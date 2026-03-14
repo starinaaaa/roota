@@ -153,11 +153,11 @@ export default function ProductInfo({ product, onAddToCart, added }: Props) {
 function ProductSpecs({ product }: { product: Product }) {
   const rows: { label: string; value: string }[] = []
 
-  if (product.material != null)
+  if (product.material != null && product.material !== '')
     rows.push({ label: 'Материал', value: product.material })
-  if (product.dimensions != null)
+  if (product.dimensions != null && product.dimensions !== '')
     rows.push({ label: 'Размер', value: product.dimensions })
-  if (product.weight != null)
+  if (product.weight != null && product.weight !== '')
     rows.push({ label: 'Вес', value: product.weight })
   if (product.dishwasher_safe != null)
     rows.push({ label: 'Посудомоечная машина', value: product.dishwasher_safe ? 'Можно' : 'Нельзя' })

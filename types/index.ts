@@ -21,6 +21,11 @@ export type Product = {
   stock_qty: number
   created_at: string
   updated_at: string
+  material?: string | null
+  dimensions?: string | null
+  weight?: string | null
+  dishwasher_safe?: boolean | null
+  microwave_safe?: boolean | null
   // JOIN
   category?: Category
 }

@@ -50,6 +50,9 @@ export default function ProductInfo({ product }: Props) {
         </p>
       )}
 
+      {/* Характеристики */}
+      <ProductSpecs product={product} />
+
       {/* CTA */}
       <div className="flex flex-col gap-3 pt-2">
         {product.in_stock ? (
@@ -151,6 +154,40 @@ export default function ProductInfo({ product }: Props) {
         — часть характера авторской керамики, а не дефект.
       </Accordion>
 
+    </div>
+  )
+}
+
+/* ── ProductSpecs ───────────────────────────────────────────────────────────── */
+function ProductSpecs({ product }: { product: Product }) {
+  const rows: { label: string; value: string }[] = []
+
+  if (product.material != null)
+    rows.push({ label: 'Материал', value: product.material })
+  if (product.dimensions != null)
+    rows.push({ label: 'Размер', value: product.dimensions })
+  if (product.weight != null)
+    rows.push({ label: 'Вес', value: product.weight })
+  if (product.dishwasher_safe != null)
+    rows.push({ label: 'Посудомоечная машина', value: product.dishwasher_safe ? 'Можно' : 'Нельзя' })
+  if (product.microwave_safe != null)
+    rows.push({ label: 'Микроволновая печь', value: product.microwave_safe ? 'Можно' : 'Нельзя' })
+
+  if (rows.length === 0) return null
+
+  return (
+    <div className="mt-6 mb-6">
+      <div className="divide-y divide-stone-100">
+        {rows.map(({ label, value }) => (
+          <div key={label} className="flex justify-between py-3">
+            <span className="font-body text-xs uppercase tracking-widest text-stone-400">{label}</span>
+            <span className="font-body text-sm text-stone-700">{value}</span>
+          </div>
+        ))}
+      </div>
+      <p className="font-body text-xs text-stone-400 italic mt-4">
+        Каждое изделие немного отличается — это часть ручной работы
+      </p>
     </div>
   )
 }

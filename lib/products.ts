@@ -35,6 +35,11 @@ type ProductRow = {
   stock_qty: number
   created_at: string
   updated_at: string
+  material: string | null
+  dimensions: string | null
+  weight: string | null
+  dishwasher_safe: boolean | null
+  microwave_safe: boolean | null
   categories: CategoryRow | null
   product_images: ProductImageRow[]
 }
@@ -52,6 +57,11 @@ const PRODUCT_SELECT = `
   stock_qty,
   created_at,
   updated_at,
+  material,
+  dimensions,
+  weight,
+  dishwasher_safe,
+  microwave_safe,
   categories (
     id,
     slug,
@@ -91,6 +101,11 @@ function mapProduct(row: ProductRow): Product {
     stock_qty: row.stock_qty,
     created_at: row.created_at,
     updated_at: row.updated_at,
+    material: row.material ?? null,
+    dimensions: row.dimensions ?? null,
+    weight: row.weight ?? null,
+    dishwasher_safe: row.dishwasher_safe ?? null,
+    microwave_safe: row.microwave_safe ?? null,
     category: row.categories
       ? {
           id: row.categories.id,

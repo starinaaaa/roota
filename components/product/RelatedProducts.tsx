@@ -41,7 +41,7 @@ export default function RelatedProducts({ products }: Props) {
               transition={{ duration: 0.55, delay: i * 0.07, ease: [0.16, 1, 0.3, 1] }}
             >
               <Link href={`/product/${p.slug}`} className="group block">
-                <div className="relative aspect-[3/4] overflow-hidden bg-stone-100 mb-4">
+                <div className="relative aspect-square overflow-hidden rounded-lg bg-stone-100 mb-4">
                   {p.images[0] && (
                     <Image
                       src={p.images[0]}

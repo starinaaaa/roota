@@ -4,18 +4,21 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { AnimatePresence, motion } from 'framer-motion'
 import { X, ShoppingBag, ArrowRight } from 'lucide-react'
-import { useCartStore } from '@/lib/store/cartStore'
+import { useCartUI } from '@/contexts/CartUIContext'
 import { formatPrice } from '@/lib/products'
 import CartLineItem from './CartLineItem'
+import type { CartItem } from '@/types'
 
-export default function CartDrawer() {
-  const items       = useCartStore(s => s.items)
-  const isOpen      = useCartStore(s => s.isDrawerOpen)
-  const closeDrawer = useCartStore(s => s.closeDrawer)
-  const totalPrice  = useCartStore(s => s.totalPrice)
-  const totalItems  = useCartStore(s => s.totalItems)
+type Props = {
+  initialItems: CartItem[]
+}
 
+export default function CartDrawer({ initialItems }: Props) {
+  const { isOpen, close: closeDrawer } = useCartUI()
   const router = useRouter()
+
+  const totalItems = initialItems.reduce((sum, i) => sum + i.quantity, 0)
+  const totalPrice = initialItems.reduce((sum, i) => sum + i.product.price * i.quantity, 0)
 
   function handleCheckout() {
     closeDrawer()
@@ -59,8 +62,8 @@ export default function CartDrawer() {
             ">
               <p className="font-body text-[10px] tracking-[0.25em] uppercase text-stone-500">
                 Корзина
-                {totalItems() > 0 && (
-                  <span className="ml-2 text-stone-400">· {totalItems()}</span>
+                {totalItems > 0 && (
+                  <span className="ml-2 text-stone-400">· {totalItems}</span>
                 )}
               </p>
               <button
@@ -74,7 +77,7 @@ export default function CartDrawer() {
 
             {/* Тело: список товаров или empty state */}
             <div className="flex-1 overflow-y-auto px-6">
-              {items.length === 0 ? (
+              {initialItems.length === 0 ? (
                 <motion.div
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -96,7 +99,7 @@ export default function CartDrawer() {
                 </motion.div>
               ) : (
                 <div>
-                  {items.map(item => (
+                  {initialItems.map(item => (
                     <CartLineItem key={item.product.id} item={item} compact />
                   ))}
                 </div>
@@ -104,14 +107,14 @@ export default function CartDrawer() {
             </div>
 
             {/* Footer: итого + кнопка оформления */}
-            {items.length > 0 && (
+            {initialItems.length > 0 && (
               <div className="shrink-0 px-6 pb-8 pt-5 border-t border-stone-100 space-y-4">
                 <div className="flex items-baseline justify-between">
                   <span className="font-body text-[10px] tracking-[0.2em] uppercase text-stone-500">
                     Итого
                   </span>
                   <span className="font-display text-2xl text-stone-900">
-                    {formatPrice(totalPrice())}
+                    {formatPrice(totalPrice)}
                   </span>
                 </div>
 

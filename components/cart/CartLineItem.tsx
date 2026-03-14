@@ -3,9 +3,9 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { Minus, Plus, X } from 'lucide-react'
-import { useCartStore } from '@/lib/store/cartStore'
+import { useCart } from '@/hooks/useCart'
 import { formatPrice } from '@/lib/products'
-import type { CartItem } from '@/lib/store/cartStore'
+import type { CartItem } from '@/types'
 
 type Props = {
   item: CartItem
@@ -13,8 +13,7 @@ type Props = {
 }
 
 export default function CartLineItem({ item, compact = false }: Props) {
-  const updateQuantity = useCartStore(s => s.updateQuantity)
-  const removeItem     = useCartStore(s => s.removeItem)
+  const { updateQuantity, removeItem } = useCart()
 
   const { product, quantity } = item
   const imgSrc = product.images?.[0] ?? null

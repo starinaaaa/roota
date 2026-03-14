@@ -1,190 +1,252 @@
-// Mock-данные каталога — структура готова для замены на Supabase-запросы.
-//
-// Чтобы подключить Supabase, замените `products` и `categories` на:
-//   const { data } = await supabase.from('products').select('*, category:categories(*)')
-//   const { data } = await supabase.from('categories').select('*').order('sort_order')
-
+import { cache } from 'react'
+import { createClient } from '@supabase/supabase-js'
 import type { Product, Category } from '@/types'
 
-// ─── Категории ────────────────────────────────────────────────────────────────
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-export const categories: Category[] = [
-  { id: 'cat-plates',  name: 'Тарелки',  slug: 'plates',  sort_order: 1 },
-  { id: 'cat-glasses', name: 'Стаканы',  slug: 'glasses', sort_order: 2 },
-  { id: 'cat-vases',   name: 'Вазы',     slug: 'vases',   sort_order: 3 },
-  { id: 'cat-decor',   name: 'Декор',    slug: 'decor',   sort_order: 4 },
-]
+const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-// Список для UI-фильтра (первый пункт — «Все»)
-export const FILTER_CATEGORIES = [
-  { slug: 'all', label: 'Все работы' },
-  ...categories.map(c => ({ slug: c.slug, label: c.name })),
-]
+// ── Internal row shapes ───────────────────────────────────────────────────────
 
-// ─── Вспомогательная функция для изображений ─────────────────────────────────
-// Замените URL на реальные фотографии товаров из Supabase Storage
-const img = (seed: string) =>
-  `https://picsum.photos/seed/${seed}/900/1100`
-
-const NOW = new Date().toISOString()
-
-// ─── Mock-товары ──────────────────────────────────────────────────────────────
-
-export const products: Product[] = [
-  // ── Тарелки ──
-  {
-    id: 'prod-1',
-    category_id: 'cat-plates',
-    name: 'Тарелка «Туман»',
-    slug: 'tarelka-tuman',
-    description:
-      'Обеденная тарелка с мягким туманно-серым покрытием. Матовая глазурь создаёт ощущение утреннего света — каждый экземпляр неповторим.',
-    price: 3200,
-    images: [img('tuman1'), img('tuman2'), img('tuman3')],
-    in_stock: true,
-    stock_qty: 4,
-    created_at: NOW,
-    updated_at: NOW,
-    category: categories[0],
-  },
-  {
-    id: 'prod-2',
-    category_id: 'cat-plates',
-    name: 'Блюдо «Соль»',
-    slug: 'blyudo-sol',
-    description:
-      'Широкое плоское блюдо с кристаллической белой глазурью. Фактура поверхности напоминает морской солончак.',
-    price: 4100,
-    images: [img('sol1'), img('sol2')],
-    in_stock: true,
-    stock_qty: 2,
-    created_at: NOW,
-    updated_at: NOW,
-    category: categories[0],
-  },
-  {
-    id: 'prod-3',
-    category_id: 'cat-plates',
-    name: 'Тарелка «Лес»',
-    slug: 'tarelka-les',
-    description:
-      'Тарелка с глубоким тёмно-зелёным покрытием. Неравномерный тон — эффект природных переходов цвета в чаще.',
-    price: 2900,
-    images: [img('les1'), img('les2')],
-    in_stock: false,
-    stock_qty: 0,
-    created_at: NOW,
-    updated_at: NOW,
-    category: categories[0],
-  },
-
-  // ── Стаканы ──
-  {
-    id: 'prod-4',
-    category_id: 'cat-glasses',
-    name: 'Стакан «Охра»',
-    slug: 'stakan-ohra',
-    description:
-      'Стакан с тёплым охровым покрытием. Ровные стенки, немного расширенный к верху — удобно держать в руке.',
-    price: 1800,
-    images: [img('ohra1'), img('ohra2')],
-    in_stock: true,
-    stock_qty: 8,
-    created_at: NOW,
-    updated_at: NOW,
-    category: categories[1],
-  },
-  {
-    id: 'prod-5',
-    category_id: 'cat-glasses',
-    name: 'Кружка «Береза»',
-    slug: 'kruzhka-bereza',
-    description:
-      'Кружка с белой глазурью и тонкими серыми полосами — текстурой берёзовой коры. Ёмкость 280 мл.',
-    price: 2200,
-    images: [img('bereza1'), img('bereza2')],
-    in_stock: true,
-    stock_qty: 5,
-    created_at: NOW,
-    updated_at: NOW,
-    category: categories[1],
-  },
-
-  // ── Вазы ──
-  {
-    id: 'prod-6',
-    category_id: 'cat-vases',
-    name: 'Ваза «Береста»',
-    slug: 'vaza-beresta',
-    description:
-      'Высокая ваза с рельефной поверхностью, имитирующей кору берёзы. Матово-белое покрытие с золотистыми переливами.',
-    price: 5600,
-    images: [img('beresta1'), img('beresta2'), img('beresta3')],
-    in_stock: true,
-    stock_qty: 3,
-    created_at: NOW,
-    updated_at: NOW,
-    category: categories[2],
-  },
-  {
-    id: 'prod-7',
-    category_id: 'cat-vases',
-    name: 'Ваза «Дюна»',
-    slug: 'vaza-dyuna',
-    description:
-      'Низкая ваза с округлым силуэтом и песчано-бежевой глазурью. Подходит для сухих полевых цветов.',
-    price: 3800,
-    images: [img('dyuna1'), img('dyuna2')],
-    in_stock: true,
-    stock_qty: 6,
-    created_at: NOW,
-    updated_at: NOW,
-    category: categories[2],
-  },
-
-  // ── Декор ──
-  {
-    id: 'prod-8',
-    category_id: 'cat-decor',
-    name: 'Свечница «Ночь»',
-    slug: 'svechnica-noch',
-    description:
-      'Подсвечник из тёмного шамота с глянцевой чёрной глазурью. Диаметр под свечу 2 см.',
-    price: 1600,
-    images: [img('noch1'), img('noch2')],
-    in_stock: true,
-    stock_qty: 10,
-    created_at: NOW,
-    updated_at: NOW,
-    category: categories[3],
-  },
-  {
-    id: 'prod-9',
-    category_id: 'cat-decor',
-    name: 'Чаша для мелочей',
-    slug: 'chasha-melochei',
-    description:
-      'Небольшая открытая чаша для украшений, монет или ключей. Глазурь «жидкий металл» — серо-оловянный отлив.',
-    price: 1400,
-    images: [img('metall1'), img('metall2')],
-    in_stock: false,
-    stock_qty: 0,
-    created_at: NOW,
-    updated_at: NOW,
-    category: categories[3],
-  },
-]
-
-// ─── Хелперы ──────────────────────────────────────────────────────────────────
-
-export function getProductBySlug(slug: string): Product | undefined {
-  return products.find(p => p.slug === slug)
+type ProductImageRow = {
+  public_url: string
+  alt_text: string | null
+  sort_order: number
+  is_primary: boolean
 }
 
-export function getProductsByCategory(categorySlug?: string): Product[] {
-  if (!categorySlug || categorySlug === 'all') return products
-  return products.filter(p => p.category?.slug === categorySlug)
+type CategoryRow = {
+  id: string
+  slug: string
+  name: string
+  sort_order: number
 }
+
+type ProductRow = {
+  id: string
+  category_id: string | null
+  slug: string
+  sku: string | null
+  name: string
+  description: string | null
+  price: number
+  in_stock: boolean
+  stock_qty: number
+  created_at: string
+  updated_at: string
+  categories: CategoryRow | null
+  product_images: ProductImageRow[]
+}
+
+// Single select fragment — identical shape across all queries
+const PRODUCT_SELECT = `
+  id,
+  category_id,
+  slug,
+  sku,
+  name,
+  description,
+  price,
+  in_stock,
+  stock_qty,
+  created_at,
+  updated_at,
+  categories (
+    id,
+    slug,
+    name,
+    sort_order
+  ),
+  product_images (
+    public_url,
+    alt_text,
+    sort_order,
+    is_primary
+  )
+` as const
+
+// ── Mapper ────────────────────────────────────────────────────────────────────
+// Invariant: images[0] === primary_image_url (always).
+
+function mapProduct(row: ProductRow): Product {
+  const images = (row.product_images ?? [])
+    .sort((a, b) => {
+      if (a.is_primary !== b.is_primary) return a.is_primary ? -1 : 1
+      return a.sort_order - b.sort_order
+    })
+    .map((img) => img.public_url)
+
+  return {
+    id: row.id,
+    category_id: row.category_id ?? '',
+    name: row.name,
+    slug: row.slug,
+    sku: row.sku,
+    description: row.description ?? '',
+    price: row.price,
+    primary_image_url: images[0] ?? null,
+    images,
+    in_stock: row.in_stock,
+    stock_qty: row.stock_qty,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+    category: row.categories
+      ? {
+          id: row.categories.id,
+          slug: row.categories.slug,
+          name: row.categories.name,
+          sort_order: row.categories.sort_order,
+        }
+      : undefined,
+  }
+}
+
+// ── Public queries ────────────────────────────────────────────────────────────
+
+export async function getCategories(): Promise<Category[]> {
+  const { data, error } = await supabase
+    .from('categories')
+    .select('id, slug, name, sort_order')
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true })
+
+  if (error) {
+    console.error('getCategories error:', error)
+    return []
+  }
+
+  return (data ?? []) as Category[]
+}
+
+export async function getFilterCategories() {
+  const categories = await getCategories()
+  return [
+    { slug: 'all', label: 'Все работы' },
+    ...categories.map((c) => ({ slug: c.slug, label: c.name })),
+  ]
+}
+
+export async function getProducts(): Promise<Product[]> {
+  const { data, error } = await supabase
+    .from('products')
+    .select(PRODUCT_SELECT)
+    .eq('is_active', true)
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('getProducts error:', error)
+    return []
+  }
+
+  return (data ?? []).map((row) => mapProduct(row as unknown as ProductRow))
+}
+
+// cache() memoises per request: generateMetadata and ProductPage both call
+// this function with the same slug — only the first call hits the DB.
+export const getProductBySlug = cache(async (slug: string): Promise<Product | undefined> => {
+  const { data, error } = await supabase
+    .from('products')
+    .select(PRODUCT_SELECT)
+    .eq('slug', slug)
+    .eq('is_active', true)
+    .single()
+
+  if (error) {
+    console.error('getProductBySlug error:', error)
+    return undefined
+  }
+
+  return mapProduct(data as unknown as ProductRow)
+})
+
+// Targeted fetch — used by getCart() to hydrate only the products
+// actually present in the cart, not the entire catalog.
+export async function getProductsByIds(ids: string[]): Promise<Product[]> {
+  if (ids.length === 0) return []
+
+  const { data, error } = await supabase
+    .from('products')
+    .select(PRODUCT_SELECT)
+    .in('id', ids)
+    .eq('is_active', true)
+
+  if (error) {
+    console.error('getProductsByIds error:', error)
+    return []
+  }
+
+  return (data ?? []).map((row) => mapProduct(row as unknown as ProductRow))
+}
+
+// Fetches up to `limit` products related to a given category, excluding the
+// current product.  Two-step:
+//   1. Same-category products first (most relevant).
+//   2. If fewer than `limit` found, fill remaining slots from any other category.
+// Uses chained .neq() for exclusion — safer than raw PostgREST not-in strings.
+export async function getRelatedProducts(
+  categoryId: string,
+  excludeSlug: string,
+  limit = 4,
+): Promise<Product[]> {
+  // Step 1 — same category, excluding current product
+  const { data: sameData, error: sameErr } = await supabase
+    .from('products')
+    .select(PRODUCT_SELECT)
+    .eq('is_active', true)
+    .eq('category_id', categoryId)
+    .neq('slug', excludeSlug)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+  if (sameErr) console.error('getRelatedProducts (same) error:', sameErr)
+
+  const same = (sameData ?? []).map((r) => mapProduct(r as unknown as ProductRow))
+  if (same.length >= limit) return same
+
+  // Step 2 — fill remaining slots from any category
+  const needed = limit - same.length
+  const takenSlugs = [excludeSlug, ...same.map((p) => p.slug)]
+
+  // Start with a fully-typed builder; .neq() returns the same builder type
+  // so TypeScript infers the chain correctly without any `any` annotation.
+  let fallbackQuery = supabase
+    .from('products')
+    .select(PRODUCT_SELECT)
+    .eq('is_active', true)
+    .order('created_at', { ascending: false })
+    .limit(needed)
+
+  for (const s of takenSlugs) {
+    fallbackQuery = fallbackQuery.neq('slug', s)
+  }
+
+  const { data: fallbackData, error: fallbackErr } = await fallbackQuery
+  if (fallbackErr) console.error('getRelatedProducts (fallback) error:', fallbackErr)
+
+  const fallback = (fallbackData ?? []).map((r) => mapProduct(r as unknown as ProductRow))
+  return [...same, ...fallback]
+}
+
+export async function getProductsByCategory(categorySlug?: string): Promise<Product[]> {
+  const { data, error } = await supabase
+    .from('products')
+    .select(PRODUCT_SELECT)
+    .eq('is_active', true)
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('getProductsByCategory error:', error)
+    return []
+  }
+
+  const mapped = (data ?? []).map((row) => mapProduct(row as unknown as ProductRow))
+
+  if (!categorySlug || categorySlug === 'all') return mapped
+  return mapped.filter((p) => p.category?.slug === categorySlug)
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 export function formatPrice(price: number): string {
   return new Intl.NumberFormat('ru-RU', {

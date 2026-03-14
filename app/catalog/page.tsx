@@ -1,8 +1,10 @@
 import { Suspense } from 'react'
 import type { Metadata } from 'next'
-import { getProductsByCategory } from '@/lib/products'
+import { getFilterCategories, getProductsByCategory } from '@/lib/products'
 import ProductGrid from '@/components/product/ProductGrid'
 import CategoryFilter from '@/components/catalog/CategoryFilter'
+
+export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: 'Каталог',
@@ -18,7 +20,10 @@ export default async function CatalogPage({ searchParams }: Props) {
   const params = await searchParams
   const activeSlug = params.category || 'all'
 
-  const filtered = getProductsByCategory(activeSlug)
+  const [filtered, categories] = await Promise.all([
+    getProductsByCategory(activeSlug),
+    getFilterCategories(),
+  ])
 
   const countLabel = (() => {
     const n = filtered.length
@@ -34,7 +39,7 @@ export default async function CatalogPage({ searchParams }: Props) {
       <section className="px-6 md:px-12 lg:px-16 py-16 md:py-24 border-b border-stone-200">
         <div className="max-w-[1440px] mx-auto">
           <p className="font-body text-[10px] tracking-[0.3em] uppercase text-stone-400 mb-6">
-            Авторская керамика · Glina Studio
+            Авторская керамика · Roota ceramics
           </p>
           <h1 className="font-display text-[clamp(3.5rem,8vw,7rem)] leading-none text-stone-900">
             Каталог
@@ -46,7 +51,7 @@ export default async function CatalogPage({ searchParams }: Props) {
       <section className="px-6 md:px-12 lg:px-16 py-7 border-b border-stone-200">
         <div className="max-w-[1440px] mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <Suspense fallback={<div className="h-7" />}>
-            <CategoryFilter activeSlug={activeSlug} />
+            <CategoryFilter activeSlug={activeSlug} categories={categories} />
           </Suspense>
           <p className="font-body text-[10px] tracking-[0.18em] uppercase text-stone-400 shrink-0">
             {countLabel}

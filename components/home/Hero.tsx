@@ -1,131 +1,84 @@
 'use client'
 
-import { useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { motion, useScroll, useTransform } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { ArrowRight } from 'lucide-react'
 
+// Header height: h-16 (64px) on mobile, md:h-20 (80px) on desktop
+const SECTION_H = 'min-h-[calc(100svh-64px)] md:min-h-[calc(100svh-80px)]'
+
 export default function Hero() {
-  const containerRef = useRef<HTMLDivElement>(null)
-
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ['start start', 'end start'],
-  })
-
-  // Параллакс-смещение для фото
-  const imageY = useTransform(scrollYProgress, [0, 1], ['0%', '18%'])
-  // Лёгкое затухание текста при скролле
-  const textOpacity = useTransform(scrollYProgress, [0, 0.45], [1, 0])
-  const textY = useTransform(scrollYProgress, [0, 0.45], ['0%', '-12%'])
-
   return (
-    <section
-      ref={containerRef}
-      className="relative w-full h-screen min-h-[600px] max-h-[1000px] overflow-hidden bg-stone-900"
-    >
-      {/* Фоновое изображение с параллаксом */}
-      <motion.div
-        style={{ y: imageY }}
-        className="absolute inset-0 will-change-transform"
-      >
+    <section className={`relative w-full ${SECTION_H} overflow-hidden bg-stone-900`}>
+
+      {/* Background image — bg-stone-900 above acts as dark fallback */}
+      <div className="absolute inset-0">
         <Image
           src="/images/hero-bg.jpg"
           alt="Авторская керамика"
           fill
           priority
           sizes="100vw"
-          className="object-cover opacity-70"
-          // Замените на реальное фото; пока используется placeholder
-          onError={(e) => {
-            const target = e.target as HTMLImageElement
-            target.style.display = 'none'
-          }}
+          className="object-cover"
         />
-        {/* Градиент поверх фото */}
-        <div className="absolute inset-0 bg-gradient-to-b from-stone-900/30 via-transparent to-stone-900/60" />
-      </motion.div>
+      </div>
 
-      {/* Fallback-фон, если фото не загрузилось */}
-      <div className="absolute inset-0 bg-stone-800" style={{ zIndex: -1 }} />
+      {/* Subtle dark gradient so white text stays readable at any scroll depth */}
+      <div className="absolute inset-0 bg-gradient-to-t from-stone-900/60 via-stone-900/10 to-transparent" />
 
-      {/* Текстовый блок */}
-      <motion.div
-        style={{ opacity: textOpacity, y: textY }}
-        className="relative z-10 h-full flex flex-col justify-end pb-16 md:pb-20 lg:pb-24 px-6 md:px-12 lg:px-16"
-      >
-        <div className="max-w-[1440px] mx-auto w-full">
+      {/* Content */}
+      <div className={`relative z-10 flex ${SECTION_H} items-end px-6 pb-16 md:px-12 md:pb-20 lg:px-16 lg:pb-24`}>
+        <div className="mx-auto w-full max-w-[1440px]">
           <div className="max-w-2xl">
 
-            {/* Надпись-лейбл */}
             <motion.p
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.1, ease: 'easeOut' }}
-              className="font-body text-xs text-stone-300 tracking-[0.25em] uppercase mb-6"
+              transition={{ duration: 0.6 }}
+              className="mb-6 font-body text-[11px] uppercase tracking-[0.25em] text-white"
             >
               Авторская керамика · Ручная работа
             </motion.p>
 
-            {/* Заголовок */}
             <motion.h1
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.9, delay: 0.2, ease: 'easeOut' }}
-              className="font-display text-[clamp(3rem,8vw,7rem)] leading-[0.95] text-stone-50 mb-8"
+              transition={{ duration: 0.7, delay: 0.1 }}
+              className="mb-6 font-display text-[clamp(3rem,8vw,7rem)] leading-[0.95] text-white"
             >
-              Каждое изделие —<br />
-              <em className="not-italic text-stone-300">отдельная история</em>
+              Каждое изделие —
+              <br />
+              отдельная история
             </motion.h1>
 
-            {/* CTA */}
+            <motion.p
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.2 }}
+              className="mb-8 max-w-xl font-body text-sm leading-relaxed text-white/90 md:text-[15px]"
+            >
+              Ручная керамика для дома — спокойные формы, живые поверхности и вещи,
+              которые хочется держать рядом каждый день.
+            </motion.p>
+
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.4, ease: 'easeOut' }}
+              transition={{ duration: 0.7, delay: 0.3 }}
             >
-              <Link href="/catalog" className="inline-block group">
-                <span className="
-                  flex items-center gap-3
-                  font-body text-sm tracking-[0.15em] uppercase
-                  text-stone-50 border-b border-stone-50/40
-                  pb-1 hover:border-stone-50/80
-                  transition-colors duration-300
-                ">
-                  Смотреть коллекцию
-                  <motion.span
-                    whileHover={{ x: 4 }}
-                    transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-                  >
-                    <ArrowRight size={14} strokeWidth={1.5} />
-                  </motion.span>
-                </span>
+              <Link
+                href="/catalog"
+                className="inline-flex items-center gap-3 border-b border-white/50 pb-1 font-body text-sm uppercase tracking-[0.15em] text-white hover:border-white transition-colors"
+              >
+                Смотреть коллекцию
+                <ArrowRight size={14} strokeWidth={1.5} />
               </Link>
             </motion.div>
 
           </div>
         </div>
-      </motion.div>
-
-      {/* Скролл-индикатор */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.2, duration: 0.8 }}
-        style={{ opacity: textOpacity }}
-        className="absolute bottom-8 right-8 md:right-14 z-10 hidden md:flex flex-col items-center gap-2"
-      >
-        <span className="font-body text-[10px] text-stone-400 tracking-[0.2em] uppercase [writing-mode:vertical-lr]">
-          Scroll
-        </span>
-        <motion.div
-          animate={{ y: [0, 6, 0] }}
-          transition={{ repeat: Infinity, duration: 1.8, ease: 'easeInOut' }}
-          className="w-px h-10 bg-stone-400/50"
-        />
-      </motion.div>
-
+      </div>
     </section>
   )
 }

@@ -1,43 +1,35 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Loader2 } from 'lucide-react'
-import { useCartStore } from '@/lib/store/cartStore'
 import { formatPrice } from '@/lib/products'
-import { createOrder } from '@/app/actions/createOrder'
-import type { CheckoutFormData, DeliveryType } from '@/types'
+import { createOrder } from '@/lib/actions/orders'
+import type { CartItem, CheckoutFormData, DeliveryType } from '@/types'
 
-export default function CheckoutForm() {
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => setMounted(true), [])
+type Props = {
+  initialItems: CartItem[]
+}
 
-  const items      = useCartStore(s => s.items)
-  const totalPrice = useCartStore(s => s.totalPrice)
-  const clearCart  = useCartStore(s => s.clearCart)
-  const router     = useRouter()
+export default function CheckoutForm({ initialItems }: Props) {
+  const router = useRouter()
 
-  const [pending,  setPending]  = useState(false)
-  const [error,    setError]    = useState<string | null>(null)
+  const [pending, setPending] = useState(false)
+  const [error,   setError]   = useState<string | null>(null)
 
   const [formData, setFormData] = useState<CheckoutFormData>({
-    name:             '',
-    phone:            '',
-    email:            '',
-    delivery_type:    'moscow',
-    delivery_address: '',
-    comment:          '',
+    name: '',
+    phone: '',
+    email: '',
+    deliveryType: 'moscow',
+    address: '',
+    comment: '',
   })
 
-  // Редирект на корзину если она пуста (после mount)
-  useEffect(() => {
-    if (mounted && items.length === 0) {
-      router.replace('/cart')
-    }
-  }, [mounted, items.length, router])
+  const totalPrice = initialItems.reduce((sum, i) => sum + i.product.price * i.quantity, 0)
 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -48,7 +40,7 @@ export default function CheckoutForm() {
   }
 
   function setDeliveryType(type: DeliveryType) {
-    setFormData(prev => ({ ...prev, delivery_type: type }))
+    setFormData((prev) => ({ ...prev, deliveryType: type }))
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -56,18 +48,16 @@ export default function CheckoutForm() {
     setPending(true)
     setError(null)
 
-    const result = await createOrder(formData, items)
+    // createOrder reads cart from Supabase server-side — no items passed
+    const result = await createOrder(formData)
 
     if (result.success) {
-      clearCart()
       router.push(`/order-success?id=${result.orderId}`)
     } else {
       setError(result.error)
       setPending(false)
     }
   }
-
-  if (!mounted) return null
 
   return (
     <div className="max-w-[1440px] mx-auto px-6 md:px-12 lg:px-16 py-12 md:py-16">
@@ -78,7 +68,7 @@ export default function CheckoutForm() {
       <div className="lg:grid lg:grid-cols-[1fr_360px] lg:gap-16 xl:gap-24">
 
         {/* ── Форма ──────────────────────────────────────────── */}
-        <form onSubmit={handleSubmit} className="space-y-8" noValidate>
+        <form id="checkout-form" onSubmit={handleSubmit} className="space-y-8" noValidate>
 
           {/* Контактные данные */}
           <fieldset className="space-y-5">
@@ -111,14 +101,15 @@ export default function CheckoutForm() {
             />
 
             <Field
-              label="Email"
+              label="Email *"
               id="email"
               name="email"
               type="email"
               value={formData.email ?? ''}
               onChange={handleChange}
-              placeholder="Необязательно"
+              placeholder="example@email.com"
               autoComplete="email"
+              required
             />
           </fieldset>
 
@@ -139,7 +130,7 @@ export default function CheckoutForm() {
                   onClick={() => setDeliveryType(type)}
                   className={[
                     'py-4 px-5 text-left border transition-all duration-200',
-                    formData.delivery_type === type
+                    formData.deliveryType === type
                       ? 'border-stone-900 bg-stone-900 text-stone-50'
                       : 'border-stone-200 text-stone-700 hover:border-stone-400',
                   ].join(' ')}
@@ -149,7 +140,7 @@ export default function CheckoutForm() {
                   </p>
                   <p className={[
                     'font-body text-[10px] mt-1',
-                    formData.delivery_type === type ? 'text-stone-300' : 'text-stone-400',
+                    formData.deliveryType === type ? 'text-stone-300' : 'text-stone-400',
                   ].join(' ')}>
                     {type === 'moscow' ? 'Курьер / самовывоз' : 'СДЭК / Почта'}
                   </p>
@@ -159,16 +150,16 @@ export default function CheckoutForm() {
 
             {/* Адрес */}
             <div className="space-y-2">
-              <label htmlFor="delivery_address" className="font-body text-[10px] tracking-[0.18em] uppercase text-stone-500 block">
+              <label htmlFor="address" className="font-body text-[10px] tracking-[0.18em] uppercase text-stone-500 block">
                 Адрес *
               </label>
               <textarea
-                id="delivery_address"
-                name="delivery_address"
-                value={formData.delivery_address}
+                id="address"
+                name="address"
+                value={formData.address}
                 onChange={handleChange}
                 placeholder={
-                  formData.delivery_type === 'moscow'
+                  formData.deliveryType === 'moscow'
                     ? 'Улица, дом, квартира'
                     : 'Индекс, город, улица, дом, квартира'
                 }
@@ -239,9 +230,9 @@ export default function CheckoutForm() {
 
             {/* Товары */}
             <div className="space-y-0">
-              {items.map(item => (
+              {initialItems.map(item => (
                 <div key={item.product.id} className="flex gap-4 py-4 border-b border-stone-100 last:border-b-0">
-                  <div className="relative w-14 h-18 bg-stone-100 shrink-0 overflow-hidden" style={{ height: '72px' }}>
+                  <div className="relative w-14 bg-stone-100 shrink-0 overflow-hidden" style={{ height: '72px' }}>
                     {item.product.images[0] && (
                       <Image
                         src={item.product.images[0]}
@@ -267,7 +258,7 @@ export default function CheckoutForm() {
             <div className="space-y-3">
               <div className="flex justify-between">
                 <span className="font-body text-sm text-stone-500">Товары</span>
-                <span className="font-body text-sm text-stone-700">{formatPrice(totalPrice())}</span>
+                <span className="font-body text-sm text-stone-700">{formatPrice(totalPrice)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="font-body text-sm text-stone-500">Доставка</span>
@@ -276,7 +267,7 @@ export default function CheckoutForm() {
               <div className="divider pt-1" />
               <div className="flex justify-between items-baseline">
                 <span className="font-body text-xs tracking-[0.15em] uppercase text-stone-500">Итого</span>
-                <span className="font-display text-2xl text-stone-900">{formatPrice(totalPrice())}</span>
+                <span className="font-display text-2xl text-stone-900">{formatPrice(totalPrice)}</span>
               </div>
             </div>
 
@@ -286,7 +277,6 @@ export default function CheckoutForm() {
                 type="submit"
                 form="checkout-form"
                 disabled={pending}
-                onClick={handleSubmit}
                 className="
                   w-full bg-stone-900 text-stone-50
                   font-body text-xs tracking-[0.2em] uppercase
@@ -305,7 +295,14 @@ export default function CheckoutForm() {
             </div>
 
             <p className="font-body text-[10px] text-stone-400 leading-relaxed">
-              Нажимая «Оформить заказ», вы соглашаетесь с условиями обработки персональных данных.
+              Нажимая «Оформить заказ», вы принимаете условия{' '}
+              <Link href="/offer" className="underline underline-offset-2 hover:text-stone-600 transition-colors duration-200">
+                публичной оферты
+              </Link>{' '}
+              и соглашаетесь с{' '}
+              <Link href="/privacy" className="underline underline-offset-2 hover:text-stone-600 transition-colors duration-200">
+                политикой конфиденциальности
+              </Link>.{' '}
               Стоимость доставки уточняется менеджером.
             </p>
 

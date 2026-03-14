@@ -39,7 +39,7 @@ export default async function OrderSuccessPage({ searchParams }: Props) {
               заказа и уточнения деталей доставки.
             </p>
             <p className="font-body text-sm text-stone-500">
-              Спасибо, что выбираете Glina Studio.
+              Спасибо, что выбираете Roota ceramics.
             </p>
           </div>
 

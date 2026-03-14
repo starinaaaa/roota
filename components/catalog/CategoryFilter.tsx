@@ -2,13 +2,18 @@
 
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { FILTER_CATEGORIES } from '@/lib/products'
+
+type FilterCategory = {
+  slug: string
+  label: string
+}
 
 type Props = {
   activeSlug: string
+  categories: FilterCategory[]
 }
 
-export default function CategoryFilter({ activeSlug }: Props) {
+export default function CategoryFilter({ activeSlug, categories }: Props) {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -28,7 +33,7 @@ export default function CategoryFilter({ activeSlug }: Props) {
       aria-label="Фильтр по категориям"
       className="flex gap-0 overflow-x-auto pb-1 -mx-6 px-6 md:mx-0 md:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
     >
-      {FILTER_CATEGORIES.map(({ slug, label }) => {
+      {categories.map(({ slug, label }) => {
         const isActive = slug === activeSlug
 
         return (

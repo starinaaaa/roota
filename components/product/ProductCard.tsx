@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
@@ -12,7 +13,9 @@ type Props = {
 }
 
 export default function ProductCard({ product, index = 0 }: Props) {
-  const imgSrc = product.images?.[0] ?? null
+  const [imageFailed, setImageFailed] = useState(false)
+  const imgSrc = product.primary_image_url ?? null
+  const hasImage = Boolean(imgSrc) && !imageFailed
 
   return (
     <motion.article
@@ -23,22 +26,26 @@ export default function ProductCard({ product, index = 0 }: Props) {
         delay: index * 0.07,
         ease: [0.16, 1, 0.3, 1],
       }}
+      className="h-full"
     >
-      <Link href={`/product/${product.slug}`} className="group block">
+      <Link href={`/product/${product.slug}`} className="group flex h-full flex-col">
         {/* Изображение */}
-        <div className="relative aspect-[3/4] overflow-hidden bg-stone-100 mb-5">
-
-          {imgSrc ? (
+        <div className="relative mb-5 aspect-square overflow-hidden rounded-lg bg-stone-100">
+          {hasImage ? (
             <Image
-              src={imgSrc}
+              src={imgSrc!}
               alt={product.name}
               fill
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
               className="object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.04]"
+              onError={() => setImageFailed(true)}
             />
           ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-stone-100 to-stone-200 flex items-end p-5">
-              <span className="font-body text-[10px] text-stone-400 tracking-widest uppercase">
+            <div className="absolute inset-0 flex flex-col justify-between bg-gradient-to-br from-stone-100 via-stone-100 to-stone-200 p-5">
+              <span className="font-body text-[10px] tracking-[0.24em] uppercase text-stone-300">
+                Roota ceramics
+              </span>
+              <span className="font-body text-[10px] tracking-[0.18em] uppercase text-stone-400">
                 Фото скоро
               </span>
             </div>
@@ -58,7 +65,7 @@ export default function ProductCard({ product, index = 0 }: Props) {
 
           {/* Подсказка «Смотреть» */}
           <motion.div
-            className="absolute bottom-0 left-0 right-0 bg-stone-50/92 backdrop-blur-sm py-3 px-5"
+            className="absolute bottom-0 left-0 right-0 bg-stone-50/92 px-5 py-3 backdrop-blur-sm"
             initial={{ y: '100%' }}
             whileHover={{ y: 0 }}
             transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
@@ -71,8 +78,8 @@ export default function ProductCard({ product, index = 0 }: Props) {
 
         {/* Информация */}
         <div className="space-y-1.5">
-          <p className="font-body text-[10px] tracking-[0.18em] uppercase text-stone-400 group-hover:text-stone-600 transition-colors duration-300">
-            {product.category?.name}
+          <p className="min-h-[1rem] font-body text-[10px] tracking-[0.18em] uppercase text-stone-400 transition-colors duration-300 group-hover:text-stone-600">
+            {product.category?.name ?? ''}
           </p>
           <h3 className="font-body text-sm text-stone-800 group-hover:text-stone-900 transition-colors duration-200">
             {product.name}

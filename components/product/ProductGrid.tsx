@@ -28,12 +28,12 @@ export default function ProductGrid({ products }: Props) {
   return (
     <AnimatePresence mode="wait">
       <motion.div
-        key={products.map(p => p.id).join('-')}
+        key={products.map((product) => product.id).join('-')}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.25 }}
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-16"
+        className="grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:gap-x-8 lg:gap-y-14 xl:grid-cols-3 items-start"
       >
         {products.map((product, i) => (
           <ProductCard key={product.id} product={product} index={i} />

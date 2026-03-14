@@ -12,8 +12,10 @@ export type Product = {
   category_id: string
   name: string
   slug: string
+  sku: string | null
   description: string | null
   price: number
+  primary_image_url: string | null
   images: string[]
   in_stock: boolean
   stock_qty: number
@@ -48,14 +50,17 @@ export type Customer = {
   updated_at: string
 }
 
-export type OrderStatus = 'new' | 'confirmed' | 'shipped' | 'done' | 'cancelled'
+export type OrderStatus = 'new' | 'confirmed' | 'in_production' | 'shipped' | 'delivered' | 'cancelled'
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded'
 export type PaymentProvider = 'robokassa' | null
-export type DeliveryType = 'moscow' | 'russia'
+export type DeliveryType = 'moscow' | 'russia' | 'pickup'
 
 export type Order = {
   id: string
-  customer_id: string
+  customer_id: string | null
+  customer_name: string
+  customer_phone: string
+  customer_email: string | null
   status: OrderStatus
   total_amount: number
   delivery_type: DeliveryType | null
@@ -74,9 +79,12 @@ export type Order = {
 export type OrderItem = {
   id: string
   order_id: string
-  product_id: string
+  product_id: string | null
   quantity: number
   price: number // зафиксирована на момент заказа
+  product_name: string
+  product_slug: string | null
+  product_sku: string | null
   // JOIN
   product?: Pick<Product, 'id' | 'name' | 'slug' | 'images'>
 }
@@ -85,10 +93,10 @@ export type OrderItem = {
 export type CheckoutFormData = {
   name: string
   phone: string
-  email?: string
-  delivery_type: DeliveryType
-  delivery_address: string
-  comment?: string
+  email: string
+  deliveryType: DeliveryType
+  address: string
+  comment: string
 }
 
 // Результат Server Action createOrder

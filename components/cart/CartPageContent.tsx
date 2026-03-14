@@ -1,27 +1,21 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { ShoppingBag, ArrowRight } from 'lucide-react'
-import { useCartStore } from '@/lib/store/cartStore'
 import { formatPrice } from '@/lib/products'
 import CartLineItem from './CartLineItem'
+import type { CartItem } from '@/types'
 
-export default function CartPageContent() {
-  // Hydration guard — предотвращает SSR mismatch с localStorage
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => setMounted(true), [])
+type Props = {
+  initialItems: CartItem[]
+}
 
-  const items      = useCartStore(s => s.items)
-  const totalPrice = useCartStore(s => s.totalPrice)
-  const totalItems = useCartStore(s => s.totalItems)
+export default function CartPageContent({ initialItems }: Props) {
+  const totalPrice = initialItems.reduce((sum, i) => sum + i.product.price * i.quantity, 0)
+  const totalItems = initialItems.reduce((sum, i) => sum + i.quantity, 0)
 
-  if (!mounted) {
-    return <CartSkeleton />
-  }
-
-  if (items.length === 0) {
+  if (initialItems.length === 0) {
     return (
       <motion.div
         initial={{ opacity: 0, y: 12 }}
@@ -65,7 +59,7 @@ export default function CartPageContent() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.4 }}
           >
-            {items.map((item, i) => (
+            {initialItems.map((item, i) => (
               <motion.div
                 key={item.product.id}
                 initial={{ opacity: 0, y: 12 }}
@@ -88,10 +82,10 @@ export default function CartPageContent() {
             <div className="space-y-4 mb-8">
               <div className="flex justify-between">
                 <span className="font-body text-sm text-stone-500">
-                  Товаров: {totalItems()}
+                  Товаров: {totalItems}
                 </span>
                 <span className="font-body text-sm text-stone-700">
-                  {formatPrice(totalPrice())}
+                  {formatPrice(totalPrice)}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -106,7 +100,7 @@ export default function CartPageContent() {
                   К оплате
                 </span>
                 <span className="font-display text-2xl text-stone-900">
-                  {formatPrice(totalPrice())}
+                  {formatPrice(totalPrice)}
                 </span>
               </div>
             </div>
@@ -140,24 +134,6 @@ export default function CartPageContent() {
         </div>
 
       </div>
-    </div>
-  )
-}
-
-/* ── Skeleton (до hydration) ──────────────────────────────── */
-function CartSkeleton() {
-  return (
-    <div className="max-w-[1440px] mx-auto px-6 md:px-12 lg:px-16 py-12 md:py-16 animate-pulse">
-      <div className="h-14 w-48 bg-stone-100 rounded mb-10" />
-      {[1, 2].map(i => (
-        <div key={i} className="flex gap-5 py-7 border-b border-stone-100">
-          <div className="w-24 h-32 bg-stone-100 rounded shrink-0" />
-          <div className="flex-1 space-y-3">
-            <div className="h-4 w-3/4 bg-stone-100 rounded" />
-            <div className="h-4 w-1/3 bg-stone-100 rounded" />
-          </div>
-        </div>
-      ))}
     </div>
   )
 }

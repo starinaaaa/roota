@@ -30,7 +30,7 @@ export default function Footer() {
               href="/"
               className="font-display text-2xl tracking-[0.15em] uppercase text-stone-900 block mb-4"
             >
-              Glina
+              Roota
             </Link>
             <p className="font-body text-sm text-stone-500 leading-relaxed max-w-[200px]">
               Авторская керамика ручной работы. Москва.
@@ -83,7 +83,7 @@ export default function Footer() {
             <ul className="space-y-3">
               <li>
                 <a
-                  href="https://t.me/glinastudio"
+                  href="https://t.me/rootaceramics"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-body text-sm text-stone-600 hover:text-stone-900 transition-colors duration-200"
@@ -93,7 +93,7 @@ export default function Footer() {
               </li>
               <li>
                 <a
-                  href="https://instagram.com/glinastudio"
+                  href="https://instagram.com/roota.ceramics"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-body text-sm text-stone-600 hover:text-stone-900 transition-colors duration-200"
@@ -103,10 +103,10 @@ export default function Footer() {
               </li>
               <li>
                 <a
-                  href="mailto:hello@glina.studio"
+                  href="mailto:hello@roota.moscow"
                   className="font-body text-sm text-stone-600 hover:text-stone-900 transition-colors duration-200"
                 >
-                  hello@glina.studio
+                  hello@roota.moscow
                 </a>
               </li>
             </ul>
@@ -115,13 +115,30 @@ export default function Footer() {
         </div>
 
         {/* Нижняя полоса */}
-        <div className="border-t border-stone-200 pt-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="border-t border-stone-200 pt-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <p className="font-body text-xs text-stone-400">
-            © {year} Glina Studio. Все права защищены.
+            © {year} Roota ceramics. Все права защищены.
           </p>
-          <p className="font-body text-xs text-stone-400">
-            Ручная работа · Москва
-          </p>
+          <div className="flex items-center gap-6">
+            <Link
+              href="/offer"
+              className="font-body text-xs text-stone-400 hover:text-stone-600 transition-colors duration-200"
+            >
+              Оферта
+            </Link>
+            <Link
+              href="/privacy"
+              className="font-body text-xs text-stone-400 hover:text-stone-600 transition-colors duration-200"
+            >
+              Конфиденциальность
+            </Link>
+            <Link
+              href="/terms"
+              className="font-body text-xs text-stone-400 hover:text-stone-600 transition-colors duration-200"
+            >
+              Условия использования
+            </Link>
+          </div>
         </div>
 
       </div>

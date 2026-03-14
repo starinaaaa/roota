@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ShoppingBag, X, Menu } from 'lucide-react'
-import { useCartStore } from '@/lib/store/cartStore'
+import { useCartUI } from '@/contexts/CartUIContext'
 
 const NAV_LINKS = [
   { href: '/catalog',  label: 'Каталог'  },
@@ -14,17 +14,20 @@ const NAV_LINKS = [
   { href: '/contacts', label: 'Контакты' },
 ]
 
-export default function Header() {
+type Props = {
+  cartCount: number
+}
+
+export default function Header({ cartCount }: Props) {
   const pathname    = usePathname()
   const [scrolled,    setScrolled]    = useState(false)
-  const [mobileOpen,  setMobileOpen]  = useState(false)
+  const [mobileMenuPath, setMobileMenuPath] = useState<string | null>(null)
 
-  // Корзина — реальные данные из Zustand store
-  const cartCount  = useCartStore(s => s.totalItems())
-  const openDrawer = useCartStore(s => s.openDrawer)
+  const { open: openDrawer } = useCartUI()
 
   const isHome        = pathname === '/'
   const isTransparent = isHome && !scrolled
+  const mobileOpen = mobileMenuPath === pathname
 
   /* ── Scroll detection ───────────────────── */
   useEffect(() => {
@@ -32,9 +35,6 @@ export default function Header() {
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
-
-  /* ── Закрывать меню при навигации ───────── */
-  useEffect(() => { setMobileOpen(false) }, [pathname])
 
   /* ── Блокировка скролла ─────────────────── */
   useEffect(() => {
@@ -64,7 +64,6 @@ export default function Header() {
           {/*
             3-колоночная сетка:
             col-1 (logo)  |  col-2 (nav center)  |  col-3 (actions right)
-            Каждая зона изолирована — наезды исключены.
           */}
           <div className="grid grid-cols-3 items-center h-16 md:h-20">
 
@@ -78,7 +77,7 @@ export default function Header() {
                 isTransparent ? 'text-stone-50' : 'text-stone-900',
               ].join(' ')}
             >
-              Glina
+              Roota
             </Link>
 
             {/* ── COL 2: Десктопная навигация ──────── */}
@@ -134,7 +133,7 @@ export default function Header() {
 
               {/* Бургер (только мобильный) */}
               <button
-                onClick={() => setMobileOpen(true)}
+                onClick={() => setMobileMenuPath(pathname)}
                 aria-label="Открыть меню"
                 className={[
                   'md:hidden p-2 -mr-2',
@@ -165,7 +164,7 @@ export default function Header() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
-              onClick={() => setMobileOpen(false)}
+              onClick={() => setMobileMenuPath(null)}
               className="fixed inset-0 z-[59] bg-stone-900/20"
             />
 
@@ -191,13 +190,13 @@ export default function Header() {
               ">
                 <Link
                   href="/"
-                  onClick={() => setMobileOpen(false)}
+                  onClick={() => setMobileMenuPath(null)}
                   className="font-display text-[1.15rem] tracking-[0.22em] uppercase text-stone-900"
                 >
-                  Glina
+                  Roota
                 </Link>
                 <button
-                  onClick={() => setMobileOpen(false)}
+                  onClick={() => setMobileMenuPath(null)}
                   aria-label="Закрыть меню"
                   className="p-2 -mr-2 text-stone-700 hover:opacity-55 transition-opacity duration-200"
                 >
@@ -221,6 +220,7 @@ export default function Header() {
                   >
                     <Link
                       href={href}
+                      onClick={() => setMobileMenuPath(null)}
                       className={[
                         'block py-[18px]',
                         'font-display text-[2.1rem] leading-tight tracking-[0.03em]',

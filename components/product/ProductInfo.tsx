@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Check } from 'lucide-react'
 import { formatPrice } from '@/lib/products'
-import { useCartStore } from '@/lib/store/cartStore'
+import { useCart } from '@/hooks/useCart'
 import type { Product } from '@/types'
 
 type Props = {
@@ -16,11 +16,10 @@ export default function ProductInfo({ product }: Props) {
   const [craftOpen, setCraftOpen] = useState(false)
   const [added,     setAdded]     = useState(false)
 
-  const addItem    = useCartStore(s => s.addItem)
-  const openDrawer = useCartStore(s => s.openDrawer)
+  const { addItem, openDrawer } = useCart()
 
   function handleAddToCart() {
-    addItem(product)
+    addItem(product.id)
     openDrawer()
     setAdded(true)
     setTimeout(() => setAdded(false), 1800)

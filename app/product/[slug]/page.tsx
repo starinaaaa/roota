@@ -1,25 +1,20 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import {
-  products,
-  getProductBySlug,
-} from '@/lib/products'
+import { getProductBySlug, getRelatedProducts } from '@/lib/products'
 import ProductImages from '@/components/product/ProductImages'
 import ProductInfo from '@/components/product/ProductInfo'
 import RelatedProducts from '@/components/product/RelatedProducts'
+
+export const dynamic = 'force-dynamic'
 
 type Props = {
   params: Promise<{ slug: string }>
 }
 
-export async function generateStaticParams() {
-  return products.map(p => ({ slug: p.slug }))
-}
-
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
-  const product = getProductBySlug(slug)
+  const product = await getProductBySlug(slug)
   if (!product) return {}
   return {
     title: product.name,
@@ -29,17 +24,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ProductPage({ params }: Props) {
   const { slug } = await params
-  const product = getProductBySlug(slug)
+
+  // getProductBySlug is cache()-wrapped — generateMetadata's earlier call
+  // is deduped, so this resolves from the request-level cache instantly.
+  const product = await getProductBySlug(slug)
   if (!product) notFound()
 
-  // До 4 других товаров той же категории (или любых)
-  const related = products
-    .filter(p => p.slug !== product.slug)
-    .sort((a, b) =>
-      a.category?.slug === product.category?.slug ? -1 :
-      b.category?.slug === product.category?.slug ? 1 : 0
-    )
-    .slice(0, 4)
+  // Targeted fetch: ≤4 same-category rows first, then fills any remaining
+  // slots from other categories.  Replaces the previous full getProducts()
+  // scan which transferred the entire catalog just to pick 4 items.
+  const related = await getRelatedProducts(product.category_id, slug)
 
   return (
     <div className="pt-16 md:pt-20">

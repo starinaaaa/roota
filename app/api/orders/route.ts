@@ -56,20 +56,19 @@ export async function POST(request: NextRequest) {
   }
 
   // Делегируем в Server Action
-  const { createOrder } = await import('@/app/actions/createOrder')
-  const { formData, items } = body as {
+  const { createOrder } = await import('@/lib/actions/orders')
+  const { formData } = body as {
     formData: Parameters<typeof createOrder>[0]
-    items:    Parameters<typeof createOrder>[1]
   }
 
-  if (!formData || !items) {
+  if (!formData) {
     return NextResponse.json(
-      { error: 'Ожидаются поля formData и items' },
+      { error: 'Ожидается поле formData' },
       { status: 400 }
     )
   }
 
-  const result = await createOrder(formData, items)
+  const result = await createOrder(formData)
 
   if (!result.success) {
     return NextResponse.json({ error: result.error }, { status: 422 })

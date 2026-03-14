@@ -1,51 +1,18 @@
 'use client'
 
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { motion, useInView } from 'framer-motion'
 import { ArrowRight } from 'lucide-react'
+import { formatPrice } from '@/lib/products'
 import type { Product } from '@/types'
 
-// ─── Mock-данные (удалить после подключения Supabase) ─────────────────────────
-const MOCK_PRODUCTS: Pick<Product, 'id' | 'name' | 'slug' | 'price' | 'images'>[] = [
-  {
-    id: 'mock-1',
-    name: 'Тарелка «Туман»',
-    slug: 'tarelka-tuman',
-    price: 3200,
-    images: ['/images/products/plate-fog.jpg'],
-  },
-  {
-    id: 'mock-2',
-    name: 'Стакан «Охра»',
-    slug: 'stakan-ohra',
-    price: 1800,
-    images: ['/images/products/glass-ochre.jpg'],
-  },
-  {
-    id: 'mock-3',
-    name: 'Ваза «Береста»',
-    slug: 'vaza-beresta',
-    price: 5600,
-    images: ['/images/products/vase-bark.jpg'],
-  },
-  {
-    id: 'mock-4',
-    name: 'Блюдо «Соль»',
-    slug: 'blyudo-sol',
-    price: 4100,
-    images: ['/images/products/plate-salt.jpg'],
-  },
-]
-// ─────────────────────────────────────────────────────────────────────────────
-
 interface FeaturedProductsProps {
-  // В будущем сюда придут реальные товары с сервера
-  products?: Pick<Product, 'id' | 'name' | 'slug' | 'price' | 'images'>[]
+  products: Pick<Product, 'id' | 'name' | 'slug' | 'price' | 'primary_image_url'>[]
 }
 
-export default function FeaturedProducts({ products = MOCK_PRODUCTS }: FeaturedProductsProps) {
+export default function FeaturedProducts({ products }: FeaturedProductsProps) {
   const sectionRef = useRef<HTMLElement>(null)
   const inView = useInView(sectionRef, { once: true, margin: '-60px' })
 
@@ -131,11 +98,13 @@ function ProductCardFeatured({
   index,
   inView,
 }: {
-  product: Pick<Product, 'id' | 'name' | 'slug' | 'price' | 'images'>
+  product: Pick<Product, 'id' | 'name' | 'slug' | 'price' | 'primary_image_url'>
   index: number
   inView: boolean
 }) {
-  const imgSrc = product.images?.[0] ?? null
+  const [imageFailed, setImageFailed] = useState(false)
+  const imgSrc = product.primary_image_url ?? null
+  const hasImage = Boolean(imgSrc) && !imageFailed
 
   return (
     <motion.div
@@ -150,18 +119,17 @@ function ProductCardFeatured({
       <Link href={`/product/${product.slug}`} className="group block">
 
         {/* Изображение */}
-        <div className="relative aspect-[3/4] overflow-hidden bg-stone-100 mb-4">
-
-          {imgSrc ? (
+        <div className="relative aspect-square overflow-hidden rounded-lg bg-stone-100 mb-4">
+          {hasImage ? (
             <Image
-              src={imgSrc}
+              src={imgSrc!}
               alt={product.name}
               fill
               sizes="(max-width: 768px) 50vw, 25vw"
               className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+              onError={() => setImageFailed(true)}
             />
           ) : (
-            // Placeholder пока нет реального фото
             <div className="absolute inset-0 bg-gradient-to-br from-stone-100 to-stone-200 flex items-end p-4">
               <span className="font-body text-[10px] text-stone-400 tracking-widest uppercase">
                 Фото скоро
@@ -190,14 +158,4 @@ function ProductCardFeatured({
       </Link>
     </motion.div>
   )
-}
-
-/* ── Форматирование цены ── */
-function formatPrice(price: number): string {
-  return new Intl.NumberFormat('ru-RU', {
-    style: 'currency',
-    currency: 'RUB',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(price)
 }

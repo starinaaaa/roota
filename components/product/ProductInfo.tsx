@@ -4,26 +4,17 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Check } from 'lucide-react'
 import { formatPrice } from '@/lib/products'
-import { useCart } from '@/hooks/useCart'
 import type { Product } from '@/types'
 
 type Props = {
   product: Product
+  onAddToCart: () => void
+  added: boolean
 }
 
-export default function ProductInfo({ product }: Props) {
+export default function ProductInfo({ product, onAddToCart, added }: Props) {
   const [careOpen,  setCareOpen]  = useState(false)
   const [craftOpen, setCraftOpen] = useState(false)
-  const [added,     setAdded]     = useState(false)
-
-  const { addItem, openDrawer } = useCart()
-
-  function handleAddToCart() {
-    addItem(product.id)
-    openDrawer()
-    setAdded(true)
-    setTimeout(() => setAdded(false), 1800)
-  }
 
   return (
     <div className="flex flex-col gap-8">
@@ -58,7 +49,7 @@ export default function ProductInfo({ product }: Props) {
         {product.in_stock ? (
           <>
             <button
-              onClick={handleAddToCart}
+              onClick={onAddToCart}
               className={[
                 'w-full font-body text-xs tracking-[0.2em] uppercase py-4 px-8',
                 'transition-all duration-300 flex items-center justify-center gap-2',

@@ -12,11 +12,10 @@ type Props = {
 
 export default function ProductClientWrapper({ product }: Props) {
   const [added, setAdded] = useState(false)
-  const { addItem, openDrawer } = useCart()
+  const { addItem } = useCart()
 
   function handleAddToCart() {
     addItem(product.id)
-    openDrawer()
     setAdded(true)
     setTimeout(() => setAdded(false), 1800)
   }

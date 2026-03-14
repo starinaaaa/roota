@@ -55,7 +55,7 @@ export default function FeaturedProducts({ products }: FeaturedProductsProps) {
         </div>
 
         {/* Сетка товаров */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
           {products.map((product, i) => (
             <ProductCardFeatured
               key={product.id}
@@ -147,10 +147,10 @@ function ProductCardFeatured({
 
         {/* Инфо */}
         <div className="space-y-1.5">
-          <p className="font-body text-xs text-stone-400 tracking-[0.12em] uppercase group-hover:text-stone-600 transition-colors duration-300">
+          <p className="font-body text-sm text-stone-400 tracking-[0.12em] uppercase group-hover:text-stone-600 transition-colors duration-300">
             {product.name}
           </p>
-          <p className="font-display text-xl text-stone-900">
+          <p className="font-display text-2xl text-stone-900">
             {formatPrice(product.price)}
           </p>
         </div>

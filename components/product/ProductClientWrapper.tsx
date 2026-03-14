@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useCart } from '@/hooks/useCart'
 import ProductInfo from './ProductInfo'
 import StickyCartBar from './StickyCartBar'
@@ -15,9 +16,10 @@ export default function ProductClientWrapper({ product }: Props) {
   const { addItem } = useCart()
 
   function handleAddToCart() {
-    addItem(product.id)
-    setAdded(true)
-    setTimeout(() => setAdded(false), 1800)
+    addItem(product.id, 1, () => {
+      setAdded(true)
+      setTimeout(() => setAdded(false), 2000)
+    })
   }
 
   return (
@@ -28,6 +30,21 @@ export default function ProductClientWrapper({ product }: Props) {
         price={product.price}
         onAddToCart={handleAddToCart}
       />
+
+      {/* Toast: показывается только после успешного ответа сервера */}
+      <AnimatePresence>
+        {added && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            className="fixed top-24 left-1/2 -translate-x-1/2 z-50 bg-stone-900 text-stone-50 font-body text-xs tracking-[0.18em] uppercase px-5 py-3 shadow-md whitespace-nowrap"
+          >
+            Добавлено в корзину ✓
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   )
 }

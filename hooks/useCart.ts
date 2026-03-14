@@ -10,10 +10,11 @@ export function useCart() {
   const router = useRouter()
   const { isOpen, open, close } = useCartUI()
 
-  function addItem(productId: string, qty = 1) {
+  function addItem(productId: string, qty = 1, onSuccess?: () => void) {
     startTransition(async () => {
       await addToCart(productId, qty)
       router.refresh()
+      onSuccess?.()
     })
   }
 

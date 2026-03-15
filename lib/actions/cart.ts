@@ -106,8 +106,6 @@ export async function getCart(): Promise<{ items: CartItem[] }> {
 
 export async function addToCart(productId: string, qty = 1): Promise<void> {
   const sessionId = await getSessionId()
-  console.log('sessionId:', sessionId)
-  console.log('SUPABASE_SERVICE_ROLE_KEY set:', !!process.env.SUPABASE_SERVICE_ROLE_KEY)
   if (!sessionId || !process.env.NEXT_PUBLIC_SUPABASE_URL) return
 
   try {
@@ -133,7 +131,6 @@ export async function addToCart(productId: string, qty = 1): Promise<void> {
         .from('cart_items')
         .insert({ cart_id: cartId, product_id: productId, quantity: qty })
     }
-    console.log('result:', result)
   } catch (err) {
     console.error('[addToCart] error:', err)
   }

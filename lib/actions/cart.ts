@@ -9,7 +9,7 @@ import type { CartItem } from '@/types'
 
 async function getSessionId(): Promise<string> {
   const cookieStore = await cookies()
-  return cookieStore.get('session_id')?.value ?? ''
+  return cookieStore.get('cart_session')?.value ?? ''
 }
 
 async function getOrCreateCart(sessionId: string): Promise<string | null> {

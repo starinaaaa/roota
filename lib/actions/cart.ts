@@ -17,19 +17,27 @@ async function getOrCreateCart(sessionId: string): Promise<string | null> {
 
   const supabase = createServerClient()
 
-  const { data: existing } = await supabase
+  const { data: existing, error: selectError } = await supabase
     .from('carts')
     .select('id')
     .eq('session_id', sessionId)
     .single()
 
+  if (selectError && selectError.code !== 'PGRST116') {
+    console.log('getOrCreateCart select error:', selectError)
+  }
+
   if (existing) return existing.id
 
-  const { data: created } = await supabase
+  const { data: created, error: insertError } = await supabase
     .from('carts')
     .insert({ session_id: sessionId })
     .select('id')
     .single()
+
+  if (insertError) {
+    console.log('getOrCreateCart insert error:', insertError)
+  }
 
   return created?.id ?? null
 }
@@ -99,6 +107,7 @@ export async function getCart(): Promise<{ items: CartItem[] }> {
 export async function addToCart(productId: string, qty = 1): Promise<void> {
   const sessionId = await getSessionId()
   console.log('sessionId:', sessionId)
+  console.log('SUPABASE_SERVICE_ROLE_KEY set:', !!process.env.SUPABASE_SERVICE_ROLE_KEY)
   if (!sessionId || !process.env.NEXT_PUBLIC_SUPABASE_URL) return
 
   try {

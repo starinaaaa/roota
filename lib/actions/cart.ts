@@ -98,6 +98,7 @@ export async function getCart(): Promise<{ items: CartItem[] }> {
 
 export async function addToCart(productId: string, qty = 1): Promise<void> {
   const sessionId = await getSessionId()
+  console.log('sessionId:', sessionId)
   if (!sessionId || !process.env.NEXT_PUBLIC_SUPABASE_URL) return
 
   try {
@@ -112,16 +113,18 @@ export async function addToCart(productId: string, qty = 1): Promise<void> {
       .eq('product_id', productId)
       .single()
 
+    let result
     if (existing) {
-      await supabase
+      result = await supabase
         .from('cart_items')
         .update({ quantity: existing.quantity + qty })
         .eq('id', existing.id)
     } else {
-      await supabase
+      result = await supabase
         .from('cart_items')
         .insert({ cart_id: cartId, product_id: productId, quantity: qty })
     }
+    console.log('result:', result)
   } catch (err) {
     console.error('[addToCart] error:', err)
   }

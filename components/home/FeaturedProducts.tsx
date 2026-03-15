@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { motion, useInView } from 'framer-motion'
 import { ArrowRight } from 'lucide-react'
 import { formatPrice } from '@/lib/products'
+import AddToCartButton from '@/components/product/AddToCartButton'
 import type { Product } from '@/types'
 
 interface FeaturedProductsProps {
@@ -143,6 +144,11 @@ function ProductCardFeatured({
             group-hover:bg-stone-900/8
             transition-colors duration-500
           " />
+
+          {/* Кнопка «В корзину» — скрыта на десктопе, видна при наведении */}
+          <div className="absolute bottom-2 left-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200">
+            <AddToCartButton productId={product.id} productName={product.name} />
+          </div>
         </div>
 
         {/* Инфо */}

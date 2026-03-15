@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { AnimatePresence, motion } from 'framer-motion'
 import { X, ShoppingBag, ArrowRight } from 'lucide-react'
 import { useCartUI } from '@/contexts/CartUIContext'
+import { useCart } from '@/hooks/useCart'
 import { formatPrice } from '@/lib/products'
 import CartLineItem from './CartLineItem'
 import type { CartItem } from '@/types'
@@ -16,9 +17,10 @@ type Props = {
 export default function CartDrawer({ initialItems }: Props) {
   const { isOpen, close: closeDrawer } = useCartUI()
   const router = useRouter()
+  const { items, updateQuantity, removeItem } = useCart(initialItems)
 
-  const totalItems = initialItems.reduce((sum, i) => sum + i.quantity, 0)
-  const totalPrice = initialItems.reduce((sum, i) => sum + i.product.price * i.quantity, 0)
+  const totalItems = items.reduce((sum, i) => sum + i.quantity, 0)
+  const totalPrice = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0)
 
   function handleCheckout() {
     closeDrawer()
@@ -77,7 +79,7 @@ export default function CartDrawer({ initialItems }: Props) {
 
             {/* Тело: список товаров или empty state */}
             <div className="flex-1 overflow-y-auto px-6">
-              {initialItems.length === 0 ? (
+              {items.length === 0 ? (
                 <motion.div
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -99,15 +101,21 @@ export default function CartDrawer({ initialItems }: Props) {
                 </motion.div>
               ) : (
                 <div>
-                  {initialItems.map(item => (
-                    <CartLineItem key={item.product.id} item={item} compact />
+                  {items.map(item => (
+                    <CartLineItem
+                      key={item.product.id}
+                      item={item}
+                      compact
+                      onUpdate={updateQuantity}
+                      onRemove={removeItem}
+                    />
                   ))}
                 </div>
               )}
             </div>
 
             {/* Footer: итого + кнопка оформления */}
-            {initialItems.length > 0 && (
+            {items.length > 0 && (
               <div className="shrink-0 px-6 pb-8 pt-5 border-t border-stone-100 space-y-4">
                 <div className="flex items-baseline justify-between">
                   <span className="font-body text-[10px] tracking-[0.2em] uppercase text-stone-500">

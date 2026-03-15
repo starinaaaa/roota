@@ -9,7 +9,7 @@ import type { CartItem } from '@/types'
 
 async function getSessionId(): Promise<string> {
   const cookieStore = await cookies()
-  return cookieStore.get('session_id')?.value ?? ''
+  return cookieStore.get('cart_session')?.value ?? ''
 }
 
 async function getOrCreateCart(sessionId: string): Promise<string | null> {
@@ -98,6 +98,7 @@ export async function getCart(): Promise<{ items: CartItem[] }> {
 
 export async function addToCart(productId: string, qty = 1): Promise<void> {
   const sessionId = await getSessionId()
+  console.log('sessionId:', sessionId)
   if (!sessionId || !process.env.NEXT_PUBLIC_SUPABASE_URL) return
 
   try {
@@ -112,18 +113,20 @@ export async function addToCart(productId: string, qty = 1): Promise<void> {
       .eq('product_id', productId)
       .single()
 
+    let result
     if (existing) {
-      await supabase
+      result = await supabase
         .from('cart_items')
         .update({ quantity: existing.quantity + qty })
         .eq('id', existing.id)
     } else {
-      await supabase
+      result = await supabase
         .from('cart_items')
         .insert({ cart_id: cartId, product_id: productId, quantity: qty })
     }
-  } catch {
-    // ignore in dev
+    console.log('result:', result)
+  } catch (err) {
+    console.log('result:', err)
   }
 }
 

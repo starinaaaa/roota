@@ -111,6 +111,13 @@ create table if not exists public.products (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
 
+  -- Product detail attributes (added post-launch)
+  material text,
+  dimensions text,
+  weight text,
+  dishwasher_safe boolean,
+  microwave_safe boolean,
+
   constraint products_price_check check (price >= 0),
   constraint products_stock_qty_check check (stock_qty >= 0)
 );
@@ -344,6 +351,11 @@ select
   p.is_active,
   p.created_at,
   p.updated_at,
+  p.material,
+  p.dimensions,
+  p.weight,
+  p.dishwasher_safe,
+  p.microwave_safe,
   pi.public_url as primary_image_url,
   pi.alt_text as primary_image_alt
 from public.products p

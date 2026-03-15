@@ -22,6 +22,34 @@ export async function createOrder(formData: CheckoutFormData): Promise<CreateOrd
   try {
     const supabase = createServerClient()
 
+    // Stock validation — query live availability before touching orders
+    const productIds = items.map(item => item.product_id)
+    const { data: stockData, error: stockErr } = await supabase
+      .from('products')
+      .select('id, name, in_stock, stock_qty')
+      .in('id', productIds)
+
+    if (stockErr) {
+      return { success: false, error: 'Ошибка проверки наличия товаров' }
+    }
+
+    if (stockData) {
+      const byId = new Map(stockData.map(p => [p.id, p]))
+      for (const item of items) {
+        const p = byId.get(item.product_id)
+        if (!p) continue
+        if (!p.in_stock) {
+          return { success: false, error: `Товар «${p.name}» недоступен` }
+        }
+        if (p.stock_qty != null && p.stock_qty < item.quantity) {
+          return {
+            success: false,
+            error: `Недостаточно товара «${p.name}»: в наличии ${p.stock_qty} шт.`,
+          }
+        }
+      }
+    }
+
     // Upsert customer by phone (one customer per phone number)
     const { data: customer, error: custErr } = await supabase
       .from('customers')

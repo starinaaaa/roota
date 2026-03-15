@@ -207,7 +207,7 @@ export default function CheckoutForm({ initialItems }: Props) {
                 initial={{ opacity: 0, y: -6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
-                className="font-body text-sm text-red-500"
+                className="font-body text-sm text-red-600 mt-2"
               >
                 {error}
               </motion.p>
@@ -273,6 +273,9 @@ export default function CheckoutForm({ initialItems }: Props) {
 
             {/* Submit button на десктопе */}
             <div className="hidden lg:block pt-2">
+              {error && (
+                <p className="font-body text-sm text-red-600 mt-2 mb-3">{error}</p>
+              )}
               <button
                 type="submit"
                 form="checkout-form"

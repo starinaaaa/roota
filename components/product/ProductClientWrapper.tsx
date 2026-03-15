@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useCart } from '@/hooks/useCart'
 import ProductInfo from './ProductInfo'
-import StickyCartBar from './StickyCartBar'
 import type { Product } from '@/types'
 
 type Props = {
@@ -25,11 +24,6 @@ export default function ProductClientWrapper({ product }: Props) {
   return (
     <>
       <ProductInfo product={product} onAddToCart={handleAddToCart} added={added} />
-      <StickyCartBar
-        productName={product.name}
-        price={product.price}
-        onAddToCart={handleAddToCart}
-      />
 
       {/* Toast: показывается только после успешного ответа сервера */}
       <AnimatePresence>

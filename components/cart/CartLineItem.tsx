@@ -3,18 +3,17 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { Minus, Plus, X } from 'lucide-react'
-import { useCart } from '@/hooks/useCart'
 import { formatPrice } from '@/lib/products'
 import type { CartItem } from '@/types'
 
 type Props = {
   item: CartItem
   compact?: boolean // компактный вид для drawer
+  onUpdate: (productId: string, qty: number) => void
+  onRemove: (productId: string) => void
 }
 
-export default function CartLineItem({ item, compact = false }: Props) {
-  const { updateQuantity, removeItem } = useCart()
-
+export default function CartLineItem({ item, compact = false, onUpdate, onRemove }: Props) {
   const { product, quantity } = item
   const imgSrc = product.images?.[0] ?? null
 
@@ -46,7 +45,7 @@ export default function CartLineItem({ item, compact = false }: Props) {
               {product.name}
             </Link>
             <button
-              onClick={() => removeItem(product.id)}
+              onClick={() => onRemove(product.id)}
               className="shrink-0 p-0.5 text-stone-300 hover:text-stone-700 transition-colors duration-200"
               aria-label="Удалить"
             >
@@ -58,7 +57,7 @@ export default function CartLineItem({ item, compact = false }: Props) {
             {/* Stepper */}
             <div className="flex items-center gap-0 border border-stone-200">
               <button
-                onClick={() => updateQuantity(product.id, quantity - 1)}
+                onClick={() => onUpdate(product.id, quantity - 1)}
                 className="w-7 h-7 flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-stone-100 transition-colors duration-150"
                 aria-label="Уменьшить"
               >
@@ -68,7 +67,7 @@ export default function CartLineItem({ item, compact = false }: Props) {
                 {quantity}
               </span>
               <button
-                onClick={() => updateQuantity(product.id, quantity + 1)}
+                onClick={() => onUpdate(product.id, quantity + 1)}
                 className="w-7 h-7 flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-stone-100 transition-colors duration-150"
                 aria-label="Увеличить"
               >
@@ -118,7 +117,7 @@ export default function CartLineItem({ item, compact = false }: Props) {
             </p>
           </div>
           <button
-            onClick={() => removeItem(product.id)}
+            onClick={() => onRemove(product.id)}
             className="p-1 text-stone-300 hover:text-stone-700 transition-colors duration-200"
             aria-label="Удалить из корзины"
           >
@@ -130,7 +129,7 @@ export default function CartLineItem({ item, compact = false }: Props) {
         <div className="flex items-center justify-between mt-auto">
           <div className="flex items-center gap-0 border border-stone-200">
             <button
-              onClick={() => updateQuantity(product.id, quantity - 1)}
+              onClick={() => onUpdate(product.id, quantity - 1)}
               className="w-8 h-8 flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-stone-100 transition-colors duration-150"
               aria-label="Уменьшить"
             >
@@ -140,7 +139,7 @@ export default function CartLineItem({ item, compact = false }: Props) {
               {quantity}
             </span>
             <button
-              onClick={() => updateQuantity(product.id, quantity + 1)}
+              onClick={() => onUpdate(product.id, quantity + 1)}
               className="w-8 h-8 flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-stone-100 transition-colors duration-150"
               aria-label="Увеличить"
             >

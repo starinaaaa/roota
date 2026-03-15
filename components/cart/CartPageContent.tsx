@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { ShoppingBag, ArrowRight } from 'lucide-react'
+import { useCart } from '@/hooks/useCart'
 import { formatPrice } from '@/lib/products'
 import CartLineItem from './CartLineItem'
 import type { CartItem } from '@/types'
@@ -12,10 +13,11 @@ type Props = {
 }
 
 export default function CartPageContent({ initialItems }: Props) {
-  const totalPrice = initialItems.reduce((sum, i) => sum + i.product.price * i.quantity, 0)
-  const totalItems = initialItems.reduce((sum, i) => sum + i.quantity, 0)
+  const { items, updateQuantity, removeItem } = useCart(initialItems)
+  const totalPrice = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0)
+  const totalItems = items.reduce((sum, i) => sum + i.quantity, 0)
 
-  if (initialItems.length === 0) {
+  if (items.length === 0) {
     return (
       <motion.div
         initial={{ opacity: 0, y: 12 }}
@@ -59,14 +61,18 @@ export default function CartPageContent({ initialItems }: Props) {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.4 }}
           >
-            {initialItems.map((item, i) => (
+            {items.map((item, i) => (
               <motion.div
                 key={item.product.id}
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.06, duration: 0.4 }}
               >
-                <CartLineItem item={item} />
+                <CartLineItem
+                  item={item}
+                  onUpdate={updateQuantity}
+                  onRemove={removeItem}
+                />
               </motion.div>
             ))}
           </motion.div>

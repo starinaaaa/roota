@@ -122,8 +122,8 @@ export async function addToCart(productId: string, qty = 1): Promise<void> {
         .from('cart_items')
         .insert({ cart_id: cartId, product_id: productId, quantity: qty })
     }
-  } catch {
-    // ignore in dev
+  } catch (err) {
+    console.error('[addToCart] error:', err)
   }
 }
 

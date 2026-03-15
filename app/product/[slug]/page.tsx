@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { getProductBySlug, getRelatedProducts } from '@/lib/products'
 import ProductImages from '@/components/product/ProductImages'
-import ProductInfo from '@/components/product/ProductInfo'
+import ProductClientWrapper from '@/components/product/ProductClientWrapper'
 import RelatedProducts from '@/components/product/RelatedProducts'
 
 export const dynamic = 'force-dynamic'
@@ -65,7 +65,7 @@ export default async function ProductPage({ params }: Props) {
         <div className="max-w-[1440px] mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-20">
             <ProductImages images={product.images} name={product.name} />
-            <ProductInfo product={product} />
+            <ProductClientWrapper product={product} />
           </div>
         </div>
       </section>

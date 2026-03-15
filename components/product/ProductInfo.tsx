@@ -4,26 +4,17 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Check } from 'lucide-react'
 import { formatPrice } from '@/lib/products'
-import { useCart } from '@/hooks/useCart'
 import type { Product } from '@/types'
 
 type Props = {
   product: Product
+  onAddToCart: () => void
+  added: boolean
 }
 
-export default function ProductInfo({ product }: Props) {
+export default function ProductInfo({ product, onAddToCart, added }: Props) {
   const [careOpen,  setCareOpen]  = useState(false)
   const [craftOpen, setCraftOpen] = useState(false)
-  const [added,     setAdded]     = useState(false)
-
-  const { addItem, openDrawer } = useCart()
-
-  function handleAddToCart() {
-    addItem(product.id)
-    openDrawer()
-    setAdded(true)
-    setTimeout(() => setAdded(false), 1800)
-  }
 
   return (
     <div className="flex flex-col gap-8">
@@ -50,12 +41,15 @@ export default function ProductInfo({ product }: Props) {
         </p>
       )}
 
+      {/* Характеристики */}
+      <ProductSpecs product={product} />
+
       {/* CTA */}
       <div className="flex flex-col gap-3 pt-2">
         {product.in_stock ? (
           <>
             <button
-              onClick={handleAddToCart}
+              onClick={onAddToCart}
               className={[
                 'w-full font-body text-xs tracking-[0.2em] uppercase py-4 px-8',
                 'transition-all duration-300 flex items-center justify-center gap-2',
@@ -151,6 +145,40 @@ export default function ProductInfo({ product }: Props) {
         — часть характера авторской керамики, а не дефект.
       </Accordion>
 
+    </div>
+  )
+}
+
+/* ── ProductSpecs ───────────────────────────────────────────────────────────── */
+function ProductSpecs({ product }: { product: Product }) {
+  const rows: { label: string; value: string }[] = []
+
+  if (product.material != null && product.material !== '')
+    rows.push({ label: 'Материал', value: product.material })
+  if (product.dimensions != null && product.dimensions !== '')
+    rows.push({ label: 'Размер', value: product.dimensions })
+  if (product.weight != null && product.weight !== '')
+    rows.push({ label: 'Вес', value: product.weight })
+  if (product.dishwasher_safe != null)
+    rows.push({ label: 'Посудомоечная машина', value: product.dishwasher_safe ? 'Можно' : 'Нельзя' })
+  if (product.microwave_safe != null)
+    rows.push({ label: 'Микроволновая печь', value: product.microwave_safe ? 'Можно' : 'Нельзя' })
+
+  if (rows.length === 0) return null
+
+  return (
+    <div className="mt-6 mb-6">
+      <div className="divide-y divide-stone-100">
+        {rows.map(({ label, value }) => (
+          <div key={label} className="flex justify-between py-3">
+            <span className="font-body text-xs uppercase tracking-widest text-stone-400">{label}</span>
+            <span className="font-body text-sm text-stone-700">{value}</span>
+          </div>
+        ))}
+      </div>
+      <p className="font-body text-xs text-stone-400 italic mt-4">
+        Каждое изделие немного отличается — это часть ручной работы
+      </p>
     </div>
   )
 }

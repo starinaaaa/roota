@@ -78,13 +78,22 @@ export function useCart() {
 
   // ── updateQuantity ─────────────────────────────────────────────────────────
   function updateQuantity(productId: string, qty: number) {
+    // Snapshot current state so we can revert if the server rejects the update
+    const prevItems = items
+
     setItems(prev =>
       qty <= 0
         ? prev.filter(i => i.product_id !== productId)
         : prev.map(i => i.product_id === productId ? { ...i, quantity: qty } : i)
     )
+
     startTransition(async () => {
-      await updateCartItem(productId, qty)
+      const result = await updateCartItem(productId, qty)
+      if (result.error) {
+        // Server rejected the quantity (stock exceeded) — revert optimistic update
+        setItems(prevItems)
+        return
+      }
       router.refresh()
     })
   }

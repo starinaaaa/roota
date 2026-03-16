@@ -17,6 +17,9 @@ export default function CartLineItem({ item, compact = false, onUpdate, onRemove
   const { product, quantity } = item
   const imgSrc = product.images?.[0] ?? null
 
+  // Disable the + button when the cart already holds every available unit
+  const atStockLimit = product.stock_qty != null && quantity >= product.stock_qty
+
   if (compact) {
     return (
       <div className="flex gap-4 py-5 border-b border-stone-100 last:border-b-0">
@@ -55,24 +58,37 @@ export default function CartLineItem({ item, compact = false, onUpdate, onRemove
 
           <div className="flex items-center justify-between mt-auto">
             {/* Stepper */}
-            <div className="flex items-center gap-0 border border-stone-200">
-              <button
-                onClick={() => onUpdate(product.id, quantity - 1)}
-                className="w-7 h-7 flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-stone-100 transition-colors duration-150"
-                aria-label="Уменьшить"
-              >
-                <Minus size={10} strokeWidth={1.5} />
-              </button>
-              <span className="w-7 h-7 flex items-center justify-center font-body text-xs text-stone-700 border-x border-stone-200">
-                {quantity}
-              </span>
-              <button
-                onClick={() => onUpdate(product.id, quantity + 1)}
-                className="w-7 h-7 flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-stone-100 transition-colors duration-150"
-                aria-label="Увеличить"
-              >
-                <Plus size={10} strokeWidth={1.5} />
-              </button>
+            <div className="flex flex-col items-start gap-1">
+              <div className="flex items-center gap-0 border border-stone-200">
+                <button
+                  onClick={() => onUpdate(product.id, quantity - 1)}
+                  className="w-7 h-7 flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-stone-100 transition-colors duration-150"
+                  aria-label="Уменьшить"
+                >
+                  <Minus size={10} strokeWidth={1.5} />
+                </button>
+                <span className="w-7 h-7 flex items-center justify-center font-body text-xs text-stone-700 border-x border-stone-200">
+                  {quantity}
+                </span>
+                <button
+                  onClick={() => !atStockLimit && onUpdate(product.id, quantity + 1)}
+                  disabled={atStockLimit}
+                  className={[
+                    'w-7 h-7 flex items-center justify-center transition-colors duration-150',
+                    atStockLimit
+                      ? 'text-stone-200 cursor-not-allowed'
+                      : 'text-stone-500 hover:text-stone-900 hover:bg-stone-100',
+                  ].join(' ')}
+                  aria-label="Увеличить"
+                >
+                  <Plus size={10} strokeWidth={1.5} />
+                </button>
+              </div>
+              {atStockLimit && (
+                <span className="font-body text-[9px] tracking-[0.12em] uppercase text-stone-400">
+                  Макс. в наличии
+                </span>
+              )}
             </div>
 
             <p className="font-display text-base text-stone-900">
@@ -127,24 +143,37 @@ export default function CartLineItem({ item, compact = false, onUpdate, onRemove
 
         {/* Stepper + итого */}
         <div className="flex items-center justify-between mt-auto">
-          <div className="flex items-center gap-0 border border-stone-200">
-            <button
-              onClick={() => onUpdate(product.id, quantity - 1)}
-              className="w-8 h-8 flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-stone-100 transition-colors duration-150"
-              aria-label="Уменьшить"
-            >
-              <Minus size={11} strokeWidth={1.5} />
-            </button>
-            <span className="w-8 h-8 flex items-center justify-center font-body text-xs text-stone-700 border-x border-stone-200">
-              {quantity}
-            </span>
-            <button
-              onClick={() => onUpdate(product.id, quantity + 1)}
-              className="w-8 h-8 flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-stone-100 transition-colors duration-150"
-              aria-label="Увеличить"
-            >
-              <Plus size={11} strokeWidth={1.5} />
-            </button>
+          <div className="flex flex-col items-start gap-1.5">
+            <div className="flex items-center gap-0 border border-stone-200">
+              <button
+                onClick={() => onUpdate(product.id, quantity - 1)}
+                className="w-8 h-8 flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-stone-100 transition-colors duration-150"
+                aria-label="Уменьшить"
+              >
+                <Minus size={11} strokeWidth={1.5} />
+              </button>
+              <span className="w-8 h-8 flex items-center justify-center font-body text-xs text-stone-700 border-x border-stone-200">
+                {quantity}
+              </span>
+              <button
+                onClick={() => !atStockLimit && onUpdate(product.id, quantity + 1)}
+                disabled={atStockLimit}
+                className={[
+                  'w-8 h-8 flex items-center justify-center transition-colors duration-150',
+                  atStockLimit
+                    ? 'text-stone-200 cursor-not-allowed'
+                    : 'text-stone-500 hover:text-stone-900 hover:bg-stone-100',
+                ].join(' ')}
+                aria-label="Увеличить"
+              >
+                <Plus size={11} strokeWidth={1.5} />
+              </button>
+            </div>
+            {atStockLimit && (
+              <span className="font-body text-[10px] tracking-[0.12em] uppercase text-stone-400">
+                Макс. в наличии
+              </span>
+            )}
           </div>
 
           <p className="font-display text-xl text-stone-900">

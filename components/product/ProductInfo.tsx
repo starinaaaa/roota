@@ -2,19 +2,21 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Check } from 'lucide-react'
 import { formatPrice } from '@/lib/products'
 import type { Product } from '@/types'
 
 type Props = {
   product: Product
-  onAddToCart: () => void
-  added: boolean
+  cartQty: number
+  onIncrement: () => void
+  onDecrement: () => void
 }
 
-export default function ProductInfo({ product, onAddToCart, added }: Props) {
+export default function ProductInfo({ product, cartQty, onIncrement, onDecrement }: Props) {
   const [careOpen,  setCareOpen]  = useState(false)
   const [craftOpen, setCraftOpen] = useState(false)
+
+  const atStockLimit = product.stock_qty != null && cartQty >= product.stock_qty
 
   return (
     <div className="flex flex-col gap-8">
@@ -48,42 +50,70 @@ export default function ProductInfo({ product, onAddToCart, added }: Props) {
       <div className="flex flex-col gap-3 pt-2">
         {product.in_stock ? (
           <>
-            <button
-              onClick={onAddToCart}
-              className={[
-                'w-full font-body text-xs tracking-[0.2em] uppercase py-4 px-8',
-                'transition-all duration-300 flex items-center justify-center gap-2',
-                added
-                  ? 'bg-stone-700 text-stone-50'
-                  : 'bg-stone-900 text-stone-50 hover:bg-stone-700',
-              ].join(' ')}
-            >
-              <AnimatePresence mode="wait">
-                {added ? (
-                  <motion.span
-                    key="added"
-                    className="flex items-center gap-2"
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -4 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <Check size={13} strokeWidth={1.8} />
-                    Добавлено
-                  </motion.span>
-                ) : (
-                  <motion.span
-                    key="add"
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -4 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    Добавить в корзину
-                  </motion.span>
-                )}
-              </AnimatePresence>
-            </button>
+            <AnimatePresence mode="wait">
+              {cartQty > 0 ? (
+                /* ── Qty counter — replaces button once item is in cart ── */
+                <motion.div
+                  key="counter"
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.2 }}
+                  className="w-full flex items-center justify-between border border-stone-200 px-6 py-4"
+                >
+                  <span className="font-body text-xs tracking-[0.18em] uppercase text-stone-500">
+                    В корзине
+                  </span>
+
+                  <div className="flex items-center gap-6">
+                    <button
+                      onClick={onDecrement}
+                      className="font-body text-lg text-stone-400 hover:text-stone-900 transition-colors w-5 text-center leading-none"
+                      aria-label="Уменьшить количество"
+                    >
+                      −
+                    </button>
+
+                    <span className="font-display text-xl text-stone-900 min-w-[1.5rem] text-center tabular-nums">
+                      {cartQty}
+                    </span>
+
+                    <button
+                      onClick={atStockLimit ? undefined : onIncrement}
+                      disabled={atStockLimit}
+                      className={[
+                        'font-body text-lg leading-none w-5 text-center transition-colors',
+                        atStockLimit
+                          ? 'text-stone-200 cursor-not-allowed'
+                          : 'text-stone-400 hover:text-stone-900',
+                      ].join(' ')}
+                      aria-label="Увеличить количество"
+                    >
+                      +
+                    </button>
+                  </div>
+                </motion.div>
+              ) : (
+                /* ── Add to cart button ── */
+                <motion.button
+                  key="add"
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.2 }}
+                  onClick={onIncrement}
+                  className="w-full bg-stone-900 text-stone-50 font-body text-xs tracking-[0.2em] uppercase py-4 px-8 hover:bg-stone-700 transition-colors duration-300"
+                >
+                  Добавить в корзину
+                </motion.button>
+              )}
+            </AnimatePresence>
+
+            {atStockLimit && cartQty > 0 && (
+              <p className="font-body text-[10px] tracking-[0.14em] uppercase text-stone-400 text-center -mt-1">
+                Максимум в наличии
+              </p>
+            )}
 
             <button className="
               w-full border border-stone-300 text-stone-700

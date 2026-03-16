@@ -188,32 +188,43 @@ export async function removeFromCart(productId: string): Promise<void> {
 
 // ── updateCartItem ────────────────────────────────────────────────────────────
 
-export async function updateCartItem(productId: string, qty: number): Promise<void> {
+export async function updateCartItem(productId: string, qty: number): Promise<{ error?: string }> {
   if (qty <= 0) {
     await removeFromCart(productId)
-    return
+    return {}
   }
 
   const sessionId = await getSessionId()
-  if (!sessionId || !process.env.NEXT_PUBLIC_SUPABASE_URL) return
+  if (!sessionId || !process.env.NEXT_PUBLIC_SUPABASE_URL) return {}
 
   try {
     const supabase = createServerClient()
 
-    const { data: cart } = await supabase
-      .from('carts')
-      .select('id')
-      .eq('session_id', sessionId)
-      .single()
+    // Fetch cart and product stock in parallel
+    const [{ data: cart }, { data: product }] = await Promise.all([
+      supabase.from('carts').select('id').eq('session_id', sessionId).single(),
+      supabase.from('products').select('in_stock, stock_qty').eq('id', productId).single(),
+    ])
 
-    if (!cart) return
+    if (!cart) return {}
+
+    if (!product || !product.in_stock) {
+      return { error: 'Товар недоступен' }
+    }
+    if (product.stock_qty != null && qty > product.stock_qty) {
+      return { error: `В наличии только ${product.stock_qty} шт.` }
+    }
 
     await supabase
       .from('cart_items')
       .update({ quantity: qty })
       .eq('cart_id', cart.id)
       .eq('product_id', productId)
-  } catch {}
+
+    return {}
+  } catch {
+    return {}
+  }
 }
 
 // ── clearCart ─────────────────────────────────────────────────────────────────

@@ -56,6 +56,7 @@ export default function ProductClientWrapper({ product, inCart = false }: Props)
         const availableQty = match ? parseInt(match[1], 10) : 0
         setStockModal({ availableQty })
       },
+      product, // enables instant optimistic update in the shared cart state
     )
   }
 

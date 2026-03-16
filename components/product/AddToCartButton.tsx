@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition, useRef, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { addToCart } from '@/lib/actions/cart'
 
 type Props = {
@@ -13,6 +14,7 @@ export default function AddToCartButton({ productId, productName }: Props) {
   const [added, setAdded] = useState(false)
   const [stockError, setStockError] = useState<string | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const router = useRouter()
 
   // Clear pending timer on unmount to avoid setState on an unmounted component
   useEffect(() => {
@@ -31,6 +33,7 @@ export default function AddToCartButton({ productId, productName }: Props) {
         setStockError(result.error)
         timerRef.current = setTimeout(() => setStockError(null), 3000)
       } else {
+        router.refresh()
         setAdded(true)
         timerRef.current = setTimeout(() => setAdded(false), 1500)
       }

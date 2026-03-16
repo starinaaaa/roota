@@ -111,19 +111,19 @@ export async function addToCart(productId: string, qty = 1): Promise<{ error?: s
   try {
     const supabase = createServerClient()
 
-    // 1. Fetch product stock info first
-    const { data: product } = await supabase
-      .from('products')
-      .select('in_stock, stock_qty')
-      .eq('id', productId)
-      .single()
+    // 1+2. Fetch product stock and get/create cart in parallel
+    const [{ data: product }, cartId] = await Promise.all([
+      supabase
+        .from('products')
+        .select('in_stock, stock_qty')
+        .eq('id', productId)
+        .single(),
+      getOrCreateCart(sessionId),
+    ])
 
     if (!product || !product.in_stock) {
       return { error: 'Товар недоступен' }
     }
-
-    // 2. Get or create cart
-    const cartId = await getOrCreateCart(sessionId)
     if (!cartId) return {}
 
     // 3. Get current cart quantity for this product (0 if not yet in cart)

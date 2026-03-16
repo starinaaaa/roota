@@ -32,7 +32,7 @@ export function useCart(serverItems: CartItem[] = []) {
   ) {
     startTransition(async () => {
       const result = await addToCart(productId, qty)
-      if (result?.error) {
+      if (result.error) {
         onError?.(result.error)
         return
       }

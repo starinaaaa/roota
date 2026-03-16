@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { AnimatePresence, motion } from 'framer-motion'
-import { X, ArrowRight } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { useCartUI } from '@/contexts/CartUIContext'
 import { useCart } from '@/hooks/useCart'
 import { formatPrice } from '@/lib/products'
@@ -34,7 +34,7 @@ export default function CartDrawer() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
             onClick={closeDrawer}
-            className="fixed inset-0 z-[59] bg-stone-900/20 backdrop-blur-[2px]"
+            className="fixed inset-0 z-[59] bg-stone-900/15 backdrop-blur-[2px]"
           />
 
           {/* Панель */}
@@ -46,13 +46,13 @@ export default function CartDrawer() {
             transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
             className="
               fixed top-0 right-0 bottom-0 z-[60]
-              w-full sm:w-[420px]
-              bg-stone-50 flex flex-col
+              w-full sm:w-[440px]
+              bg-white flex flex-col
             "
           >
             {/* ── Header ─────────────────────────────────────────────────── */}
-            <div className="flex items-center justify-between shrink-0 px-7 py-6 border-b border-stone-100">
-              <p className="font-body text-[9px] tracking-[0.3em] uppercase text-stone-400">
+            <div className="flex items-center justify-between shrink-0 px-7 py-5 border-b border-stone-100">
+              <p className="font-body text-[9px] tracking-[0.28em] uppercase text-stone-500">
                 {totalItems > 0
                   ? `${totalItems} ${plural(totalItems, 'предмет', 'предмета', 'предметов')} в корзине`
                   : 'Корзина'}
@@ -62,7 +62,7 @@ export default function CartDrawer() {
                 aria-label="Закрыть корзину"
                 className="font-body text-[9px] tracking-[0.22em] uppercase text-stone-400 hover:text-stone-900 transition-colors duration-200"
               >
-                Закрыть
+                [ Закрыть ]
               </button>
             </div>
 
@@ -75,7 +75,7 @@ export default function CartDrawer() {
                   transition={{ delay: 0.12, duration: 0.35 }}
                   className="flex flex-col items-start justify-center h-full gap-6 py-20"
                 >
-                  <p className="font-display text-3xl text-stone-200">
+                  <p className="font-display text-4xl text-stone-200 leading-none">
                     Пусто
                   </p>
                   <Link
@@ -104,50 +104,39 @@ export default function CartDrawer() {
 
             {/* ── Footer ─────────────────────────────────────────────────── */}
             {items.length > 0 && (
-              <div className="shrink-0 px-7 pb-8 pt-6 border-t border-stone-100 space-y-5">
+              <div className="shrink-0 px-7 pb-8 pt-5 border-t border-stone-100">
 
                 {/* Итого */}
-                <div className="flex items-baseline justify-between">
-                  <span className="font-body text-[9px] tracking-[0.3em] uppercase text-stone-400">
+                <div className="flex items-baseline justify-between mb-6">
+                  <span className="font-body text-[9px] tracking-[0.28em] uppercase text-stone-400">
                     Итого
                   </span>
-                  <span className="font-display text-3xl text-stone-900">
+                  <span className="font-body text-[13px] tracking-[0.04em] text-stone-900 tabular-nums">
                     {formatPrice(totalPrice)}
                   </span>
                 </div>
 
-                {/* Кнопка оформления */}
+                {/* Кнопка оформления — editorial стиль без фона */}
                 <button
                   onClick={handleCheckout}
                   className="
                     w-full flex items-center justify-between
-                    bg-stone-900 text-stone-50
-                    px-6 py-5
-                    hover:bg-stone-700
-                    transition-colors duration-300
+                    border-t border-stone-900 pt-5
                     group
                   "
                 >
-                  <span className="font-body text-[10px] tracking-[0.28em] uppercase">
+                  <span className="font-display text-[1.6rem] leading-tight text-stone-900 group-hover:text-stone-500 transition-colors duration-300">
                     Оформить заказ
                   </span>
                   <motion.span
-                    initial={false}
-                    whileHover={{ x: 3 }}
+                    className="text-stone-900 group-hover:text-stone-500 transition-colors duration-300"
+                    whileHover={{ x: 4 }}
                     transition={{ type: 'spring', stiffness: 400, damping: 20 }}
                   >
-                    <ArrowRight size={14} strokeWidth={1.4} />
+                    <ArrowRight size={20} strokeWidth={1.2} />
                   </motion.span>
                 </button>
 
-                {/* Открыть полную корзину */}
-                <Link
-                  href="/cart"
-                  onClick={closeDrawer}
-                  className="block text-center font-body text-[9px] tracking-[0.2em] uppercase text-stone-400 hover:text-stone-700 transition-colors duration-200"
-                >
-                  Открыть корзину
-                </Link>
               </div>
             )}
           </motion.div>

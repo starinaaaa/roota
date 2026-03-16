@@ -243,13 +243,13 @@ export default function Header({ cartCount }: Props) {
                 transition={{ delay: 0.32, duration: 0.4 }}
                 className="shrink-0 px-6 md:px-8 pb-10 pt-7 border-t border-stone-100"
               >
-                <Link
-                  href="/cart"
+                <button
+                  onClick={() => { setMobileMenuPath(null); openDrawer() }}
                   className="flex items-center gap-2.5 font-body text-sm text-stone-500 hover:text-stone-900 transition-colors duration-200 mb-7"
                 >
                   <ShoppingBag size={15} strokeWidth={1.4} />
                   Корзина
-                </Link>
+                </button>
                 <p className="font-body text-[9px] tracking-[0.3em] uppercase text-stone-400">
                   Авторская керамика · Москва
                 </p>

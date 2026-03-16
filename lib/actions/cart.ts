@@ -104,15 +104,29 @@ export async function getCart(): Promise<{ items: CartItem[] }> {
 
 // ── addToCart ─────────────────────────────────────────────────────────────────
 
-export async function addToCart(productId: string, qty = 1): Promise<void> {
+export async function addToCart(productId: string, qty = 1): Promise<{ error?: string }> {
   const sessionId = await getSessionId()
-  if (!sessionId || !process.env.NEXT_PUBLIC_SUPABASE_URL) return
+  if (!sessionId || !process.env.NEXT_PUBLIC_SUPABASE_URL) return {}
 
   try {
     const supabase = createServerClient()
-    const cartId = await getOrCreateCart(sessionId)
-    if (!cartId) return
 
+    // 1. Fetch product stock info first
+    const { data: product } = await supabase
+      .from('products')
+      .select('in_stock, stock_qty')
+      .eq('id', productId)
+      .single()
+
+    if (!product || !product.in_stock) {
+      return { error: 'Товар недоступен' }
+    }
+
+    // 2. Get or create cart
+    const cartId = await getOrCreateCart(sessionId)
+    if (!cartId) return {}
+
+    // 3. Get current cart quantity for this product (0 if not yet in cart)
     const { data: existing } = await supabase
       .from('cart_items')
       .select('id, quantity')
@@ -120,19 +134,30 @@ export async function addToCart(productId: string, qty = 1): Promise<void> {
       .eq('product_id', productId)
       .single()
 
-    let result
+    const currentQty = existing?.quantity ?? 0
+    const newQty = currentQty + qty
+
+    // 4. Validate against stock_qty
+    if (product.stock_qty != null && newQty > product.stock_qty) {
+      return { error: `В наличии только ${product.stock_qty} шт.` }
+    }
+
+    // 5. Upsert cart item
     if (existing) {
-      result = await supabase
+      await supabase
         .from('cart_items')
-        .update({ quantity: existing.quantity + qty })
+        .update({ quantity: newQty })
         .eq('id', existing.id)
     } else {
-      result = await supabase
+      await supabase
         .from('cart_items')
         .insert({ cart_id: cartId, product_id: productId, quantity: qty })
     }
+
+    return {}
   } catch (err) {
     console.error('[addToCart] error:', err)
+    return {}
   }
 }
 

@@ -5,7 +5,6 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { formatPrice } from '@/lib/products'
-import AddToCartButton from './AddToCartButton'
 import type { Product } from '@/types'
 
 type Props = {
@@ -63,13 +62,6 @@ export default function ProductCard({ product, index = 0 }: Props) {
 
           {/* Тёмный hover-оверлей */}
           <div className="absolute inset-0 bg-stone-900/0 group-hover:bg-stone-900/6 transition-colors duration-500" />
-
-          {/* Кнопка «В корзину» — скрыта на десктопе, видна при наведении */}
-          {product.in_stock && (
-            <div className="absolute bottom-2 left-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200">
-              <AddToCartButton productId={product.id} productName={product.name} />
-            </div>
-          )}
 
           {/* Подсказка «Смотреть» */}
           <motion.div

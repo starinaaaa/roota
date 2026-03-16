@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useState } from 'react'
+import { AnimatePresence } from 'framer-motion'
 import { useCart } from '@/hooks/useCart'
 import ProductInfo from './ProductInfo'
 import StockLimitModal from './StockLimitModal'
@@ -9,74 +9,51 @@ import type { Product } from '@/types'
 
 type Props = {
   product: Product
-  inCart?: boolean
+  inCart?: boolean // kept for server compat, actual qty comes from context
 }
 
-// Shared motion config for the success toast
-const TOAST_MOTION = {
-  initial: { opacity: 0, y: -8 },
-  animate: { opacity: 1, y: 0 },
-  exit:    { opacity: 0, y: -8 },
-  transition: { duration: 0.2, ease: 'easeOut' },
-} as const
+export default function ProductClientWrapper({ product }: Props) {
+  const [stockModal, setStockModal] = useState<{ availableQty: number } | null>(null)
+  const { addItem, items, updateQuantity, openDrawer } = useCart()
 
-export default function ProductClientWrapper({ product, inCart = false }: Props) {
-  // `added` reflects whether the product is known to be in the cart.
-  // Initialised from server-side cart data (inCart prop) so the button
-  // shows the correct state on page load (BUG 3).
-  const [added, setAdded] = useState(inCart)
-  const [showToast, setShowToast]     = useState(false)
-  const [stockModal, setStockModal]   = useState<{ availableQty: number } | null>(null)
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const { addItem } = useCart()
+  // Derive cart state from the shared context (seeded by layout's getCart)
+  const cartItem = items.find(i => i.product_id === product.id)
+  const cartQty  = cartItem?.quantity ?? 0
 
-  // Sync with fresh server data after router.refresh() completes
-  useEffect(() => { setAdded(inCart) }, [inCart])
+  function handleIncrement() {
+    if (cartQty === 0) {
+      // First add — open drawer so the user sees the item appear
+      addItem(
+        product.id,
+        1,
+        () => openDrawer(),
+        (msg) => {
+          const match = msg.match(/(\d+)/)
+          setStockModal({ availableQty: match ? parseInt(match[1], 10) : 0 })
+        },
+        product,
+      )
+    } else {
+      // Already in cart — increment qty (server validates stock, reverts silently)
+      updateQuantity(product.id, cartQty + 1)
+    }
+  }
 
-  // Clear pending timer on unmount to avoid setState on an unmounted component
-  useEffect(() => {
-    return () => { if (timerRef.current) clearTimeout(timerRef.current) }
-  }, [])
-
-  function handleAddToCart() {
-    addItem(
-      product.id,
-      1,
-      () => {
-        // Success — mark as added (persists until server confirms via inCart sync)
-        setAdded(true)
-        // Show brief confirmation toast
-        if (timerRef.current) clearTimeout(timerRef.current)
-        setShowToast(true)
-        timerRef.current = setTimeout(() => setShowToast(false), 2000)
-      },
-      (msg) => {
-        // Stock error — open StockLimitModal instead of a red toast
-        const match = msg.match(/(\d+)/)
-        const availableQty = match ? parseInt(match[1], 10) : 0
-        setStockModal({ availableQty })
-      },
-      product, // enables instant optimistic update in the shared cart state
-    )
+  function handleDecrement() {
+    // Goes to 0 → removeFromCart (handled inside updateQuantity)
+    updateQuantity(product.id, cartQty - 1)
   }
 
   return (
     <>
-      <ProductInfo product={product} onAddToCart={handleAddToCart} added={added} />
+      <ProductInfo
+        product={product}
+        cartQty={cartQty}
+        onIncrement={handleIncrement}
+        onDecrement={handleDecrement}
+      />
 
-      {/* Toast: добавлено */}
-      <AnimatePresence>
-        {showToast && (
-          <motion.div
-            {...TOAST_MOTION}
-            className="fixed top-24 left-1/2 -translate-x-1/2 z-50 bg-stone-900 text-stone-50 font-body text-xs tracking-[0.18em] uppercase px-5 py-3 shadow-md whitespace-nowrap"
-          >
-            Добавлено в корзину ✓
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* StockLimitModal: вместо красного тоста при ошибке наличия */}
+      {/* StockLimitModal: shown when addItem reports stock error */}
       <AnimatePresence>
         {stockModal && (
           <StockLimitModal

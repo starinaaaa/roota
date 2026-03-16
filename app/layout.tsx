@@ -32,11 +32,11 @@ export default async function RootLayout({
   return (
     <html lang="ru">
       <body className="bg-stone-50 text-stone-900 antialiased">
-        <CartUIProvider>
+        <CartUIProvider initialItems={items}>
           <Header cartCount={cartCount} />
           <main>{children}</main>
           <Footer />
-          <CartDrawer initialItems={items} />
+          <CartDrawer />
           <CookieBanner />
         </CartUIProvider>
       </body>

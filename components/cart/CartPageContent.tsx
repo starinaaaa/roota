@@ -13,7 +13,7 @@ type Props = {
 }
 
 export default function CartPageContent({ initialItems }: Props) {
-  const { items, updateQuantity, removeItem } = useCart(initialItems)
+  const { items, updateQuantity, removeItem } = useCart()
   const totalPrice = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0)
   const totalItems = items.reduce((sum, i) => sum + i.quantity, 0)
 

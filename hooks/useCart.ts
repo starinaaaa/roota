@@ -1,66 +1,88 @@
 'use client'
 
-import { useState, useEffect, useTransition } from 'react'
+import { useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCartUI } from '@/contexts/CartUIContext'
 import { addToCart, removeFromCart, updateCartItem } from '@/lib/actions/cart'
-import type { CartItem } from '@/types'
+import type { CartItem, Product } from '@/types'
 
-// useCart accepts server-fetched items and manages them locally so mutations
-// (quantity updates, removals) feel instant — the UI reflects changes before
-// the server round-trip completes.  After router.refresh() finishes and the
-// parent re-renders with fresh serverItems, useEffect syncs the local state.
-export function useCart(serverItems: CartItem[] = []) {
+// useCart reads from and writes to the shared CartUIContext so that all
+// mounted instances (CartDrawer, ProductClientWrapper, CartPageContent, …)
+// always see the same items.  Mutations are applied optimistically to the
+// shared state and then confirmed / corrected by router.refresh().
+export function useCart() {
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
-  const { isOpen, open, close } = useCartUI()
+  const { isOpen, open, close, items, setItems } = useCartUI()
 
-  // Local optimistic state — starts from server data, mutated instantly
-  const [items, setItems] = useState<CartItem[]>(serverItems)
-
-  // Sync whenever the parent re-renders with fresh server data
-  // (triggered by router.refresh() completing after each mutation)
-  useEffect(() => {
-    setItems(serverItems)
-  }, [serverItems])
-
+  // ── addItem ────────────────────────────────────────────────────────────────
+  // Pass `product` (5th arg) to get an instant optimistic update in the drawer.
+  // Without it the item appears after router.refresh() completes (~0.5–1 s).
   function addItem(
     productId: string,
     qty = 1,
     onSuccess?: () => void,
     onError?: (msg: string) => void,
+    product?: Product,
   ) {
+    // Optimistic: add / increment immediately so the drawer feels instant
+    if (product) {
+      setItems(prev => {
+        const existing = prev.find(i => i.product_id === productId)
+        if (existing) {
+          return prev.map(i =>
+            i.product_id === productId ? { ...i, quantity: i.quantity + qty } : i
+          )
+        }
+        return [...prev, {
+          id:         `optimistic-${productId}`,
+          cart_id:    '',
+          product_id: productId,
+          quantity:   qty,
+          product,
+        }]
+      })
+    }
+
     startTransition(async () => {
       const result = await addToCart(productId, qty)
+
       if (result.error) {
+        // Revert the optimistic add
+        if (product) {
+          setItems(prev =>
+            prev
+              .map(i => i.product_id === productId ? { ...i, quantity: i.quantity - qty } : i)
+              .filter(i => i.quantity > 0)
+          )
+        }
         onError?.(result.error)
         return
       }
+
+      // Refresh so layout re-fetches the cart and replaces the optimistic item
+      // with the real DB row (correct id / cart_id).
       router.refresh()
       onSuccess?.()
     })
   }
 
+  // ── removeItem ─────────────────────────────────────────────────────────────
   function removeItem(productId: string) {
-    // 1. Optimistic: remove instantly from local state
     setItems(prev => prev.filter(i => i.product_id !== productId))
-    // 2. Fire server action in background; router.refresh() syncs final state
     startTransition(async () => {
       await removeFromCart(productId)
       router.refresh()
     })
   }
 
+  // ── updateQuantity ─────────────────────────────────────────────────────────
   function updateQuantity(productId: string, qty: number) {
-    // 1. Optimistic: apply new quantity (or remove if qty drops to 0)
-    if (qty <= 0) {
-      setItems(prev => prev.filter(i => i.product_id !== productId))
-    } else {
-      setItems(prev =>
-        prev.map(i => i.product_id === productId ? { ...i, quantity: qty } : i)
-      )
-    }
-    // 2. Fire server action in background; router.refresh() syncs final state
+    setItems(prev =>
+      qty <= 0
+        ? prev.filter(i => i.product_id !== productId)
+        : prev.map(i => i.product_id === productId ? { ...i, quantity: qty } : i)
+    )
     startTransition(async () => {
       await updateCartItem(productId, qty)
       router.refresh()
@@ -74,7 +96,7 @@ export function useCart(serverItems: CartItem[] = []) {
     removeItem,
     updateQuantity,
     isDrawerOpen: isOpen,
-    openDrawer: open,
-    closeDrawer: close,
+    openDrawer:   open,
+    closeDrawer:  close,
   }
 }

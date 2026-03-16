@@ -8,16 +8,11 @@ import { useCartUI } from '@/contexts/CartUIContext'
 import { useCart } from '@/hooks/useCart'
 import { formatPrice } from '@/lib/products'
 import CartLineItem from './CartLineItem'
-import type { CartItem } from '@/types'
 
-type Props = {
-  initialItems: CartItem[]
-}
-
-export default function CartDrawer({ initialItems }: Props) {
+export default function CartDrawer() {
   const { isOpen, close: closeDrawer } = useCartUI()
   const router = useRouter()
-  const { items, updateQuantity, removeItem } = useCart(initialItems)
+  const { items, updateQuantity, removeItem } = useCart()
 
   const totalItems = items.reduce((sum, i) => sum + i.quantity, 0)
   const totalPrice = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0)

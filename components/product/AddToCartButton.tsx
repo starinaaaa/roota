@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useRef, useEffect } from 'react'
 import { addToCart } from '@/lib/actions/cart'
 
 type Props = {
@@ -12,6 +12,12 @@ export default function AddToCartButton({ productId, productName }: Props) {
   const [isPending, startTransition] = useTransition()
   const [added, setAdded] = useState(false)
   const [stockError, setStockError] = useState<string | null>(null)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Clear pending timer on unmount to avoid setState on an unmounted component
+  useEffect(() => {
+    return () => { if (timerRef.current) clearTimeout(timerRef.current) }
+  }, [])
 
   function handleClick(e: React.MouseEvent) {
     e.preventDefault()
@@ -20,17 +26,16 @@ export default function AddToCartButton({ productId, productName }: Props) {
 
     startTransition(async () => {
       const result = await addToCart(productId)
+      if (timerRef.current) clearTimeout(timerRef.current)
       if (result.error) {
         setStockError(result.error)
-        setTimeout(() => setStockError(null), 3000)
+        timerRef.current = setTimeout(() => setStockError(null), 3000)
       } else {
         setAdded(true)
-        setTimeout(() => setAdded(false), 1500)
+        timerRef.current = setTimeout(() => setAdded(false), 1500)
       }
     })
   }
-
-  const isError = Boolean(stockError)
 
   return (
     <button
@@ -39,7 +44,7 @@ export default function AddToCartButton({ productId, productName }: Props) {
       className={[
         'border font-body text-[10px] tracking-[0.15em] uppercase px-3 py-1.5',
         'bg-white/90 backdrop-blur-sm transition-all duration-200',
-        isError
+        stockError
           ? 'border-red-400 text-red-600 bg-red-50/90'
           : added
           ? 'border-stone-700 text-stone-700'
@@ -47,7 +52,7 @@ export default function AddToCartButton({ productId, productName }: Props) {
         isPending ? 'opacity-60 cursor-wait' : 'opacity-100',
       ].join(' ')}
     >
-      {isError ? stockError : added ? '✓' : 'В корзину'}
+      {stockError ?? (added ? '✓' : 'В корзину')}
     </button>
   )
 }

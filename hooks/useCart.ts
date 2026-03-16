@@ -24,9 +24,18 @@ export function useCart(serverItems: CartItem[] = []) {
     setItems(serverItems)
   }, [serverItems])
 
-  function addItem(productId: string, qty = 1, onSuccess?: () => void) {
+  function addItem(
+    productId: string,
+    qty = 1,
+    onSuccess?: () => void,
+    onError?: (msg: string) => void,
+  ) {
     startTransition(async () => {
-      await addToCart(productId, qty)
+      const result = await addToCart(productId, qty)
+      if (result?.error) {
+        onError?.(result.error)
+        return
+      }
       router.refresh()
       onSuccess?.()
     })

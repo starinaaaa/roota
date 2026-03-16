@@ -4,13 +4,15 @@ import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useCart } from '@/hooks/useCart'
 import ProductInfo from './ProductInfo'
+import StockLimitModal from './StockLimitModal'
 import type { Product } from '@/types'
 
 type Props = {
   product: Product
+  inCart?: boolean
 }
 
-// Shared motion config for both toast variants
+// Shared motion config for the success toast
 const TOAST_MOTION = {
   initial: { opacity: 0, y: -8 },
   animate: { opacity: 1, y: 0 },
@@ -18,11 +20,18 @@ const TOAST_MOTION = {
   transition: { duration: 0.2, ease: 'easeOut' },
 } as const
 
-export default function ProductClientWrapper({ product }: Props) {
-  const [added, setAdded] = useState(false)
-  const [cartError, setCartError] = useState<string | null>(null)
+export default function ProductClientWrapper({ product, inCart = false }: Props) {
+  // `added` reflects whether the product is known to be in the cart.
+  // Initialised from server-side cart data (inCart prop) so the button
+  // shows the correct state on page load (BUG 3).
+  const [added, setAdded] = useState(inCart)
+  const [showToast, setShowToast]     = useState(false)
+  const [stockModal, setStockModal]   = useState<{ availableQty: number } | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const { addItem } = useCart()
+
+  // Sync with fresh server data after router.refresh() completes
+  useEffect(() => { setAdded(inCart) }, [inCart])
 
   // Clear pending timer on unmount to avoid setState on an unmounted component
   useEffect(() => {
@@ -34,14 +43,18 @@ export default function ProductClientWrapper({ product }: Props) {
       product.id,
       1,
       () => {
-        if (timerRef.current) clearTimeout(timerRef.current)
+        // Success — mark as added (persists until server confirms via inCart sync)
         setAdded(true)
-        timerRef.current = setTimeout(() => setAdded(false), 2000)
+        // Show brief confirmation toast
+        if (timerRef.current) clearTimeout(timerRef.current)
+        setShowToast(true)
+        timerRef.current = setTimeout(() => setShowToast(false), 2000)
       },
       (msg) => {
-        if (timerRef.current) clearTimeout(timerRef.current)
-        setCartError(msg)
-        timerRef.current = setTimeout(() => setCartError(null), 3000)
+        // Stock error — open StockLimitModal instead of a red toast
+        const match = msg.match(/(\d+)/)
+        const availableQty = match ? parseInt(match[1], 10) : 0
+        setStockModal({ availableQty })
       },
     )
   }
@@ -52,7 +65,7 @@ export default function ProductClientWrapper({ product }: Props) {
 
       {/* Toast: добавлено */}
       <AnimatePresence>
-        {added && (
+        {showToast && (
           <motion.div
             {...TOAST_MOTION}
             className="fixed top-24 left-1/2 -translate-x-1/2 z-50 bg-stone-900 text-stone-50 font-body text-xs tracking-[0.18em] uppercase px-5 py-3 shadow-md whitespace-nowrap"
@@ -62,15 +75,15 @@ export default function ProductClientWrapper({ product }: Props) {
         )}
       </AnimatePresence>
 
-      {/* Toast: ошибка наличия */}
+      {/* StockLimitModal: вместо красного тоста при ошибке наличия */}
       <AnimatePresence>
-        {cartError && (
-          <motion.div
-            {...TOAST_MOTION}
-            className="fixed top-24 left-1/2 -translate-x-1/2 z-50 bg-red-600 text-white font-body text-xs tracking-[0.15em] px-5 py-3 shadow-md whitespace-nowrap"
-          >
-            {cartError}
-          </motion.div>
+        {stockModal && (
+          <StockLimitModal
+            productId={product.id}
+            productName={product.name}
+            availableQty={stockModal.availableQty}
+            onClose={() => setStockModal(null)}
+          />
         )}
       </AnimatePresence>
     </>

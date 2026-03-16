@@ -108,3 +108,22 @@ export type CheckoutFormData = {
 export type CreateOrderResult =
   | { success: true; orderId: string }
   | { success: false; error: string }
+
+// Список ожидания
+export type WaitlistEntry = {
+  id: string
+  product_id: string
+  contact: string // email или телефон
+  created_at: string
+}
+
+// Предзаказ
+export type Preorder = {
+  id: string
+  product_id: string
+  name: string
+  phone: string
+  comment: string | null
+  status: 'pending' | 'confirmed' | 'cancelled'
+  created_at: string
+}

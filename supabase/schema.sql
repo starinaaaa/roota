@@ -366,3 +366,30 @@ left join lateral (
   order by is_primary desc, sort_order asc, created_at asc
   limit 1
 ) pi on true;
+
+-- ============================================================
+-- Список ожидания (waitlist)
+-- ============================================================
+create table if not exists public.waitlist (
+  id          uuid primary key default gen_random_uuid(),
+  product_id  uuid not null references public.products(id) on delete cascade,
+  contact     text not null,  -- email или телефон
+  created_at  timestamptz not null default now()
+);
+
+create index if not exists waitlist_product_id_idx on public.waitlist(product_id);
+
+-- ============================================================
+-- Предзаказы (preorders)
+-- ============================================================
+create table if not exists public.preorders (
+  id          uuid primary key default gen_random_uuid(),
+  product_id  uuid not null references public.products(id) on delete cascade,
+  name        text not null,
+  phone       text not null,
+  comment     text,
+  status      text not null default 'pending' check (status in ('pending', 'confirmed', 'cancelled')),
+  created_at  timestamptz not null default now()
+);
+
+create index if not exists preorders_product_id_idx on public.preorders(product_id);

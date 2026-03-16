@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { getProductBySlug, getRelatedProducts } from '@/lib/products'
+import { getCart } from '@/lib/actions/cart'
 import ProductImages from '@/components/product/ProductImages'
 import ProductClientWrapper from '@/components/product/ProductClientWrapper'
 import RelatedProducts from '@/components/product/RelatedProducts'
@@ -25,15 +26,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function ProductPage({ params }: Props) {
   const { slug } = await params
 
-  // getProductBySlug is cache()-wrapped — generateMetadata's earlier call
-  // is deduped, so this resolves from the request-level cache instantly.
-  const product = await getProductBySlug(slug)
+  // Run product fetch, related products and cart in parallel
+  const [product, related, { items: cartItems }] = await Promise.all([
+    getProductBySlug(slug),
+    // related needs product.category_id — resolved after product fetch
+    Promise.resolve(null as Awaited<ReturnType<typeof getRelatedProducts>> | null),
+    getCart(),
+  ])
+
   if (!product) notFound()
 
-  // Targeted fetch: ≤4 same-category rows first, then fills any remaining
-  // slots from other categories.  Replaces the previous full getProducts()
-  // scan which transferred the entire catalog just to pick 4 items.
-  const related = await getRelatedProducts(product.category_id, slug)
+  // Fetch related now that we have the product (needs category_id + slug)
+  const relatedProducts = await getRelatedProducts(product.category_id, slug)
+
+  const inCart = cartItems.some(i => i.product_id === product.id)
 
   return (
     <div className="pt-16 md:pt-20">
@@ -65,13 +71,13 @@ export default async function ProductPage({ params }: Props) {
         <div className="max-w-[1440px] mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-20">
             <ProductImages images={product.images} name={product.name} />
-            <ProductClientWrapper product={product} />
+            <ProductClientWrapper product={product} inCart={inCart} />
           </div>
         </div>
       </section>
 
       {/* Похожие работы */}
-      <RelatedProducts products={related} />
+      <RelatedProducts products={relatedProducts} />
 
     </div>
   )

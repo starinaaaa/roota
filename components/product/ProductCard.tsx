@@ -51,14 +51,20 @@ export default function ProductCard({ product, index = 0 }: Props) {
             </div>
           )}
 
-          {/* Статус: нет в наличии */}
-          {!product.in_stock && (
+          {/* Статус: нет в наличии / мало на складе */}
+          {!product.in_stock ? (
             <div className="absolute top-4 left-4">
               <span className="font-body text-[9px] tracking-[0.18em] uppercase bg-stone-50/90 text-stone-400 px-2.5 py-1.5">
-                Нет в наличии
+                Скоро в наличии
               </span>
             </div>
-          )}
+          ) : product.stock_qty != null && product.stock_qty > 0 && product.stock_qty <= 3 ? (
+            <div className="absolute top-4 left-4">
+              <span className="font-body text-[9px] tracking-[0.18em] uppercase bg-stone-50/90 text-stone-400 px-2.5 py-1.5">
+                {product.stock_qty === 1 ? 'Осталась 1 шт.' : `Осталось ${product.stock_qty} шт.`}
+              </span>
+            </div>
+          ) : null}
 
           {/* Тёмный hover-оверлей */}
           <div className="absolute inset-0 bg-stone-900/0 group-hover:bg-stone-900/6 transition-colors duration-500" />

@@ -9,7 +9,7 @@ import { formatPrice } from '@/lib/products'
 import type { Product } from '@/types'
 
 interface FeaturedProductsProps {
-  products: Pick<Product, 'id' | 'name' | 'slug' | 'price' | 'primary_image_url'>[]
+  products: Pick<Product, 'id' | 'name' | 'slug' | 'price' | 'primary_image_url' | 'in_stock' | 'stock_qty'>[]
 }
 
 export default function FeaturedProducts({ products }: FeaturedProductsProps) {
@@ -98,7 +98,7 @@ function ProductCardFeatured({
   index,
   inView,
 }: {
-  product: Pick<Product, 'id' | 'name' | 'slug' | 'price' | 'primary_image_url'>
+  product: Pick<Product, 'id' | 'name' | 'slug' | 'price' | 'primary_image_url' | 'in_stock' | 'stock_qty'>
   index: number
   inView: boolean
 }) {
@@ -137,13 +137,27 @@ function ProductCardFeatured({
             </div>
           )}
 
+          {/* Статус: нет в наличии / мало на складе */}
+          {!product.in_stock ? (
+            <div className="absolute top-4 left-4">
+              <span className="font-body text-[9px] tracking-[0.18em] uppercase bg-stone-50/90 text-stone-400 px-2.5 py-1.5">
+                Скоро в наличии
+              </span>
+            </div>
+          ) : product.stock_qty != null && product.stock_qty > 0 && product.stock_qty <= 3 ? (
+            <div className="absolute top-4 left-4">
+              <span className="font-body text-[9px] tracking-[0.18em] uppercase bg-stone-50/90 text-stone-400 px-2.5 py-1.5">
+                {product.stock_qty === 1 ? 'Осталась 1 шт.' : `Осталось ${product.stock_qty} шт.`}
+              </span>
+            </div>
+          ) : null}
+
           {/* Оверлей при hover */}
           <div className="
             absolute inset-0 bg-stone-900/0
             group-hover:bg-stone-900/8
             transition-colors duration-500
           " />
-
 
         </div>
 

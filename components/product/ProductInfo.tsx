@@ -48,6 +48,13 @@ export default function ProductInfo({ product, cartQty, onIncrement, onDecrement
 
       {/* CTA */}
       <div className="flex flex-col gap-3 pt-2">
+        {/* Мало на складе */}
+        {product.in_stock && product.stock_qty != null && product.stock_qty > 0 && product.stock_qty <= 3 && (
+          <p className="font-body text-sm text-stone-400 -mt-1">
+            {product.stock_qty === 1 ? 'Осталась 1 шт.' : `Осталось ${product.stock_qty} шт.`}
+          </p>
+        )}
+
         {product.in_stock ? (
           <>
             <AnimatePresence mode="wait">
@@ -135,7 +142,7 @@ export default function ProductInfo({ product, cartQty, onIncrement, onDecrement
                 py-4 px-8 cursor-not-allowed
               "
             >
-              Нет в наличии
+              Скоро в наличии
             </button>
             <button className="
               w-full border border-stone-300 text-stone-700

@@ -102,6 +102,7 @@ export type CheckoutFormData = {
   deliveryType: DeliveryType
   address: string
   comment: string
+  subscribeToNews: boolean
 }
 
 // Результат Server Action createOrder

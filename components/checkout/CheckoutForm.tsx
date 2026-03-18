@@ -27,6 +27,7 @@ export default function CheckoutForm({ initialItems }: Props) {
     deliveryType: 'moscow',
     address: '',
     comment: '',
+    subscribeToNews: false,
   })
 
   const totalPrice = initialItems.reduce((sum, i) => sum + i.product.price * i.quantity, 0)
@@ -34,8 +35,9 @@ export default function CheckoutForm({ initialItems }: Props) {
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) {
-    const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
+    const { name, value, type } = e.target
+    const checked = (e.target as HTMLInputElement).checked
+    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }))
     setError(null)
   }
 
@@ -199,6 +201,20 @@ export default function CheckoutForm({ initialItems }: Props) {
               />
             </div>
           </fieldset>
+
+          {/* Подписка на новости */}
+          <label className="flex items-start gap-3 cursor-pointer group">
+            <input
+              type="checkbox"
+              name="subscribeToNews"
+              checked={formData.subscribeToNews}
+              onChange={handleChange}
+              className="mt-1 w-4 h-4 accent-stone-900 cursor-pointer"
+            />
+            <span className="font-body text-[13px] tracking-[0.05em] text-stone-600 group-hover:text-stone-900 transition-colors duration-200">
+              Хочу подписаться на новости студии
+            </span>
+          </label>
 
           {/* Ошибка */}
           <AnimatePresence>

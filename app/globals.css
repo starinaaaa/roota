@@ -19,7 +19,7 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-cormorant);
+    font-family: var(--font-display);
     font-weight: 400;
   }
 
@@ -31,7 +31,7 @@
 
 @layer utilities {
   .font-display {
-    font-family: var(--font-cormorant);
+    font-family: var(--font-display);
   }
 
   .font-body {

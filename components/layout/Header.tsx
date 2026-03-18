@@ -74,7 +74,7 @@ export default function Header({ cartCount }: Props) {
             <Link
               href="/"
               className={[
-                'font-display text-[1.15rem] md:text-[1.3rem]',
+                'font-display text-[1.4375rem] md:text-[1.4375rem]',
                 'tracking-[0.22em] uppercase',
                 'transition-opacity duration-300 hover:opacity-55',
                 isTransparent ? 'text-stone-50' : 'text-stone-900',
@@ -207,7 +207,7 @@ export default function Header({ cartCount }: Props) {
                 <Link
                   href="/"
                   onClick={() => setMobileMenuPath(null)}
-                  className="font-display text-[1.15rem] tracking-[0.22em] uppercase text-stone-900"
+                  className="font-display text-[1.4375rem] tracking-[0.22em] uppercase text-stone-900"
                 >
                   Roota
                 </Link>

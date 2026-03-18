@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { motion, useInView } from 'framer-motion'
 import { ArrowRight } from 'lucide-react'
 import { formatPrice } from '@/lib/products'
+import CardActions from '@/components/product/CardActions'
 import type { Product } from '@/types'
 
 interface FeaturedProductsProps {
@@ -116,6 +117,7 @@ function ProductCardFeatured({
         ease: [0.16, 1, 0.3, 1],
       }}
     >
+      {/* Link wraps only image + info — CardActions sits outside to avoid nested <a> */}
       <Link href={`/product/${product.slug}`} className="group block">
 
         {/* Изображение */}
@@ -172,6 +174,15 @@ function ProductCardFeatured({
         </div>
 
       </Link>
+
+      {/* Кнопки действий — вне Link, чтобы не было вложенных <a> */}
+      <CardActions
+        productId={product.id}
+        productSlug={product.slug}
+        productName={product.name}
+        inStock={product.in_stock}
+        stockQty={product.stock_qty ?? null}
+      />
     </motion.div>
   )
 }

@@ -22,58 +22,58 @@ export default function CartLineItem({ item, compact = false, onUpdate, onRemove
 
   if (compact) {
     return (
-      <div className="flex gap-5 py-6 border-b border-stone-100 last:border-b-0">
+      // py-6→py-9 (×1.5), gap-5→gap-8 (×1.5)
+      <div className="flex gap-8 py-9 border-b border-stone-100 last:border-b-0">
 
-        {/* Фото */}
+        {/* Фото — 72px→108px (×1.5) */}
         <Link href={`/product/${product.slug}`} className="shrink-0">
-          <div className="relative w-[72px] h-[72px] bg-stone-100 overflow-hidden">
+          <div className="relative w-[108px] h-[108px] bg-stone-100 overflow-hidden">
             {imgSrc && (
               <Image
                 src={imgSrc}
                 alt={product.name}
                 fill
                 className="object-cover"
-                sizes="72px"
+                sizes="108px"
               />
             )}
           </div>
         </Link>
 
-        {/* Инфо */}
-        <div className="flex flex-col flex-1 min-w-0 gap-3">
+        {/* Инфо — gap-3→gap-5 (×1.5) */}
+        <div className="flex flex-col flex-1 min-w-0 gap-5">
 
-          {/* Строка: название + цена */}
-          <div className="flex items-start justify-between gap-3">
+          {/* Строка: название + цена — text ×1.5 */}
+          <div className="flex items-start justify-between gap-4">
             <Link
               href={`/product/${product.slug}`}
-              className="font-body text-[10px] tracking-[0.16em] uppercase text-stone-700 leading-snug hover:text-stone-400 transition-colors duration-200 line-clamp-2"
+              className="font-body text-[15px] tracking-[0.16em] uppercase text-stone-700 leading-snug hover:text-stone-400 transition-colors duration-200 line-clamp-2"
             >
               {product.name}
             </Link>
-            <span className="font-body text-[11px] tracking-[0.06em] text-stone-900 shrink-0 tabular-nums">
+            <span className="font-body text-[17px] tracking-[0.06em] text-stone-900 shrink-0 tabular-nums">
               {formatPrice(product.price * quantity)}
             </span>
           </div>
 
-          {/* Строка: степпер + удалить */}
+          {/* Строка: степпер + удалить — text ×1.5 */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              {/* [ qty ] шт. */}
+            <div className="flex items-center gap-3">
               <button
                 onClick={() => onUpdate(product.id, quantity - 1)}
-                className="font-body text-[11px] text-stone-400 hover:text-stone-800 transition-colors leading-none"
+                className="font-body text-[17px] text-stone-400 hover:text-stone-800 transition-colors leading-none"
                 aria-label="Уменьшить"
               >
                 —
               </button>
-              <span className="font-body text-[11px] tracking-[0.06em] text-stone-600 tabular-nums">
+              <span className="font-body text-[17px] tracking-[0.06em] text-stone-600 tabular-nums">
                 [ {quantity} ] шт.
               </span>
               <button
                 onClick={() => !atStockLimit && onUpdate(product.id, quantity + 1)}
                 disabled={atStockLimit}
                 className={[
-                  'font-body text-[13px] leading-none transition-colors',
+                  'font-body text-[20px] leading-none transition-colors',
                   atStockLimit ? 'text-stone-200 cursor-not-allowed' : 'text-stone-400 hover:text-stone-800',
                 ].join(' ')}
                 aria-label="Увеличить"
@@ -81,7 +81,7 @@ export default function CartLineItem({ item, compact = false, onUpdate, onRemove
                 +
               </button>
               {atStockLimit && (
-                <span className="font-body text-[8px] tracking-[0.14em] uppercase text-stone-300">
+                <span className="font-body text-[12px] tracking-[0.14em] uppercase text-stone-300">
                   макс.
                 </span>
               )}
@@ -89,10 +89,10 @@ export default function CartLineItem({ item, compact = false, onUpdate, onRemove
 
             <button
               onClick={() => onRemove(product.id)}
-              className="font-body text-[9px] tracking-[0.16em] uppercase text-stone-300 hover:text-stone-700 transition-colors duration-150"
+              className="font-body text-[14px] tracking-[0.16em] uppercase text-stone-300 hover:text-stone-700 transition-colors duration-150"
               aria-label="Удалить"
             >
-              [ Удалить ]
+              •удалить•
             </button>
           </div>
 

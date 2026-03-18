@@ -30,7 +30,7 @@ export default function FeaturedProducts({ products }: FeaturedProductsProps) {
             initial={{ opacity: 0, y: 16 }}
             animate={inView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.7, ease: 'easeOut' }}
-            className="font-display text-[clamp(2rem,4vw,3.5rem)] text-stone-900"
+            className="font-display font-normal text-[clamp(1.8rem,3.6vw,3.15rem)] text-stone-900"
           >
             Избранное
           </motion.h2>

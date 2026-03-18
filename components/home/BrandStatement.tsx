@@ -45,7 +45,7 @@ export default function BrandStatement() {
                       delay: 0.2 + i * 0.1,
                       ease: [0.16, 1, 0.3, 1],
                     }}
-                    className="font-display text-[clamp(2.2rem,5vw,4.5rem)] leading-[1.1] text-stone-900"
+                    className="font-display font-normal text-[clamp(1.76rem,4vw,3.6rem)] leading-[1.1] text-stone-900"
                   >
                     {line}
                   </motion.p>

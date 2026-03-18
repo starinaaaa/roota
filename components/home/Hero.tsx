@@ -42,7 +42,7 @@ export default function Hero() {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.1 }}
-              className="mb-6 font-display text-[clamp(3rem,8vw,7rem)] leading-[0.95] text-white"
+              className="mb-6 font-display font-normal text-[clamp(1.8rem,3.6vw,3.15rem)] leading-[0.95] text-white"
             >
               Каждое изделие —
               <br />

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { formatPrice } from '@/lib/products'
+import CardActions from './CardActions'
 import type { Product } from '@/types'
 
 type Props = {
@@ -40,6 +41,7 @@ export default function RelatedProducts({ products }: Props) {
               viewport={{ once: true, margin: '-40px' }}
               transition={{ duration: 0.55, delay: i * 0.07, ease: [0.16, 1, 0.3, 1] }}
             >
+              {/* Link wraps only image + info — CardActions sits outside to avoid nested <a> */}
               <Link href={`/product/${p.slug}`} className="group block">
                 <div className="relative aspect-square overflow-hidden rounded-lg bg-stone-100 mb-4">
                   {p.images[0] && (
@@ -72,6 +74,15 @@ export default function RelatedProducts({ products }: Props) {
                 <p className="font-body text-xs text-stone-700 mb-0.5">{p.name}</p>
                 <p className="font-display text-lg text-stone-900">{formatPrice(p.price)}</p>
               </Link>
+
+              {/* Кнопки действий — вне Link, чтобы не было вложенных <a> */}
+              <CardActions
+                productId={p.id}
+                productSlug={p.slug}
+                productName={p.name}
+                inStock={p.in_stock}
+                stockQty={p.stock_qty ?? null}
+              />
             </motion.div>
           ))}
         </div>

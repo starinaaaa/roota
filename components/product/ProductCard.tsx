@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { formatPrice } from '@/lib/products'
+import CardActions from './CardActions'
 import type { Product } from '@/types'
 
 type Props = {
@@ -26,9 +27,10 @@ export default function ProductCard({ product, index = 0 }: Props) {
         delay: index * 0.07,
         ease: [0.16, 1, 0.3, 1],
       }}
-      className="h-full"
+      className="h-full flex flex-col"
     >
-      <Link href={`/product/${product.slug}`} className="group flex h-full flex-col">
+      {/* Link wraps only image + info — CardActions sits outside to avoid nested <a> */}
+      <Link href={`/product/${product.slug}`} className="group flex flex-col flex-1">
         {/* Изображение */}
         <div className="relative mb-5 aspect-square overflow-hidden rounded-lg bg-stone-100">
           {hasImage ? (
@@ -95,6 +97,15 @@ export default function ProductCard({ product, index = 0 }: Props) {
           </p>
         </div>
       </Link>
+
+      {/* Кнопки действий — вне Link, чтобы не было вложенных <a> */}
+      <CardActions
+        productId={product.id}
+        productSlug={product.slug}
+        productName={product.name}
+        inStock={product.in_stock}
+        stockQty={product.stock_qty ?? null}
+      />
     </motion.article>
   )
 }

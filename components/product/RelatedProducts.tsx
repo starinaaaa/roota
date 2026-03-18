@@ -51,6 +51,22 @@ export default function RelatedProducts({ products }: Props) {
                       className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
                     />
                   )}
+
+                  {/* Статус: нет в наличии / мало на складе */}
+                  {!p.in_stock ? (
+                    <div className="absolute top-4 left-4">
+                      <span className="font-body text-[9px] tracking-[0.18em] uppercase bg-stone-50/90 text-stone-400 px-2.5 py-1.5">
+                        Скоро в наличии
+                      </span>
+                    </div>
+                  ) : p.stock_qty != null && p.stock_qty > 0 && p.stock_qty <= 3 ? (
+                    <div className="absolute top-4 left-4">
+                      <span className="font-body text-[9px] tracking-[0.18em] uppercase bg-stone-50/90 text-stone-400 px-2.5 py-1.5">
+                        {p.stock_qty === 1 ? 'Осталась 1 шт.' : `Осталось ${p.stock_qty} шт.`}
+                      </span>
+                    </div>
+                  ) : null}
+
                   <div className="absolute inset-0 bg-stone-900/0 group-hover:bg-stone-900/6 transition-colors duration-500" />
                 </div>
                 <p className="font-body text-xs text-stone-700 mb-0.5">{p.name}</p>

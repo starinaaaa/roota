@@ -59,13 +59,16 @@ export default function Header({ cartCount }: Props) {
             : 'bg-stone-50/96 backdrop-blur-md border-b border-stone-200/60',
         ].join(' ')}
       >
-        <div className="max-w-[1440px] mx-auto">
+        {/* px wrapper first — then max-w — mirrors Hero.tsx so logo and
+            hero h1 share the same left edge at any viewport width     */}
+        <div className="px-6 md:px-12 lg:px-16">
+          <div className="max-w-[1440px] mx-auto">
 
           {/*
             3-колоночная сетка:
             col-1 (logo)  |  col-2 (nav center)  |  col-3 (actions right)
           */}
-          <div className="grid grid-cols-3 items-center h-16 md:h-20 px-6 md:px-12 lg:px-16">
+          <div className="grid grid-cols-3 items-center h-16 md:h-20">
 
             {/* ── COL 1: Логотип ─────────────────── */}
             <Link
@@ -81,7 +84,7 @@ export default function Header({ cartCount }: Props) {
             </Link>
 
             {/* ── COL 2: Десктопная навигация ──────── */}
-            <nav className="hidden md:flex items-center justify-center gap-6 lg:gap-10">
+            <nav className="hidden md:flex items-center justify-center gap-4 lg:gap-6">
               {NAV_LINKS.map(({ href, label }, i) => (
                 <React.Fragment key={href}>
                   {i > 0 && (
@@ -119,7 +122,7 @@ export default function Header({ cartCount }: Props) {
                   isTransparent ? 'text-stone-50' : 'text-stone-800',
                 ].join(' ')}
               >
-                <ShoppingBag size={18} strokeWidth={1.4} />
+                <ShoppingBag size={21} strokeWidth={1.3} />
                 <AnimatePresence>
                   {cartCount > 0 && (
                     <motion.span
@@ -159,6 +162,7 @@ export default function Header({ cartCount }: Props) {
             </div>
           </div>
 
+          </div>
         </div>
       </motion.header>
 

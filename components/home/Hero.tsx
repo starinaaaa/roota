@@ -25,7 +25,7 @@ export default function Hero() {
       <div className="absolute inset-0 bg-gradient-to-t from-stone-900/60 via-stone-900/10 to-transparent" />
 
       {/* Content */}
-      <div className="relative z-10 flex min-h-svh items-start pt-4 md:pt-5 px-6 pb-16 md:px-12 md:pb-20 lg:px-16 lg:pb-24">
+      <div className="relative z-10 flex min-h-svh items-center pt-24 md:pt-28 px-6 pb-16 md:px-12 md:pb-20 lg:px-16 lg:pb-24">
         <div className="mx-auto w-full max-w-[1440px]">
           <div className="max-w-2xl">
 

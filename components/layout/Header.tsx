@@ -81,7 +81,7 @@ export default function Header({ cartCount }: Props) {
             </Link>
 
             {/* ── COL 2: Десктопная навигация ──────── */}
-            <nav className="hidden md:flex items-center justify-center gap-0">
+            <nav className="hidden md:flex items-center justify-center gap-6 lg:gap-10">
               {NAV_LINKS.map(({ href, label }, i) => (
                 <React.Fragment key={href}>
                   {i > 0 && (
@@ -293,7 +293,7 @@ function NavLink({
     <Link
       href={href}
       className={[
-        'relative font-body text-[13px] tracking-[0.15em] uppercase',
+        'relative font-body text-[13px] tracking-[0.15em] uppercase whitespace-nowrap',
         'transition-colors duration-200',
         active
           ? transparent ? 'text-stone-50'  : 'text-stone-900'

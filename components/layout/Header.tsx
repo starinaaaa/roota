@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -59,13 +59,13 @@ export default function Header({ cartCount }: Props) {
             : 'bg-stone-50/96 backdrop-blur-md border-b border-stone-200/60',
         ].join(' ')}
       >
-        <div className="max-w-[1440px] mx-auto px-6 md:px-12 lg:px-16">
+        <div className="max-w-[1440px] mx-auto">
 
           {/*
             3-колоночная сетка:
             col-1 (logo)  |  col-2 (nav center)  |  col-3 (actions right)
           */}
-          <div className="grid grid-cols-3 items-center h-16 md:h-20">
+          <div className="grid grid-cols-3 items-center h-16 md:h-20 px-6 md:px-12 lg:px-16">
 
             {/* ── COL 1: Логотип ─────────────────── */}
             <Link
@@ -81,16 +81,28 @@ export default function Header({ cartCount }: Props) {
             </Link>
 
             {/* ── COL 2: Десктопная навигация ──────── */}
-            <nav className="hidden md:flex items-center justify-center gap-7 lg:gap-10">
-              {NAV_LINKS.map(({ href, label }) => (
-                <NavLink
-                  key={href}
-                  href={href}
-                  active={href !== '/' && pathname.startsWith(href)}
-                  transparent={isTransparent}
-                >
-                  {label}
-                </NavLink>
+            <nav className="hidden md:flex items-center justify-center gap-0">
+              {NAV_LINKS.map(({ href, label }, i) => (
+                <React.Fragment key={href}>
+                  {i > 0 && (
+                    <span
+                      className={[
+                        'select-none text-[10px] mx-2',
+                        isTransparent ? 'text-stone-400' : 'text-stone-300',
+                      ].join(' ')}
+                      aria-hidden
+                    >
+                      ·
+                    </span>
+                  )}
+                  <NavLink
+                    href={href}
+                    active={href !== '/' && pathname.startsWith(href)}
+                    transparent={isTransparent}
+                  >
+                    {label}
+                  </NavLink>
+                </React.Fragment>
               ))}
             </nav>
 

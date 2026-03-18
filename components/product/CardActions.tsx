@@ -24,7 +24,6 @@ export default function CardActions({
   const [modal, setModal] = useState(false)
   const { items, addItem, updateQuantity } = useCart()
 
-  // Derive current cart qty from shared context — no extra fetch needed
   const cartItem = items.find(i => i.product_id === productId)
   const cartQty  = cartItem?.quantity ?? 0
   const atLimit  = stockQty != null && cartQty >= stockQty
@@ -34,28 +33,15 @@ export default function CardActions({
     e.stopPropagation()
   }
 
-  function handleAdd(e: React.MouseEvent) {
-    stop(e)
-    addItem(productId, 1)
-  }
+  function handleAdd(e: React.MouseEvent) { stop(e); addItem(productId, 1) }
+  function handleDecrement(e: React.MouseEvent) { stop(e); updateQuantity(productId, cartQty - 1) }
+  function handleIncrement(e: React.MouseEvent) { stop(e); if (!atLimit) updateQuantity(productId, cartQty + 1) }
+  function handleModal(e: React.MouseEvent) { stop(e); setModal(true) }
 
-  function handleDecrement(e: React.MouseEvent) {
-    stop(e)
-    updateQuantity(productId, cartQty - 1)
-  }
-
-  function handleIncrement(e: React.MouseEvent) {
-    stop(e)
-    if (!atLimit) updateQuantity(productId, cartQty + 1)
-  }
-
-  function handleModal(e: React.MouseEvent) {
-    stop(e)
-    setModal(true)
-  }
+  // Shared base for both buttons so heights are always identical
+  const btnBase = 'flex-1 min-h-[36px] box-border flex items-center justify-center font-body text-[10px] tracking-[0.15em] uppercase px-3 py-2 transition-colors duration-200'
 
   return (
-    // stopPropagation on the whole block so clicks never bubble to the parent Link
     <div
       onClick={e => e.stopPropagation()}
       className="flex gap-2 mt-3"
@@ -64,7 +50,7 @@ export default function CardActions({
         <>
           {/* ── В корзину / inline counter ── */}
           {cartQty > 0 ? (
-            <div className="flex items-stretch flex-1 border border-stone-200">
+            <div className="flex items-stretch flex-1 min-h-[36px] border border-stone-200">
               <button
                 onClick={handleDecrement}
                 className="px-3 py-2 font-body text-[12px] text-stone-500 hover:text-stone-900 hover:bg-stone-50 transition-colors duration-150"
@@ -80,9 +66,7 @@ export default function CardActions({
                 disabled={atLimit}
                 className={[
                   'px-3 py-2 font-body text-[12px] transition-colors duration-150',
-                  atLimit
-                    ? 'text-stone-200 cursor-not-allowed'
-                    : 'text-stone-500 hover:text-stone-900 hover:bg-stone-50',
+                  atLimit ? 'text-stone-200 cursor-not-allowed' : 'text-stone-500 hover:text-stone-900 hover:bg-stone-50',
                 ].join(' ')}
                 aria-label="Увеличить"
               >
@@ -92,7 +76,7 @@ export default function CardActions({
           ) : (
             <button
               onClick={handleAdd}
-              className="flex-1 bg-stone-900 text-stone-50 font-body text-[10px] tracking-[0.15em] uppercase px-3 py-2 hover:bg-stone-700 transition-colors duration-200"
+              className={`${btnBase} bg-stone-900 text-stone-50 hover:bg-stone-700`}
             >
               В корзину
             </button>
@@ -102,26 +86,17 @@ export default function CardActions({
           <Link
             href={`/product/${productSlug}`}
             onClick={e => e.stopPropagation()}
-            className="flex-1 flex items-center justify-center border border-stone-300 text-stone-600 font-body text-[10px] tracking-[0.15em] uppercase px-3 py-2 hover:border-stone-600 transition-colors duration-200"
+            className={`${btnBase} border border-stone-300 text-stone-600 hover:border-stone-600`}
           >
             Подробнее
           </Link>
         </>
       ) : (
         <>
-          {/* ── Уведомить ── */}
-          <button
-            onClick={handleModal}
-            className="flex-1 border border-stone-300 text-stone-500 font-body text-[10px] tracking-[0.15em] uppercase px-3 py-2 hover:border-stone-500 transition-colors duration-200"
-          >
+          <button onClick={handleModal} className={`${btnBase} border border-stone-300 text-stone-500 hover:border-stone-500`}>
             Уведомить
           </button>
-
-          {/* ── Предзаказ ── */}
-          <button
-            onClick={handleModal}
-            className="flex-1 border border-stone-300 text-stone-500 font-body text-[10px] tracking-[0.15em] uppercase px-3 py-2 hover:border-stone-500 transition-colors duration-200"
-          >
+          <button onClick={handleModal} className={`${btnBase} border border-stone-300 text-stone-500 hover:border-stone-500`}>
             Предзаказ
           </button>
         </>

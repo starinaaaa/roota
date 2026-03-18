@@ -89,10 +89,10 @@ export default function ProductCard({ product, index = 0 }: Props) {
           <p className="min-h-[1rem] font-body text-[10px] tracking-[0.18em] uppercase text-stone-400 transition-colors duration-300 group-hover:text-stone-600">
             {product.category?.name ?? ''}
           </p>
-          <h3 className="font-body text-sm text-stone-800 group-hover:text-stone-900 transition-colors duration-200">
+          <h3 className="font-body font-light text-sm text-stone-800 group-hover:text-stone-900 transition-colors duration-200">
             {product.name}
           </h3>
-          <p className="font-display text-lg text-stone-900">
+          <p className="font-display text-xl text-stone-900">
             {formatPrice(product.price)}
           </p>
         </div>

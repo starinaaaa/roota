@@ -41,7 +41,7 @@ export default async function CatalogPage({ searchParams }: Props) {
           <p className="font-body text-[10px] tracking-[0.3em] uppercase text-stone-400 mb-6">
             Авторская керамика · Roota ceramics
           </p>
-          <h1 className="font-display font-normal text-[clamp(3.15rem,7.2vw,6.3rem)] leading-none text-stone-900">
+          <h1 className="font-display font-normal text-[clamp(1.8rem,3.6vw,3.15rem)] leading-none text-stone-900">
             Каталог
           </h1>
         </div>

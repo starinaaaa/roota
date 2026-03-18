@@ -42,9 +42,9 @@ export default function CategoryFilter({ activeSlug, categories }: Props) {
             onClick={() => handleSelect(slug)}
             className={`
               relative shrink-0 py-2 pr-7
-              font-body text-[11px] tracking-[0.18em] uppercase
+              font-body text-[14px] tracking-[0.18em] uppercase
               transition-colors duration-200 whitespace-nowrap
-              ${isActive ? 'text-stone-900' : 'text-stone-400 hover:text-stone-700'}
+              ${isActive ? 'text-stone-900' : 'text-stone-800 hover:text-stone-700'}
             `}
           >
             {label}

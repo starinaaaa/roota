@@ -32,7 +32,7 @@ export default function Footer() {
             >
               Roota
             </Link>
-            <p className="font-body text-sm text-stone-500 leading-relaxed max-w-[200px]">
+            <p className="font-body text-sm text-stone-800 leading-relaxed max-w-[200px]">
               Авторская керамика ручной работы. Москва.
             </p>
           </div>
@@ -47,7 +47,7 @@ export default function Footer() {
                 <li key={href}>
                   <Link
                     href={href}
-                    className="font-body text-sm text-stone-600 hover:text-stone-900 transition-colors duration-200"
+                    className="font-body text-sm text-stone-800 hover:text-stone-900 transition-colors duration-200"
                   >
                     {label}
                   </Link>
@@ -66,7 +66,7 @@ export default function Footer() {
                 <li key={href}>
                   <Link
                     href={href}
-                    className="font-body text-sm text-stone-600 hover:text-stone-900 transition-colors duration-200"
+                    className="font-body text-sm text-stone-800 hover:text-stone-900 transition-colors duration-200"
                   >
                     {label}
                   </Link>
@@ -86,7 +86,7 @@ export default function Footer() {
                   href="https://t.me/rootaceramics"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-body text-sm text-stone-600 hover:text-stone-900 transition-colors duration-200"
+                  className="font-body text-sm text-stone-800 hover:text-stone-900 transition-colors duration-200"
                 >
                   Telegram
                 </a>
@@ -96,7 +96,7 @@ export default function Footer() {
                   href="https://instagram.com/roota.ceramics"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-body text-sm text-stone-600 hover:text-stone-900 transition-colors duration-200"
+                  className="font-body text-sm text-stone-800 hover:text-stone-900 transition-colors duration-200"
                 >
                   Instagram
                 </a>
@@ -104,7 +104,7 @@ export default function Footer() {
               <li>
                 <a
                   href="mailto:hello@roota.moscow"
-                  className="font-body text-sm text-stone-600 hover:text-stone-900 transition-colors duration-200"
+                  className="font-body text-sm text-stone-800 hover:text-stone-900 transition-colors duration-200"
                 >
                   hello@roota.moscow
                 </a>
@@ -116,25 +116,25 @@ export default function Footer() {
 
         {/* Нижняя полоса */}
         <div className="border-t border-stone-200 pt-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <p className="font-body text-xs text-stone-400">
+          <p className="font-body text-[15px] text-stone-800">
             © {year} Roota ceramics. Все права защищены.
           </p>
           <div className="flex items-center gap-6">
             <Link
               href="/offer"
-              className="font-body text-xs text-stone-400 hover:text-stone-600 transition-colors duration-200"
+              className="font-body text-[15px] text-stone-800 hover:text-stone-600 transition-colors duration-200"
             >
               Оферта
             </Link>
             <Link
               href="/privacy"
-              className="font-body text-xs text-stone-400 hover:text-stone-600 transition-colors duration-200"
+              className="font-body text-[15px] text-stone-800 hover:text-stone-600 transition-colors duration-200"
             >
               Конфиденциальность
             </Link>
             <Link
               href="/terms"
-              className="font-body text-xs text-stone-400 hover:text-stone-600 transition-colors duration-200"
+              className="font-body text-[15px] text-stone-800 hover:text-stone-600 transition-colors duration-200"
             >
               Условия использования
             </Link>

@@ -39,7 +39,7 @@ export default function CardActions({
   function handleModal(e: React.MouseEvent) { stop(e); setModal(true) }
 
   // Shared base for both buttons so heights are always identical
-  const btnBase = 'flex-1 min-h-[36px] box-border flex items-center justify-center font-body text-[10px] tracking-[0.15em] uppercase px-3 py-2 transition-colors duration-200'
+  const btnBase = 'flex-1 h-[36px] min-h-[36px] box-border flex items-center justify-center font-body text-[13px] tracking-[0.15em] uppercase px-3 py-0 transition-colors duration-200'
 
   return (
     <div
@@ -86,7 +86,7 @@ export default function CardActions({
           <Link
             href={`/product/${productSlug}`}
             onClick={e => e.stopPropagation()}
-            className={`${btnBase} border border-stone-300 text-stone-600 hover:border-stone-600`}
+            className={`${btnBase} border border-stone-300 text-stone-900 hover:border-stone-900`}
           >
             Подробнее
           </Link>

@@ -66,7 +66,7 @@ export default function Hero() {
             >
               <Link
                 href="/catalog"
-                className="inline-flex items-center gap-3 border-b border-white/50 pb-1 font-body text-sm uppercase tracking-[0.15em] text-white hover:border-white transition-colors"
+                className="inline-flex items-center gap-3 border-b border-white/50 pb-1 font-body text-[17px] uppercase tracking-[0.15em] text-white hover:border-white transition-colors"
               >
                 Смотреть коллекцию
                 <ArrowRight size={14} strokeWidth={1.5} />

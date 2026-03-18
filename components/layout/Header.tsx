@@ -10,7 +10,7 @@ import { useCartUI } from '@/contexts/CartUIContext'
 const NAV_LINKS = [
   { href: '/catalog',  label: 'Каталог'  },
   { href: '/about',    label: 'О студии' },
-  { href: '/delivery', label: 'Доставка' },
+  { href: '/delivery', label: 'Доставка и оплата' },
   { href: '/contacts', label: 'Контакты' },
 ]
 
@@ -281,11 +281,11 @@ function NavLink({
     <Link
       href={href}
       className={[
-        'relative font-body text-[10.5px] tracking-[0.18em] uppercase',
+        'relative font-body text-[13px] tracking-[0.15em] uppercase',
         'transition-colors duration-200',
         active
           ? transparent ? 'text-stone-50'  : 'text-stone-900'
-          : transparent ? 'text-stone-300 hover:text-stone-50' : 'text-stone-400 hover:text-stone-900',
+          : transparent ? 'text-stone-100 hover:text-white' : 'text-stone-400 hover:text-stone-900',
       ].join(' ')}
     >
       {children}

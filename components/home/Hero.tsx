@@ -5,12 +5,9 @@ import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { ArrowRight } from 'lucide-react'
 
-// Header height: h-16 (64px) on mobile, md:h-20 (80px) on desktop
-const SECTION_H = 'min-h-[calc(100svh-64px)] md:min-h-[calc(100svh-80px)]'
-
 export default function Hero() {
   return (
-    <section className={`relative w-full ${SECTION_H} overflow-hidden bg-stone-900`}>
+    <section className="relative w-full min-h-svh overflow-hidden bg-stone-900">
 
       {/* Background image — bg-stone-900 above acts as dark fallback */}
       <div className="absolute inset-0">
@@ -28,7 +25,7 @@ export default function Hero() {
       <div className="absolute inset-0 bg-gradient-to-t from-stone-900/60 via-stone-900/10 to-transparent" />
 
       {/* Content */}
-      <div className={`relative z-10 flex ${SECTION_H} items-end px-6 pb-16 md:px-12 md:pb-20 lg:px-16 lg:pb-24`}>
+      <div className="relative z-10 flex min-h-svh items-start pt-4 md:pt-5 px-6 pb-16 md:px-12 md:pb-20 lg:px-16 lg:pb-24">
         <div className="mx-auto w-full max-w-[1440px]">
           <div className="max-w-2xl">
 

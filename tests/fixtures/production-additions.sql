@@ -17,7 +17,7 @@ CREATE OR REPLACE FUNCTION public.decrease_stock_on_order()
 AS $function$
 BEGIN
   UPDATE public.products
-  SET 
+  SET
     stock_qty = stock_qty - NEW.quantity,
     in_stock = CASE WHEN stock_qty - NEW.quantity <= 0 THEN false ELSE true END
   WHERE id = NEW.product_id
@@ -40,7 +40,7 @@ BEGIN
   -- Если статус изменился на 'cancelled'
   IF NEW.status = 'cancelled' AND OLD.status != 'cancelled' THEN
     UPDATE public.products p
-    SET 
+    SET
       stock_qty = p.stock_qty + oi.quantity,
       in_stock = true
     FROM public.order_items oi

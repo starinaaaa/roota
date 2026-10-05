@@ -1,26 +1,39 @@
-import type { Metadata } from 'next'
-import Link from 'next/link'
-import OrderSuccessClient from './OrderSuccessClient'
+import type { Metadata } from "next";
+import Link from "next/link";
+import OrderSuccessClient from "./OrderSuccessClient";
+import { cookies } from "next/headers";
+import { notFound } from "next/navigation";
+import { createServerClient } from "@/lib/supabase/server";
+import { uuid } from "@/lib/validation";
 
 export const metadata: Metadata = {
-  title: 'Заказ принят',
-}
+  title: "Заказ принят",
+  robots: { index: false, follow: false },
+};
 
 type Props = {
-  searchParams: Promise<{ id?: string }>
-}
+  searchParams: Promise<{ id?: string }>;
+};
 
 export default async function OrderSuccessPage({ searchParams }: Props) {
-  const params  = await searchParams
-  const orderId = params.id ?? ''
-  // Первые 8 символов UUID — достаточно для идентификации
-  const shortId = orderId.slice(0, 8).toUpperCase()
+  const params = await searchParams;
+  const orderId = params.id ?? "";
+  const session = (await cookies()).get("cart_session")?.value;
+  if (!uuid.safeParse(orderId).success || !uuid.safeParse(session).success)
+    notFound();
+  const { data: order, error } = await createServerClient()
+    .from("orders")
+    .select("order_number")
+    .eq("id", orderId)
+    .eq("cart_session", session)
+    .maybeSingle();
+  if (error || !order) notFound();
+  const shortId = order.order_number;
 
   return (
     <div className="pt-16 md:pt-20 min-h-screen flex items-center">
       <div className="max-w-[1440px] w-full mx-auto px-6 md:px-12 lg:px-16 py-20 md:py-32">
         <div className="max-w-md">
-
           {/* Анимированная галочка */}
           <OrderSuccessClient />
 
@@ -35,8 +48,8 @@ export default async function OrderSuccessPage({ searchParams }: Props) {
               Заказ принят
             </h1>
             <p className="font-body text-sm text-stone-500 leading-relaxed">
-              Мы свяжемся с вами в течение 24 часов для подтверждения
-              заказа и уточнения деталей доставки.
+              Мы свяжемся с вами в течение 24 часов для подтверждения заказа и
+              уточнения деталей доставки.
             </p>
             <p className="font-body text-sm text-stone-500">
               Спасибо, что выбираете Roota ceramics.
@@ -68,9 +81,8 @@ export default async function OrderSuccessPage({ searchParams }: Props) {
               На главную
             </Link>
           </div>
-
         </div>
       </div>
     </div>
-  )
+  );
 }

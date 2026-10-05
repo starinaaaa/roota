@@ -1,18 +1,20 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import Link from 'next/link'
-import { AnimatePresence } from 'framer-motion'
-import { useCart } from '@/hooks/useCart'
-import StockLimitModal from './StockLimitModal'
+import { useState } from "react";
+import Link from "next/link";
+import { AnimatePresence } from "framer-motion";
+import { useCart } from "@/hooks/useCart";
+import StockLimitModal from "./StockLimitModal";
 
 type Props = {
-  productId: string
-  productSlug: string
-  productName: string
-  inStock: boolean
-  stockQty: number | null
-}
+  productId: string;
+  productSlug: string;
+  productName: string;
+  inStock: boolean;
+  stockQty: number | null;
+  preorderEnabled?: boolean;
+  leadTimeDays?: number | null;
+};
 
 export default function CardActions({
   productId,
@@ -20,33 +22,47 @@ export default function CardActions({
   productName,
   inStock,
   stockQty,
+  preorderEnabled = false,
+  leadTimeDays = null,
 }: Props) {
-  const [modal, setModal] = useState(false)
-  const { items, addItem, updateQuantity } = useCart()
+  const [modal, setModal] = useState(false);
+  const [modalTab, setModalTab] = useState<"waitlist" | "preorder">("waitlist");
+  const { items, addItem, updateQuantity } = useCart();
 
-  const cartItem = items.find(i => i.product_id === productId)
-  const cartQty  = cartItem?.quantity ?? 0
-  const atLimit  = stockQty != null && cartQty >= stockQty
+  const cartItem = items.find((i) => i.product_id === productId);
+  const cartQty = cartItem?.quantity ?? 0;
+  const atLimit = stockQty != null && cartQty >= stockQty;
 
   function stop(e: React.MouseEvent) {
-    e.preventDefault()
-    e.stopPropagation()
+    e.preventDefault();
+    e.stopPropagation();
   }
 
-  function handleAdd(e: React.MouseEvent) { stop(e); addItem(productId, 1) }
-  function handleDecrement(e: React.MouseEvent) { stop(e); updateQuantity(productId, cartQty - 1) }
-  function handleIncrement(e: React.MouseEvent) { stop(e); if (!atLimit) updateQuantity(productId, cartQty + 1) }
-  function handleModal(e: React.MouseEvent) { stop(e); setModal(true) }
+  function handleAdd(e: React.MouseEvent) {
+    stop(e);
+    addItem(productId, 1);
+  }
+  function handleDecrement(e: React.MouseEvent) {
+    stop(e);
+    updateQuantity(productId, cartQty - 1);
+  }
+  function handleIncrement(e: React.MouseEvent) {
+    stop(e);
+    if (!atLimit) updateQuantity(productId, cartQty + 1);
+  }
+  function handleModal(e: React.MouseEvent) {
+    stop(e);
+    setModalTab("waitlist");
+    setModal(true);
+  }
 
   // Shared base for both buttons so heights are always identical
-  const btnBase = 'flex-1 h-[36px] min-h-[36px] box-border flex items-center justify-center font-body text-[13px] tracking-[0.15em] uppercase px-3 py-0 transition-colors duration-200'
+  const btnBase =
+    "flex-1 h-[36px] min-h-[36px] box-border flex items-center justify-center font-body text-[13px] tracking-[0.15em] uppercase px-3 py-0 transition-colors duration-200";
 
   return (
-    <div
-      onClick={e => e.stopPropagation()}
-      className="flex gap-2 mt-3"
-    >
-      {inStock ? (
+    <div onClick={(e) => e.stopPropagation()} className="flex gap-2 mt-3">
+      {inStock && Boolean(stockQty && stockQty > 0) ? (
         <>
           {/* ── В корзину / inline counter ── */}
           {cartQty > 0 ? (
@@ -65,9 +81,11 @@ export default function CardActions({
                 onClick={handleIncrement}
                 disabled={atLimit}
                 className={[
-                  'px-3 py-2 font-body text-[12px] transition-colors duration-150',
-                  atLimit ? 'text-stone-200 cursor-not-allowed' : 'text-stone-500 hover:text-stone-900 hover:bg-stone-50',
-                ].join(' ')}
+                  "px-3 py-2 font-body text-[12px] transition-colors duration-150",
+                  atLimit
+                    ? "text-stone-200 cursor-not-allowed"
+                    : "text-stone-500 hover:text-stone-900 hover:bg-stone-50",
+                ].join(" ")}
                 aria-label="Увеличить"
               >
                 +
@@ -85,7 +103,7 @@ export default function CardActions({
           {/* ── Подробнее ── */}
           <Link
             href={`/product/${productSlug}`}
-            onClick={e => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
             className={`${btnBase} border border-stone-300 text-stone-900 hover:border-stone-900`}
           >
             Подробнее
@@ -93,12 +111,24 @@ export default function CardActions({
         </>
       ) : (
         <>
-          <button onClick={handleModal} className={`${btnBase} border border-stone-300 text-stone-500 hover:border-stone-500`}>
+          <button
+            onClick={handleModal}
+            className={`${btnBase} border border-stone-300 text-stone-500 hover:border-stone-500`}
+          >
             Уведомить
           </button>
-          <button onClick={handleModal} className={`${btnBase} border border-stone-300 text-stone-500 hover:border-stone-500`}>
-            Предзаказ
-          </button>
+          {preorderEnabled && leadTimeDays && (
+            <button
+              onClick={(e) => {
+                stop(e);
+                setModalTab("preorder");
+                setModal(true);
+              }}
+              className={`${btnBase} border border-stone-300 text-stone-500 hover:border-stone-500`}
+            >
+              Предзаказ
+            </button>
+          )}
         </>
       )}
 
@@ -108,10 +138,13 @@ export default function CardActions({
             productId={productId}
             productName={productName}
             availableQty={0}
+            initialTab={modalTab}
+            preorderEnabled={preorderEnabled}
+            leadTimeDays={leadTimeDays}
             onClose={() => setModal(false)}
           />
         )}
       </AnimatePresence>
     </div>
-  )
+  );
 }

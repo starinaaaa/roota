@@ -1,49 +1,36 @@
-'use server'
-
-import { createServerClient } from '@/lib/supabase/server'
-
+"use server";
+import { createServerClient } from "@/lib/supabase/server";
+import { uuid, phone } from "@/lib/validation";
+import { z } from "zod";
 export async function addToWaitlist(
   productId: string,
   contact: string,
 ): Promise<{ error?: string }> {
-  if (!contact?.trim()) return { error: 'Укажите email или телефон' }
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return { error: 'База данных не настроена' }
-
+  if (!uuid.safeParse(productId).success || typeof contact !== "string")
+    return { error: "Проверьте данные" };
+  const email = z.string().trim().email().max(254).safeParse(contact),
+    number = phone.safeParse(contact);
+  if (!email.success && !number.success)
+    return { error: "Укажите корректный email или телефон" };
+  const value = email.success ? email.data.toLowerCase() : number.data!;
   try {
-    const supabase = createServerClient()
-    const { error } = await supabase
-      .from('waitlist')
-      .insert({ product_id: productId, contact: contact.trim() })
-    if (error) return { error: error.message }
-    return {}
-  } catch (e) {
-    return { error: e instanceof Error ? e.message : 'Ошибка' }
-  }
-}
-
-export async function createPreorder(data: {
-  productId: string
-  name: string
-  phone: string
-  comment?: string
-}): Promise<{ error?: string }> {
-  if (!data.name?.trim())  return { error: 'Укажите имя' }
-  if (!data.phone?.trim()) return { error: 'Укажите телефон' }
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return { error: 'База данных не настроена' }
-
-  try {
-    const supabase = createServerClient()
-    const { error } = await supabase
-      .from('preorders')
-      .insert({
-        product_id: data.productId,
-        name:       data.name.trim(),
-        phone:      data.phone.trim(),
-        comment:    data.comment?.trim() || null,
-      })
-    if (error) return { error: error.message }
-    return {}
-  } catch (e) {
-    return { error: e instanceof Error ? e.message : 'Ошибка' }
+    const db = createServerClient();
+    const { data } = await db
+      .from("products")
+      .select("id")
+      .eq("id", productId)
+      .eq("publication_status", "published")
+      .maybeSingle();
+    if (!data) return { error: "Изделие недоступно" };
+    const { error } = await db
+      .from("waitlist")
+      .upsert(
+        { product_id: productId, contact: value },
+        { onConflict: "product_id,contact", ignoreDuplicates: true },
+      );
+    if (error) return { error: "Не удалось сохранить заявку" };
+    return {};
+  } catch {
+    return { error: "Не удалось связаться со студией" };
   }
 }

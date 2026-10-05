@@ -1,63 +1,85 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { motion, AnimatePresence } from 'framer-motion'
-import Image from 'next/image'
-import Link from 'next/link'
-import { Loader2 } from 'lucide-react'
-import { formatPrice } from '@/lib/products'
-import { createOrder } from '@/lib/actions/orders'
-import type { CartItem, CheckoutFormData, DeliveryType } from '@/types'
+import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import Image from "next/image";
+import Link from "next/link";
+import { Loader2 } from "lucide-react";
+import { formatPrice } from "@/lib/products";
+import { createOrder } from "@/lib/actions/orders";
+import type { CartItem, CheckoutFormData, DeliveryType } from "@/types";
 
 type Props = {
-  initialItems: CartItem[]
-}
+  initialItems: CartItem[];
+};
 
 export default function CheckoutForm({ initialItems }: Props) {
-  const router = useRouter()
+  const router = useRouter();
+  const requestKey = useRef<string | null>(null);
+  const submitting = useRef(false);
 
-  const [pending, setPending] = useState(false)
-  const [error,   setError]   = useState<string | null>(null)
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<CheckoutFormData>({
-    name: '',
-    phone: '',
-    email: '',
-    deliveryType: 'moscow',
-    address: '',
-    comment: '',
+    name: "",
+    phone: "",
+    email: "",
+    deliveryType: "moscow",
+    address: "",
+    comment: "",
     subscribeToNews: false,
-  })
+  });
 
-  const totalPrice = initialItems.reduce((sum, i) => sum + i.product.price * i.quantity, 0)
+  const totalPrice = initialItems.reduce(
+    (sum, i) => sum + i.product.price * i.quantity,
+    0,
+  );
 
   function handleChange(
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
   ) {
-    const { name, value, type } = e.target
-    const checked = (e.target as HTMLInputElement).checked
-    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }))
-    setError(null)
+    const { name, value, type } = e.target;
+    const checked = (e.target as HTMLInputElement).checked;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+    setError(null);
   }
 
   function setDeliveryType(type: DeliveryType) {
-    setFormData((prev) => ({ ...prev, deliveryType: type }))
+    setFormData((prev) => ({ ...prev, deliveryType: type }));
   }
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setPending(true)
-    setError(null)
+    e.preventDefault();
+    if (submitting.current) return;
+    submitting.current = true;
+    requestKey.current ??= crypto.randomUUID();
+    setPending(true);
+    setError(null);
 
     // createOrder reads cart from Supabase server-side — no items passed
-    const result = await createOrder(formData)
+    let result;
+    try {
+      result = await createOrder(formData, requestKey.current, totalPrice);
+    } catch {
+      result = {
+        success: false as const,
+        error: "Нет соединения. Повторите отправку.",
+      };
+    }
 
     if (result.success) {
-      router.push(`/order-success?id=${result.orderId}`)
+      router.push(`/order-success?id=${result.orderId}`);
     } else {
-      setError(result.error)
-      setPending(false)
+      setError(result.error);
+      setPending(false);
+      submitting.current = false;
     }
   }
 
@@ -68,10 +90,8 @@ export default function CheckoutForm({ initialItems }: Props) {
       </h1>
 
       <div className="lg:grid lg:grid-cols-[1fr_360px] lg:gap-16 xl:gap-24">
-
         {/* ── Форма ──────────────────────────────────────────── */}
-        <form id="checkout-form" onSubmit={handleSubmit} className="space-y-8" noValidate>
-
+        <form id="checkout-form" onSubmit={handleSubmit} className="space-y-8">
           {/* Контактные данные */}
           <fieldset className="space-y-5">
             <legend className="font-body text-[10px] tracking-[0.28em] uppercase text-stone-400 mb-6">
@@ -107,7 +127,7 @@ export default function CheckoutForm({ initialItems }: Props) {
               id="email"
               name="email"
               type="email"
-              value={formData.email ?? ''}
+              value={formData.email ?? ""}
               onChange={handleChange}
               placeholder="example@email.com"
               autoComplete="email"
@@ -125,26 +145,30 @@ export default function CheckoutForm({ initialItems }: Props) {
 
             {/* Тип доставки */}
             <div className="grid grid-cols-2 gap-3">
-              {(['moscow', 'russia'] as const).map(type => (
+              {(["moscow", "russia"] as const).map((type) => (
                 <button
                   key={type}
                   type="button"
                   onClick={() => setDeliveryType(type)}
                   className={[
-                    'py-4 px-5 text-left border transition-all duration-200',
+                    "py-4 px-5 text-left border transition-all duration-200",
                     formData.deliveryType === type
-                      ? 'border-stone-900 bg-stone-900 text-stone-50'
-                      : 'border-stone-200 text-stone-700 hover:border-stone-400',
-                  ].join(' ')}
+                      ? "border-stone-900 bg-stone-900 text-stone-50"
+                      : "border-stone-200 text-stone-700 hover:border-stone-400",
+                  ].join(" ")}
                 >
                   <p className="font-body text-xs tracking-[0.12em] uppercase">
-                    {type === 'moscow' ? 'Москва' : 'По России'}
+                    {type === "moscow" ? "Москва" : "По России"}
                   </p>
-                  <p className={[
-                    'font-body text-[10px] mt-1',
-                    formData.deliveryType === type ? 'text-stone-300' : 'text-stone-400',
-                  ].join(' ')}>
-                    {type === 'moscow' ? 'Курьер / самовывоз' : 'СДЭК / Почта'}
+                  <p
+                    className={[
+                      "font-body text-[10px] mt-1",
+                      formData.deliveryType === type
+                        ? "text-stone-300"
+                        : "text-stone-400",
+                    ].join(" ")}
+                  >
+                    {type === "moscow" ? "Курьер / самовывоз" : "СДЭК / Почта"}
                   </p>
                 </button>
               ))}
@@ -152,7 +176,10 @@ export default function CheckoutForm({ initialItems }: Props) {
 
             {/* Адрес */}
             <div className="space-y-2">
-              <label htmlFor="address" className="font-body text-[10px] tracking-[0.18em] uppercase text-stone-500 block">
+              <label
+                htmlFor="address"
+                className="font-body text-[10px] tracking-[0.18em] uppercase text-stone-500 block"
+              >
                 Адрес *
               </label>
               <textarea
@@ -161,9 +188,9 @@ export default function CheckoutForm({ initialItems }: Props) {
                 value={formData.address}
                 onChange={handleChange}
                 placeholder={
-                  formData.deliveryType === 'moscow'
-                    ? 'Улица, дом, квартира'
-                    : 'Индекс, город, улица, дом, квартира'
+                  formData.deliveryType === "moscow"
+                    ? "Улица, дом, квартира"
+                    : "Индекс, город, улица, дом, квартира"
                 }
                 rows={3}
                 required
@@ -180,13 +207,16 @@ export default function CheckoutForm({ initialItems }: Props) {
 
             {/* Комментарий */}
             <div className="space-y-2">
-              <label htmlFor="comment" className="font-body text-[10px] tracking-[0.18em] uppercase text-stone-500 block">
+              <label
+                htmlFor="comment"
+                className="font-body text-[10px] tracking-[0.18em] uppercase text-stone-500 block"
+              >
                 Комментарий
               </label>
               <textarea
                 id="comment"
                 name="comment"
-                value={formData.comment ?? ''}
+                value={formData.comment ?? ""}
                 onChange={handleChange}
                 placeholder="Пожелания к заказу, удобное время доставки"
                 rows={3}
@@ -239,16 +269,21 @@ export default function CheckoutForm({ initialItems }: Props) {
         {/* ── Summary ────────────────────────────────────────── */}
         <div className="mt-12 lg:mt-0">
           <div className="lg:sticky lg:top-28 space-y-6">
-
             <h2 className="font-body text-[10px] tracking-[0.28em] uppercase text-stone-400">
               Ваш заказ
             </h2>
 
             {/* Товары */}
             <div className="space-y-0">
-              {initialItems.map(item => (
-                <div key={item.product.id} className="flex gap-4 py-4 border-b border-stone-100 last:border-b-0">
-                  <div className="relative w-14 bg-stone-100 shrink-0 overflow-hidden" style={{ height: '72px' }}>
+              {initialItems.map((item) => (
+                <div
+                  key={item.product.id}
+                  className="flex gap-4 py-4 border-b border-stone-100 last:border-b-0"
+                >
+                  <div
+                    className="relative w-14 bg-stone-100 shrink-0 overflow-hidden"
+                    style={{ height: "72px" }}
+                  >
                     {item.product.images[0] && (
                       <Image
                         src={item.product.images[0]}
@@ -260,8 +295,18 @@ export default function CheckoutForm({ initialItems }: Props) {
                     )}
                   </div>
                   <div className="flex flex-col justify-center flex-1 min-w-0">
-                    <p className="font-body text-xs text-stone-700 truncate">{item.product.name}</p>
-                    <p className="font-body text-xs text-stone-400 mt-0.5">× {item.quantity}</p>
+                    <p className="font-body text-xs text-stone-700 truncate">
+                      {item.product.name}
+                    </p>
+                    <p className="font-body text-xs text-stone-400 mt-0.5">
+                      × {item.quantity}
+                    </p>
+                    {item.purchase_mode === "preorder" && (
+                      <p className="text-xs text-stone-600">
+                        Предзаказ · изготовление {item.product.lead_time_days}{" "}
+                        дней
+                      </p>
+                    )}
                   </div>
                   <p className="font-body text-sm text-stone-800 shrink-0 self-center">
                     {formatPrice(item.product.price * item.quantity)}
@@ -274,23 +319,35 @@ export default function CheckoutForm({ initialItems }: Props) {
             <div className="space-y-3">
               <div className="flex justify-between">
                 <span className="font-body text-sm text-stone-500">Товары</span>
-                <span className="font-body text-sm text-stone-700">{formatPrice(totalPrice)}</span>
+                <span className="font-body text-sm text-stone-700">
+                  {formatPrice(totalPrice)}
+                </span>
               </div>
               <div className="flex justify-between">
-                <span className="font-body text-sm text-stone-500">Доставка</span>
-                <span className="font-body text-xs text-stone-400">уточняется</span>
+                <span className="font-body text-sm text-stone-500">
+                  Доставка
+                </span>
+                <span className="font-body text-xs text-stone-400">
+                  уточняется
+                </span>
               </div>
               <div className="divider pt-1" />
               <div className="flex justify-between items-baseline">
-                <span className="font-body text-xs tracking-[0.15em] uppercase text-stone-500">Итого</span>
-                <span className="font-display text-2xl text-stone-900">{formatPrice(totalPrice)}</span>
+                <span className="font-body text-xs tracking-[0.15em] uppercase text-stone-500">
+                  Итого
+                </span>
+                <span className="font-display text-2xl text-stone-900">
+                  {formatPrice(totalPrice)}
+                </span>
               </div>
             </div>
 
             {/* Submit button на десктопе */}
             <div className="hidden lg:block pt-2">
               {error && (
-                <p className="font-body text-sm text-red-600 mt-2 mb-3">{error}</p>
+                <p className="font-body text-sm text-red-600 mt-2 mb-3">
+                  {error}
+                </p>
               )}
               <button
                 type="submit"
@@ -306,56 +363,79 @@ export default function CheckoutForm({ initialItems }: Props) {
                 "
               >
                 {pending ? (
-                  <><Loader2 size={14} strokeWidth={1.5} className="animate-spin" /> Отправляю...</>
+                  <>
+                    <Loader2
+                      size={14}
+                      strokeWidth={1.5}
+                      className="animate-spin"
+                    />{" "}
+                    Отправляю...
+                  </>
                 ) : (
-                  'Оформить заказ'
+                  "Оформить заказ"
                 )}
               </button>
             </div>
 
             <p className="font-body text-[10px] text-stone-400 leading-relaxed">
-              Нажимая «Оформить заказ», вы принимаете условия{' '}
-              <Link href="/offer" className="underline underline-offset-2 hover:text-stone-600 transition-colors duration-200">
+              Нажимая «Оформить заказ», вы принимаете условия{" "}
+              <Link
+                href="/offer"
+                className="underline underline-offset-2 hover:text-stone-600 transition-colors duration-200"
+              >
                 публичной оферты
-              </Link>{' '}
-              и соглашаетесь с{' '}
-              <Link href="/privacy" className="underline underline-offset-2 hover:text-stone-600 transition-colors duration-200">
+              </Link>{" "}
+              и соглашаетесь с{" "}
+              <Link
+                href="/privacy"
+                className="underline underline-offset-2 hover:text-stone-600 transition-colors duration-200"
+              >
                 политикой конфиденциальности
-              </Link>.{' '}
-              Стоимость доставки уточняется менеджером.
+              </Link>
+              . Стоимость доставки уточняется менеджером.
             </p>
 
             <Link
-              href="/cart"
+              href="/catalog"
               className="block font-body text-[10px] tracking-[0.18em] uppercase text-stone-400 hover:text-stone-700 transition-colors duration-200"
             >
-              ← Вернуться в корзину
+              ← Вернуться в каталог
             </Link>
           </div>
         </div>
-
       </div>
     </div>
-  )
+  );
 }
 
 /* ── Field component ────────────────────────────────────────── */
 function Field({
-  label, id, name, type, value, onChange, placeholder, autoComplete, required,
+  label,
+  id,
+  name,
+  type,
+  value,
+  onChange,
+  placeholder,
+  autoComplete,
+  required,
 }: {
-  label: string
-  id: string
-  name: string
-  type: string
-  value: string
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
-  placeholder?: string
-  autoComplete?: string
-  required?: boolean
+  label: string;
+  id: string;
+  name: string;
+  type: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  placeholder?: string;
+  autoComplete?: string;
+  required?: boolean;
 }) {
   return (
     <div className="space-y-2">
-      <label htmlFor={id} className="font-body text-[10px] tracking-[0.18em] uppercase text-stone-500 block">
+      <label
+        htmlFor={id}
+        className="font-body text-[10px] tracking-[0.18em] uppercase text-stone-500 block"
+      >
         {label}
       </label>
       <input
@@ -377,7 +457,7 @@ function Field({
         "
       />
     </div>
-  )
+  );
 }
 
 /* ── Submit button (мобильный) ──────────────────────────────── */
@@ -396,10 +476,13 @@ function SubmitButton({ pending }: { pending: boolean }) {
       "
     >
       {pending ? (
-        <><Loader2 size={14} strokeWidth={1.5} className="animate-spin" /> Отправляю...</>
+        <>
+          <Loader2 size={14} strokeWidth={1.5} className="animate-spin" />{" "}
+          Отправляю...
+        </>
       ) : (
-        'Оформить заказ'
+        "Оформить заказ"
       )}
     </button>
-  )
+  );
 }

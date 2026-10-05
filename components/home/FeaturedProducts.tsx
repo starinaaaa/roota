@@ -1,35 +1,42 @@
-'use client'
+"use client";
 
-import { useRef, useState } from 'react'
-import Link from 'next/link'
-import Image from 'next/image'
-import { motion, useInView } from 'framer-motion'
-import { ArrowRight } from 'lucide-react'
-import { formatPrice } from '@/lib/products'
-import CardActions from '@/components/product/CardActions'
-import type { Product } from '@/types'
+import { useRef, useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { motion, useInView } from "framer-motion";
+import { ArrowRight } from "lucide-react";
+import { formatPrice } from "@/lib/products";
+import CardActions from "@/components/product/CardActions";
+import type { Product } from "@/types";
 
 interface FeaturedProductsProps {
-  products: Pick<Product, 'id' | 'name' | 'slug' | 'price' | 'primary_image_url' | 'in_stock' | 'stock_qty'>[]
+  products: Pick<
+    Product,
+    | "id"
+    | "name"
+    | "slug"
+    | "price"
+    | "primary_image_url"
+    | "in_stock"
+    | "stock_qty"
+    | "preorder_enabled"
+    | "lead_time_days"
+  >[];
 }
 
 export default function FeaturedProducts({ products }: FeaturedProductsProps) {
-  const sectionRef = useRef<HTMLElement>(null)
-  const inView = useInView(sectionRef, { once: true, margin: '-60px' })
+  const sectionRef = useRef<HTMLElement>(null);
+  const inView = useInView(sectionRef, { once: true, margin: "-60px" });
 
   return (
-    <section
-      ref={sectionRef}
-      className="pb-28 md:pb-36 px-6 md:px-12 lg:px-16"
-    >
+    <section ref={sectionRef} className="pb-28 md:pb-36 px-6 md:px-12 lg:px-16">
       <div className="max-w-[1440px] mx-auto">
-
         {/* Шапка секции */}
         <div className="flex items-end justify-between mb-10 md:mb-14">
           <motion.h2
             initial={{ opacity: 0, y: 16 }}
             animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.7, ease: 'easeOut' }}
+            transition={{ duration: 0.7, ease: "easeOut" }}
             className="font-display font-normal text-[clamp(1.8rem,3.6vw,3.15rem)] text-stone-900"
           >
             Избранное
@@ -47,7 +54,7 @@ export default function FeaturedProducts({ products }: FeaturedProductsProps) {
               Весь каталог
               <motion.span
                 whileHover={{ x: 3 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+                transition={{ type: "spring", stiffness: 400, damping: 20 }}
               >
                 <ArrowRight size={13} strokeWidth={1.5} />
               </motion.span>
@@ -87,10 +94,9 @@ export default function FeaturedProducts({ products }: FeaturedProductsProps) {
             Весь каталог
           </Link>
         </motion.div>
-
       </div>
     </section>
-  )
+  );
 }
 
 /* ── Карточка товара ── */
@@ -99,13 +105,24 @@ function ProductCardFeatured({
   index,
   inView,
 }: {
-  product: Pick<Product, 'id' | 'name' | 'slug' | 'price' | 'primary_image_url' | 'in_stock' | 'stock_qty'>
-  index: number
-  inView: boolean
+  product: Pick<
+    Product,
+    | "id"
+    | "name"
+    | "slug"
+    | "price"
+    | "primary_image_url"
+    | "in_stock"
+    | "stock_qty"
+    | "preorder_enabled"
+    | "lead_time_days"
+  >;
+  index: number;
+  inView: boolean;
 }) {
-  const [imageFailed, setImageFailed] = useState(false)
-  const imgSrc = product.primary_image_url ?? null
-  const hasImage = Boolean(imgSrc) && !imageFailed
+  const [imageFailed, setImageFailed] = useState(false);
+  const imgSrc = product.primary_image_url ?? null;
+  const hasImage = Boolean(imgSrc) && !imageFailed;
 
   return (
     <motion.div
@@ -119,7 +136,6 @@ function ProductCardFeatured({
     >
       {/* Link wraps only image + info — CardActions sits outside to avoid nested <a> */}
       <Link href={`/product/${product.slug}`} className="group block">
-
         {/* Изображение */}
         <div className="relative aspect-square overflow-hidden rounded-lg bg-stone-100 mb-4">
           {hasImage ? (
@@ -146,21 +162,26 @@ function ProductCardFeatured({
                 Скоро в наличии
               </span>
             </div>
-          ) : product.stock_qty != null && product.stock_qty > 0 && product.stock_qty <= 3 ? (
+          ) : product.stock_qty != null &&
+            product.stock_qty > 0 &&
+            product.stock_qty <= 3 ? (
             <div className="absolute top-4 left-4">
               <span className="font-body text-[9px] tracking-[0.18em] uppercase bg-stone-50/90 text-stone-400 px-2.5 py-1.5">
-                {product.stock_qty === 1 ? 'Осталась 1 шт.' : `Осталось ${product.stock_qty} шт.`}
+                {product.stock_qty === 1
+                  ? "Осталась 1 шт."
+                  : `Осталось ${product.stock_qty} шт.`}
               </span>
             </div>
           ) : null}
 
           {/* Оверлей при hover */}
-          <div className="
+          <div
+            className="
             absolute inset-0 bg-stone-900/0
             group-hover:bg-stone-900/8
             transition-colors duration-500
-          " />
-
+          "
+          />
         </div>
 
         {/* Инфо */}
@@ -172,7 +193,6 @@ function ProductCardFeatured({
             {formatPrice(product.price)}
           </p>
         </div>
-
       </Link>
 
       {/* Кнопки действий — вне Link, чтобы не было вложенных <a> */}
@@ -182,7 +202,9 @@ function ProductCardFeatured({
         productName={product.name}
         inStock={product.in_stock}
         stockQty={product.stock_qty ?? null}
+        preorderEnabled={product.preorder_enabled}
+        leadTimeDays={product.lead_time_days}
       />
     </motion.div>
-  )
+  );
 }

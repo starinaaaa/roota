@@ -1,23 +1,22 @@
-'use client'
+"use client";
 
-import Link from 'next/link'
-import Image from 'next/image'
-import { motion } from 'framer-motion'
-import { formatPrice } from '@/lib/products'
-import CardActions from './CardActions'
-import type { Product } from '@/types'
+import Link from "next/link";
+import Image from "next/image";
+import { motion } from "framer-motion";
+import { formatPrice } from "@/lib/products";
+import CardActions from "./CardActions";
+import type { Product } from "@/types";
 
 type Props = {
-  products: Product[]
-}
+  products: Product[];
+};
 
 export default function RelatedProducts({ products }: Props) {
-  if (products.length === 0) return null
+  if (products.length === 0) return null;
 
   return (
     <section className="px-6 md:px-12 lg:px-16 pb-20 md:pb-28">
       <div className="max-w-[1440px] mx-auto">
-
         <div className="divider mb-14" />
 
         <div className="flex items-baseline justify-between mb-10 md:mb-14">
@@ -38,8 +37,12 @@ export default function RelatedProducts({ products }: Props) {
               key={p.id}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-40px' }}
-              transition={{ duration: 0.55, delay: i * 0.07, ease: [0.16, 1, 0.3, 1] }}
+              viewport={{ once: true, margin: "-40px" }}
+              transition={{
+                duration: 0.55,
+                delay: i * 0.07,
+                ease: [0.16, 1, 0.3, 1],
+              }}
             >
               {/* Link wraps only image + info — CardActions sits outside to avoid nested <a> */}
               <Link href={`/product/${p.slug}`} className="group block">
@@ -61,18 +64,26 @@ export default function RelatedProducts({ products }: Props) {
                         Скоро в наличии
                       </span>
                     </div>
-                  ) : p.stock_qty != null && p.stock_qty > 0 && p.stock_qty <= 3 ? (
+                  ) : p.stock_qty != null &&
+                    p.stock_qty > 0 &&
+                    p.stock_qty <= 3 ? (
                     <div className="absolute top-4 left-4">
                       <span className="font-body text-[9px] tracking-[0.18em] uppercase bg-stone-50/90 text-stone-400 px-2.5 py-1.5">
-                        {p.stock_qty === 1 ? 'Осталась 1 шт.' : `Осталось ${p.stock_qty} шт.`}
+                        {p.stock_qty === 1
+                          ? "Осталась 1 шт."
+                          : `Осталось ${p.stock_qty} шт.`}
                       </span>
                     </div>
                   ) : null}
 
                   <div className="absolute inset-0 bg-stone-900/0 group-hover:bg-stone-900/6 transition-colors duration-500" />
                 </div>
-                <p className="font-body text-xs text-stone-700 mb-0.5">{p.name}</p>
-                <p className="font-display text-lg text-stone-900">{formatPrice(p.price)}</p>
+                <p className="font-body text-xs text-stone-700 mb-0.5">
+                  {p.name}
+                </p>
+                <p className="font-display text-lg text-stone-900">
+                  {formatPrice(p.price)}
+                </p>
               </Link>
 
               {/* Кнопки действий — вне Link, чтобы не было вложенных <a> */}
@@ -82,12 +93,13 @@ export default function RelatedProducts({ products }: Props) {
                 productName={p.name}
                 inStock={p.in_stock}
                 stockQty={p.stock_qty ?? null}
+                preorderEnabled={p.preorder_enabled}
+                leadTimeDays={p.lead_time_days}
               />
             </motion.div>
           ))}
         </div>
-
       </div>
     </section>
-  )
+  );
 }

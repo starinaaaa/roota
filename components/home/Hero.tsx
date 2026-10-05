@@ -1,18 +1,25 @@
-'use client'
+"use client";
 
-import Link from 'next/link'
-import Image from 'next/image'
-import { motion } from 'framer-motion'
-import { ArrowRight } from 'lucide-react'
+import Link from "next/link";
+import Image from "next/image";
+import { motion } from "framer-motion";
+import { ArrowRight } from "lucide-react";
 
-export default function Hero() {
+export default function Hero({
+  title = "Каждое изделие —\nотдельная история",
+  intro = "Ручная керамика для дома — спокойные формы, живые поверхности и вещи, которые хочется держать рядом каждый день.",
+  image = "/images/hero-bg.jpg",
+}: {
+  title?: string;
+  intro?: string;
+  image?: string;
+}) {
   return (
     <section className="relative w-full min-h-svh overflow-hidden bg-stone-900">
-
       {/* Background image — bg-stone-900 above acts as dark fallback */}
       <div className="absolute inset-0">
         <Image
-          src="/images/hero-bg.jpg"
+          src={image}
           alt="Авторская керамика"
           fill
           priority
@@ -28,7 +35,6 @@ export default function Hero() {
       <div className="relative z-10 flex min-h-svh items-center pt-24 md:pt-28 px-6 pb-16 md:px-12 md:pb-20 lg:px-16 lg:pb-24">
         <div className="mx-auto w-full max-w-[1440px]">
           <div className="max-w-2xl">
-
             <motion.p
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
@@ -42,11 +48,9 @@ export default function Hero() {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.1 }}
-              className="mb-6 font-display font-normal text-[clamp(1.8rem,3.6vw,3.15rem)] leading-[0.95] text-white"
+              className="mb-6 font-display font-normal text-[clamp(1.8rem,3.6vw,3.15rem)] leading-[0.95] text-white whitespace-pre-line break-words"
             >
-              Каждое изделие —
-              <br />
-              отдельная история
+              {title}
             </motion.h1>
 
             <motion.p
@@ -55,8 +59,7 @@ export default function Hero() {
               transition={{ duration: 0.7, delay: 0.2 }}
               className="mb-8 max-w-xl font-body text-sm leading-relaxed text-white/90 md:text-[15px]"
             >
-              Ручная керамика для дома — спокойные формы, живые поверхности и вещи,
-              которые хочется держать рядом каждый день.
+              {intro}
             </motion.p>
 
             <motion.div
@@ -72,10 +75,9 @@ export default function Hero() {
                 <ArrowRight size={14} strokeWidth={1.5} />
               </Link>
             </motion.div>
-
           </div>
         </div>
       </div>
     </section>
-  )
+  );
 }

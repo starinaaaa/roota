@@ -1,40 +1,40 @@
-import { Suspense } from 'react'
-import type { Metadata } from 'next'
-import { getFilterCategories, getProductsByCategory } from '@/lib/products'
-import ProductGrid from '@/components/product/ProductGrid'
-import CategoryFilter from '@/components/catalog/CategoryFilter'
+import { Suspense } from "react";
+import type { Metadata } from "next";
+import { getFilterCategories, getProductsByCategory } from "@/lib/products";
+import ProductGrid from "@/components/product/ProductGrid";
+import CategoryFilter from "@/components/catalog/CategoryFilter";
 
-export const dynamic = 'force-dynamic'
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: 'Каталог',
+  alternates: { canonical: "/catalog" },
+  title: "Каталог",
   description:
-    'Авторская керамика ручной работы. Тарелки, стаканы, вазы и декор — каждое изделие создано в единственном экземпляре.',
-}
+    "Авторская керамика ручной работы. Тарелки, стаканы, вазы и декор — каждое изделие создано в единственном экземпляре.",
+};
 
 type Props = {
-  searchParams: Promise<{ category?: string }>
-}
+  searchParams: Promise<{ category?: string }>;
+};
 
 export default async function CatalogPage({ searchParams }: Props) {
-  const params = await searchParams
-  const activeSlug = params.category || 'all'
+  const params = await searchParams;
+  const activeSlug = params.category || "all";
 
   const [filtered, categories] = await Promise.all([
     getProductsByCategory(activeSlug),
     getFilterCategories(),
-  ])
+  ]);
 
   const countLabel = (() => {
-    const n = filtered.length
-    if (n === 1) return '1 изделие'
-    if (n >= 2 && n <= 4) return `${n} изделия`
-    return `${n} изделий`
-  })()
+    const n = filtered.length;
+    if (n === 1) return "1 изделие";
+    if (n >= 2 && n <= 4) return `${n} изделия`;
+    return `${n} изделий`;
+  })();
 
   return (
     <div className="pt-16 md:pt-20">
-
       {/* Заголовок страницы */}
       <section className="px-6 md:px-12 lg:px-16 py-16 md:py-24 border-b border-stone-200">
         <div className="max-w-[1440px] mx-auto">
@@ -65,7 +65,6 @@ export default async function CatalogPage({ searchParams }: Props) {
           <ProductGrid products={filtered} />
         </div>
       </section>
-
     </div>
-  )
+  );
 }

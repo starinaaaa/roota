@@ -1,12 +1,18 @@
-'use client'
+"use client";
 
-import { useRef } from 'react'
-import Link from 'next/link'
-import { motion, useInView } from 'framer-motion'
+import { useRef } from "react";
+import Link from "next/link";
+import { motion, useInView } from "framer-motion";
 
-export default function BrandStatement() {
-  const ref = useRef<HTMLElement>(null)
-  const inView = useInView(ref, { once: true, margin: '-80px' })
+export default function BrandStatement({
+  statement = "Мы делаем керамику,\nкоторую хочется\nтрогать руками.",
+  summary = "Каждое изделие проходит через руки мастера от начала до конца. Никакого потока. Только внимание к форме, фактуре и смыслу.",
+}: {
+  statement?: string;
+  summary?: string;
+}) {
+  const ref = useRef<HTMLElement>(null);
+  const inView = useInView(ref, { once: true, margin: "-80px" });
 
   return (
     <section
@@ -15,10 +21,8 @@ export default function BrandStatement() {
     >
       <div className="max-w-[1440px] mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-6 items-end">
-
           {/* Большой текст слева */}
           <div className="md:col-span-8 lg:col-span-7">
-
             {/* Маленький лейбл */}
             <motion.p
               initial={{ opacity: 0 }}
@@ -31,14 +35,10 @@ export default function BrandStatement() {
 
             {/* Цитата */}
             <div className="overflow-hidden">
-              {[
-                'Мы делаем керамику,',
-                'которую хочется',
-                'трогать руками.',
-              ].map((line, i) => (
+              {statement.split("\n").map((line, i) => (
                 <div key={i} className="overflow-hidden">
                   <motion.p
-                    initial={{ y: '100%' }}
+                    initial={{ y: "100%" }}
                     animate={inView ? { y: 0 } : {}}
                     transition={{
                       duration: 0.75,
@@ -62,8 +62,7 @@ export default function BrandStatement() {
             className="md:col-span-4 lg:col-span-5 md:pb-2"
           >
             <p className="font-body text-sm text-stone-500 leading-loose mb-8 max-w-xs">
-              Каждое изделие проходит через руки мастера от начала до конца.
-              Никакого потока. Только внимание к форме, фактуре и смыслу.
+              {summary}
             </p>
 
             <Link
@@ -75,19 +74,17 @@ export default function BrandStatement() {
               </span>
             </Link>
           </motion.div>
-
         </div>
 
         {/* Горизонтальная линия */}
         <motion.div
           initial={{ scaleX: 0 }}
           animate={inView ? { scaleX: 1 } : {}}
-          transition={{ duration: 1, delay: 0.6, ease: 'easeInOut' }}
+          transition={{ duration: 1, delay: 0.6, ease: "easeInOut" }}
           style={{ originX: 0 }}
           className="mt-16 md:mt-20 h-px bg-stone-200"
         />
-
       </div>
     </section>
-  )
+  );
 }

@@ -1,41 +1,45 @@
-import type { Metadata } from 'next'
-import { Unbounded } from 'next/font/google'
-import Header from '@/components/layout/Header'
+import type { Metadata } from "next";
+import { Unbounded } from "next/font/google";
+import Header from "@/components/layout/Header";
 
 const unbounded = Unbounded({
-  subsets: ['latin', 'cyrillic'],
-  weight: ['300', '400', '500'],
-  variable: '--font-display',
-  display: 'swap',
-})
-import Footer from '@/components/layout/Footer'
-import CartDrawer from '@/components/cart/CartDrawer'
-import CookieBanner from '@/components/layout/CookieBanner'
-import { CartUIProvider } from '@/contexts/CartUIContext'
-import { getCart } from '@/lib/actions/cart'
-import './globals.css'
+  subsets: ["latin", "cyrillic"],
+  weight: ["300", "400", "500"],
+  variable: "--font-display",
+  display: "swap",
+});
+import Footer from "@/components/layout/Footer";
+import CartDrawer from "@/components/cart/CartDrawer";
+import CookieBanner from "@/components/layout/CookieBanner";
+import { CartUIProvider } from "@/contexts/CartUIContext";
+import { getCart } from "@/lib/actions/cart";
+import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || "https://roota-liart.vercel.app",
+  ),
   title: {
-    default: 'Студия авторской керамики',
-    template: '%s | Студия авторской керамики',
+    default: "Студия авторской керамики",
+    template: "%s | Студия авторской керамики",
   },
   description:
-    'Авторская керамика ручной работы. Тарелки, стаканы, вазы и декор — каждое изделие создано с заботой о деталях.',
+    "Авторская керамика ручной работы. Тарелки, стаканы, вазы и декор — каждое изделие создано с заботой о деталях.",
   openGraph: {
-    type: 'website',
-    locale: 'ru_RU',
-    siteName: 'Студия авторской керамики',
+    type: "website",
+    locale: "ru_RU",
+    siteName: "Roota ceramics",
+    images: ["/images/hero-bg.jpg"],
   },
-}
+};
 
 export default async function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
-  const { items } = await getCart()
-  const cartCount = items.reduce((sum, i) => sum + i.quantity, 0)
+  const { items } = await getCart();
+  const cartCount = items.reduce((sum, i) => sum + i.quantity, 0);
 
   return (
     <html lang="ru" className={unbounded.variable}>
@@ -49,5 +53,5 @@ export default async function RootLayout({
         </CartUIProvider>
       </body>
     </html>
-  )
+  );
 }

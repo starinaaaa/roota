@@ -1,48 +1,24 @@
-import type { Metadata } from 'next'
+import type { Metadata } from "next";
+import { getSiteContent } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: 'Доставка и оплата',
+  alternates: { canonical: "/delivery" },
+  title: "Доставка и оплата",
   description:
-    'Условия доставки, оплаты, упаковки и ухода за керамикой Roota ceramics.',
-}
-
-const DELIVERY_ITEMS = [
-  {
-    title: 'Курьером по Москве',
-    text: 'Доставка в течение 1–2 дней. Стоимость — от 400 ₽. Бесплатно при заказе от 5 000 ₽.',
-  },
-  {
-    title: 'СДЭК / Почта России',
-    text: 'Отправляем по всей России. Срок — 3–7 рабочих дней в зависимости от региона. Стоимость рассчитывается при оформлении заказа.',
-  },
-  {
-    title: 'Самовывоз',
-    text: 'Забрать заказ можно из нашей мастерской в Москве. Адрес и время — по договорённости после оформления.',
-  },
-]
-
-const PAYMENT_ITEMS = [
-  {
-    title: 'Онлайн-оплата',
-    text: 'Банковская карта через защищённую форму. Принимаем Visa, Mastercard, МИР.',
-  },
-  {
-    title: 'Перевод на карту',
-    text: 'После подтверждения заказа мы пришлём реквизиты для оплаты.',
-  },
-]
+    "Условия доставки, оплаты, упаковки и ухода за керамикой Roota ceramics.",
+};
 
 const CARE_ITEMS = [
-  'Подходит для посудомоечной машины на щадящем режиме.',
-  'Совместимо с микроволновой печью — без металлического декора.',
-  'Не рекомендуется резкий перепад температур: не ставьте горячую посуду в холодную воду.',
-  'Матовые глазури со временем приобретают патину — это нормально и красиво.',
-]
+  "Проверьте допустимость посудомоечной машины в карточке изделия.",
+  "Допустимость микроволновой печи указана в карточке конкретного изделия.",
+  "Не рекомендуется резкий перепад температур: не ставьте горячую посуду в холодную воду.",
+  "Матовые глазури со временем приобретают патину — это нормально и красиво.",
+];
 
-export default function DeliveryPage() {
+export default async function DeliveryPage() {
+  const site = await getSiteContent();
   return (
     <div className="pt-16 md:pt-20">
-
       {/* ── Заголовок ── */}
       <section className="py-20 md:py-28 px-6 md:px-12 lg:px-16">
         <div className="max-w-[1440px] mx-auto">
@@ -50,7 +26,8 @@ export default function DeliveryPage() {
             Информация
           </p>
           <h1 className="font-display text-[clamp(3rem,7vw,6.5rem)] leading-[1.05] text-stone-900 max-w-2xl">
-            Доставка<br />и оплата
+            Доставка
+            <br />и оплата
           </h1>
         </div>
       </section>
@@ -65,12 +42,14 @@ export default function DeliveryPage() {
           </div>
           <div className="md:col-span-8 lg:col-span-9">
             <div className="divide-y divide-stone-200">
-              {DELIVERY_ITEMS.map((item) => (
+              {site.delivery.map((item) => (
                 <div
                   key={item.title}
                   className="py-8 first:pt-0 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-8"
                 >
-                  <p className="font-body text-sm text-stone-900">{item.title}</p>
+                  <p className="font-body text-sm text-stone-900">
+                    {item.title}
+                  </p>
                   <p className="sm:col-span-2 font-body text-sm text-stone-500 leading-relaxed">
                     {item.text}
                   </p>
@@ -91,12 +70,14 @@ export default function DeliveryPage() {
           </div>
           <div className="md:col-span-8 lg:col-span-9">
             <div className="divide-y divide-stone-200">
-              {PAYMENT_ITEMS.map((item) => (
+              {site.payment.map((item) => (
                 <div
                   key={item.title}
                   className="py-8 first:pt-0 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-8"
                 >
-                  <p className="font-body text-sm text-stone-900">{item.title}</p>
+                  <p className="font-body text-sm text-stone-900">
+                    {item.title}
+                  </p>
                   <p className="sm:col-span-2 font-body text-sm text-stone-500 leading-relaxed">
                     {item.text}
                   </p>
@@ -118,10 +99,9 @@ export default function DeliveryPage() {
           <div className="md:col-span-8 lg:col-span-9 max-w-xl">
             <p className="font-body text-sm text-stone-500 leading-loose">
               Каждое изделие упаковывается вручную: крафтовая бумага,
-              наполнитель, фирменная коробка. Хрупкие предметы
-              дополнительно защищены пузырчатой плёнкой. Упаковка
-              подходит для подарка — попросите добавить открытку при
-              оформлении заказа.
+              наполнитель, фирменная коробка. Хрупкие предметы дополнительно
+              защищены пузырчатой плёнкой. Упаковка подходит для подарка —
+              попросите добавить открытку при оформлении заказа.
             </p>
           </div>
         </div>
@@ -149,7 +129,6 @@ export default function DeliveryPage() {
           </div>
         </div>
       </section>
-
     </div>
-  )
+  );
 }

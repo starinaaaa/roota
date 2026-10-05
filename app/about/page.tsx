@@ -1,16 +1,18 @@
-import type { Metadata } from 'next'
-import Link from 'next/link'
+import type { Metadata } from "next";
+import { getSiteContent } from "@/lib/site";
+import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: 'О студии',
+  alternates: { canonical: "/about" },
+  title: "О студии",
   description:
-    'Roota ceramics — авторская керамика ручной работы из Москвы. О студии, философии и процессе создания.',
-}
+    "Roota ceramics — авторская керамика ручной работы из Москвы. О студии, философии и процессе создания.",
+};
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const site = await getSiteContent();
   return (
     <div className="pt-16 md:pt-20">
-
       {/* ── Заголовок ── */}
       <section className="py-20 md:py-28 px-6 md:px-12 lg:px-16">
         <div className="max-w-[1440px] mx-auto">
@@ -18,7 +20,7 @@ export default function AboutPage() {
             О студии
           </p>
           <h1 className="font-display text-[clamp(3rem,7vw,6.5rem)] leading-[1.05] text-stone-900 max-w-3xl">
-            Керамика, которая<br />живёт рядом с вами
+            {site.studioTitle}
           </h1>
         </div>
       </section>
@@ -32,15 +34,8 @@ export default function AboutPage() {
             </p>
           </div>
           <div className="md:col-span-8 lg:col-span-9 space-y-6 max-w-2xl">
-            <p className="font-body text-sm text-stone-500 leading-loose">
-              Roota ceramics — мастерская авторской керамики в Москве.
-              Мы не производим серии. Каждое изделие создаётся вручную:
-              от первого касания глины до финальной обжиговой печи.
-            </p>
-            <p className="font-body text-sm text-stone-500 leading-loose">
-              За студией стоит небольшая команда — люди, для которых
-              керамика это не просто ремесло, а способ замедлиться
-              и сделать что-то настоящее.
+            <p className="font-body text-sm text-stone-500 leading-loose whitespace-pre-wrap break-words">
+              {site.studioIntro}
             </p>
           </div>
         </div>
@@ -54,20 +49,14 @@ export default function AboutPage() {
               Процесс
             </p>
             <h2 className="font-display text-[clamp(1.8rem,3vw,3rem)] leading-tight text-stone-900">
-              От рук<br />до стола
+              От рук
+              <br />
+              до стола
             </h2>
           </div>
           <div className="md:col-span-8 lg:col-span-9 space-y-6 max-w-2xl md:pt-14">
-            <p className="font-body text-sm text-stone-500 leading-loose">
-              Мы работаем на гончарном круге и вручную. Никаких пресс-форм,
-              никакой автоматизации. Каждое изделие проходит этапы
-              формовки, сушки, первого обжига, глазурования и финального
-              обжига — всё в нашей мастерской.
-            </p>
-            <p className="font-body text-sm text-stone-500 leading-loose">
-              Именно поэтому две тарелки из одной коллекции никогда не
-              будут идентичными. Небольшие различия в форме и цвете —
-              это не погрешность, а подпись мастера.
+            <p className="font-body text-sm text-stone-500 leading-loose whitespace-pre-wrap break-words">
+              {site.processText}
             </p>
           </div>
         </div>
@@ -81,18 +70,13 @@ export default function AboutPage() {
               Материалы
             </p>
             <h2 className="font-display text-[clamp(1.8rem,3vw,3rem)] leading-tight text-stone-900">
-              Глина<br />и глазурь
+              Глина
+              <br />и глазурь
             </h2>
           </div>
           <div className="md:col-span-8 lg:col-span-9 space-y-6 max-w-2xl md:pt-14">
-            <p className="font-body text-sm text-stone-500 leading-loose">
-              Мы используем каменную массу высокотемпературного обжига —
-              плотную, долговечную, хорошо держащую форму. Глазури
-              готовим сами: от матовых кремовых до глубоких пепельных тонов.
-            </p>
-            <p className="font-body text-sm text-stone-500 leading-loose">
-              Все изделия безопасны для пищевого использования,
-              подходят для посудомоечной машины и микроволновой печи.
+            <p className="font-body text-sm text-stone-500 leading-loose whitespace-pre-wrap break-words">
+              {site.materialsText}
             </p>
           </div>
         </div>
@@ -102,8 +86,7 @@ export default function AboutPage() {
       <section className="border-t border-stone-200 py-28 md:py-36 px-6 md:px-12 lg:px-16">
         <div className="max-w-[1440px] mx-auto">
           <p className="font-display text-[clamp(1.6rem,3.5vw,3rem)] leading-snug text-stone-800 max-w-3xl mx-auto text-center">
-            «Нам важно, чтобы каждый предмет нёс в себе что-то тихое —
-            ощущение, что он был сделан с намерением.»
+            {site.studioQuote}
           </p>
           <p className="font-body text-xs text-stone-400 tracking-[0.2em] uppercase text-center mt-8">
             Roota ceramics · Москва
@@ -125,7 +108,6 @@ export default function AboutPage() {
           </Link>
         </div>
       </section>
-
     </div>
-  )
+  );
 }

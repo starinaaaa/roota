@@ -1,22 +1,22 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import Link from 'next/link'
-import Image from 'next/image'
-import { motion } from 'framer-motion'
-import { formatPrice } from '@/lib/products'
-import CardActions from './CardActions'
-import type { Product } from '@/types'
+import { useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { motion } from "framer-motion";
+import { formatPrice } from "@/lib/products";
+import CardActions from "./CardActions";
+import type { Product } from "@/types";
 
 type Props = {
-  product: Product
-  index?: number
-}
+  product: Product;
+  index?: number;
+};
 
 export default function ProductCard({ product, index = 0 }: Props) {
-  const [imageFailed, setImageFailed] = useState(false)
-  const imgSrc = product.primary_image_url ?? null
-  const hasImage = Boolean(imgSrc) && !imageFailed
+  const [imageFailed, setImageFailed] = useState(false);
+  const imgSrc = product.primary_image_url ?? null;
+  const hasImage = Boolean(imgSrc) && !imageFailed;
 
   return (
     <motion.article
@@ -30,7 +30,10 @@ export default function ProductCard({ product, index = 0 }: Props) {
       className="h-full flex flex-col"
     >
       {/* Link wraps only image + info — CardActions sits outside to avoid nested <a> */}
-      <Link href={`/product/${product.slug}`} className="group flex flex-col flex-1">
+      <Link
+        href={`/product/${product.slug}`}
+        className="group flex flex-col flex-1"
+      >
         {/* Изображение */}
         <div className="relative mb-5 aspect-square overflow-hidden rounded-lg bg-stone-100">
           {hasImage ? (
@@ -60,10 +63,14 @@ export default function ProductCard({ product, index = 0 }: Props) {
                 Скоро в наличии
               </span>
             </div>
-          ) : product.stock_qty != null && product.stock_qty > 0 && product.stock_qty <= 3 ? (
+          ) : product.stock_qty != null &&
+            product.stock_qty > 0 &&
+            product.stock_qty <= 3 ? (
             <div className="absolute top-4 left-4">
               <span className="font-body text-[9px] tracking-[0.18em] uppercase bg-stone-50/90 text-stone-400 px-2.5 py-1.5">
-                {product.stock_qty === 1 ? 'Осталась 1 шт.' : `Осталось ${product.stock_qty} шт.`}
+                {product.stock_qty === 1
+                  ? "Осталась 1 шт."
+                  : `Осталось ${product.stock_qty} шт.`}
               </span>
             </div>
           ) : null}
@@ -74,7 +81,7 @@ export default function ProductCard({ product, index = 0 }: Props) {
           {/* Подсказка «Смотреть» */}
           <motion.div
             className="absolute bottom-0 left-0 right-0 bg-stone-50/92 px-5 py-3 backdrop-blur-sm"
-            initial={{ y: '100%' }}
+            initial={{ y: "100%" }}
             whileHover={{ y: 0 }}
             transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
           >
@@ -87,7 +94,7 @@ export default function ProductCard({ product, index = 0 }: Props) {
         {/* Информация */}
         <div className="space-y-1.5">
           <p className="min-h-[1rem] font-body text-[10px] tracking-[0.18em] uppercase text-stone-400 transition-colors duration-300 group-hover:text-stone-600">
-            {product.category?.name ?? ''}
+            {product.category?.name ?? ""}
           </p>
           <h3 className="font-body font-light text-sm text-stone-800 group-hover:text-stone-900 transition-colors duration-200">
             {product.name}
@@ -105,7 +112,9 @@ export default function ProductCard({ product, index = 0 }: Props) {
         productName={product.name}
         inStock={product.in_stock}
         stockQty={product.stock_qty ?? null}
+        preorderEnabled={product.preorder_enabled}
+        leadTimeDays={product.lead_time_days}
       />
     </motion.article>
-  )
+  );
 }

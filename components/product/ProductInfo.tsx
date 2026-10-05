@@ -1,26 +1,36 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { formatPrice } from '@/lib/products'
-import type { Product } from '@/types'
+import { useState } from "react";
+import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
+import { formatPrice } from "@/lib/products";
+import type { Product } from "@/types";
 
 type Props = {
-  product: Product
-  cartQty: number
-  onIncrement: () => void
-  onDecrement: () => void
-}
+  product: Product;
+  cartQty: number;
+  onIncrement: () => void;
+  onDecrement: () => void;
+  onUnavailable: () => void;
+  onPreorder: () => void;
+};
 
-export default function ProductInfo({ product, cartQty, onIncrement, onDecrement }: Props) {
-  const [careOpen,  setCareOpen]  = useState(false)
-  const [craftOpen, setCraftOpen] = useState(false)
+export default function ProductInfo({
+  product,
+  cartQty,
+  onIncrement,
+  onDecrement,
+  onUnavailable,
+  onPreorder,
+}: Props) {
+  const [careOpen, setCareOpen] = useState(false);
+  const [craftOpen, setCraftOpen] = useState(false);
 
-  const atStockLimit = product.stock_qty != null && cartQty >= product.stock_qty
+  const atStockLimit =
+    product.stock_qty != null && cartQty >= product.stock_qty;
 
   return (
     <div className="flex flex-col gap-8">
-
       {/* Категория + название */}
       <div className="space-y-3">
         {product.category && (
@@ -49,13 +59,18 @@ export default function ProductInfo({ product, cartQty, onIncrement, onDecrement
       {/* CTA */}
       <div className="flex flex-col gap-3 pt-2">
         {/* Мало на складе */}
-        {product.in_stock && product.stock_qty != null && product.stock_qty > 0 && product.stock_qty <= 3 && (
-          <p className="font-body text-sm text-stone-400 -mt-1">
-            {product.stock_qty === 1 ? 'Осталась 1 шт.' : `Осталось ${product.stock_qty} шт.`}
-          </p>
-        )}
+        {product.in_stock &&
+          product.stock_qty != null &&
+          product.stock_qty > 0 &&
+          product.stock_qty <= 3 && (
+            <p className="font-body text-sm text-stone-400 -mt-1">
+              {product.stock_qty === 1
+                ? "Осталась 1 шт."
+                : `Осталось ${product.stock_qty} шт.`}
+            </p>
+          )}
 
-        {product.in_stock ? (
+        {product.in_stock && product.stock_qty > 0 ? (
           <>
             <AnimatePresence mode="wait">
               {cartQty > 0 ? (
@@ -89,11 +104,11 @@ export default function ProductInfo({ product, cartQty, onIncrement, onDecrement
                       onClick={atStockLimit ? undefined : onIncrement}
                       disabled={atStockLimit}
                       className={[
-                        'font-body text-lg leading-none w-5 text-center transition-colors',
+                        "font-body text-lg leading-none w-5 text-center transition-colors",
                         atStockLimit
-                          ? 'text-stone-200 cursor-not-allowed'
-                          : 'text-stone-400 hover:text-stone-900',
-                      ].join(' ')}
+                          ? "text-stone-200 cursor-not-allowed"
+                          : "text-stone-400 hover:text-stone-900",
+                      ].join(" ")}
                       aria-label="Увеличить количество"
                     >
                       +
@@ -122,15 +137,18 @@ export default function ProductInfo({ product, cartQty, onIncrement, onDecrement
               </p>
             )}
 
-            <button className="
+            <Link
+              href="/contacts"
+              className="text-center
               w-full border border-stone-300 text-stone-700
               font-body text-xs tracking-[0.2em] uppercase
               py-4 px-8
               hover:bg-stone-900 hover:text-stone-50 hover:border-stone-900
               transition-all duration-300
-            ">
-              Написать мастеру
-            </button>
+            "
+            >
+              Связаться со студией
+            </Link>
           </>
         ) : (
           <>
@@ -144,15 +162,23 @@ export default function ProductInfo({ product, cartQty, onIncrement, onDecrement
             >
               Скоро в наличии
             </button>
-            <button className="
+            <button
+              onClick={onUnavailable}
+              className="
               w-full border border-stone-300 text-stone-700
               font-body text-xs tracking-[0.2em] uppercase
               py-4 px-8
               hover:bg-stone-900 hover:text-stone-50 hover:border-stone-900
               transition-all duration-300
-            ">
+            "
+            >
               Уведомить о поступлении
             </button>
+            {product.preorder_enabled && product.lead_time_days && (
+              <button className="admin-secondary" onClick={onPreorder}>
+                Предзаказ · изготовление {product.lead_time_days} дней
+              </button>
+            )}
           </>
         )}
       </div>
@@ -164,51 +190,57 @@ export default function ProductInfo({ product, cartQty, onIncrement, onDecrement
       <Accordion
         label="Уход за изделием"
         open={careOpen}
-        onToggle={() => setCareOpen(v => !v)}
+        onToggle={() => setCareOpen((v) => !v)}
       >
-        Рекомендуется ручная мойка тёплой водой. Изделие не предназначено
-        для использования в микроволновой печи. Избегайте резких
-        перепадов температур — это может повредить глазурь.
+        {product.care ||
+          "Избегайте резких перепадов температур. Допустимые способы использования указаны в характеристиках изделия."}
       </Accordion>
 
       {/* Ручная работа */}
       <Accordion
         label="Ручная работа"
         open={craftOpen}
-        onToggle={() => setCraftOpen(v => !v)}
+        onToggle={() => setCraftOpen((v) => !v)}
       >
-        Каждое изделие создаётся вручную — след инструментов и пальцев
-        мастера остаётся в форме. Незначительные отличия в размере и оттенке
-        — часть характера авторской керамики, а не дефект.
+        Каждое изделие создаётся вручную — след инструментов и пальцев мастера
+        остаётся в форме. Незначительные отличия в размере и оттенке — часть
+        характера авторской керамики, а не дефект.
       </Accordion>
-
     </div>
-  )
+  );
 }
 
 /* ── ProductSpecs ───────────────────────────────────────────────────────────── */
 function ProductSpecs({ product }: { product: Product }) {
-  const rows: { label: string; value: string }[] = []
+  const rows: { label: string; value: string }[] = [];
 
-  if (product.material != null && product.material !== '')
-    rows.push({ label: 'Материал', value: product.material })
-  if (product.dimensions != null && product.dimensions !== '')
-    rows.push({ label: 'Размер', value: product.dimensions })
-  if (product.weight != null && product.weight !== '')
-    rows.push({ label: 'Вес', value: product.weight })
+  if (product.material != null && product.material !== "")
+    rows.push({ label: "Материал", value: product.material });
+  if (product.dimensions != null && product.dimensions !== "")
+    rows.push({ label: "Размер", value: product.dimensions });
+  if (product.weight != null && product.weight !== "")
+    rows.push({ label: "Вес", value: product.weight });
   if (product.dishwasher_safe != null)
-    rows.push({ label: 'Посудомоечная машина', value: product.dishwasher_safe ? 'Можно' : 'Нельзя' })
+    rows.push({
+      label: "Посудомоечная машина",
+      value: product.dishwasher_safe ? "Можно" : "Нельзя",
+    });
   if (product.microwave_safe != null)
-    rows.push({ label: 'Микроволновая печь', value: product.microwave_safe ? 'Можно' : 'Нельзя' })
+    rows.push({
+      label: "Микроволновая печь",
+      value: product.microwave_safe ? "Можно" : "Нельзя",
+    });
 
-  if (rows.length === 0) return null
+  if (rows.length === 0) return null;
 
   return (
     <div className="mt-6 mb-6">
       <div className="divide-y divide-stone-100">
         {rows.map(({ label, value }) => (
           <div key={label} className="flex justify-between py-3">
-            <span className="font-body text-xs uppercase tracking-widest text-stone-400">{label}</span>
+            <span className="font-body text-xs uppercase tracking-widest text-stone-400">
+              {label}
+            </span>
             <span className="font-body text-sm text-stone-700">{value}</span>
           </div>
         ))}
@@ -217,7 +249,7 @@ function ProductSpecs({ product }: { product: Product }) {
         Каждое изделие немного отличается — это часть ручной работы
       </p>
     </div>
-  )
+  );
 }
 
 /* ── Accordion ─────────────────────────────────────────────────────────────── */
@@ -227,10 +259,10 @@ function Accordion({
   onToggle,
   children,
 }: {
-  label: string
-  open: boolean
-  onToggle: () => void
-  children: React.ReactNode
+  label: string;
+  open: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
 }) {
   return (
     <div>
@@ -254,7 +286,7 @@ function Accordion({
         {open && (
           <motion.p
             initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
+            animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
             className="overflow-hidden font-body text-sm text-stone-500 leading-relaxed pt-3 pb-1"
@@ -266,5 +298,5 @@ function Accordion({
 
       <div className="divider mt-4" />
     </div>
-  )
+  );
 }

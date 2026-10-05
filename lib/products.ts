@@ -1,48 +1,55 @@
-import { cache } from 'react'
-import { createClient } from '@supabase/supabase-js'
-import type { Product, Category } from '@/types'
+import { cache } from "react";
+import { createClient } from "@supabase/supabase-js";
+import type { Product, Category } from "@/types";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-const supabase = createClient(supabaseUrl, supabaseAnonKey)
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // ── Internal row shapes ───────────────────────────────────────────────────────
 
 type ProductImageRow = {
-  public_url: string
-  alt_text: string | null
-  sort_order: number
-  is_primary: boolean
-}
+  public_url: string;
+  alt_text: string | null;
+  sort_order: number;
+  is_primary: boolean;
+};
 
 type CategoryRow = {
-  id: string
-  slug: string
-  name: string
-  sort_order: number
-}
+  id: string;
+  slug: string;
+  name: string;
+  sort_order: number;
+};
 
 type ProductRow = {
-  id: string
-  category_id: string | null
-  slug: string
-  sku: string | null
-  name: string
-  description: string | null
-  price: number
-  in_stock: boolean
-  stock_qty: number
-  created_at: string
-  updated_at: string
-  material: string | null
-  dimensions: string | null
-  weight: string | null
-  dishwasher_safe: boolean | null
-  microwave_safe: boolean | null
-  categories: CategoryRow | null
-  product_images: ProductImageRow[]
-}
+  id: string;
+  category_id: string | null;
+  slug: string;
+  sku: string | null;
+  name: string;
+  description: string | null;
+  price: number;
+  in_stock: boolean;
+  stock_qty: number;
+  created_at: string;
+  updated_at: string;
+  material: string | null;
+  dimensions: string | null;
+  weight: string | null;
+  dishwasher_safe: boolean | null;
+  microwave_safe: boolean | null;
+  care: string | null;
+  preorder_enabled: boolean;
+  lead_time_days: number | null;
+  seo_title: string | null;
+  seo_description: string | null;
+  featured: boolean;
+  featured_order: number;
+  categories: CategoryRow | null;
+  product_images: ProductImageRow[];
+};
 
 // Single select fragment — identical shape across all queries
 const PRODUCT_SELECT = `
@@ -62,6 +69,13 @@ const PRODUCT_SELECT = `
   weight,
   dishwasher_safe,
   microwave_safe,
+  care,
+  preorder_enabled,
+  lead_time_days,
+  seo_title,
+  seo_description,
+  featured,
+  featured_order,
   categories (
     id,
     slug,
@@ -74,7 +88,7 @@ const PRODUCT_SELECT = `
     sort_order,
     is_primary
   )
-` as const
+` as const;
 
 // ── Mapper ────────────────────────────────────────────────────────────────────
 // Invariant: images[0] === primary_image_url (always).
@@ -82,18 +96,18 @@ const PRODUCT_SELECT = `
 function mapProduct(row: ProductRow): Product {
   const images = (row.product_images ?? [])
     .sort((a, b) => {
-      if (a.is_primary !== b.is_primary) return a.is_primary ? -1 : 1
-      return a.sort_order - b.sort_order
+      if (a.is_primary !== b.is_primary) return a.is_primary ? -1 : 1;
+      return a.sort_order - b.sort_order;
     })
-    .map((img) => img.public_url)
+    .map((img) => img.public_url);
 
   return {
     id: row.id,
-    category_id: row.category_id ?? '',
+    category_id: row.category_id ?? "",
     name: row.name,
     slug: row.slug,
     sku: row.sku,
-    description: row.description ?? '',
+    description: row.description ?? "",
     price: row.price,
     primary_image_url: images[0] ?? null,
     images,
@@ -106,6 +120,13 @@ function mapProduct(row: ProductRow): Product {
     weight: row.weight ?? null,
     dishwasher_safe: row.dishwasher_safe ?? null,
     microwave_safe: row.microwave_safe ?? null,
+    care: row.care,
+    preorder_enabled: row.preorder_enabled,
+    lead_time_days: row.lead_time_days,
+    seo_title: row.seo_title,
+    seo_description: row.seo_description,
+    featured: row.featured,
+    featured_order: row.featured_order,
     category: row.categories
       ? {
           id: row.categories.id,
@@ -114,84 +135,86 @@ function mapProduct(row: ProductRow): Product {
           sort_order: row.categories.sort_order,
         }
       : undefined,
-  }
+  };
 }
 
 // ── Public queries ────────────────────────────────────────────────────────────
 
 export async function getCategories(): Promise<Category[]> {
   const { data, error } = await supabase
-    .from('categories')
-    .select('id, slug, name, sort_order')
-    .eq('is_active', true)
-    .order('sort_order', { ascending: true })
+    .from("categories")
+    .select("id, slug, name, sort_order")
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true });
 
   if (error) {
-    console.error('getCategories error:', error)
-    return []
+    console.error("getCategories error:", error);
+    return [];
   }
 
-  return (data ?? []) as Category[]
+  return (data ?? []) as Category[];
 }
 
 export async function getFilterCategories() {
-  const categories = await getCategories()
+  const categories = await getCategories();
   return [
-    { slug: 'all', label: 'Все работы' },
+    { slug: "all", label: "Все работы" },
     ...categories.map((c) => ({ slug: c.slug, label: c.name })),
-  ]
+  ];
 }
 
 export async function getProducts(): Promise<Product[]> {
   const { data, error } = await supabase
-    .from('products')
+    .from("products")
     .select(PRODUCT_SELECT)
-    .eq('is_active', true)
-    .order('created_at', { ascending: false })
+    .eq("is_active", true)
+    .order("created_at", { ascending: false });
 
   if (error) {
-    console.error('getProducts error:', error)
-    return []
+    console.error("getProducts error:", error);
+    return [];
   }
 
-  return (data ?? []).map((row) => mapProduct(row as unknown as ProductRow))
+  return (data ?? []).map((row) => mapProduct(row as unknown as ProductRow));
 }
 
 // cache() memoises per request: generateMetadata and ProductPage both call
 // this function with the same slug — only the first call hits the DB.
-export const getProductBySlug = cache(async (slug: string): Promise<Product | undefined> => {
-  const { data, error } = await supabase
-    .from('products')
-    .select(PRODUCT_SELECT)
-    .eq('slug', slug)
-    .eq('is_active', true)
-    .single()
+export const getProductBySlug = cache(
+  async (slug: string): Promise<Product | undefined> => {
+    const { data, error } = await supabase
+      .from("products")
+      .select(PRODUCT_SELECT)
+      .eq("slug", slug)
+      .eq("is_active", true)
+      .single();
 
-  if (error) {
-    console.error('getProductBySlug error:', error)
-    return undefined
-  }
+    if (error) {
+      console.error("Product lookup failed");
+      return undefined;
+    }
 
-  return mapProduct(data as unknown as ProductRow)
-})
+    return mapProduct(data as unknown as ProductRow);
+  },
+);
 
 // Targeted fetch — used by getCart() to hydrate only the products
 // actually present in the cart, not the entire catalog.
 export async function getProductsByIds(ids: string[]): Promise<Product[]> {
-  if (ids.length === 0) return []
+  if (ids.length === 0) return [];
 
   const { data, error } = await supabase
-    .from('products')
+    .from("products")
     .select(PRODUCT_SELECT)
-    .in('id', ids)
-    .eq('is_active', true)
+    .in("id", ids)
+    .eq("is_active", true);
 
   if (error) {
-    console.error('getProductsByIds error:', error)
-    return []
+    console.error("getProductsByIds error:", error);
+    return [];
   }
 
-  return (data ?? []).map((row) => mapProduct(row as unknown as ProductRow))
+  return (data ?? []).map((row) => mapProduct(row as unknown as ProductRow));
 }
 
 // Fetches up to `limit` products related to a given category, excluding the
@@ -206,68 +229,77 @@ export async function getRelatedProducts(
 ): Promise<Product[]> {
   // Step 1 — same category, excluding current product
   const { data: sameData, error: sameErr } = await supabase
-    .from('products')
+    .from("products")
     .select(PRODUCT_SELECT)
-    .eq('is_active', true)
-    .eq('category_id', categoryId)
-    .neq('slug', excludeSlug)
-    .order('created_at', { ascending: false })
-    .limit(limit)
+    .eq("is_active", true)
+    .eq("category_id", categoryId)
+    .neq("slug", excludeSlug)
+    .order("created_at", { ascending: false })
+    .limit(limit);
 
-  if (sameErr) console.error('getRelatedProducts (same) error:', sameErr)
+  if (sameErr) console.error("getRelatedProducts (same) error:", sameErr);
 
-  const same = (sameData ?? []).map((r) => mapProduct(r as unknown as ProductRow))
-  if (same.length >= limit) return same
+  const same = (sameData ?? []).map((r) =>
+    mapProduct(r as unknown as ProductRow),
+  );
+  if (same.length >= limit) return same;
 
   // Step 2 — fill remaining slots from any category
-  const needed = limit - same.length
-  const takenSlugs = [excludeSlug, ...same.map((p) => p.slug)]
+  const needed = limit - same.length;
+  const takenSlugs = [excludeSlug, ...same.map((p) => p.slug)];
 
   // Start with a fully-typed builder; .neq() returns the same builder type
   // so TypeScript infers the chain correctly without any `any` annotation.
   let fallbackQuery = supabase
-    .from('products')
+    .from("products")
     .select(PRODUCT_SELECT)
-    .eq('is_active', true)
-    .order('created_at', { ascending: false })
-    .limit(needed)
+    .eq("is_active", true)
+    .order("created_at", { ascending: false })
+    .limit(needed);
 
   for (const s of takenSlugs) {
-    fallbackQuery = fallbackQuery.neq('slug', s)
+    fallbackQuery = fallbackQuery.neq("slug", s);
   }
 
-  const { data: fallbackData, error: fallbackErr } = await fallbackQuery
-  if (fallbackErr) console.error('getRelatedProducts (fallback) error:', fallbackErr)
+  const { data: fallbackData, error: fallbackErr } = await fallbackQuery;
+  if (fallbackErr)
+    console.error("getRelatedProducts (fallback) error:", fallbackErr);
 
-  const fallback = (fallbackData ?? []).map((r) => mapProduct(r as unknown as ProductRow))
-  return [...same, ...fallback]
+  const fallback = (fallbackData ?? []).map((r) =>
+    mapProduct(r as unknown as ProductRow),
+  );
+  return [...same, ...fallback];
 }
 
-export async function getProductsByCategory(categorySlug?: string): Promise<Product[]> {
+export async function getProductsByCategory(
+  categorySlug?: string,
+): Promise<Product[]> {
   const { data, error } = await supabase
-    .from('products')
+    .from("products")
     .select(PRODUCT_SELECT)
-    .eq('is_active', true)
-    .order('created_at', { ascending: false })
+    .eq("is_active", true)
+    .order("created_at", { ascending: false });
 
   if (error) {
-    console.error('getProductsByCategory error:', error)
-    return []
+    console.error("getProductsByCategory error:", error);
+    return [];
   }
 
-  const mapped = (data ?? []).map((row) => mapProduct(row as unknown as ProductRow))
+  const mapped = (data ?? []).map((row) =>
+    mapProduct(row as unknown as ProductRow),
+  );
 
-  if (!categorySlug || categorySlug === 'all') return mapped
-  return mapped.filter((p) => p.category?.slug === categorySlug)
+  if (!categorySlug || categorySlug === "all") return mapped;
+  return mapped.filter((p) => p.category?.slug === categorySlug);
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 export function formatPrice(price: number): string {
-  return new Intl.NumberFormat('ru-RU', {
-    style: 'currency',
-    currency: 'RUB',
+  return new Intl.NumberFormat("ru-RU", {
+    style: "currency",
+    currency: "RUB",
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(price)
+  }).format(price);
 }

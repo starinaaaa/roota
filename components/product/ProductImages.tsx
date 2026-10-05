@@ -1,39 +1,53 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import Image from 'next/image'
-import { ChevronLeft, ChevronRight, X } from 'lucide-react'
+import { useState, useEffect } from "react";
+import Image from "next/image";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 
 type Props = {
-  images: string[]
-  name: string
-}
+  images: string[];
+  name: string;
+};
 
-export default function ProductImages({ images, name }: Props) {
-  const [active, setActive] = useState(0)
-  const [lightboxOpen, setLightboxOpen] = useState(false)
+export default function ProductImages({ images: sourceImages, name }: Props) {
+  const [selected, setActive] = useState(0);
+  const [failed, setFailed] = useState<string[]>([]);
+  const images = sourceImages.filter((src) => !failed.includes(src));
+  const active = Math.min(selected, Math.max(0, images.length - 1));
+  const unavailable = (src: string) =>
+    setFailed((previous) =>
+      previous.includes(src) ? previous : [...previous, src],
+    );
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   // prev/next use functional updates — no stale-closure risk, safe to omit from deps
-  const prev = () => setActive((i) => (i - 1 + images.length) % images.length)
-  const next = () => setActive((i) => (i + 1) % images.length)
+  const prev = () =>
+    setActive(
+      (i) =>
+        (Math.min(i, images.length - 1) - 1 + images.length) % images.length,
+    );
+  const next = () =>
+    setActive((i) => (Math.min(i, images.length - 1) + 1) % images.length);
 
   // Keyboard: Esc closes, arrow keys navigate (only when lightbox is open)
   useEffect(() => {
-    if (!lightboxOpen) return
+    if (!lightboxOpen) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape')     setLightboxOpen(false)
-      if (e.key === 'ArrowLeft')  prev()
-      if (e.key === 'ArrowRight') next()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [lightboxOpen]) // eslint-disable-line react-hooks/exhaustive-deps
+      if (e.key === "Escape") setLightboxOpen(false);
+      if (e.key === "ArrowLeft") prev();
+      if (e.key === "ArrowRight") next();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [lightboxOpen, images.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Scroll lock while lightbox is open
   useEffect(() => {
-    document.body.style.overflow = lightboxOpen ? 'hidden' : ''
-    return () => { document.body.style.overflow = '' }
-  }, [lightboxOpen])
+    document.body.style.overflow = lightboxOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [lightboxOpen]);
 
   if (images.length === 0) {
     return (
@@ -42,21 +56,20 @@ export default function ProductImages({ images, name }: Props) {
           Фото скоро
         </span>
       </div>
-    )
+    );
   }
 
-  const multi = images.length > 1
+  const multi = images.length > 1;
 
   return (
     <>
       <div className="flex flex-col gap-3">
-
         {/* ── Main image ── */}
         <div className="relative aspect-square overflow-hidden rounded-lg bg-stone-100 select-none">
-
           <Image
-            key={active}
+            key={images[active]}
             src={images[active]}
+            onError={() => unavailable(images[active])}
             alt={`${name} — фото ${active + 1}`}
             fill
             sizes="(max-width: 1024px) 100vw, 50vw"
@@ -75,7 +88,11 @@ export default function ProductImages({ images, name }: Props) {
               <span className="absolute inset-0 rounded-l-lg bg-stone-900/0 group-hover:bg-stone-900/15 transition-colors duration-200" />
               {/* Arrow */}
               <span className="relative flex h-10 w-10 items-center justify-center rounded-full bg-white/90 shadow-md transition-all duration-200 group-hover:shadow-lg group-hover:scale-105">
-                <ChevronLeft size={18} strokeWidth={1.5} className="text-stone-700" />
+                <ChevronLeft
+                  size={18}
+                  strokeWidth={1.5}
+                  className="text-stone-700"
+                />
               </span>
             </button>
           )}
@@ -85,9 +102,9 @@ export default function ProductImages({ images, name }: Props) {
             onClick={() => setLightboxOpen(true)}
             aria-label="Открыть фото на весь экран"
             className={[
-              'absolute inset-y-0 z-10 cursor-zoom-in',
-              multi ? 'left-[20%] right-[20%]' : 'inset-x-0',
-            ].join(' ')}
+              "absolute inset-y-0 z-10 cursor-zoom-in",
+              multi ? "left-[20%] right-[20%]" : "inset-x-0",
+            ].join(" ")}
           />
 
           {/* ── Right zone (1/5) — next + hover tint ── */}
@@ -99,7 +116,11 @@ export default function ProductImages({ images, name }: Props) {
             >
               <span className="absolute inset-0 rounded-r-lg bg-stone-900/0 group-hover:bg-stone-900/15 transition-colors duration-200" />
               <span className="relative flex h-10 w-10 items-center justify-center rounded-full bg-white/90 shadow-md transition-all duration-200 group-hover:shadow-lg group-hover:scale-105">
-                <ChevronRight size={18} strokeWidth={1.5} className="text-stone-700" />
+                <ChevronRight
+                  size={18}
+                  strokeWidth={1.5}
+                  className="text-stone-700"
+                />
               </span>
             </button>
           )}
@@ -107,22 +128,23 @@ export default function ProductImages({ images, name }: Props) {
 
         {/* ── Thumbnails ── */}
         {multi && (
-          <div className="flex flex-row gap-2">
+          <div className="flex flex-row gap-2 overflow-x-auto max-w-full pb-1">
             {images.map((src, i) => (
               <button
                 key={i}
                 onClick={() => setActive(i)}
                 aria-label={`Фото ${i + 1}`}
                 className={[
-                  'relative w-24 h-24 shrink-0 overflow-hidden rounded-md bg-stone-100',
-                  'cursor-pointer transition-all duration-200',
+                  "relative w-24 h-24 shrink-0 overflow-hidden rounded-md bg-stone-100",
+                  "cursor-pointer transition-all duration-200",
                   i === active
-                    ? 'ring-2 ring-stone-800 opacity-100'
-                    : 'opacity-50 hover:opacity-80 ring-1 ring-stone-200',
-                ].join(' ')}
+                    ? "ring-2 ring-stone-800 opacity-100"
+                    : "opacity-50 hover:opacity-80 ring-1 ring-stone-200",
+                ].join(" ")}
               >
                 <Image
                   src={src}
+                  onError={() => unavailable(src)}
                   alt={`${name} — миниатюра ${i + 1}`}
                   fill
                   className="object-contain"
@@ -133,7 +155,6 @@ export default function ProductImages({ images, name }: Props) {
             ))}
           </div>
         )}
-
       </div>
 
       {/* ── Lightbox ────────────────────────────────────────────────────────────
@@ -154,12 +175,13 @@ export default function ProductImages({ images, name }: Props) {
               doesn't bubble up and close the lightbox */}
           <div
             className="relative"
-            style={{ width: '90vw', height: '90vh', maxWidth: '1400px' }}
+            style={{ width: "90vw", height: "90vh", maxWidth: "1400px" }}
             onClick={(e) => e.stopPropagation()}
           >
             <Image
               key={`lb-${active}`}
               src={images[active]}
+              onError={() => unavailable(images[active])}
               alt={`${name} — фото ${active + 1}`}
               fill
               sizes="100vw"
@@ -180,18 +202,32 @@ export default function ProductImages({ images, name }: Props) {
           {multi && (
             <>
               <button
-                onClick={(e) => { e.stopPropagation(); prev() }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  prev();
+                }}
                 aria-label="Предыдущее фото"
                 className="absolute left-5 top-1/2 -translate-y-1/2 z-10 flex h-12 w-12 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors duration-200"
               >
-                <ChevronLeft size={22} strokeWidth={1.5} className="text-white" />
+                <ChevronLeft
+                  size={22}
+                  strokeWidth={1.5}
+                  className="text-white"
+                />
               </button>
               <button
-                onClick={(e) => { e.stopPropagation(); next() }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  next();
+                }}
                 aria-label="Следующее фото"
                 className="absolute right-5 top-1/2 -translate-y-1/2 z-10 flex h-12 w-12 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors duration-200"
               >
-                <ChevronRight size={22} strokeWidth={1.5} className="text-white" />
+                <ChevronRight
+                  size={22}
+                  strokeWidth={1.5}
+                  className="text-white"
+                />
               </button>
             </>
           )}
@@ -205,5 +241,5 @@ export default function ProductImages({ images, name }: Props) {
         </div>
       )}
     </>
-  )
+  );
 }

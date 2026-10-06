@@ -117,7 +117,7 @@ export type CheckoutFormData = {
 
 // Результат Server Action createOrder
 export type CreateOrderResult =
-  | { success: true; orderId: string; orderNumber: string }
+  | { success: true; orderId: string; orderNumber: string; paymentId?: string }
   | { success: false; error: string };
 
 // Список ожидания

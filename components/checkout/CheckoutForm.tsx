@@ -137,7 +137,11 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
     }
 
     if (result.success) {
-      router.push(`/order-success?id=${result.orderId}`);
+      router.push(
+        result.paymentId
+          ? `/payment/${result.paymentId}`
+          : `/order-success?id=${result.orderId}`,
+      );
     } else {
       if (/достав|упаков|Корзина|Цена изменилась/i.test(result.error))
         receiveQuote(null);

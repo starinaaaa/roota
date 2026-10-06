@@ -22,6 +22,8 @@ export async function updateOrder(input: unknown) {
   });
   if (error) {
     const messages: Record<string, string> = {
+      ROBOKASSA_PAYMENT_MANAGED:
+        "Оплату Robokassa подтверждает платёжный сервис. Для возврата используйте кабинет Robokassa.",
       EMPTY_ORDER:
         "В старом заказе нет состава. Сначала уточните его у покупателя.",
       PAYMENT_REASON_REQUIRED:

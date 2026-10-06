@@ -42,6 +42,13 @@ export async function proxy(request: NextRequest) {
     response.headers.set("Cache-Control", "private, no-store");
     response.headers.set("X-Robots-Tag", "noindex, nofollow");
   }
+  if (
+    request.nextUrl.pathname.startsWith("/payment") ||
+    request.nextUrl.pathname.startsWith("/api/payments")
+  ) {
+    response.headers.set("Cache-Control", "private, no-store");
+    response.headers.set("X-Robots-Tag", "noindex, nofollow");
+  }
   if (!request.cookies.get("cart_session"))
     response.cookies.set("cart_session", crypto.randomUUID(), {
       httpOnly: true,

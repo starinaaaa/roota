@@ -58,15 +58,15 @@ export default function CardActions({
 
   // Shared base for both buttons so heights are always identical
   const btnBase =
-    "flex-1 h-[36px] min-h-[36px] box-border flex items-center justify-center font-body text-[13px] tracking-[0.15em] uppercase px-3 py-0 transition-colors duration-200";
+    "min-w-0 min-h-[44px] box-border flex items-center justify-center font-body text-[13px] leading-snug tracking-[0.15em] uppercase px-3 py-2 text-center transition-colors duration-200";
 
   return (
-    <div onClick={(e) => e.stopPropagation()} className="flex gap-2 mt-3">
+    <div onClick={(e) => e.stopPropagation()} className="product-card-actions mt-3">
       {inStock && Boolean(stockQty && stockQty > 0) ? (
         <>
           {/* ── В корзину / inline counter ── */}
           {cartQty > 0 ? (
-            <div className="flex items-stretch flex-1 min-h-[36px] border border-stone-200">
+            <div className="flex items-stretch min-w-0 min-h-[44px] border border-stone-200">
               <button
                 onClick={handleDecrement}
                 className="px-3 py-2 font-body text-[12px] text-stone-500 hover:text-stone-900 hover:bg-stone-50 transition-colors duration-150"

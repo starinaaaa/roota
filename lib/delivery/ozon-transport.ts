@@ -219,44 +219,37 @@ export async function activeShipmentMethod(
         "Проверьте OZON_SHIPMENT_METHOD_ID в настройках сервера.",
       );
   } else {
-    const found = await transport.call<{
-      shipment_methods?: {
-        shipment_method_id: number;
-        name: string;
-        status: string;
-      }[];
-      shipment_method?: {
-        shipment_method_id: number;
-        name: string;
-        status: string;
-      }[];
-      next_cursor?: string;
-    }>("/v1/shipment-method/search", {
-      filters: { statuses: ["active"] },
-      pagination: { limit: 100 },
-    });
-    const active = (
-      found.shipment_methods ??
-      found.shipment_method ??
-      []
-    ).filter((m) => m.status.toLowerCase() === "active");
-    // Safe diagnostic contains method identifiers and status, never account or contact fields.
-    console.info(
-      "Ozon shipment methods",
-      JSON.stringify({
-        keys: Object.keys(found).filter((k) => /^[a-z_]{1,40}$/.test(k)),
-        methods: (found.shipment_methods ?? found.shipment_method ?? []).map(
-          (m) => ({ id: Number(m.shipment_method_id), status: m.status }),
-        ),
-        hasNextPage: Boolean(found.next_cursor),
-      }),
-    );
-    // Never silently choose between multiple dispatch methods.
-    if (found.next_cursor || active.length !== 1)
+    const active = new Set<number>();
+    let cursor: string | undefined;
+    const cursors = new Set<string>();
+    for (let page = 0; page < 100; page++) {
+      const found = await transport.call<{
+        shipment_methods?: { shipment_method_id: number; status: string }[];
+        shipment_method?: { shipment_method_id: number; status: string }[];
+        next_cursor?: string;
+      }>("/v1/shipment-method/search", {
+        filters: { statuses: ["active"] },
+        pagination: { limit: 100, ...(cursor ? { cursor } : {}) },
+      });
+      const methods = found.shipment_methods ?? found.shipment_method;
+      if (!Array.isArray(methods))
+        throw new Error("Ozon вернул неверный список методов доставки.");
+      for (const method of methods)
+        if (method.status.toLowerCase() === "active")
+          active.add(Number(method.shipment_method_id));
+      if (active.size > 1) break;
+      // A cursor can be returned after the last record. Confirm the next page instead of treating it as a second method.
+      if (!methods.length || !found.next_cursor) break;
+      if (cursors.has(found.next_cursor) || page === 99)
+        throw new Error("Не удалось завершить поиск метода доставки Ozon.");
+      cursor = found.next_cursor;
+      cursors.add(cursor);
+    }
+    if (active.size !== 1)
       throw new Error(
         "В Ozon должен быть один активный метод доставки. Для нескольких методов укажите OZON_SHIPMENT_METHOD_ID.",
       );
-    id = active[0].shipment_method_id;
+    id = [...active][0];
     if (!Number.isSafeInteger(id) || id <= 0)
       throw new Error("Ozon вернул неверный идентификатор метода доставки.");
   }
@@ -265,7 +258,9 @@ export async function activeShipmentMethod(
   }>("/v1/shipment-method/info", { shipment_method_ids: [id] });
   if (
     !info.shipment_methods?.some(
-      (m) => m.shipment_method_id === id && m.status.toLowerCase() === "active",
+      (m) =>
+        Number(m.shipment_method_id) === id &&
+        m.status.toLowerCase() === "active",
     )
   )
     throw new Error("Метод доставки Ozon неактивен. Свяжитесь со студией.");

@@ -135,7 +135,7 @@ export default async function Footer() {
             <p className="font-body text-[15px] text-stone-800">
               © {year} Roota ceramics. Все права защищены.
             </p>
-            <div className="flex items-center gap-6">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
               <Link
                 href="/offer"
                 className="font-body text-[15px] text-stone-800 hover:text-stone-600 transition-colors duration-200"

@@ -66,38 +66,53 @@ export class OzonTransport {
     if (this.token && Date.now() < this.tokenUntil) return this.token;
     if (this.authenticating) return this.authenticating;
     this.authenticating = (async () => {
-      const response = await this.request("https://xapi.ozon.ru/oauth/token", {
-        client_id: this.clientId,
-        client_secret: this.secret,
-        grant_type: "client_credentials",
-        scope: [
+      const authenticate = async (scope: string[]) => {
+        const response = await this.request(
+          "https://xapi.ozon.ru/oauth/token",
+          {
+            client_id: this.clientId,
+            client_secret: this.secret,
+            grant_type: "client_credentials",
+            scope,
+          },
+        );
+        if (!response.ok) {
+          // Log only status and a short OAuth error code, never response bodies or credentials.
+          let reason = "unknown";
+          try {
+            const rejected = await response.json();
+            const message = String(rejected.message ?? rejected.error ?? "");
+            reason = /scope/i.test(message)
+              ? "scope"
+              : /client.?id.*uuid|invalid uuid/i.test(message)
+                ? "client_id_format"
+                : /client|secret|credential|unauthoriz|authentication/i.test(
+                      message,
+                    )
+                  ? "credentials"
+                  : Number.isInteger(rejected.code)
+                    ? `vendor_code_${rejected.code}`
+                    : "unknown";
+          } catch {}
+          throw new OzonAuthError(response.status, reason);
+        }
+        return response;
+      };
+      let response: Response;
+      try {
+        response = await authenticate([
           "delivery-api.shipment-method",
           "delivery-api.delivery",
           "delivery-api.delivery-point",
           "delivery-api.order",
           "delivery-api.posting",
-        ],
-      });
-      if (!response.ok) {
-        // Log only status and a short OAuth error code, never response bodies or credentials.
-        let reason = "unknown";
-        try {
-          const rejected = await response.json();
-          const message = String(rejected.message ?? rejected.error ?? "");
-          reason = /scope/i.test(message)
-            ? "scope"
-            : /client.?id.*uuid|invalid uuid/i.test(message)
-              ? "client_id_format"
-              : /client|secret|credential|unauthoriz|authentication/i.test(
-                    message,
-                  )
-                ? "credentials"
-                : Number.isInteger(rejected.code)
-                  ? `vendor_code_${rejected.code}`
-                  : "unknown";
-        } catch {}
-        console.error("Ozon OAuth rejected", response.status, reason);
-        throw new OzonAuthError(response.status, reason);
+        ]);
+      } catch (error) {
+        // Apps granted delivery-api.all may reject individual scope names.
+        // The retry only uses access already granted to this private application.
+        if (!(error instanceof OzonAuthError) || error.reason !== "scope")
+          throw error;
+        response = await authenticate(["delivery-api.all"]);
       }
       const data = await response.json();
       if (typeof data.access_token !== "string" || !data.access_token)

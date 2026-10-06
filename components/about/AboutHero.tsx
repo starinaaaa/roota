@@ -1,8 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 
 type Photo = { src: string; alt: string };
 
@@ -14,24 +14,25 @@ export default function AboutHero({
   title: string;
 }) {
   const [active, setActive] = useState(0);
-  const [hovered, setHovered] = useState(false);
-  const [reducedMotion, setReducedMotion] = useState(true);
+  const [autoPlay, setAutoPlay] = useState(false);
+  const [touching, setTouching] = useState(false);
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const update = () => setReducedMotion(preference.matches);
+    const update = () => setAutoPlay(!preference.matches);
     update();
     preference.addEventListener("change", update);
     return () => preference.removeEventListener("change", update);
   }, []);
 
   useEffect(() => {
-    if (!hovered || reducedMotion || photos.length < 2) return;
-    const timer = window.setInterval(() => {
+    if (!autoPlay || touching || photos.length < 2) return;
+    const timer = window.setTimeout(() => {
       setActive((current) => (current + 1) % photos.length);
-    }, 2200);
-    return () => window.clearInterval(timer);
-  }, [hovered, reducedMotion, photos.length]);
+    }, 5000);
+    return () => window.clearTimeout(timer);
+  }, [active, autoPlay, touching, photos.length]);
 
   const step = (direction: number) => {
     setActive(
@@ -43,15 +44,40 @@ export default function AboutHero({
     <section
       aria-label="О студии Roota"
       aria-roledescription="галерея"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      style={{ touchAction: "pan-y pinch-zoom" }}
+      onTouchStart={(event) => {
+        if (event.touches.length !== 1) {
+          touchStart.current = null;
+          setTouching(false);
+          return;
+        }
+        const touch = event.touches[0];
+        touchStart.current = { x: touch.clientX, y: touch.clientY };
+        setTouching(true);
+      }}
+      onTouchEnd={(event) => {
+        const start = touchStart.current;
+        touchStart.current = null;
+        setTouching(false);
+        if (!start || photos.length < 2) return;
+        const touch = event.changedTouches[0];
+        const dx = touch.clientX - start.x;
+        const dy = touch.clientY - start.y;
+        if (Math.abs(dx) >= 40 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+          step(dx < 0 ? 1 : -1);
+        }
+      }}
+      onTouchCancel={() => {
+        touchStart.current = null;
+        setTouching(false);
+      }}
       className="relative isolate flex min-h-[520px] items-center overflow-hidden bg-stone-800 px-6 py-24 md:min-h-[640px] md:px-12 lg:px-16"
     >
       {photos.map((photo, index) => (
         <div
           key={photo.src}
           aria-hidden={index !== active}
-          className={`absolute inset-0 -z-20 transition-opacity duration-700 motion-reduce:transition-none ${index === active ? "opacity-100" : "opacity-0"}`}
+          className={`absolute inset-0 -z-20 transition-opacity duration-1000 motion-reduce:transition-none ${index === active ? "opacity-100" : "opacity-0"}`}
         >
           <Image
             src={photo.src}
@@ -81,11 +107,21 @@ export default function AboutHero({
             {String(active + 1).padStart(2, "0")} /{" "}
             {String(photos.length).padStart(2, "0")}
           </p>
-          <div
-            className="flex gap-2"
-            onMouseEnter={() => setHovered(false)}
-            onMouseLeave={() => setHovered(true)}
-          >
+          <div className="flex gap-2">
+            <button
+              type="button"
+              aria-label={
+                autoPlay ? "Приостановить слайд-шоу" : "Запустить слайд-шоу"
+              }
+              onClick={() => setAutoPlay((current) => !current)}
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/50 text-white transition-colors hover:bg-white/20 focus-visible:bg-white/20"
+            >
+              {autoPlay ? (
+                <Pause size={16} strokeWidth={1.5} />
+              ) : (
+                <Play size={16} strokeWidth={1.5} />
+              )}
+            </button>
             <button
               type="button"
               aria-label="Предыдущее фото"

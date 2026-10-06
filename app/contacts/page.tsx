@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getSiteContent } from "@/lib/site";
+import { seller } from "@/lib/seller";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/contacts" },
@@ -11,6 +12,12 @@ export const metadata: Metadata = {
 export default async function ContactsPage() {
   const site = await getSiteContent();
   const CONTACTS = [
+    {
+      label: "Телефон",
+      value: seller.phone,
+      href: seller.phoneHref,
+      external: false,
+    },
     {
       label: "Email",
       value: site.email,
@@ -87,6 +94,9 @@ export default async function ContactsPage() {
           </div>
           <div className="md:col-span-8 lg:col-span-9 max-w-xl">
             <p className="font-body text-sm text-stone-900 mb-3">Москва</p>
+            <p className="font-body text-sm text-stone-900 mb-3">
+              Самозанятый {seller.name}. ИНН {seller.inn}.
+            </p>
             <p className="font-body text-sm text-stone-500 leading-loose">
               Мы работаем по предварительной записи. Посещение мастерской
               возможно — напишите нам, чтобы договориться о времени.

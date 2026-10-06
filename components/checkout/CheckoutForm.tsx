@@ -261,9 +261,16 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
                 className="mt-1 w-4 h-4 accent-stone-900 cursor-pointer"
               />
               <span className="font-body text-[13px] tracking-[0.05em] text-stone-600 group-hover:text-stone-900 transition-colors duration-200">
-                Хочу подписаться на новости студии
+                Даю отдельное согласие на получение новостей и рекламных
+                сообщений студии по электронной почте. Отказ не влияет на заказ.
               </span>
             </label>
+            <Link
+              href="/newsletter-consent"
+              className="font-body text-xs text-stone-500 underline underline-offset-2"
+            >
+              Условия согласия на рассылку и обработку данных для неё
+            </Link>
 
             {/* Ошибка */}
             <AnimatePresence>
@@ -412,13 +419,13 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
                 className="underline underline-offset-2 hover:text-stone-600 transition-colors duration-200"
               >
                 публичной оферты
-              </Link>{" "}
-              и соглашаетесь с{" "}
+              </Link>
+              . Обработка данных заказа описана в{" "}
               <Link
                 href="/privacy"
                 className="underline underline-offset-2 hover:text-stone-600 transition-colors duration-200"
               >
-                политикой конфиденциальности
+                политике конфиденциальности
               </Link>
               . Доставка и страховка включены в итог после расчёта.
             </p>

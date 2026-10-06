@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getSiteContent } from "@/lib/site";
+import { seller } from "@/lib/seller";
 
 const SHOP_LINKS = [
   { href: "/catalog", label: "Каталог" },
@@ -35,6 +36,13 @@ export default async function Footer() {
               </Link>
               <p className="font-body text-sm text-stone-800 leading-relaxed max-w-[200px]">
                 Авторская керамика ручной работы. Москва.
+              </p>
+              <p className="font-body text-xs text-stone-600 leading-relaxed mt-4">
+                Самозанятый {seller.name}
+                <br />
+                ИНН {seller.inn}
+                <br />
+                {seller.city}
               </p>
             </div>
 
@@ -82,6 +90,14 @@ export default async function Footer() {
                 Связь
               </p>
               <ul className="space-y-3">
+                <li>
+                  <a
+                    href={seller.phoneHref}
+                    className="font-body text-sm text-stone-800 hover:text-stone-900 transition-colors duration-200"
+                  >
+                    {seller.phone}
+                  </a>
+                </li>
                 <li>
                   <a
                     href={site.telegram}

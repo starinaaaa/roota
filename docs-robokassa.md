@@ -14,7 +14,7 @@
 
 Пароли добавлять непосредственно в Vercel → Project → Settings → Environment Variables; не вставлять их в PR, команды терминала, переписку или `NEXT_PUBLIC_*`. После смены секретов нужен новый деплой. Production-пароли для тестов не требуются, пароль №3 не используется.
 
-`ROBOKASSA_MODE` по умолчанию отключён: обычное оформление заказа продолжает работать. Production публикуется только после отдельного одобрения. Для рабочего режима дополнительно нужны `ROBOKASSA_MODE=live`, `ROBOKASSA_LIVE_ENABLED=true`, `ROBOKASSA_SMZ_READY=true`, основные `ROBOKASSA_PASSWORD1/2` и согласованный `ROBOKASSA_RECEIPT_PROFILE`. Live блокируется в Preview.
+`ROBOKASSA_MODE` по умолчанию отключён: обычное оформление заказа продолжает работать. Публикация в Production одобрена владельцем 6 октября 2026 года. На основном домене используется test: реальные списания и отправки отключены до активации магазина, проверки Робочеков СМЗ и параметров чека. Для рабочего режима дополнительно нужны `ROBOKASSA_MODE=live`, `ROBOKASSA_LIVE_ENABLED=true`, `ROBOKASSA_SMZ_READY=true`, основные `ROBOKASSA_PASSWORD1/2` и согласованный `ROBOKASSA_RECEIPT_PROFILE`. Live блокируется в Preview.
 
 ## URL и методы
 
@@ -24,7 +24,7 @@
 - SuccessURL: `https://roota-git-codex-robokassa-payments-starinaaaas-projects.vercel.app/payment/success`, **GET**.
 - FailURL: `https://roota-git-codex-robokassa-payments-starinaaaas-projects.vercel.app/payment/fail`, **GET**.
 
-После разрешённого запуска домен: `https://roota-liart.vercel.app`. MD5 должен совпадать в тестовом и рабочем разделах кабинета. Для конкретного preview-адреса этой ветки создано исключение Vercel Authentication; остальные preview сохраняют защиту. Проверен публичный доступ к ResultURL.
+Основной домен для тестирования после публикации: `https://roota-liart.vercel.app`. MD5 должен совпадать в тестовом и рабочем разделах кабинета. Для конкретного preview-адреса этой ветки создано исключение Vercel Authentication; остальные preview сохраняют защиту. Проверен публичный доступ к ResultURL.
 
 Success/Fail альтернативные URL тоже подписываются в форме и ведут в окружение, где создан платёж. ResultURL берётся из кабинета. Проверить, что настройки кабинета сохранены, а не только введены.
 

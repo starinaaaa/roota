@@ -422,3 +422,25 @@ test("OAuth errors expose only a safe diagnostic category", async () => {
       !error.message.includes("GetTokenRequest"),
   );
 });
+
+test("an application granted all API access can authenticate after individual scopes are rejected", async () => {
+  const scopes: string[][] = [];
+  const transport = new OzonTransport("id", "secret", (async (
+    url: string | URL | Request,
+    init?: RequestInit,
+  ) => {
+    if (String(url).includes("/oauth/token")) {
+      scopes.push(JSON.parse(String(init?.body)).scope);
+      return scopes.length === 1
+        ? Response.json(
+            { code: 3, message: "scope is not allowed" },
+            { status: 400 },
+          )
+        : Response.json({ access_token: "token", expires_in: 3600 });
+    }
+    return Response.json({ ok: true });
+  }) as typeof fetch);
+  await transport.call("/v1/shipment-method/search", {});
+  assert.equal(scopes.length, 2);
+  assert.deepEqual(scopes[1], ["delivery-api.all"]);
+});

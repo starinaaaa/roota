@@ -4,7 +4,7 @@
 
 ## Настройка production
 
-В Vercel нужны серверные переменные `OZON_CLIENT_ID` и `OZON_CLIENT_SECRET`. Приложению Ozon нужны области доступа `delivery-api.shipment-method`, `delivery-api.delivery`, `delivery-api.delivery-point`, `delivery-api.order`, `delivery-api.posting`.
+В Vercel нужны серверные переменные `OZON_CLIENT_ID` и `OZON_CLIENT_SECRET`. Поддерживаются приложения с `delivery-api.all`; при отказе индивидуальных scopes сервер пробует этот вариант только в рамках выданных приложению прав. Для отдельных прав приложению Ozon нужны области доступа `delivery-api.shipment-method`, `delivery-api.delivery`, `delivery-api.delivery-point`, `delivery-api.order`, `delivery-api.posting`.
 
 Если есть ровно один активный метод отгрузки, сервер определит его ID через `/v1/shipment-method/search`. Для нескольких методов задайте `OZON_SHIPMENT_METHOD_ID`. Адрес отправления берётся из выбранного метода в Ozon, а не из адреса покупателя. Метод должен быть активным; сейчас Ozon предусматривает самостоятельную передачу в пункт отгрузки.
 

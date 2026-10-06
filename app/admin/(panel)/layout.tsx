@@ -25,6 +25,7 @@ export default async function PanelLayout({
           ["orders", "Заказы"],
           ["products", "Товары"],
           ["site", "Сайт"],
+          ["delivery", "Доставка"],
         ].map(([path, label]) => (
           <Link className="admin-secondary" key={path} href={"/admin/" + path}>
             {label}

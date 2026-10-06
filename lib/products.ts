@@ -300,6 +300,6 @@ export function formatPrice(price: number): string {
     style: "currency",
     currency: "RUB",
     minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
+    maximumFractionDigits: 2,
   }).format(price);
 }

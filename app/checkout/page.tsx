@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ozonConfigured } from "@/lib/delivery/ozon";
 import CheckoutForm from "@/components/checkout/CheckoutForm";
 import { getCart } from "@/lib/actions/cart";
 
@@ -11,7 +12,7 @@ export default async function CheckoutPage() {
   const { items } = await getCart();
   return (
     <div className="pt-16 md:pt-20 min-h-screen">
-      <CheckoutForm initialItems={items} />
+      <CheckoutForm initialItems={items} deliveryEnabled={ozonConfigured()} />
     </div>
   );
 }

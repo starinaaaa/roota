@@ -1,27 +1,38 @@
+import { normalizeRussianPhone } from "./contacts";
 import { z } from "zod";
 export const uuid = z.string().uuid();
 export const phone = z
   .string()
-  .trim()
   .max(40)
-  .regex(/^[+\d\s()\-]+$/, "Укажите корректный телефон")
-  .transform((v) => {
-    let digits = v.replace(/[^0-9]/g, "");
-    if (digits.length === 11 && digits.startsWith("8"))
-      digits = "7" + digits.slice(1);
-    if (digits.length === 10) digits = "7" + digits;
-    return "+" + digits;
-  })
-  .pipe(z.string().regex(/^\+[1-9]\d{9,14}$/, "Укажите корректный телефон"));
+  .transform((v, ctx) => {
+    const normalized = normalizeRussianPhone(v);
+    if (!normalized) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Укажите российский телефон: +7 и 10 цифр",
+      });
+      return z.NEVER;
+    }
+    return normalized;
+  });
 export const checkoutSchema = z
   .object({
     name: z.string().trim().min(1, "Укажите имя").max(100),
     phone,
-    email: z.string().trim().email("Укажите корректный email").max(254),
+    email: z
+      .string()
+      .trim()
+      .email("Укажите корректный email")
+      .max(254)
+      .refine(
+        (v) => /^[^\s@]+@[^\s@.]+(?:\.[^\s@.]+)+$/.test(v),
+        "Укажите корректный email",
+      ),
     deliveryType: z.enum(["moscow", "russia", "pickup"]),
     address: z.string().trim().max(500),
     comment: z.string().trim().max(2000),
     subscribeToNews: z.boolean().optional().default(false),
+    deliveryQuoteId: uuid.optional(),
   })
   .refine((v) => v.deliveryType === "pickup" || v.address.length >= 5, {
     message: "Укажите адрес доставки",

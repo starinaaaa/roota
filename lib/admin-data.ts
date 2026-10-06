@@ -33,7 +33,7 @@ export async function getOrder(id: string) {
   const { data, error } = await createServerClient()
     .from("orders")
     .select(
-      "*,items:order_items(*),events:order_events(*),notification:notification_outbox(state,attempts)",
+      "*,items:order_items(*),events:order_events(*),notification:notification_outbox(state,attempts),shipments:order_shipments(*)",
     )
     .eq("id", id)
     .maybeSingle();

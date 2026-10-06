@@ -1,4 +1,8 @@
 "use client";
+import {
+  createOzonShipment,
+  refreshOzonShipment,
+} from "@/lib/actions/delivery-admin";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { updateOrder, retryNotification } from "@/lib/actions/admin";
@@ -20,6 +24,25 @@ type OrderData = {
   internal_notes: string;
   tracking_number: string;
   reservation_state: string;
+  delivery_amount?: number | null;
+  insurance_amount?: number | null;
+  delivery_details?: {
+    provider: string;
+    point: { name: string; address: string };
+    packing: {
+      weight_g: number;
+      length_mm: number;
+      width_mm: number;
+      height_mm: number;
+    };
+  } | null;
+  shipments?: {
+    state: string;
+    posting_number: string | null;
+    carrier_status: string | null;
+    last_error: string | null;
+  }[];
+
   items: {
     id: string;
     product_name: string;
@@ -111,6 +134,15 @@ export default function OrderEditor({ order }: { order: OrderData }) {
               )}
             </div>
           ))}
+          {order.delivery_amount != null && (
+            <p>
+              Доставка и страховка:{" "}
+              {formatPrice(
+                Number(order.delivery_amount) +
+                  Number(order.insurance_amount ?? 0),
+              )}
+            </p>
+          )}
           <strong>Итого: {formatPrice(order.total_amount)}</strong>
         </section>
       </div>
@@ -201,6 +233,79 @@ export default function OrderEditor({ order }: { order: OrderData }) {
           {message}
         </p>
       </form>
+      {order.delivery_details?.provider === "ozon" && (
+        <section className="admin-card space-y-3">
+          <h3 className="text-lg">Ozon Доставка</h3>
+          <p>
+            {order.delivery_details.point.name} ·{" "}
+            {order.delivery_details.point.address}
+          </p>
+          <p>
+            Посылка: {order.delivery_details.packing.weight_g} г ·{" "}
+            {order.delivery_details.packing.length_mm / 10} ×{" "}
+            {order.delivery_details.packing.width_mm / 10} ×{" "}
+            {order.delivery_details.packing.height_mm / 10} см
+          </p>
+          <p>
+            Статус Ozon:{" "}
+            {order.shipments?.[0]?.carrier_status ?? "Ещё не создано"}
+          </p>
+          {order.shipments?.[0]?.posting_number && (
+            <p>Отправление: {order.shipments[0].posting_number}</p>
+          )}
+          {order.shipments?.[0]?.last_error && (
+            <p role="alert">{order.shipments[0].last_error}</p>
+          )}
+          <p className="text-sm text-stone-500">
+            Создавайте отправление после подтверждения заказа и поступления
+            оплаты. Готовность к отгрузке и этикетку оформите в кабинете Ozon
+            после упаковки.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              className="admin-secondary"
+              disabled={
+                pending ||
+                order.payment_status !== "paid" ||
+                order.status !== "confirmed" ||
+                order.shipments?.[0]?.state === "created"
+              }
+              onClick={() =>
+                start(async () => {
+                  try {
+                    const r = await createOzonShipment(order.id);
+                    setMessage(r.error ?? r.message ?? "");
+                    router.refresh();
+                  } catch {
+                    setMessage("Не удалось создать отправление.");
+                  }
+                })
+              }
+            >
+              Создать отправление Ozon
+            </button>
+            <button
+              type="button"
+              className="admin-secondary"
+              disabled={pending || !order.shipments?.[0]?.posting_number}
+              onClick={() =>
+                start(async () => {
+                  try {
+                    const r = await refreshOzonShipment(order.id);
+                    setMessage(r.error ?? r.message ?? "");
+                    router.refresh();
+                  } catch {
+                    setMessage("Не удалось обновить статус.");
+                  }
+                })
+              }
+            >
+              Обновить статус Ozon
+            </button>
+          </div>
+        </section>
+      )}
       <section className="admin-card space-y-3">
         <h3 className="text-lg">Уведомление студии</h3>
         <p>

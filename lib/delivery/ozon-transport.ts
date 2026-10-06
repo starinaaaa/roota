@@ -1,3 +1,11 @@
+export class OzonAuthError extends Error {
+  constructor(
+    public status: number,
+    public reason: string,
+  ) {
+    super("Служба доставки временно недоступна. Повторите позже.");
+  }
+}
 // Imported only by the server adapter. Separate transport allows offline contract tests.
 export class OzonTransport {
   private cookies = new Map<string, Map<string, string>>();
@@ -72,19 +80,24 @@ export class OzonTransport {
       });
       if (!response.ok) {
         // Log only status and a short OAuth error code, never response bodies or credentials.
-        let code = "unknown";
+        let reason = "unknown";
         try {
           const rejected = await response.json();
-          if (
-            typeof rejected.error === "string" &&
-            /^[a-z_]{1,50}$/.test(rejected.error)
-          )
-            code = rejected.error;
+          const message = String(rejected.message ?? rejected.error ?? "");
+          reason = /scope/i.test(message)
+            ? "scope"
+            : /client.?id.*uuid|invalid uuid/i.test(message)
+              ? "client_id_format"
+              : /client|secret|credential|unauthoriz|authentication/i.test(
+                    message,
+                  )
+                ? "credentials"
+                : Number.isInteger(rejected.code)
+                  ? `vendor_code_${rejected.code}`
+                  : "unknown";
         } catch {}
-        console.error("Ozon OAuth rejected", response.status, code);
-        throw new Error(
-          "Служба доставки временно недоступна. Повторите позже.",
-        );
+        console.error("Ozon OAuth rejected", response.status, reason);
+        throw new OzonAuthError(response.status, reason);
       }
       const data = await response.json();
       if (typeof data.access_token !== "string" || !data.access_token)

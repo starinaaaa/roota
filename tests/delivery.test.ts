@@ -13,6 +13,7 @@ import {
 } from "../lib/delivery/model";
 import {
   OzonTransport,
+  OzonAuthError,
   activeShipmentMethod,
 } from "../lib/delivery/ozon-transport";
 
@@ -400,5 +401,24 @@ test("city filter does not mistake a street or region for the selected city", ()
   assert.equal(
     pointInCity("Россия, Санкт-Петербург, улица А", "Санкт-Петербург"),
     true,
+  );
+});
+
+test("OAuth errors expose only a safe diagnostic category", async () => {
+  const transport = new OzonTransport("id", "secret", (async () =>
+    Response.json(
+      {
+        code: 3,
+        message: "invalid GetTokenRequest.ClientId: value must be a valid UUID",
+      },
+      { status: 400 },
+    )) as typeof fetch);
+  await assert.rejects(
+    transport.call("/v1/shipment-method/search", {}),
+    (error: unknown) =>
+      error instanceof OzonAuthError &&
+      error.status === 400 &&
+      error.reason === "client_id_format" &&
+      !error.message.includes("GetTokenRequest"),
   );
 });

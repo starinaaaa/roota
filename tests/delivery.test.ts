@@ -461,3 +461,27 @@ test("map catalogue recognizes settlement names, aliases and validates carrier c
     longitude: 30.3,
   });
 });
+
+test("Ozon can return a cursor after its sole active method", async () => {
+  let searches = 0;
+  const transport = {
+    call: async <T>(path: string): Promise<T> => {
+      if (path.endsWith("/search"))
+        return (
+          ++searches === 1
+            ? {
+                shipment_methods: [
+                  { shipment_method_id: 42, status: "active" },
+                ],
+                next_cursor: "last-record",
+              }
+            : { shipment_methods: [], next_cursor: "last-record" }
+        ) as T;
+      return {
+        shipment_methods: [{ shipment_method_id: 42, status: "active" }],
+      } as T;
+    },
+  };
+  assert.equal(await activeShipmentMethod(transport), 42);
+  assert.equal(searches, 2);
+});

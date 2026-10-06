@@ -100,9 +100,10 @@ export async function GET(request: NextRequest) {
       { error: "Некорректная страница." },
       { status: 422 },
     );
-  const { data, error } = await createServerClient()
+  const db = createServerClient();
+  const { data, error, count } = await db
     .from("delivery_points")
-    .select("data")
+    .select("data", { count: "exact" })
     .eq("provider", "ozon")
     .eq("active", true)
     .ilike("address", pattern)
@@ -110,7 +111,7 @@ export async function GET(request: NextRequest) {
     .order("id")
     .range(
       action === "cities" ? 0 : offset,
-      action === "cities" ? 999 : offset + 499,
+      action === "cities" ? 999 : offset + 999,
     );
   if (error)
     return NextResponse.json(
@@ -139,6 +140,33 @@ export async function GET(request: NextRequest) {
       { headers: { "Cache-Control": "public, max-age=60" } },
     );
   }
+  // PostgREST caps a response at 1,000 rows. Fetch every city page on the
+  // server so the map and address search are complete from their first render.
+  const rows = [...(data ?? [])];
+  const starts: number[] = [];
+  for (let start = offset + 1000; start < (count ?? 0); start += 1000)
+    starts.push(start);
+  for (let batch = 0; batch < starts.length; batch += 8) {
+    const pages = await Promise.all(
+      starts.slice(batch, batch + 8).map((start) =>
+        db
+          .from("delivery_points")
+          .select("data")
+          .eq("provider", "ozon")
+          .eq("active", true)
+          .ilike("address", pattern)
+          .order("address")
+          .order("id")
+          .range(start, start + 999),
+      ),
+    );
+    if (pages.some((page) => page.error))
+      return NextResponse.json(
+        { error: "Не удалось загрузить все пункты выдачи. Повторите позже." },
+        { status: 503 },
+      );
+    for (const page of pages) rows.push(...(page.data ?? []));
+  }
   if (!data?.length && !offset) {
     const { count } = await createServerClient()
       .from("delivery_points")
@@ -153,11 +181,11 @@ export async function GET(request: NextRequest) {
   }
   return NextResponse.json(
     {
-      points: (data ?? [])
+      points: rows
         .filter((p) => pointInCity(p.data.full_address, search))
         .map((p) => publicPoint(p.data)),
-      nextOffset: data?.length === 500 ? offset + 500 : null,
+      nextOffset: null,
     },
-    { headers: { "Cache-Control": "no-store" } },
+    { headers: { "Cache-Control": "public, max-age=300" } },
   );
 }

@@ -5,7 +5,7 @@ import PackingEditor from "@/components/admin/PackingEditor";
 export default async function DeliveryPage() {
   await requireAdmin();
   const db = createServerClient();
-  const [rules, categories, points] = await Promise.all([
+  const [rules, categories, points, sync] = await Promise.all([
     db.from("delivery_packing_rules").select("*").order("name"),
     db.from("categories").select("id,name").order("sort_order"),
     db
@@ -13,6 +13,11 @@ export default async function DeliveryPage() {
       .select("id", { count: "exact", head: true })
       .eq("provider", "ozon")
       .eq("active", true),
+    db
+      .from("delivery_sync")
+      .select("updated_at")
+      .eq("provider", "ozon")
+      .maybeSingle(),
   ]);
   if (rules.error || categories.error || points.error)
     throw new Error("Не удалось загрузить настройки доставки.");
@@ -34,6 +39,7 @@ export default async function DeliveryPage() {
         categories={categories.data ?? []}
         configured={ozonConfigured()}
         pointCount={points.count ?? 0}
+        syncedAt={sync.data?.updated_at ?? null}
       />
     </>
   );

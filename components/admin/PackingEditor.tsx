@@ -11,12 +11,14 @@ type Props = {
   categories: { id: string; name: string }[];
   configured: boolean;
   pointCount: number;
+  syncedAt: string | null;
 };
 export default function PackingEditor({
   rules,
   categories,
   configured,
   pointCount,
+  syncedAt,
 }: Props) {
   const blank = () => ({
     id: undefined as string | undefined,
@@ -43,9 +45,18 @@ export default function PackingEditor({
             : "Добавьте OZON_CLIENT_ID, OZON_CLIENT_SECRET и OZON_SHIPMENT_METHOD_ID (необязателен, если в Ozon один активный метод) в Vercel."}
         </p>
         <p>Загружено активных ПВЗ: {pointCount}</p>
+        {syncedAt && (
+          <p className="text-sm text-stone-500">
+            Последнее обновление:{" "}
+            {new Date(syncedAt).toLocaleString("ru-RU", {
+              timeZone: "Europe/Moscow",
+            })}
+          </p>
+        )}
         <p className="text-sm text-stone-500">
-          Перед запуском загрузите каталог пунктов. Доступность конкретного
-          заказа проверяется в API при выборе и оформлении.
+          Каталог обновляется автоматически каждый день. Кнопка ниже запускает
+          внеплановое обновление. Доступность доставки проверяется при выборе
+          ПВЗ для конкретного заказа.
         </p>
         <button
           className="admin-secondary"

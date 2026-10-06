@@ -36,7 +36,7 @@ export default function DeliverySelector({
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [open, setOpen] = useState(false),
-    [nextOffset, setNextOffset] = useState<number | null>(null);
+    [listLimit, setListLimit] = useState(100);
   const dialog = useRef<HTMLDialogElement>(null),
     controller = useRef<AbortController | null>(null),
     revision = useRef(0),
@@ -48,7 +48,7 @@ export default function DeliverySelector({
     controller.current?.abort();
     setPoint(null);
     setPoints([]);
-    setNextOffset(null);
+    setListLimit(100);
     setError("");
     setBusy(false);
     onQuoteRef.current(null);
@@ -102,11 +102,7 @@ export default function DeliverySelector({
     setSuggestOpen(false);
     setMethod(false);
   }
-  async function request(
-    action: "points" | "quote",
-    selected?: DeliveryPoint,
-    offset = 0,
-  ) {
+  async function request(action: "points" | "quote", selected?: DeliveryPoint) {
     if (!selectedCity) return;
     controller.current?.abort();
     const abort = new AbortController();
@@ -122,7 +118,7 @@ export default function DeliverySelector({
       const response =
         action === "points"
           ? await fetch(
-              `/api/delivery?action=catalog&q=${encodeURIComponent(selectedCity.name)}&offset=${offset}`,
+              `/api/delivery?action=catalog&q=${encodeURIComponent(selectedCity.name)}`,
               { signal: abort.signal },
             )
           : await fetch("/api/delivery", {
@@ -141,10 +137,8 @@ export default function DeliverySelector({
       if (!response.ok)
         throw new Error(result.error || "Не удалось рассчитать доставку.");
       if (action === "points") {
-        setPoints((prev) =>
-          offset ? [...prev, ...result.points] : result.points,
-        );
-        setNextOffset(result.nextOffset);
+        setPoints(result.points);
+        setListLimit(100);
       } else {
         onQuoteRef.current(result.quote);
         setOpen(false);
@@ -352,7 +346,10 @@ export default function DeliverySelector({
           <input
             aria-label="Поиск пункта по адресу"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setListLimit(100);
+            }}
             placeholder="Улица или название пункта"
             className="w-full border border-stone-200 bg-transparent px-4 py-3 text-sm"
           />
@@ -366,7 +363,7 @@ export default function DeliverySelector({
             )}
             <div className="max-h-[30dvh] md:max-h-[55dvh] overflow-y-auto space-y-2">
               <ul className="space-y-2">
-                {visible.map((p) => (
+                {visible.slice(0, listLimit).map((p) => (
                   <li key={p.id}>
                     <button
                       type="button"
@@ -389,21 +386,21 @@ export default function DeliverySelector({
                     : "Пунктов в этом городе не найдено."}
                 </p>
               )}
-              {nextOffset !== null && (
+              {visible.length > listLimit && (
                 <button
                   type="button"
                   disabled={busy}
-                  onClick={() => request("points", undefined, nextOffset)}
+                  onClick={() => setListLimit((limit) => limit + 100)}
                   className="text-sm underline p-3"
                 >
-                  Показать ещё пункты
+                  Показать ещё в списке
                 </button>
               )}
             </div>
           </div>
           <p className="text-xs text-stone-500">
-            После выбора проверим доставку для вашего заказа и рассчитаем
-            стоимость.
+            На карте все пункты города: {points.length}. После выбора проверим
+            доставку для вашего заказа и рассчитаем стоимость.
             {!validPhone && " Для расчёта понадобится номер телефона."}
           </p>
           {busy && (

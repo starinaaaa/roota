@@ -1,5 +1,9 @@
 export class OzonApiError extends Error {
-  constructor(public path: string, public status: number, public reason: string) {
+  constructor(
+    public path: string,
+    public status: number,
+    public reason: string,
+  ) {
     super("Не удалось выполнить запрос доставки. Повторите позже.");
   }
 }
@@ -158,13 +162,22 @@ export class OzonTransport {
       let reason = "unknown";
       try {
         const data = await response.json();
-        const message = String(data.message ?? data.error ?? "");
-        reason = /permission|forbidden|access|scope/i.test(message) ? "permissions"
-          : /cursor/i.test(message) ? "cursor"
-          : /limit|pagination/i.test(message) ? "pagination"
-          : /shipment|method/i.test(message) ? "shipment_method"
-          : /invalid|validation|required/i.test(message) ? "validation"
-          : Number.isInteger(data.code) ? `vendor_code_${data.code}` : "unknown";
+        const message = String(
+          data.message ?? data.error?.message ?? data.error ?? "",
+        );
+        reason = /permission|forbidden|access|scope/i.test(message)
+          ? "permissions"
+          : /cursor/i.test(message)
+            ? "cursor"
+            : /limit|pagination/i.test(message)
+              ? "pagination"
+              : /shipment|method/i.test(message)
+                ? "shipment_method"
+                : /invalid|validation|required/i.test(message)
+                  ? "validation"
+                  : Number.isInteger(data.code)
+                    ? `vendor_code_${data.code}`
+                    : "unknown";
       } catch {}
       console.warn("Ozon API rejected", path, response.status, reason);
       throw new OzonApiError(path, response.status, reason);
@@ -199,7 +212,7 @@ export async function activeShipmentMethod(
       next_cursor?: string;
     }>("/v1/shipment-method/search", {
       filters: { statuses: ["active"] },
-      pagination: { cursor: "", limit: 100 },
+      pagination: { limit: 100 },
     });
     const active = (
       found.shipment_methods ??

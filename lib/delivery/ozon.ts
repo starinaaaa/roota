@@ -123,6 +123,7 @@ export type OzonPointInfo = {
   delivery_point_id: number;
   name: string;
   full_address: string;
+  coordinates?: { latitude: number; longitude: number };
   is_active: boolean;
   type: string;
   schedule?: {

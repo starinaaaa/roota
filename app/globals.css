@@ -69,3 +69,8 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #a8a29e;
 }
+
+.ozon-point-marker span { display:flex; align-items:center; justify-content:center; width:30px; height:30px; border-radius:50% 50% 50% 0; transform:rotate(-45deg); background:#005bff; border:2px solid white; box-shadow:0 2px 6px #0003; color:white; font:bold 16px sans-serif; }
+.ozon-point-marker span::first-letter { transform:rotate(45deg); }
+.marker-cluster-small,.marker-cluster-medium,.marker-cluster-large { background:#005bff33; }
+.marker-cluster-small div,.marker-cluster-medium div,.marker-cluster-large div { background:#005bff; color:white; }

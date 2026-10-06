@@ -1,4 +1,5 @@
 import "server-only";
+import { coordinates } from "./geo";
 import { cookies } from "next/headers";
 import { getCart } from "@/lib/actions/cart";
 import { createServerClient } from "@/lib/supabase/server";
@@ -72,6 +73,7 @@ export function publicPoint(
     id: info.delivery_point_id,
     name: info.name,
     address: info.full_address,
+    coordinates: coordinates(info.coordinates),
   };
 }
 export async function quoteDelivery(

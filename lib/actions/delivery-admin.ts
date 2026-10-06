@@ -1,14 +1,11 @@
 "use server";
 import { z } from "zod";
+import { syncCatalogPage } from "@/lib/delivery/catalog-sync";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { uuid } from "@/lib/validation";
 import { createServerClient } from "@/lib/supabase/server";
-import {
-  ozonTransport,
-  pointInfo,
-  shipmentMethodId,
-} from "@/lib/delivery/ozon";
+import { ozonTransport, shipmentMethodId } from "@/lib/delivery/ozon";
 import {
   createPaidShipment,
   refreshShipmentStatus,
@@ -58,65 +55,21 @@ export async function savePackingRule(input: unknown) {
   revalidatePath("/admin/delivery");
   return { success: true };
 }
-export async function syncDeliveryPoints() {
+export async function syncDeliveryPoints(): Promise<{
+  count?: number;
+  more?: boolean;
+  error?: string;
+}> {
   await requireAdmin();
   const db = createServerClient();
   try {
-    const { data: sync, error: syncError } = await db
-      .from("delivery_sync")
-      .select("cursor")
-      .eq("provider", "ozon")
-      .maybeSingle();
-    if (syncError) throw new Error("Не удалось прочитать состояние загрузки.");
-    const data = await ozonTransport().call<{
-      delivery_points: {
-        delivery_point_id: number;
-        shipment_method_ids: number[];
-      }[];
-      next_cursor?: string | null;
-    }>("/v1/delivery-point/list", {
-      pagination: { cursor: sync?.cursor ?? "", limit: 100 },
-    });
-    if (!Array.isArray(data.delivery_points))
-      throw new Error("Не удалось получить список пунктов.");
-    const method = await shipmentMethodId();
-    const ids = data.delivery_points
-      .filter((p) =>
-        Array.isArray(p.shipment_method_ids)
-          ? p.shipment_method_ids.includes(method)
-          : Number(p.shipment_method_ids) === method,
-      )
-      .map((p) => p.delivery_point_id);
-    if (ids.length) {
-      const info = await pointInfo(ids);
-      const { error } = await db.from("delivery_points").upsert(
-        info.map((p) => ({
-          provider: "ozon",
-          id: p.delivery_point_id,
-          name: p.name,
-          address: p.full_address,
-          active: p.is_active && p.type === "pvz",
-          data: p,
-          updated_at: new Date().toISOString(),
-        })),
-        { onConflict: "provider,id" },
-      );
-      if (error) throw new Error("Не удалось сохранить пункты выдачи.");
-    }
-    if (data.next_cursor && data.next_cursor === sync?.cursor)
-      throw new Error(
-        "Не удалось продолжить загрузку пунктов. Повторите позже.",
-      );
-    const { error } = await db
-      .from("delivery_sync")
-      .upsert({
-        provider: "ozon",
-        cursor: data.next_cursor ?? null,
-        updated_at: new Date().toISOString(),
-      });
-    if (error) throw new Error("Не удалось сохранить состояние загрузки.");
+    const result = await syncCatalogPage(
+      db,
+      ozonTransport(),
+      await shipmentMethodId(),
+    );
     revalidatePath("/admin/delivery");
-    return { count: ids.length, more: Boolean(data.next_cursor) };
+    return result;
   } catch (e) {
     return {
       error:

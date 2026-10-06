@@ -9,16 +9,35 @@ export default async function OrdersPage({
     q?: string;
     status?: string;
     payment?: string;
+    mode?: string;
     page?: string;
   }>;
 }) {
   const p = await searchParams,
     page = Math.max(1, Math.floor(Number(p.page) || 1)),
-    { orders, count } = await listOrders(p.q, p.status, p.payment, page);
+    { orders, count } = await listOrders(
+      p.q,
+      p.status,
+      p.payment,
+      page,
+      p.mode,
+    );
   return (
     <div className="space-y-6">
       <h2 className="text-xl">Заказы · {count}</h2>
-      <form className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <form className="grid sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        <label>
+          Режим
+          <select
+            name="mode"
+            className="admin-input"
+            defaultValue={p.mode ?? ""}
+          >
+            <option value="">Все заказы</option>
+            <option value="live">Обычные</option>
+            <option value="test">Тестовые</option>
+          </select>
+        </label>
         <label>
           Поиск
           <input
@@ -67,11 +86,18 @@ export default async function OrdersPage({
         {orders.map((o) => (
           <Link
             key={o.id}
-            href={`/admin/orders/${o.id}`}
+            href={
+              o.mode === "test"
+                ? `/admin/orders/test/${o.id}`
+                : `/admin/orders/${o.id}`
+            }
             className="admin-card grid md:grid-cols-[1.2fr_1fr_1fr_1fr] gap-3 hover:border-stone-500"
           >
             <div>
               <strong>{o.order_number}</strong>
+              {o.mode === "test" && (
+                <span className="ml-2 text-xs text-amber-800">ТЕСТ</span>
+              )}
               <p className="text-sm text-stone-600">
                 {new Date(o.created_at).toLocaleString("ru-RU", {
                   timeZone: "Europe/Moscow",
@@ -81,7 +107,11 @@ export default async function OrdersPage({
             <p>{o.customer_name}</p>
             <p>{formatPrice(o.total_amount)}</p>
             <div>
-              <p>{orderLabels[o.status]}</p>
+              <p>
+                {o.mode === "test"
+                  ? "Тестовый · без отправки"
+                  : orderLabels[o.status]}
+              </p>
               <p className="text-sm text-stone-600">
                 Оплата: {paymentLabels[o.payment_status]}
               </p>
@@ -103,6 +133,7 @@ export default async function OrdersPage({
                   q: p.q ?? "",
                   status: p.status ?? "",
                   payment: p.payment ?? "",
+                  mode: p.mode ?? "",
                   page: String(n),
                 })
               }

@@ -1,5 +1,6 @@
-import { NextRequest } from "next/server";
+import { after, NextRequest } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
+import { sendOrderNotification } from "@/lib/notifications";
 import {
   callbackFields,
   verifyPaymentNotification,
@@ -64,5 +65,20 @@ export async function POST(request: NextRequest) {
     p_mode: data.mode,
   });
   if (saveError) return reply("retry later", 503);
+  if (data.mode === "live" && data.order_id) {
+    after(async () => {
+      try {
+        const { data: order } = await db
+          .from("orders")
+          .select("status")
+          .eq("id", data.order_id)
+          .maybeSingle();
+        if (order && order.status !== "cancelled")
+          await sendOrderNotification(data.order_id);
+      } catch {
+        /* The committed payment must not depend on notification delivery. */
+      }
+    });
+  }
   return reply(`OK${fields.InvId}`, 200);
 }

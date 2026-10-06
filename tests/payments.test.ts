@@ -289,6 +289,15 @@ test("SQL payment checkout, callback rollback, idempotency, test isolation and R
     await db.exec(
       "drop trigger fail_event on order_events;drop function fail_event();",
     );
+    await db.query(
+      "update orders set total_amount=total_amount+1 where id=$1",
+      [live.order_id],
+    );
+    await assert.rejects(confirm(live), /ORDER_MISMATCH/);
+    await db.query(
+      "update orders set total_amount=total_amount-1 where id=$1",
+      [live.order_id],
+    );
     await confirm(live);
     await confirm(live);
     assert.equal(

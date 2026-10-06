@@ -120,7 +120,7 @@ export async function createOrder(
               sum: number;
               kind: "goods" | "delivery" | "insurance";
             }) => ({
-              name: item.name,
+              name: item.name.slice(0, 128),
               quantity: item.quantity,
               sum: Number(item.sum),
               ...fiscal[item.kind],

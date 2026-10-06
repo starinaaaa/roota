@@ -444,3 +444,20 @@ test("an application granted all API access can authenticate after individual sc
   assert.equal(scopes.length, 2);
   assert.deepEqual(scopes[1], ["delivery-api.all"]);
 });
+
+test("map catalogue recognizes settlement names, aliases and validates carrier coordinates", async () => {
+  const { addressCity, normalizeCity, coordinates } =
+    await import("../lib/delivery/geo");
+  assert.equal(
+    addressCity("Россия, Московская область, г. Химки, улица Москва, 1"),
+    "Химки",
+  );
+  assert.equal(addressCity("Россия, Москва, улица Ленина, 1"), "Москва");
+  assert.equal(normalizeCity("спб"), "санкт-петербург");
+  assert.equal(coordinates({ latitude: 999, longitude: 30 }), undefined);
+  assert.equal(coordinates({ latitude: 0, longitude: 0 }), undefined);
+  assert.deepEqual(coordinates({ latitude: 59.9, longitude: 30.3 }), {
+    latitude: 59.9,
+    longitude: 30.3,
+  });
+});

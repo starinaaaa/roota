@@ -16,6 +16,7 @@ export type DeliveryPoint = {
   name: string;
   address: string;
   schedule?: string;
+  coordinates?: { latitude: number; longitude: number };
 };
 export type DeliveryQuote = {
   id: string;

@@ -79,3 +79,85 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+// Public projection of the carrier catalogue; never expose private delivery rows.
+export async function GET(request: NextRequest) {
+  const { addressCity, coordinates, majorCities, normalizeCity } =
+    await import("@/lib/delivery/geo");
+  const action = request.nextUrl.searchParams.get("action"),
+    query = request.nextUrl.searchParams.get("q")?.trim() ?? "";
+  if (
+    !["cities", "catalog"].includes(action ?? "") ||
+    query.length < 2 ||
+    query.length > 100
+  )
+    return NextResponse.json({ error: "Укажите город." }, { status: 422 });
+  const search = normalizeCity(query);
+  const pattern = "%" + search.replace(/[\\%_]/g, "\\$&") + "%";
+  const offset = Number(request.nextUrl.searchParams.get("offset") ?? 0);
+  if (!Number.isInteger(offset) || offset < 0 || offset > 100000)
+    return NextResponse.json(
+      { error: "Некорректная страница." },
+      { status: 422 },
+    );
+  const { data, error } = await createServerClient()
+    .from("delivery_points")
+    .select("data")
+    .eq("provider", "ozon")
+    .eq("active", true)
+    .ilike("address", pattern)
+    .order("address")
+    .order("id")
+    .range(
+      action === "cities" ? 0 : offset,
+      action === "cities" ? 999 : offset + 499,
+    );
+  if (error)
+    return NextResponse.json(
+      { error: "Не удалось загрузить пункты выдачи." },
+      { status: 503 },
+    );
+  if (action === "cities") {
+    const cities = new Map(
+      majorCities
+        .filter((c) => normalizeCity(c.name).startsWith(search))
+        .map((c) => [c.name, c]),
+    );
+    for (const row of data ?? []) {
+      const name = addressCity(row.data.full_address),
+        position = coordinates(row.data.coordinates);
+      if (
+        name &&
+        position &&
+        normalizeCity(name).startsWith(search) &&
+        !cities.has(name)
+      )
+        cities.set(name, { name, ...position });
+    }
+    return NextResponse.json(
+      { cities: [...cities.values()].slice(0, 12) },
+      { headers: { "Cache-Control": "public, max-age=60" } },
+    );
+  }
+  if (!data?.length && !offset) {
+    const { count } = await createServerClient()
+      .from("delivery_points")
+      .select("id", { count: "exact", head: true })
+      .eq("provider", "ozon")
+      .eq("active", true);
+    if (!count)
+      return NextResponse.json(
+        { error: "Каталог пунктов Ozon временно недоступен. Повторите позже." },
+        { status: 503 },
+      );
+  }
+  return NextResponse.json(
+    {
+      points: (data ?? [])
+        .filter((p) => pointInCity(p.data.full_address, search))
+        .map((p) => publicPoint(p.data)),
+      nextOffset: data?.length === 500 ? offset + 500 : null,
+    },
+    { headers: { "Cache-Control": "no-store" } },
+  );
+}

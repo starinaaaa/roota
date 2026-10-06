@@ -1,6 +1,6 @@
 "use server";
 import { z } from "zod";
-import { syncCatalogPage } from "@/lib/delivery/catalog-sync";
+import { syncCatalog } from "@/lib/delivery/catalog-sync";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { uuid } from "@/lib/validation";
@@ -63,7 +63,7 @@ export async function syncDeliveryPoints(): Promise<{
   await requireAdmin();
   const db = createServerClient();
   try {
-    const result = await syncCatalogPage(
+    const result = await syncCatalog(
       db,
       ozonTransport(),
       await shipmentMethodId(),

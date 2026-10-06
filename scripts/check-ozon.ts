@@ -1,5 +1,3 @@
-import { createClient } from "@supabase/supabase-js";
-import { syncCatalogPage } from "../lib/delivery/catalog-sync";
 import {
   OzonTransport,
   activeShipmentMethod,
@@ -23,44 +21,6 @@ async function check(attempt = 0) {
       process.env.OZON_SHIPMENT_METHOD_ID,
     );
     console.info("Ozon connection check: active shipment method ID", id);
-    if (
-      process.env.VERCEL_ENV === "production" &&
-      process.env.SUPABASE_SERVICE_ROLE_KEY &&
-      process.env.NEXT_PUBLIC_SUPABASE_URL
-    ) {
-      const db = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL,
-        process.env.SUPABASE_SERVICE_ROLE_KEY,
-        { auth: { persistSession: false } },
-      );
-      const { count, error } = await db
-        .from("delivery_points")
-        .select("id", { count: "exact", head: true })
-        .eq("provider", "ozon");
-      const { data: state } = await db
-        .from("delivery_sync")
-        .select("cursor")
-        .eq("provider", "ozon")
-        .maybeSingle();
-      if (error) throw new Error("Catalogue storage unavailable");
-      if (!count || state?.cursor) {
-        const started = Date.now();
-        let total = 0;
-        for (let page = 0; page < 2000; page++) {
-          const result = await syncCatalogPage(db, transport, id);
-          total += result.count;
-          if (page % 25 === 0 || !result.more)
-            console.info("Ozon catalogue: imported", total, "points");
-          if (!result.more) break;
-          if (Date.now() - started > 300000) {
-            console.info(
-              "Ozon catalogue: paused; resume in admin delivery settings",
-            );
-            break;
-          }
-        }
-      }
-    }
   } catch (error) {
     if (error instanceof OzonConnectionError && attempt < 2) {
       console.warn(

@@ -1,3 +1,11 @@
+export class OzonConnectionError extends Error {
+  constructor(
+    public endpoint: string,
+    public code: string,
+  ) {
+    super("Не удалось связаться со службой доставки. Повторите попытку.");
+  }
+}
 export class OzonApiError extends Error {
   constructor(
     public path: string,
@@ -56,6 +64,19 @@ export class OzonTransport {
         redirect: "manual",
         signal,
         cache: "no-store",
+      }).catch((error: unknown) => {
+        const cause =
+          error instanceof Error
+            ? (error as Error & { cause?: { code?: string } }).cause
+            : undefined;
+        const code =
+          typeof cause?.code === "string" &&
+          /^[A-Z_0-9]{1,60}$/.test(cause.code)
+            ? cause.code
+            : "NETWORK_ERROR";
+        const endpoint = current.hostname + current.pathname;
+        console.warn("Ozon connection failed", endpoint, code);
+        throw new OzonConnectionError(endpoint, code);
       });
       for (const cookie of response.headers.getSetCookie()) {
         const pair = cookie.split(";")[0],

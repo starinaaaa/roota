@@ -5,9 +5,10 @@ import {
   activeShipmentMethod,
   OzonAuthError,
   OzonApiError,
+  OzonConnectionError,
 } from "../lib/delivery/ozon-transport";
 // Production credentials stay within the build process; only safe diagnostics are logged.
-async function check() {
+async function check(attempt = 0) {
   if (!process.env.OZON_CLIENT_ID || !process.env.OZON_CLIENT_SECRET) {
     console.info("Ozon connection check: credentials not configured");
     return;
@@ -61,7 +62,22 @@ async function check() {
       }
     }
   } catch (error) {
-    if (error instanceof OzonAuthError)
+    if (error instanceof OzonConnectionError && attempt < 2) {
+      console.warn(
+        "Ozon connection check: retry",
+        attempt + 1,
+        error.endpoint,
+        error.code,
+      );
+      return check(attempt + 1);
+    }
+    if (error instanceof OzonConnectionError)
+      console.warn(
+        "Ozon connection check: network failure",
+        error.endpoint,
+        error.code,
+      );
+    else if (error instanceof OzonAuthError)
       console.warn(
         "Ozon connection check: OAuth rejected",
         error.status,

@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { getSiteContent } from "@/lib/site";
 import Link from "next/link";
+import Image from "next/image";
+import AboutHero from "@/components/about/AboutHero";
+import { aboutGallery } from "@/lib/about-gallery";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/about" },
@@ -13,17 +16,14 @@ export default async function AboutPage() {
   const site = await getSiteContent();
   return (
     <div className="pt-16 md:pt-20">
-      {/* ── Заголовок ── */}
-      <section className="py-20 md:py-28 px-6 md:px-12 lg:px-16">
-        <div className="max-w-[1440px] mx-auto">
-          <p className="font-body text-xs text-stone-400 tracking-[0.2em] uppercase mb-8">
-            О студии
-          </p>
-          <h1 className="font-display text-[clamp(3rem,7vw,6.5rem)] leading-[1.05] text-stone-900 max-w-3xl">
-            {site.studioTitle}
-          </h1>
-        </div>
-      </section>
+      <AboutHero
+        title={site.studioTitle}
+        photos={
+          aboutGallery.length
+            ? aboutGallery
+            : [{ src: site.heroImage, alt: "Авторская керамика Roota" }]
+        }
+      />
 
       {/* ── Вступление ── */}
       <section className="border-t border-stone-200 py-20 md:py-28 px-6 md:px-12 lg:px-16">
@@ -41,12 +41,12 @@ export default async function AboutPage() {
         </div>
       </section>
 
-      {/* ── Процесс ── */}
+      {/* ── Обо мне ── */}
       <section className="border-t border-stone-200 py-20 md:py-28 px-6 md:px-12 lg:px-16">
         <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-8">
           <div className="md:col-span-4 lg:col-span-3">
             <p className="font-body text-xs text-stone-400 tracking-[0.2em] uppercase mb-6">
-              Процесс
+              Обо мне
             </p>
             <h2 className="font-display text-[clamp(1.8rem,3vw,3rem)] leading-tight text-stone-900">
               От рук
@@ -82,15 +82,17 @@ export default async function AboutPage() {
         </div>
       </section>
 
-      {/* ── Цитата ── */}
-      <section className="border-t border-stone-200 py-28 md:py-36 px-6 md:px-12 lg:px-16">
-        <div className="max-w-[1440px] mx-auto">
-          <p className="font-display text-[clamp(1.6rem,3.5vw,3rem)] leading-snug text-stone-800 max-w-3xl mx-auto text-center">
-            {site.studioQuote}
-          </p>
-          <p className="font-body text-xs text-stone-400 tracking-[0.2em] uppercase text-center mt-8">
-            Roota ceramics · Москва
-          </p>
+      {/* ── Иллюстрация ── */}
+      <section className="border-t border-stone-200 bg-white px-6 py-16 md:px-12 md:py-20 lg:px-16">
+        <div className="mx-auto max-w-[1440px]">
+          <Image
+            src="/images/about/illustration.png"
+            alt="Нарисованный персонаж с лейкой"
+            width={1076}
+            height={1012}
+            sizes="(max-width: 768px) 85vw, 520px"
+            className="mx-auto h-auto w-full max-w-[520px]"
+          />
         </div>
       </section>
 

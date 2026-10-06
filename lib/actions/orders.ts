@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { sendOrderNotification } from "@/lib/notifications";
 import { quoteDelivery } from "@/lib/delivery/service";
 import type { CreateOrderResult } from "@/types";
+import { paymentMode, receiptProfile } from "@/lib/payments/robokassa";
 const messages: Record<string, string> = {
   EMPTY_CART: "Корзина пуста",
   OUT_OF_STOCK:
@@ -47,6 +48,8 @@ export async function createOrder(
       error: "Обновите страницу, чтобы восстановить корзину.",
     };
   try {
+    const mode = paymentMode();
+    const fiscal = mode ? receiptProfile(mode) : null;
     const db = createServerClient();
     if (!form.data.deliveryQuoteId)
       return {
@@ -55,7 +58,7 @@ export async function createOrder(
       };
     // Retrying a committed checkout must succeed even though its cart is now empty.
     const { data: previous, error: lookupError } = await db
-      .from("orders")
+      .from(mode === "test" ? "payment_test_orders" : "orders")
       .select("id")
       .eq("cart_session", session)
       .eq("request_key", key.data)
@@ -88,13 +91,17 @@ export async function createOrder(
       if (!Number.isFinite(fresh.totalCost))
         throw new Error("Не удалось проверить доставку.");
     }
-    const { data, error } = await db.rpc("checkout_delivery_order", {
-      p_session: session,
-      p_key: key.data,
-      p_form: form.data,
-      p_expected_total: expectedTotal,
-      p_quote: form.data.deliveryQuoteId,
-    });
+    const { data, error } = await db.rpc(
+      mode ? "checkout_robokassa" : "checkout_delivery_order",
+      {
+        p_session: session,
+        p_key: key.data,
+        p_form: form.data,
+        p_expected_total: expectedTotal,
+        p_quote: form.data.deliveryQuoteId,
+        ...(mode ? { p_mode: mode } : {}),
+      },
+    );
     if (error)
       return {
         success: false,
@@ -102,6 +109,40 @@ export async function createOrder(
           messages[error.message] ??
           "Не удалось сохранить заказ. Попробуйте ещё раз.",
       };
+    if (mode && data?.id) {
+      if (fiscal && !data.receipt) {
+        const receipt = {
+          ...(fiscal.sno ? { sno: fiscal.sno } : {}),
+          items: data.items.map(
+            (item: {
+              name: string;
+              quantity: number;
+              sum: number;
+              kind: "goods" | "delivery" | "insurance";
+            }) => ({
+              name: item.name.slice(0, 128),
+              quantity: item.quantity,
+              sum: Number(item.sum),
+              ...fiscal[item.kind],
+            }),
+          ),
+        };
+        const { error: receiptError } = await db
+          .from("payments")
+          .update({ receipt })
+          .eq("id", data.id)
+          .eq("status", "pending")
+          .is("receipt", null);
+        if (receiptError)
+          throw new Error("Не удалось подготовить оплату. Повторите отправку.");
+      }
+      return {
+        success: true,
+        orderId: data.order_id ?? data.test_order_id,
+        orderNumber: String(data.inv_id),
+        paymentId: data.id,
+      };
+    }
     if (!data?.id || !data?.number)
       return {
         success: false,
@@ -118,6 +159,9 @@ export async function createOrder(
       success: false,
       error:
         e instanceof Error &&
+        !/PAYMENT_CONFIG|RECEIPT_NOT_APPROVED|ZodError|Unexpected/i.test(
+          e.message,
+        ) &&
         !/fetch|JSON|network|abort|timeout/i.test(e.message)
           ? e.message
           : "Не удалось связаться со студией. Попробуйте ещё раз.",

@@ -95,7 +95,11 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json(
-    { orderId: result.orderId, orderNumber: result.orderNumber },
+    {
+      orderId: result.orderId,
+      orderNumber: result.orderNumber,
+      paymentId: result.paymentId,
+    },
     { status: 201 },
   );
 }

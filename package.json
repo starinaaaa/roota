@@ -11,6 +11,7 @@
     "postbuild": "node --import tsx scripts/check-ozon.ts"
   },
   "dependencies": {
+    "@robokassa/sdk": "1.0.0",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.99.1",
     "framer-motion": "^12.35.2",

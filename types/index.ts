@@ -112,6 +112,7 @@ export type CheckoutFormData = {
   address: string;
   comment: string;
   subscribeToNews: boolean;
+  deliveryQuoteId?: string;
 };
 
 // Результат Server Action createOrder

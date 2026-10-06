@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
@@ -8,25 +8,33 @@ import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { formatPrice } from "@/lib/products";
 import { createOrder } from "@/lib/actions/orders";
-import type { CartItem, CheckoutFormData, DeliveryType } from "@/types";
+import type { CartItem, CheckoutFormData } from "@/types";
+
+import PhoneField from "./PhoneField";
+import DeliverySelector from "./DeliverySelector";
+import { checkoutSchema } from "@/lib/validation";
+import type { DeliveryQuote } from "@/lib/delivery/model";
 
 type Props = {
   initialItems: CartItem[];
+  deliveryEnabled: boolean;
 };
 
-export default function CheckoutForm({ initialItems }: Props) {
+export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
   const router = useRouter();
   const requestKey = useRef<string | null>(null);
   const submitting = useRef(false);
 
+  const [quote, setQuote] = useState<DeliveryQuote | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<CheckoutFormData>({
     name: "",
-    phone: "",
+    phone: "+7",
     email: "",
-    deliveryType: "moscow",
+    deliveryType: "russia",
     address: "",
     comment: "",
     subscribeToNews: false,
@@ -51,13 +59,67 @@ export default function CheckoutForm({ initialItems }: Props) {
     setError(null);
   }
 
-  function setDeliveryType(type: DeliveryType) {
-    setFormData((prev) => ({ ...prev, deliveryType: type }));
+  function receiveQuote(next: DeliveryQuote | null) {
+    setQuote(next);
+    setFormData((prev) => ({
+      ...prev,
+      deliveryQuoteId: next?.id,
+      address: next?.point.address ?? "",
+    }));
   }
+  function validateField(name: string) {
+    const parsed = checkoutSchema.safeParse(formData);
+    const message = parsed.success
+      ? ""
+      : (parsed.error.issues.find((i) => i.path[0] === name)?.message ?? "");
+    setFieldErrors((prev) => ({ ...prev, [name]: message }));
+  }
+  useEffect(() => {
+    if (!quote) return;
+    const timer = setTimeout(
+      () => {
+        receiveQuote(null);
+        setError("Расчёт доставки устарел. Рассчитайте доставку ещё раз.");
+      },
+      Math.max(0, Date.parse(quote.expiresAt) - Date.now()),
+    );
+    return () => clearTimeout(timer);
+  }, [quote]);
+  const cartKey = JSON.stringify(
+    initialItems.map((i) => [
+      i.product_id,
+      i.quantity,
+      i.product.price,
+      i.purchase_mode,
+    ]),
+  );
+  const finalTotal = quote
+    ? Math.round((totalPrice + quote.totalCost) * 100) / 100
+    : null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (submitting.current) return;
+    const validated = checkoutSchema.safeParse({
+      ...formData,
+      address: quote?.point.address ?? "Пункт ещё не выбран",
+    });
+    if (!validated.success) {
+      const fields: Record<string, string> = {};
+      for (const issue of validated.error.issues) {
+        const name = String(issue.path[0]);
+        fields[name] ??= issue.message;
+      }
+      setFieldErrors(fields);
+      setError("Проверьте данные заказа.");
+      document.getElementById(Object.keys(fields)[0])?.focus();
+      return;
+    }
+    if (!quote || finalTotal === null) {
+      setError("Выберите пункт выдачи и рассчитайте доставку.");
+      return;
+    }
+
     submitting.current = true;
     requestKey.current ??= crypto.randomUUID();
     setPending(true);
@@ -66,7 +128,7 @@ export default function CheckoutForm({ initialItems }: Props) {
     // createOrder reads cart from Supabase server-side — no items passed
     let result;
     try {
-      result = await createOrder(formData, requestKey.current, totalPrice);
+      result = await createOrder(formData, requestKey.current, finalTotal);
     } catch {
       result = {
         success: false as const,
@@ -77,6 +139,8 @@ export default function CheckoutForm({ initialItems }: Props) {
     if (result.success) {
       router.push(`/order-success?id=${result.orderId}`);
     } else {
+      if (/достав|упаков|Корзина|Цена изменилась/i.test(result.error))
+        receiveQuote(null);
       setError(result.error);
       setPending(false);
       submitting.current = false;
@@ -91,119 +155,71 @@ export default function CheckoutForm({ initialItems }: Props) {
 
       <div className="lg:grid lg:grid-cols-[1fr_360px] lg:gap-16 xl:gap-24">
         {/* ── Форма ──────────────────────────────────────────── */}
-        <form id="checkout-form" onSubmit={handleSubmit} className="space-y-8">
-          {/* Контактные данные */}
-          <fieldset className="space-y-5">
-            <legend className="font-body text-[10px] tracking-[0.28em] uppercase text-stone-400 mb-6">
-              Контактные данные
-            </legend>
+        <form
+          id="checkout-form"
+          onSubmit={handleSubmit}
+          className="space-y-8"
+          noValidate
+        >
+          <fieldset disabled={pending} className="space-y-8">
+            {/* Контактные данные */}
+            <fieldset className="space-y-5">
+              <legend className="font-body text-[10px] tracking-[0.28em] uppercase text-stone-400 mb-6">
+                Контактные данные
+              </legend>
 
-            <Field
-              label="Имя *"
-              id="name"
-              name="name"
-              type="text"
-              value={formData.name}
-              onChange={handleChange}
-              placeholder="Как к вам обращаться"
-              autoComplete="given-name"
-              required
-            />
-
-            <Field
-              label="Телефон *"
-              id="phone"
-              name="phone"
-              type="tel"
-              value={formData.phone}
-              onChange={handleChange}
-              placeholder="+7 (___) ___-__-__"
-              autoComplete="tel"
-              required
-            />
-
-            <Field
-              label="Email *"
-              id="email"
-              name="email"
-              type="email"
-              value={formData.email ?? ""}
-              onChange={handleChange}
-              placeholder="example@email.com"
-              autoComplete="email"
-              required
-            />
-          </fieldset>
-
-          <div className="divider" />
-
-          {/* Доставка */}
-          <fieldset className="space-y-5">
-            <legend className="font-body text-[10px] tracking-[0.28em] uppercase text-stone-400 mb-6">
-              Доставка
-            </legend>
-
-            {/* Тип доставки */}
-            <div className="grid grid-cols-2 gap-3">
-              {(["moscow", "russia"] as const).map((type) => (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => setDeliveryType(type)}
-                  className={[
-                    "py-4 px-5 text-left border transition-all duration-200",
-                    formData.deliveryType === type
-                      ? "border-stone-900 bg-stone-900 text-stone-50"
-                      : "border-stone-200 text-stone-700 hover:border-stone-400",
-                  ].join(" ")}
-                >
-                  <p className="font-body text-xs tracking-[0.12em] uppercase">
-                    {type === "moscow" ? "Москва" : "По России"}
-                  </p>
-                  <p
-                    className={[
-                      "font-body text-[10px] mt-1",
-                      formData.deliveryType === type
-                        ? "text-stone-300"
-                        : "text-stone-400",
-                    ].join(" ")}
-                  >
-                    {type === "moscow" ? "Курьер / самовывоз" : "СДЭК / Почта"}
-                  </p>
-                </button>
-              ))}
-            </div>
-
-            {/* Адрес */}
-            <div className="space-y-2">
-              <label
-                htmlFor="address"
-                className="font-body text-[10px] tracking-[0.18em] uppercase text-stone-500 block"
-              >
-                Адрес *
-              </label>
-              <textarea
-                id="address"
-                name="address"
-                value={formData.address}
+              <Field
+                error={fieldErrors.name}
+                onBlur={() => validateField("name")}
+                label="Имя *"
+                id="name"
+                name="name"
+                type="text"
+                value={formData.name}
                 onChange={handleChange}
-                placeholder={
-                  formData.deliveryType === "moscow"
-                    ? "Улица, дом, квартира"
-                    : "Индекс, город, улица, дом, квартира"
-                }
-                rows={3}
+                placeholder="Как к вам обращаться"
+                autoComplete="given-name"
                 required
-                className="
-                  w-full border border-stone-200 bg-transparent
-                  font-body text-sm text-stone-800
-                  px-4 py-3 resize-none
-                  placeholder:text-stone-300
-                  focus:outline-none focus:border-stone-500
-                  transition-colors duration-200
-                "
               />
-            </div>
+
+              <PhoneField
+                value={formData.phone}
+                onChange={(value) => {
+                  setFormData((prev) => ({ ...prev, phone: value }));
+                  setFieldErrors((prev) => ({ ...prev, phone: "" }));
+                  setError(null);
+                  receiveQuote(null);
+                }}
+                onBlur={() => validateField("phone")}
+                error={fieldErrors.phone}
+                onInvalidPaste={(message) =>
+                  setFieldErrors((prev) => ({ ...prev, phone: message }))
+                }
+              />
+
+              <Field
+                error={fieldErrors.email}
+                onBlur={() => validateField("email")}
+                label="Email *"
+                id="email"
+                name="email"
+                type="email"
+                value={formData.email ?? ""}
+                onChange={handleChange}
+                placeholder="example@email.com"
+                autoComplete="email"
+                required
+              />
+            </fieldset>
+
+            <div className="divider" />
+
+            <DeliverySelector
+              phone={formData.phone}
+              cartKey={cartKey}
+              enabled={deliveryEnabled}
+              onQuote={receiveQuote}
+            />
 
             {/* Комментарий */}
             <div className="space-y-2">
@@ -230,40 +246,36 @@ export default function CheckoutForm({ initialItems }: Props) {
                 "
               />
             </div>
+
+            {/* Подписка на новости */}
+            <label className="flex items-start gap-3 cursor-pointer group">
+              <input
+                type="checkbox"
+                name="subscribeToNews"
+                checked={formData.subscribeToNews}
+                onChange={handleChange}
+                className="mt-1 w-4 h-4 accent-stone-900 cursor-pointer"
+              />
+              <span className="font-body text-[13px] tracking-[0.05em] text-stone-600 group-hover:text-stone-900 transition-colors duration-200">
+                Хочу подписаться на новости студии
+              </span>
+            </label>
+
+            {/* Ошибка */}
+            <AnimatePresence>
+              {error && (
+                <motion.p
+                  role="alert"
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="font-body text-sm text-red-600 mt-2"
+                >
+                  {error}
+                </motion.p>
+              )}
+            </AnimatePresence>
           </fieldset>
-
-          {/* Подписка на новости */}
-          <label className="flex items-start gap-3 cursor-pointer group">
-            <input
-              type="checkbox"
-              name="subscribeToNews"
-              checked={formData.subscribeToNews}
-              onChange={handleChange}
-              className="mt-1 w-4 h-4 accent-stone-900 cursor-pointer"
-            />
-            <span className="font-body text-[13px] tracking-[0.05em] text-stone-600 group-hover:text-stone-900 transition-colors duration-200">
-              Хочу подписаться на новости студии
-            </span>
-          </label>
-
-          {/* Ошибка */}
-          <AnimatePresence>
-            {error && (
-              <motion.p
-                initial={{ opacity: 0, y: -6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="font-body text-sm text-red-600 mt-2"
-              >
-                {error}
-              </motion.p>
-            )}
-          </AnimatePresence>
-
-          {/* Submit — только на мобильном виден здесь, на десктопе — в sidebar */}
-          <div className="lg:hidden">
-            <SubmitButton pending={pending} />
-          </div>
         </form>
 
         {/* ── Summary ────────────────────────────────────────── */}
@@ -328,22 +340,34 @@ export default function CheckoutForm({ initialItems }: Props) {
                   Доставка
                 </span>
                 <span className="font-body text-xs text-stone-400">
-                  уточняется
+                  {quote ? formatPrice(quote.totalCost) : "нужен расчёт"}
                 </span>
               </div>
+              {quote && (
+                <p className="font-body text-[10px] text-stone-400">
+                  Включая страховку {formatPrice(quote.insuranceCost)}
+                  {quote.estimatedDays !== null && (
+                    <>
+                      {" "}
+                      · ориентировочно {quote.estimatedDays} дн. после передачи
+                      Ozon
+                    </>
+                  )}
+                </p>
+              )}
               <div className="divider pt-1" />
               <div className="flex justify-between items-baseline">
                 <span className="font-body text-xs tracking-[0.15em] uppercase text-stone-500">
-                  Итого
+                  {quote ? "Итого" : "Сумма товаров"}
                 </span>
                 <span className="font-display text-2xl text-stone-900">
-                  {formatPrice(totalPrice)}
+                  {formatPrice(finalTotal ?? totalPrice)}
                 </span>
               </div>
             </div>
 
             {/* Submit button на десктопе */}
-            <div className="hidden lg:block pt-2">
+            <div className="pt-2">
               {error && (
                 <p className="font-body text-sm text-red-600 mt-2 mb-3">
                   {error}
@@ -392,7 +416,7 @@ export default function CheckoutForm({ initialItems }: Props) {
               >
                 политикой конфиденциальности
               </Link>
-              . Стоимость доставки уточняется менеджером.
+              . Доставка и страховка включены в итог после расчёта.
             </p>
 
             <Link
@@ -419,6 +443,8 @@ function Field({
   placeholder,
   autoComplete,
   required,
+  error,
+  onBlur,
 }: {
   label: string;
   id: string;
@@ -429,6 +455,8 @@ function Field({
   placeholder?: string;
   autoComplete?: string;
   required?: boolean;
+  error?: string;
+  onBlur?: () => void;
 }) {
   return (
     <div className="space-y-2">
@@ -444,6 +472,9 @@ function Field({
         type={type}
         value={value}
         onChange={onChange}
+        onBlur={onBlur}
+        aria-invalid={Boolean(error)}
+        aria-describedby={error ? id + "-error" : undefined}
         placeholder={placeholder}
         autoComplete={autoComplete}
         required={required}
@@ -456,33 +487,11 @@ function Field({
           transition-colors duration-200
         "
       />
-    </div>
-  );
-}
-
-/* ── Submit button (мобильный) ──────────────────────────────── */
-function SubmitButton({ pending }: { pending: boolean }) {
-  return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="
-        w-full bg-stone-900 text-stone-50
-        font-body text-xs tracking-[0.2em] uppercase
-        py-4
-        hover:bg-stone-700 disabled:opacity-50 disabled:cursor-not-allowed
-        transition-colors duration-300
-        flex items-center justify-center gap-2
-      "
-    >
-      {pending ? (
-        <>
-          <Loader2 size={14} strokeWidth={1.5} className="animate-spin" />{" "}
-          Отправляю...
-        </>
-      ) : (
-        "Оформить заказ"
+      {error && (
+        <p id={id + "-error"} role="alert" className="text-xs text-red-700">
+          {error}
+        </p>
       )}
-    </button>
+    </div>
   );
 }

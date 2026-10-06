@@ -70,10 +70,22 @@ export class OzonTransport {
           "delivery-api.posting",
         ],
       });
-      if (!response.ok)
+      if (!response.ok) {
+        // Log only status and a short OAuth error code, never response bodies or credentials.
+        let code = "unknown";
+        try {
+          const rejected = await response.json();
+          if (
+            typeof rejected.error === "string" &&
+            /^[a-z_]{1,50}$/.test(rejected.error)
+          )
+            code = rejected.error;
+        } catch {}
+        console.error("Ozon OAuth rejected", response.status, code);
         throw new Error(
           "Служба доставки временно недоступна. Повторите позже.",
         );
+      }
       const data = await response.json();
       if (typeof data.access_token !== "string" || !data.access_token)
         throw new Error("Служба доставки временно недоступна.");

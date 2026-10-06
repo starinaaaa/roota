@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { normalizeRussianPhone } from "@/lib/contacts";
 import type { DeliveryPoint, DeliveryQuote } from "@/lib/delivery/model";
@@ -159,10 +159,14 @@ export default function DeliverySelector({
     }
   }
   const validPhone = Boolean(normalizeRussianPhone(phone));
-  const visible = points.filter((p) =>
-    (p.name + " " + p.address)
-      .toLocaleLowerCase("ru")
-      .includes(query.toLocaleLowerCase("ru")),
+  const visible = useMemo(
+    () =>
+      points.filter((p) =>
+        (p.name + " " + p.address)
+          .toLocaleLowerCase("ru")
+          .includes(query.toLocaleLowerCase("ru")),
+      ),
+    [points, query],
   );
   function choose(p: DeliveryPoint) {
     if (!validPhone) {

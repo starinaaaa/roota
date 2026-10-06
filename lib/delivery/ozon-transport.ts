@@ -219,6 +219,17 @@ export async function activeShipmentMethod(
       found.shipment_method ??
       []
     ).filter((m) => m.status.toLowerCase() === "active");
+    // Safe diagnostic contains method identifiers and status, never account or contact fields.
+    console.info(
+      "Ozon shipment methods",
+      JSON.stringify({
+        keys: Object.keys(found).filter((k) => /^[a-z_]{1,40}$/.test(k)),
+        methods: (found.shipment_methods ?? found.shipment_method ?? []).map(
+          (m) => ({ id: Number(m.shipment_method_id), status: m.status }),
+        ),
+        hasNextPage: Boolean(found.next_cursor),
+      }),
+    );
     // Never silently choose between multiple dispatch methods.
     if (found.next_cursor || active.length !== 1)
       throw new Error(

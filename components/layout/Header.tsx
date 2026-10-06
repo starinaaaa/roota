@@ -68,7 +68,7 @@ export default function Header({ cartCount }: Props) {
             3-колоночная сетка:
             col-1 (logo)  |  col-2 (nav center)  |  col-3 (actions right)
           */}
-          <div className="grid grid-cols-3 items-center h-16 md:h-20">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] md:grid-cols-3 items-center h-16 md:h-20">
 
             {/* ── COL 1: Логотип ─────────────────── */}
             <Link

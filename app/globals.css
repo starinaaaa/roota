@@ -70,3 +70,10 @@
   background: #a8a29e;
 }
 
+
+/* Keep actions within each card, including two-column mobile grids. */
+.product-card-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 124px), 1fr));
+  gap: 8px;
+}

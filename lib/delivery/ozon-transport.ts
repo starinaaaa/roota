@@ -1,3 +1,8 @@
+export class OzonApiError extends Error {
+  constructor(public path: string, public status: number, public reason: string) {
+    super("Не удалось выполнить запрос доставки. Повторите позже.");
+  }
+}
 export class OzonAuthError extends Error {
   constructor(
     public status: number,
@@ -149,12 +154,21 @@ export class OzonTransport {
       this.token = undefined;
       this.tokenUntil = 0;
     }
-    if (!response.ok)
-      throw new Error(
-        response.status === 429
-          ? "Служба доставки занята. Повторите расчёт немного позже."
-          : "Не удалось выполнить запрос доставки. Повторите позже.",
-      );
+    if (!response.ok) {
+      let reason = "unknown";
+      try {
+        const data = await response.json();
+        const message = String(data.message ?? data.error ?? "");
+        reason = /permission|forbidden|access|scope/i.test(message) ? "permissions"
+          : /cursor/i.test(message) ? "cursor"
+          : /limit|pagination/i.test(message) ? "pagination"
+          : /shipment|method/i.test(message) ? "shipment_method"
+          : /invalid|validation|required/i.test(message) ? "validation"
+          : Number.isInteger(data.code) ? `vendor_code_${data.code}` : "unknown";
+      } catch {}
+      console.warn("Ozon API rejected", path, response.status, reason);
+      throw new OzonApiError(path, response.status, reason);
+    }
     return response.json() as Promise<T>;
   }
 }

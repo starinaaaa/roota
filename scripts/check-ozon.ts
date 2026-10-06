@@ -2,6 +2,7 @@ import {
   OzonTransport,
   activeShipmentMethod,
   OzonAuthError,
+  OzonApiError,
 } from "../lib/delivery/ozon-transport";
 // Production credentials stay within the build process; only safe diagnostics are logged.
 async function check() {
@@ -25,6 +26,8 @@ async function check() {
         error.status,
         error.reason,
       );
+    else if (error instanceof OzonApiError)
+      console.warn("Ozon connection check: API rejected", error.path, error.status, error.reason);
     else
       console.warn(
         "Ozon connection check:",

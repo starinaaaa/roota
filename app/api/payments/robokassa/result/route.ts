@@ -18,6 +18,17 @@ const reply = (text: string, status: number) =>
     },
   });
 
+export async function GET(request: NextRequest) {
+  let fields: Record<string, string>;
+  try {
+    fields = callbackFields(request.nextUrl.search.slice(1));
+  } catch {
+    console.warn("robokassa_result_invalid_parameters", { method: "GET" });
+    return reply("invalid notification", 400);
+  }
+  return processNotification(fields);
+}
+
 export async function POST(request: NextRequest) {
   if (
     !request.headers
@@ -43,19 +54,37 @@ export async function POST(request: NextRequest) {
     }
     fields = callbackFields(Buffer.concat(chunks).toString("utf8"));
   } catch {
+    console.warn("robokassa_result_invalid_parameters", { method: "POST" });
     return reply("invalid notification", 400);
   }
+  return processNotification(fields);
+}
+
+async function processNotification(fields: Record<string, string>) {
   const db = createServerClient();
   const { data, error } = await db
     .from("payments")
     .select("*")
     .eq("inv_id", fields.InvId)
     .maybeSingle();
-  if (error) return reply("retry later", 503);
-  if (!data) return reply("invalid notification", 400);
+  if (error) {
+    console.error("robokassa_result_payment_lookup_failed", {
+      invoice: fields.InvId,
+      code: error.code,
+    });
+    return reply("retry later", 503);
+  }
+  if (!data) {
+    console.warn("robokassa_result_unknown_invoice", { invoice: fields.InvId });
+    return reply("invalid notification", 400);
+  }
   try {
     verifyPaymentNotification(data as PaymentRow, fields);
   } catch {
+    console.warn("robokassa_result_verification_failed", {
+      invoice: fields.InvId,
+      mode: data.mode,
+    });
     return reply("invalid notification", 400);
   }
   const { error: saveError } = await db.rpc("confirm_robokassa", {
@@ -64,7 +93,17 @@ export async function POST(request: NextRequest) {
     p_amount: String(data.amount),
     p_mode: data.mode,
   });
-  if (saveError) return reply("retry later", 503);
+  if (saveError) {
+    console.error("robokassa_result_confirmation_failed", {
+      invoice: fields.InvId,
+      code: saveError.code,
+    });
+    return reply("retry later", 503);
+  }
+  console.info("robokassa_result_confirmed", {
+    invoice: fields.InvId,
+    mode: data.mode,
+  });
   if (data.mode === "live" && data.order_id) {
     after(async () => {
       try {

@@ -61,7 +61,10 @@ export default function CardActions({
     "min-w-0 min-h-[44px] box-border flex items-center justify-center font-body text-ui leading-snug tracking-[0.08em] uppercase px-3 py-2 text-center transition-colors duration-200";
 
   return (
-    <div onClick={(e) => e.stopPropagation()} className="product-card-actions mt-3">
+    <div
+      onClick={(e) => e.stopPropagation()}
+      className="product-card-actions mt-3"
+    >
       {inStock && Boolean(stockQty && stockQty > 0) ? (
         <>
           {/* ── В корзину / inline counter ── */}
@@ -96,7 +99,7 @@ export default function CardActions({
               onClick={handleAdd}
               className={`${btnBase} bg-stone-900 text-stone-50 hover:bg-stone-700`}
             >
-              В корзину
+              В корзину
             </button>
           )}
 

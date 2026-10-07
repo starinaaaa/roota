@@ -1,5 +1,6 @@
 "use client";
 
+import { bindPrepositions } from "@/lib/typography";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 
@@ -26,7 +27,7 @@ export default function CookieBanner() {
     <div className="fixed bottom-0 inset-x-0 z-40 border-t border-stone-200 bg-stone-50/96 backdrop-blur-sm">
       <div className="max-w-[1440px] mx-auto px-6 md:px-12 lg:px-16 py-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8">
         <p className="font-body text-caption text-stone-600 leading-relaxed flex-1">
-          Сайт использует cookie для работы корзины.{" "}
+          Сайт использует cookie для работы корзины.{bindPrepositions(" ")}
           <Link
             href="/cookies"
             className="text-stone-700 border-b border-stone-300 pb-px hover:border-stone-600 transition-colors duration-200"

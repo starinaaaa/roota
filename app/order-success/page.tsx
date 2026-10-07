@@ -48,8 +48,8 @@ export default async function OrderSuccessPage({ searchParams }: Props) {
               Заказ принят
             </h1>
             <p className="font-body text-copy text-stone-800 leading-relaxed">
-              Мы свяжемся с вами в течение 24 часов для подтверждения заказа и
-              уточнения деталей доставки.
+              Мы свяжемся с вами в течение 24 часов для подтверждения заказа
+              и уточнения деталей доставки.
             </p>
             <p className="font-body text-copy text-stone-600">
               Спасибо, что выбираете Roota ceramics.
@@ -78,7 +78,7 @@ export default async function OrderSuccessPage({ searchParams }: Props) {
                 hover:border-stone-400 hover:text-stone-900 transition-all duration-300
               "
             >
-              На главную
+              На главную
             </Link>
           </div>
         </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { bindPrepositions } from "@/lib/typography";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
@@ -56,9 +57,11 @@ export default function CartDrawer() {
             {/* ── Header — padding ×1.5: px-7→px-6 sm:px-[42px], py-5→py-[30px] ── */}
             <div className="flex items-center justify-between shrink-0 px-6 sm:px-[42px] py-[30px] border-b border-stone-100">
               <p className="font-body text-ui tracking-[0.08em] uppercase text-stone-600">
-                {totalItems > 0
-                  ? `${totalItems} ${plural(totalItems, "предмет", "предмета", "предметов")} в корзине`
-                  : "Корзина"}
+                {bindPrepositions(
+                  totalItems > 0
+                    ? `${totalItems} ${plural(totalItems, "предмет", "предмета", "предметов")} в корзине`
+                    : "Корзина",
+                )}
               </p>
               <button
                 onClick={closeDrawer}
@@ -86,7 +89,7 @@ export default function CartDrawer() {
                     onClick={closeDrawer}
                     className="flex items-center gap-3 font-body text-ui tracking-[0.08em] uppercase text-stone-600 hover:text-stone-900 transition-colors duration-200"
                   >
-                    Перейти в каталог
+                    Перейти в каталог
                     <ArrowRight size={15} strokeWidth={1.5} />
                   </Link>
                 </motion.div>
@@ -114,7 +117,7 @@ export default function CartDrawer() {
                     Итого
                   </span>
                   <span className="font-body text-price tracking-[0.04em] text-stone-900 tabular-nums">
-                    {formatPrice(totalPrice)}
+                    {bindPrepositions(formatPrice(totalPrice))}
                   </span>
                 </div>
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { bindPrepositions } from "@/lib/typography";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -61,7 +62,7 @@ export default function RelatedProducts({ products }: Props) {
                   {!p.in_stock ? (
                     <div className="absolute top-4 left-4">
                       <span className="font-body text-caption tracking-[0.08em] uppercase inline-block bg-stone-50/90 text-stone-600 px-2.5 py-1.5">
-                        Скоро в наличии
+                        Скоро в наличии
                       </span>
                     </div>
                   ) : p.stock_qty != null &&
@@ -69,20 +70,22 @@ export default function RelatedProducts({ products }: Props) {
                     p.stock_qty <= 3 ? (
                     <div className="absolute top-4 left-4">
                       <span className="font-body text-caption tracking-[0.08em] uppercase inline-block bg-stone-50/90 text-stone-600 px-2.5 py-1.5">
-                        {p.stock_qty === 1
-                          ? "Осталась 1 шт."
-                          : `Осталось ${p.stock_qty} шт.`}
+                        {bindPrepositions(
+                          p.stock_qty === 1
+                            ? "Осталась 1 шт."
+                            : `Осталось ${p.stock_qty} шт.`,
+                        )}
                       </span>
                     </div>
                   ) : null}
 
                   <div className="absolute inset-0 bg-stone-900/0 group-hover:bg-stone-900/6 transition-colors duration-500" />
                 </div>
-                <p className="font-body text-copy text-stone-800 mb-0.5">
-                  {p.name}
+                <p className="font-display text-price text-stone-800 mb-0.5">
+                  {bindPrepositions(p.name)}
                 </p>
-                <p className="font-display text-price text-stone-900">
-                  {formatPrice(p.price)}
+                <p className="font-body text-copy text-stone-900">
+                  {bindPrepositions(formatPrice(p.price))}
                 </p>
               </Link>
 

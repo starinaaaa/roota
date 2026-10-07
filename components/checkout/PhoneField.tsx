@@ -1,4 +1,5 @@
 "use client";
+import { bindPrepositions } from "@/lib/typography";
 import { useRef } from "react";
 import { formatRussianPhone, normalizeRussianPhone } from "@/lib/contacts";
 type Props = {
@@ -134,11 +135,11 @@ export default function PhoneField({
       />
       {error ? (
         <p id="phone-error" role="alert" className="text-caption text-red-700">
-          {error}
+          {bindPrepositions(error)}
         </p>
       ) : (
         <p id="phone-hint" className="text-caption text-stone-600">
-          Номер должен быть привязан к аккаунту выбранной службы доставки
+          Номер должен быть привязан к аккаунту выбранной службы доставки
         </p>
       )}
     </div>

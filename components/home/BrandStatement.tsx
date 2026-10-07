@@ -1,5 +1,6 @@
 "use client";
 
+import { bindPrepositions } from "@/lib/typography";
 import { useRef } from "react";
 import Link from "next/link";
 import { motion, useInView } from "framer-motion";
@@ -20,37 +21,40 @@ export default function BrandStatement({
       className="py-28 md:py-36 lg:py-44 px-6 md:px-12 lg:px-16"
     >
       <div className="max-w-[1440px] mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-6 items-end">
+        {/* Маленький лейбл */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={inView ? { opacity: 1 } : {}}
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="font-body text-caption text-stone-600 tracking-[0.08em] uppercase mb-8"
+        >
+          О студии
+        </motion.p>
+
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-6 items-start">
           {/* Большой текст слева */}
           <div className="md:col-span-8 lg:col-span-7">
-            {/* Маленький лейбл */}
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={inView ? { opacity: 1 } : {}}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="font-body text-caption text-stone-600 tracking-[0.08em] uppercase mb-8"
-            >
-              О студии
-            </motion.p>
-
             {/* Цитата */}
             <div className="overflow-hidden">
-              {statement.split("\n").map((line, i) => (
-                <div key={i} className="overflow-hidden">
-                  <motion.p
-                    initial={{ y: "100%" }}
-                    animate={inView ? { y: 0 } : {}}
-                    transition={{
-                      duration: 0.75,
-                      delay: 0.2 + i * 0.1,
-                      ease: [0.16, 1, 0.3, 1],
-                    }}
-                    className="font-display font-normal text-section leading-[1.1] text-stone-900"
-                  >
-                    {line}
-                  </motion.p>
-                </div>
-              ))}
+              {statement
+                .replace(/\s+которую\s+/iu, "\nкоторую ")
+                .split("\n")
+                .map((line, i) => (
+                  <div key={i} className="overflow-hidden">
+                    <motion.p
+                      initial={{ y: "100%" }}
+                      animate={inView ? { y: 0 } : {}}
+                      transition={{
+                        duration: 0.75,
+                        delay: 0.2 + i * 0.1,
+                        ease: [0.16, 1, 0.3, 1],
+                      }}
+                      className="font-display font-normal text-section leading-[1.1] text-stone-900"
+                    >
+                      {bindPrepositions(line)}
+                    </motion.p>
+                  </div>
+                ))}
             </div>
           </div>
 
@@ -59,10 +63,10 @@ export default function BrandStatement({
             initial={{ opacity: 0, y: 20 }}
             animate={inView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.7, delay: 0.5 }}
-            className="md:col-span-4 lg:col-span-5 md:pb-2"
+            className="md:col-span-4 lg:col-span-5"
           >
-            <p className="font-body text-copy text-stone-800 leading-loose mb-8 max-w-xs">
-              {summary}
+            <p className="font-body text-copy text-stone-800 leading-loose mb-8 max-w-md">
+              {bindPrepositions(summary)}
             </p>
 
             <Link

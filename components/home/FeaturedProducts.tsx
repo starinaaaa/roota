@@ -1,5 +1,6 @@
 "use client";
 
+import { bindPrepositions } from "@/lib/typography";
 import { useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -159,7 +160,7 @@ function ProductCardFeatured({
           {!product.in_stock ? (
             <div className="absolute top-4 left-4">
               <span className="font-body text-caption tracking-[0.08em] uppercase inline-block bg-stone-50/90 text-stone-600 px-2.5 py-1.5">
-                Скоро в наличии
+                Скоро в наличии
               </span>
             </div>
           ) : product.stock_qty != null &&
@@ -167,9 +168,11 @@ function ProductCardFeatured({
             product.stock_qty <= 3 ? (
             <div className="absolute top-4 left-4">
               <span className="font-body text-caption tracking-[0.08em] uppercase inline-block bg-stone-50/90 text-stone-600 px-2.5 py-1.5">
-                {product.stock_qty === 1
-                  ? "Осталась 1 шт."
-                  : `Осталось ${product.stock_qty} шт.`}
+                {bindPrepositions(
+                  product.stock_qty === 1
+                    ? "Осталась 1 шт."
+                    : `Осталось ${product.stock_qty} шт.`,
+                )}
               </span>
             </div>
           ) : null}
@@ -186,11 +189,11 @@ function ProductCardFeatured({
 
         {/* Инфо */}
         <div className="space-y-1.5">
-          <p className="font-body text-copy text-stone-800 tracking-[0.08em] uppercase group-hover:text-stone-600 transition-colors duration-300">
-            {product.name}
+          <p className="font-display text-price text-stone-800 group-hover:text-stone-600 transition-colors duration-300">
+            {bindPrepositions(product.name)}
           </p>
-          <p className="font-display text-price text-stone-900">
-            {formatPrice(product.price)}
+          <p className="font-body text-copy text-stone-900">
+            {bindPrepositions(formatPrice(product.price))}
           </p>
         </div>
       </Link>

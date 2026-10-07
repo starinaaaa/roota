@@ -1,4 +1,5 @@
 "use client";
+import { bindPrepositions } from "@/lib/typography";
 import Script from "next/script";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -93,33 +94,37 @@ export default function PaymentPanel({
         <div className="max-w-md space-y-6">
           {mode === "test" && (
             <p className="font-body text-caption text-stone-600">
-              Тестовая оплата · деньги не списываются · заказ не отправляется
+              Тестовая оплата · деньги не списываются · заказ не отправляется
             </p>
           )}
           <h1
             className="font-display text-page leading-tight text-stone-900"
             aria-live="polite"
           >
-            {paid
-              ? mode === "test"
-                ? "Тестовая оплата прошла"
-                : "Заказ оплачен"
-              : failed
-                ? "Оплата не завершена"
-                : form && !opened
-                  ? "Оплата заказа"
-                  : "Ожидаем подтверждение"}
+            {bindPrepositions(
+              paid
+                ? mode === "test"
+                  ? "Тестовая оплата прошла"
+                  : "Заказ оплачен"
+                : failed
+                  ? "Оплата не завершена"
+                  : form && !opened
+                    ? "Оплата заказа"
+                    : "Ожидаем подтверждение",
+            )}
           </h1>
           <p className="font-body text-copy text-stone-800 leading-relaxed">
-            {paid
-              ? mode === "test"
-                ? "Платёжный сценарий проверен. Это тест, доставка не запускается."
-                : "Спасибо! Мы свяжемся с вами для подготовки заказа."
-              : "Статус обновится после подтверждения Robokassa. Если вы уже оплатили, повторять оплату не нужно."}
+            {bindPrepositions(
+              paid
+                ? mode === "test"
+                  ? "Платёжный сценарий проверен. Это тест, доставка не запускается."
+                  : "Спасибо! Мы свяжемся с вами для подготовки заказа."
+                : "Статус обновится после подтверждения Robokassa. Если вы уже оплатили, повторять оплату не нужно.",
+            )}
           </p>
           {checkFailed && (
             <p role="status" className="font-body text-ui text-stone-600">
-              Не удалось обновить статус. Проверим ещё раз автоматически.
+              Не удалось обновить статус. Проверим ещё раз автоматически.
             </p>
           )}
           {form && !paid && (
@@ -134,8 +139,8 @@ export default function PaymentPanel({
               </button>
               {unavailable && (
                 <p role="status" className="font-body text-ui text-stone-600">
-                  Встроенная форма недоступна. Откройте страницу оплаты по
-                  кнопке ниже.
+                  Встроенная форма недоступна. Откройте страницу оплаты
+                  по кнопке ниже.
                 </p>
               )}
               <form action={form.action} method="POST">
@@ -155,7 +160,7 @@ export default function PaymentPanel({
                   type="submit"
                   className="w-full border border-stone-300 text-stone-700 font-body text-ui py-4"
                 >
-                  Перейти на страницу Robokassa
+                  Перейти на страницу Robokassa
                 </button>
               </form>
             </>
@@ -165,7 +170,7 @@ export default function PaymentPanel({
               href={`/payment/${id}`}
               className="block font-body text-ui underline underline-offset-4"
             >
-              Вернуться к оплате заказа
+              Вернуться к оплате заказа
             </Link>
           )}
           <Link

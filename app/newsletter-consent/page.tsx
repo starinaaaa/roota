@@ -1,3 +1,4 @@
+import { bindPrepositions } from "@/lib/typography";
 import { getSiteContent } from "@/lib/site";
 import type { Metadata } from "next";
 
@@ -45,7 +46,7 @@ export default async function NewsletterConsentPage() {
             Документы
           </p>
           <h1 className="font-display text-page leading-[1.05] text-stone-900 max-w-2xl">
-            Согласие на рассылку
+            Согласие на рассылку
           </h1>
         </div>
       </section>
@@ -69,7 +70,7 @@ export default async function NewsletterConsentPage() {
                   className="border-t border-stone-100 pt-10 first:border-t-0 first:pt-0"
                 >
                   <h2 className="font-body text-caption tracking-[0.08em] uppercase text-stone-600 mb-5">
-                    {section.heading}
+                    {bindPrepositions(section.heading)}
                   </h2>
                   <div className="space-y-4">
                     {section.paragraphs.map((p, i) => (
@@ -77,7 +78,7 @@ export default async function NewsletterConsentPage() {
                         key={i}
                         className="font-body text-copy text-stone-800 leading-loose"
                       >
-                        {p}
+                        {bindPrepositions(p)}
                       </p>
                     ))}
                   </div>

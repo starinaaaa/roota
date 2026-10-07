@@ -1,5 +1,6 @@
 "use client";
 
+import { bindPrepositions } from "@/lib/typography";
 import { useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -35,21 +36,21 @@ export default function ProductInfo({
       <div className="space-y-3">
         {product.category && (
           <p className="font-body text-caption tracking-[0.08em] uppercase text-stone-600">
-            {product.category.name}
+            {bindPrepositions(product.category.name)}
           </p>
         )}
         <h1 className="font-display text-section leading-tight text-stone-900">
-          {product.name}
+          {bindPrepositions(product.name)}
         </h1>
-        <p className="font-display text-price text-stone-900">
-          {formatPrice(product.price)}
+        <p className="font-body text-copy text-stone-900">
+          {bindPrepositions(formatPrice(product.price))}
         </p>
       </div>
 
       {/* Описание */}
       {product.description && (
         <p className="font-body text-copy text-stone-800 leading-relaxed max-w-sm">
-          {product.description}
+          {bindPrepositions(product.description)}
         </p>
       )}
 
@@ -64,9 +65,11 @@ export default function ProductInfo({
           product.stock_qty > 0 &&
           product.stock_qty <= 3 && (
             <p className="font-body text-ui text-stone-600 -mt-1">
-              {product.stock_qty === 1
-                ? "Осталась 1 шт."
-                : `Осталось ${product.stock_qty} шт.`}
+              {bindPrepositions(
+                product.stock_qty === 1
+                  ? "Осталась 1 шт."
+                  : `Осталось ${product.stock_qty} шт.`,
+              )}
             </p>
           )}
 
@@ -84,7 +87,7 @@ export default function ProductInfo({
                   className="w-full flex items-center justify-between border border-stone-200 px-6 py-4"
                 >
                   <span className="font-body text-caption tracking-[0.08em] uppercase text-stone-600">
-                    В корзине
+                    В корзине
                   </span>
 
                   <div className="flex items-center gap-6">
@@ -96,7 +99,7 @@ export default function ProductInfo({
                       −
                     </button>
 
-                    <span className="font-display text-price text-stone-900 min-w-[1.5rem] text-center tabular-nums">
+                    <span className="font-body text-copy text-stone-900 min-w-[1.5rem] text-center tabular-nums">
                       {cartQty}
                     </span>
 
@@ -126,14 +129,14 @@ export default function ProductInfo({
                   onClick={onIncrement}
                   className="w-full bg-stone-900 text-stone-50 font-body text-ui tracking-[0.08em] uppercase py-4 px-8 hover:bg-stone-700 transition-colors duration-300"
                 >
-                  Добавить в корзину
+                  Добавить в корзину
                 </motion.button>
               )}
             </AnimatePresence>
 
             {atStockLimit && cartQty > 0 && (
               <p className="font-body text-caption tracking-[0.08em] uppercase text-stone-600 text-center -mt-1">
-                Максимум в наличии
+                Максимум в наличии
               </p>
             )}
 
@@ -147,7 +150,7 @@ export default function ProductInfo({
               transition-all duration-300
             "
             >
-              Связаться со студией
+              Связаться со студией
             </Link>
           </>
         ) : (
@@ -160,7 +163,7 @@ export default function ProductInfo({
                 py-4 px-8 cursor-not-allowed
               "
             >
-              Скоро в наличии
+              Скоро в наличии
             </button>
             <button
               onClick={onUnavailable}
@@ -172,7 +175,7 @@ export default function ProductInfo({
               transition-all duration-300
             "
             >
-              Уведомить о поступлении
+              Уведомить о поступлении
             </button>
             {product.preorder_enabled && product.lead_time_days && (
               <button className="admin-secondary" onClick={onPreorder}>
@@ -192,8 +195,10 @@ export default function ProductInfo({
         open={careOpen}
         onToggle={() => setCareOpen((v) => !v)}
       >
-        {product.care ||
-          "Избегайте резких перепадов температур. Допустимые способы использования указаны в характеристиках изделия."}
+        {bindPrepositions(
+          product.care ||
+            "Избегайте резких перепадов температур. Допустимые способы использования указаны в характеристиках изделия.",
+        )}
       </Accordion>
 
       {/* Ручная работа */}
@@ -202,9 +207,9 @@ export default function ProductInfo({
         open={craftOpen}
         onToggle={() => setCraftOpen((v) => !v)}
       >
-        Каждое изделие создаётся вручную — след инструментов и пальцев мастера
-        остаётся в форме. Незначительные отличия в размере и оттенке — часть
-        характера авторской керамики, а не дефект.
+        Каждое изделие создаётся вручную — след инструментов и пальцев мастера
+        остаётся в форме. Незначительные отличия в размере и оттенке — часть
+        характера авторской керамики, а не дефект.
       </Accordion>
     </div>
   );
@@ -239,9 +244,11 @@ function ProductSpecs({ product }: { product: Product }) {
         {rows.map(({ label, value }) => (
           <div key={label} className="flex justify-between py-3">
             <span className="font-body text-ui uppercase tracking-[0.08em] text-stone-600">
-              {label}
+              {bindPrepositions(label)}
             </span>
-            <span className="font-body text-ui text-stone-700">{value}</span>
+            <span className="font-body text-ui text-stone-700">
+              {bindPrepositions(value)}
+            </span>
           </div>
         ))}
       </div>
@@ -271,7 +278,7 @@ function Accordion({
         className="w-full flex items-center justify-between py-1 group"
       >
         <span className="font-body text-ui tracking-[0.08em] uppercase text-stone-600 group-hover:text-stone-900 transition-colors duration-200">
-          {label}
+          {bindPrepositions(label)}
         </span>
         <motion.span
           animate={{ rotate: open ? 45 : 0 }}

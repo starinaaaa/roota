@@ -1,5 +1,6 @@
 "use client";
 
+import { bindPrepositions } from "@/lib/typography";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -261,15 +262,15 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
                 className="mt-1 w-4 h-4 accent-stone-900 cursor-pointer"
               />
               <span className="font-body text-ui tracking-[0.05em] text-stone-600 group-hover:text-stone-900 transition-colors duration-200">
-                Даю отдельное согласие на получение новостей и рекламных
-                сообщений студии по электронной почте. Отказ не влияет на заказ.
+                Даю отдельное согласие на получение новостей и рекламных
+                сообщений студии по электронной почте. Отказ не влияет на заказ.
               </span>
             </label>
             <Link
               href="/newsletter-consent"
               className="font-body text-ui text-stone-600 underline underline-offset-2"
             >
-              Условия согласия на рассылку и обработку данных для неё
+              Условия согласия на рассылку и обработку данных для неё
             </Link>
 
             {/* Ошибка */}
@@ -282,7 +283,7 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
                   exit={{ opacity: 0 }}
                   className="font-body text-ui text-red-600 mt-2"
                 >
-                  {error}
+                  {bindPrepositions(error)}
                 </motion.p>
               )}
             </AnimatePresence>
@@ -319,20 +320,23 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
                   </div>
                   <div className="flex flex-col justify-center flex-1 min-w-0">
                     <p className="font-body text-caption text-stone-700 truncate">
-                      {item.product.name}
+                      {bindPrepositions(item.product.name)}
                     </p>
                     <p className="font-body text-caption text-stone-600 mt-0.5">
                       × {item.quantity}
                     </p>
                     {item.purchase_mode === "preorder" && (
                       <p className="text-caption text-stone-600">
-                        Предзаказ · изготовление {item.product.lead_time_days}{" "}
+                        Предзаказ · изготовление {item.product.lead_time_days}
+                        {bindPrepositions(" ")}
                         дней
                       </p>
                     )}
                   </div>
                   <p className="font-body text-ui text-stone-800 shrink-0 self-center">
-                    {formatPrice(item.product.price * item.quantity)}
+                    {bindPrepositions(
+                      formatPrice(item.product.price * item.quantity),
+                    )}
                   </p>
                 </div>
               ))}
@@ -343,7 +347,7 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
               <div className="flex justify-between">
                 <span className="font-body text-ui text-stone-600">Товары</span>
                 <span className="font-body text-ui text-stone-700">
-                  {formatPrice(totalPrice)}
+                  {bindPrepositions(formatPrice(totalPrice))}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -351,17 +355,19 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
                   Доставка
                 </span>
                 <span className="font-body text-caption text-stone-600">
-                  {quote ? formatPrice(quote.totalCost) : "нужен расчёт"}
+                  {bindPrepositions(
+                    quote ? formatPrice(quote.totalCost) : "нужен расчёт",
+                  )}
                 </span>
               </div>
               {quote && (
                 <p className="font-body text-caption text-stone-600">
-                  Включая страховку {formatPrice(quote.insuranceCost)}
+                  Включая страховку{" "}
+                  {bindPrepositions(formatPrice(quote.insuranceCost))}
                   {quote.estimatedDays !== null && (
                     <>
-                      {" "}
-                      · ориентировочно {quote.estimatedDays} дн. после передачи
-                      Ozon
+                      {bindPrepositions(" ")}· ориентировочно{" "}
+                      {quote.estimatedDays} дн. после передачи Ozon
                     </>
                   )}
                 </p>
@@ -369,10 +375,10 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
               <div className="divider pt-1" />
               <div className="flex justify-between items-baseline">
                 <span className="font-body text-caption tracking-[0.08em] uppercase text-stone-600">
-                  {quote ? "Итого" : "Сумма товаров"}
+                  {bindPrepositions(quote ? "Итого" : "Сумма товаров")}
                 </span>
                 <span className="font-display text-price text-stone-900">
-                  {formatPrice(finalTotal ?? totalPrice)}
+                  {bindPrepositions(formatPrice(finalTotal ?? totalPrice))}
                 </span>
               </div>
             </div>
@@ -381,7 +387,7 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
             <div className="pt-2">
               {error && (
                 <p className="font-body text-ui text-red-600 mt-2 mb-3">
-                  {error}
+                  {bindPrepositions(error)}
                 </p>
               )}
               <button
@@ -403,7 +409,8 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
                       size={14}
                       strokeWidth={1.5}
                       className="animate-spin"
-                    />{" "}
+                    />
+                    {bindPrepositions(" ")}
                     Отправляю...
                   </>
                 ) : (
@@ -413,28 +420,29 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
             </div>
 
             <p className="font-body text-caption text-stone-600 leading-relaxed">
-              Нажимая «Оформить заказ», вы принимаете условия{" "}
+              Нажимая «Оформить заказ», вы принимаете условия
+              {bindPrepositions(" ")}
               <Link
                 href="/offer"
                 className="underline underline-offset-2 hover:text-stone-600 transition-colors duration-200"
               >
                 публичной оферты
               </Link>
-              . Обработка данных заказа описана в{" "}
+              . Обработка данных заказа описана в{bindPrepositions(" ")}
               <Link
                 href="/privacy"
                 className="underline underline-offset-2 hover:text-stone-600 transition-colors duration-200"
               >
                 политике конфиденциальности
               </Link>
-              . Доставка и страховка включены в итог после расчёта.
+              . Доставка и страховка включены в итог после расчёта.
             </p>
 
             <Link
               href="/catalog"
               className="block font-body text-ui tracking-[0.08em] uppercase text-stone-600 hover:text-stone-700 transition-colors duration-200"
             >
-              ← Вернуться в каталог
+              ← Вернуться в каталог
             </Link>
           </div>
         </div>
@@ -475,7 +483,7 @@ function Field({
         htmlFor={id}
         className="font-body text-ui tracking-[0.08em] uppercase text-stone-600 block"
       >
-        {label}
+        {bindPrepositions(label)}
       </label>
       <input
         id={id}
@@ -499,8 +507,12 @@ function Field({
         "
       />
       {error && (
-        <p id={id + "-error"} role="alert" className="text-caption text-red-700">
-          {error}
+        <p
+          id={id + "-error"}
+          role="alert"
+          className="text-caption text-red-700"
+        >
+          {bindPrepositions(error)}
         </p>
       )}
     </div>

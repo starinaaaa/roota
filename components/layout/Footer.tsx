@@ -1,3 +1,4 @@
+import { bindPrepositions } from "@/lib/typography";
 import Link from "next/link";
 import { getSiteContent } from "@/lib/site";
 import { seller } from "@/lib/seller";
@@ -38,11 +39,11 @@ export default async function Footer() {
                 Авторская керамика ручной работы. Москва.
               </p>
               <p className="font-body text-caption text-stone-600 leading-relaxed mt-4">
-                Самозанятый {seller.name}
+                Самозанятый {bindPrepositions(seller.name)}
                 <br />
-                ИНН {seller.inn}
+                ИНН {bindPrepositions(seller.inn)}
                 <br />
-                {seller.city}
+                {bindPrepositions(seller.city)}
               </p>
             </div>
 
@@ -58,7 +59,7 @@ export default async function Footer() {
                       href={href}
                       className="font-body text-ui text-stone-800 hover:text-stone-900 transition-colors duration-200"
                     >
-                      {label}
+                      {bindPrepositions(label)}
                     </Link>
                   </li>
                 ))}
@@ -77,7 +78,7 @@ export default async function Footer() {
                       href={href}
                       className="font-body text-ui text-stone-800 hover:text-stone-900 transition-colors duration-200"
                     >
-                      {label}
+                      {bindPrepositions(label)}
                     </Link>
                   </li>
                 ))}
@@ -95,7 +96,7 @@ export default async function Footer() {
                     href={seller.phoneHref}
                     className="font-body text-ui text-stone-800 hover:text-stone-900 transition-colors duration-200"
                   >
-                    {seller.phone}
+                    {bindPrepositions(seller.phone)}
                   </a>
                 </li>
                 <li>
@@ -123,7 +124,7 @@ export default async function Footer() {
                     href={"mailto:" + site.email}
                     className="font-body text-ui text-stone-800 hover:text-stone-900 transition-colors duration-200"
                   >
-                    {site.email}
+                    {bindPrepositions(site.email)}
                   </a>
                 </li>
               </ul>

@@ -1,5 +1,6 @@
 "use client";
 
+import { bindPrepositions } from "@/lib/typography";
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -60,7 +61,7 @@ export default function ProductCard({ product, index = 0 }: Props) {
           {!product.in_stock ? (
             <div className="absolute top-4 left-4">
               <span className="font-body text-caption tracking-[0.08em] uppercase inline-block bg-stone-50/90 text-stone-600 px-2.5 py-1.5">
-                Скоро в наличии
+                Скоро в наличии
               </span>
             </div>
           ) : product.stock_qty != null &&
@@ -68,9 +69,11 @@ export default function ProductCard({ product, index = 0 }: Props) {
             product.stock_qty <= 3 ? (
             <div className="absolute top-4 left-4">
               <span className="font-body text-caption tracking-[0.08em] uppercase inline-block bg-stone-50/90 text-stone-600 px-2.5 py-1.5">
-                {product.stock_qty === 1
-                  ? "Осталась 1 шт."
-                  : `Осталось ${product.stock_qty} шт.`}
+                {bindPrepositions(
+                  product.stock_qty === 1
+                    ? "Осталась 1 шт."
+                    : `Осталось ${product.stock_qty} шт.`,
+                )}
               </span>
             </div>
           ) : null}
@@ -94,13 +97,13 @@ export default function ProductCard({ product, index = 0 }: Props) {
         {/* Информация */}
         <div className="space-y-1.5">
           <p className="min-h-[1rem] font-body text-caption tracking-[0.08em] uppercase text-stone-600 transition-colors duration-300 group-hover:text-stone-600">
-            {product.category?.name ?? ""}
+            {bindPrepositions(product.category?.name ?? "")}
           </p>
-          <h3 className="font-body font-light text-copy text-stone-800 group-hover:text-stone-900 transition-colors duration-200">
-            {product.name}
+          <h3 className="font-display font-light text-price text-stone-800 group-hover:text-stone-900 transition-colors duration-200">
+            {bindPrepositions(product.name)}
           </h3>
-          <p className="font-display text-price text-stone-900">
-            {formatPrice(product.price)}
+          <p className="font-body text-copy text-stone-900">
+            {bindPrepositions(formatPrice(product.price))}
           </p>
         </div>
       </Link>

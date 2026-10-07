@@ -1,3 +1,4 @@
+import { bindPrepositions } from "@/lib/typography";
 import type { Metadata } from "next";
 import { getSiteContent } from "@/lib/site";
 import Link from "next/link";
@@ -27,15 +28,15 @@ export default async function AboutPage() {
 
       {/* ── Вступление ── */}
       <section className="border-t border-stone-200 py-20 md:py-28 px-6 md:px-12 lg:px-16">
-        <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-8">
-          <div className="md:col-span-4 lg:col-span-3">
-            <p className="font-body text-caption text-stone-600 tracking-[0.08em] uppercase">
+        <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-8 items-start">
+          <div className="md:col-span-4">
+            <h2 className="font-display text-section leading-tight text-stone-900">
               Студия
-            </p>
+            </h2>
           </div>
-          <div className="md:col-span-8 lg:col-span-9 space-y-6 max-w-2xl">
+          <div className="md:col-span-8 space-y-6 max-w-2xl">
             <p className="font-body text-copy text-stone-800 leading-loose whitespace-pre-wrap break-words">
-              {site.studioIntro}
+              {bindPrepositions(site.studioIntro)}
             </p>
           </div>
         </div>
@@ -43,20 +44,15 @@ export default async function AboutPage() {
 
       {/* ── Обо мне ── */}
       <section className="border-t border-stone-200 py-20 md:py-28 px-6 md:px-12 lg:px-16">
-        <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-8">
-          <div className="md:col-span-4 lg:col-span-3">
-            <p className="font-body text-caption text-stone-600 tracking-[0.08em] uppercase mb-6">
-              Обо мне
-            </p>
+        <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-8 items-start">
+          <div className="md:col-span-4">
             <h2 className="font-display text-section leading-tight text-stone-900">
-              От рук
-              <br />
-              до стола
+              Обо мне
             </h2>
           </div>
-          <div className="md:col-span-8 lg:col-span-9 space-y-6 max-w-2xl md:pt-14">
+          <div className="md:col-span-8 space-y-6 max-w-2xl">
             <p className="font-body text-copy text-stone-800 leading-loose whitespace-pre-wrap break-words">
-              {site.processText}
+              {bindPrepositions(site.processText)}
             </p>
           </div>
         </div>
@@ -64,19 +60,15 @@ export default async function AboutPage() {
 
       {/* ── Материалы ── */}
       <section className="border-t border-stone-200 py-20 md:py-28 px-6 md:px-12 lg:px-16 bg-stone-100">
-        <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-8">
-          <div className="md:col-span-4 lg:col-span-3">
-            <p className="font-body text-caption text-stone-600 tracking-[0.08em] uppercase mb-6">
-              Материалы
-            </p>
+        <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-8 items-start">
+          <div className="md:col-span-4">
             <h2 className="font-display text-section leading-tight text-stone-900">
-              Глина
-              <br />и глазурь
+              Материалы
             </h2>
           </div>
-          <div className="md:col-span-8 lg:col-span-9 space-y-6 max-w-2xl md:pt-14">
+          <div className="md:col-span-8 space-y-6 max-w-2xl">
             <p className="font-body text-copy text-stone-800 leading-loose whitespace-pre-wrap break-words">
-              {site.materialsText}
+              {bindPrepositions(site.materialsText)}
             </p>
           </div>
         </div>
@@ -106,7 +98,7 @@ export default async function AboutPage() {
             href="/catalog"
             className="font-body text-ui tracking-[0.08em] uppercase bg-stone-900 text-stone-50 px-8 py-4 hover:bg-stone-700 transition-colors duration-300 whitespace-nowrap"
           >
-            В каталог
+            В каталог
           </Link>
         </div>
       </section>

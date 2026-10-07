@@ -1,46 +1,49 @@
-'use client'
+"use client";
 
-import React, { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { motion, AnimatePresence } from 'framer-motion'
-import { ShoppingBag, X, Menu } from 'lucide-react'
-import { useCartUI } from '@/contexts/CartUIContext'
+import { bindPrepositions } from "@/lib/typography";
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import { ShoppingBag, X, Menu } from "lucide-react";
+import { useCartUI } from "@/contexts/CartUIContext";
 
 const NAV_LINKS = [
-  { href: '/catalog',  label: 'Каталог'  },
-  { href: '/about',    label: 'О студии' },
-  { href: '/delivery', label: 'Доставка и оплата' },
-  { href: '/contacts', label: 'Контакты' },
-]
+  { href: "/catalog", label: "Каталог" },
+  { href: "/about", label: "О студии" },
+  { href: "/delivery", label: "Доставка и оплата" },
+  { href: "/contacts", label: "Контакты" },
+];
 
 type Props = {
-  cartCount: number
-}
+  cartCount: number;
+};
 
 export default function Header({ cartCount }: Props) {
-  const pathname    = usePathname()
-  const [scrolled,    setScrolled]    = useState(false)
-  const [mobileMenuPath, setMobileMenuPath] = useState<string | null>(null)
+  const pathname = usePathname();
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuPath, setMobileMenuPath] = useState<string | null>(null);
 
-  const { open: openDrawer } = useCartUI()
+  const { open: openDrawer } = useCartUI();
 
-  const isHome        = pathname === '/'
-  const isTransparent = isHome && !scrolled
-  const mobileOpen = mobileMenuPath === pathname
+  const isHome = pathname === "/";
+  const isTransparent = isHome && !scrolled;
+  const mobileOpen = mobileMenuPath === pathname;
 
   /* ── Scroll detection ───────────────────── */
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 48)
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
+    const onScroll = () => setScrolled(window.scrollY > 48);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   /* ── Блокировка скролла ─────────────────── */
   useEffect(() => {
-    document.body.style.overflow = mobileOpen ? 'hidden' : ''
-    return () => { document.body.style.overflow = '' }
-  }, [mobileOpen])
+    document.body.style.overflow = mobileOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileOpen]);
 
   return (
     <>
@@ -52,116 +55,113 @@ export default function Header({ cartCount }: Props) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
         className={[
-          'fixed top-0 left-0 right-0 z-50',
-          'transition-[background-color,border-color,backdrop-filter] duration-500',
+          "fixed top-0 left-0 right-0 z-50",
+          "transition-[background-color,border-color,backdrop-filter] duration-500",
           isTransparent
-            ? 'bg-transparent border-b border-transparent'
-            : 'bg-stone-50/96 backdrop-blur-md border-b border-stone-200/60',
-        ].join(' ')}
+            ? "bg-transparent border-b border-transparent"
+            : "bg-stone-50/96 backdrop-blur-md border-b border-stone-200/60",
+        ].join(" ")}
       >
         {/* px wrapper first — then max-w — mirrors Hero.tsx so logo and
             hero h1 share the same left edge at any viewport width     */}
         <div className="px-6 md:px-12 lg:px-16">
           <div className="max-w-[1440px] mx-auto">
-
-          {/*
+            {/*
             3-колоночная сетка:
             col-1 (logo)  |  col-2 (nav center)  |  col-3 (actions right)
           */}
-          <div className="grid grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center h-16 md:h-20">
-
-            {/* ── COL 1: Логотип ─────────────────── */}
-            <Link
-              href="/"
-              className={[
-                'font-display text-price',
-                'tracking-[0.22em] uppercase',
-                'transition-opacity duration-300 hover:opacity-55',
-                isTransparent ? 'text-stone-50' : 'text-stone-900',
-              ].join(' ')}
-            >
-              Roota
-            </Link>
-
-            {/* ── COL 2: Десктопная навигация ──────── */}
-            <nav className="hidden lg:flex items-center justify-center gap-3 lg:gap-5">
-              {NAV_LINKS.map(({ href, label }, i) => (
-                <React.Fragment key={href}>
-                  {i > 0 && (
-                    <span
-                      className={[
-                        'select-none text-caption mx-2',
-                        isTransparent ? 'text-stone-600' : 'text-stone-300',
-                      ].join(' ')}
-                      aria-hidden
-                    >
-                      ·
-                    </span>
-                  )}
-                  <NavLink
-                    href={href}
-                    active={href !== '/' && pathname.startsWith(href)}
-                    transparent={isTransparent}
-                  >
-                    {label}
-                  </NavLink>
-                </React.Fragment>
-              ))}
-            </nav>
-
-            {/* ── COL 3: Действия ──────────────────── */}
-            <div className="flex items-center justify-end gap-2 md:gap-4">
-
-              {/* Корзина — открывает CartDrawer */}
-              <button
-                onClick={openDrawer}
-                aria-label={cartCount > 0 ? `Корзина, ${cartCount} товара` : 'Корзина'}
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center h-16 md:h-20">
+              {/* ── COL 1: Логотип ─────────────────── */}
+              <Link
+                href="/"
                 className={[
-                  'relative p-2 -mr-2',
-                  'transition-opacity duration-200 hover:opacity-55',
-                  isTransparent ? 'text-stone-50' : 'text-stone-800',
-                ].join(' ')}
+                  "font-display text-price",
+                  "tracking-[0.22em] uppercase",
+                  "transition-opacity duration-300 hover:opacity-55",
+                  isTransparent ? "text-stone-50" : "text-stone-900",
+                ].join(" ")}
               >
-                <ShoppingBag size={21} strokeWidth={1.3} />
-                <AnimatePresence>
-                  {cartCount > 0 && (
-                    <motion.span
-                      key="badge"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      exit={{ scale: 0 }}
-                      className={[
-                        'absolute top-0.5 right-0.5',
-                        'min-w-5 h-5 px-1 rounded-full',
-                        'text-caption font-body',
-                        'flex items-center justify-center',
-                        isTransparent
-                          ? 'bg-stone-50 text-stone-900'
-                          : 'bg-stone-900 text-stone-50',
-                      ].join(' ')}
+                Roota
+              </Link>
+
+              {/* ── COL 2: Десктопная навигация ──────── */}
+              <nav className="hidden lg:flex items-center justify-center gap-3 lg:gap-5">
+                {NAV_LINKS.map(({ href, label }, i) => (
+                  <React.Fragment key={href}>
+                    {i > 0 && (
+                      <span
+                        className={[
+                          "select-none text-caption mx-2",
+                          isTransparent ? "text-stone-600" : "text-stone-300",
+                        ].join(" ")}
+                        aria-hidden
+                      >
+                        ·
+                      </span>
+                    )}
+                    <NavLink
+                      href={href}
+                      active={href !== "/" && pathname.startsWith(href)}
+                      transparent={isTransparent}
                     >
-                      {cartCount}
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              </button>
+                      {bindPrepositions(label)}
+                    </NavLink>
+                  </React.Fragment>
+                ))}
+              </nav>
 
-              {/* Бургер (только мобильный) */}
-              <button
-                onClick={() => setMobileMenuPath(pathname)}
-                aria-label="Открыть меню"
-                className={[
-                  'lg:hidden p-2 -mr-2',
-                  'transition-opacity duration-200 hover:opacity-55',
-                  isTransparent ? 'text-stone-50' : 'text-stone-800',
-                ].join(' ')}
-              >
-                <Menu size={18} strokeWidth={1.4} />
-              </button>
+              {/* ── COL 3: Действия ──────────────────── */}
+              <div className="flex items-center justify-end gap-2 md:gap-4">
+                {/* Корзина — открывает CartDrawer */}
+                <button
+                  onClick={openDrawer}
+                  aria-label={
+                    cartCount > 0 ? `Корзина, ${cartCount} товара` : "Корзина"
+                  }
+                  className={[
+                    "relative p-2 -mr-2",
+                    "transition-opacity duration-200 hover:opacity-55",
+                    isTransparent ? "text-stone-50" : "text-stone-800",
+                  ].join(" ")}
+                >
+                  <ShoppingBag size={21} strokeWidth={1.3} />
+                  <AnimatePresence>
+                    {cartCount > 0 && (
+                      <motion.span
+                        key="badge"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        exit={{ scale: 0 }}
+                        className={[
+                          "absolute top-0.5 right-0.5",
+                          "min-w-5 h-5 px-1 rounded-full",
+                          "text-caption font-body",
+                          "flex items-center justify-center",
+                          isTransparent
+                            ? "bg-stone-50 text-stone-900"
+                            : "bg-stone-900 text-stone-50",
+                        ].join(" ")}
+                      >
+                        {cartCount}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </button>
 
+                {/* Бургер (только мобильный) */}
+                <button
+                  onClick={() => setMobileMenuPath(pathname)}
+                  aria-label="Открыть меню"
+                  className={[
+                    "lg:hidden p-2 -mr-2",
+                    "transition-opacity duration-200 hover:opacity-55",
+                    isTransparent ? "text-stone-50" : "text-stone-800",
+                  ].join(" ")}
+                >
+                  <Menu size={18} strokeWidth={1.4} />
+                </button>
+              </div>
             </div>
-          </div>
-
           </div>
         </div>
       </motion.header>
@@ -187,9 +187,9 @@ export default function Header({ cartCount }: Props) {
             {/* Панель (выезжает справа) */}
             <motion.div
               key="panel"
-              initial={{ x: '100%' }}
+              initial={{ x: "100%" }}
               animate={{ x: 0 }}
-              exit={{ x: '100%' }}
+              exit={{ x: "100%" }}
               transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
               className="
                 fixed top-0 right-0 bottom-0 z-[60]
@@ -199,11 +199,13 @@ export default function Header({ cartCount }: Props) {
               "
             >
               {/* Шапка панели — зеркалит основной header */}
-              <div className="
+              <div
+                className="
                 flex items-center justify-between shrink-0
                 h-16 md:h-20 px-6 md:px-8
                 border-b border-stone-100
-              ">
+              "
+              >
                 <Link
                   href="/"
                   onClick={() => setMobileMenuPath(null)}
@@ -238,15 +240,15 @@ export default function Header({ cartCount }: Props) {
                       href={href}
                       onClick={() => setMobileMenuPath(null)}
                       className={[
-                        'block py-[18px]',
-                        'font-display text-section leading-tight tracking-[0.03em]',
-                        'transition-colors duration-200',
+                        "block py-[18px]",
+                        "font-display text-section leading-tight tracking-[0.03em]",
+                        "transition-colors duration-200",
                         pathname.startsWith(href)
-                          ? 'text-stone-900'
-                          : 'text-stone-600 hover:text-stone-900',
-                      ].join(' ')}
+                          ? "text-stone-900"
+                          : "text-stone-600 hover:text-stone-900",
+                      ].join(" ")}
                     >
-                      {label}
+                      {bindPrepositions(label)}
                     </Link>
                   </motion.div>
                 ))}
@@ -260,7 +262,10 @@ export default function Header({ cartCount }: Props) {
                 className="shrink-0 px-6 md:px-8 pb-10 pt-7 border-t border-stone-100"
               >
                 <button
-                  onClick={() => { setMobileMenuPath(null); openDrawer() }}
+                  onClick={() => {
+                    setMobileMenuPath(null);
+                    openDrawer();
+                  }}
                   className="flex items-center gap-2.5 font-body text-ui text-stone-600 hover:text-stone-900 transition-colors duration-200 mb-7"
                 >
                   <ShoppingBag size={15} strokeWidth={1.4} />
@@ -270,13 +275,12 @@ export default function Header({ cartCount }: Props) {
                   Авторская керамика · Москва
                 </p>
               </motion.div>
-
             </motion.div>
           </>
         )}
       </AnimatePresence>
     </>
-  )
+  );
 }
 
 /* ────────────────────────────────────────────────
@@ -288,31 +292,35 @@ function NavLink({
   transparent,
   children,
 }: {
-  href: string
-  active: boolean
-  transparent: boolean
-  children: React.ReactNode
+  href: string;
+  active: boolean;
+  transparent: boolean;
+  children: React.ReactNode;
 }) {
   return (
     <Link
       href={href}
       className={[
-        'relative font-body text-ui tracking-[0.08em] uppercase whitespace-nowrap',
-        'transition-colors duration-200',
+        "relative font-body text-ui tracking-[0.08em] uppercase whitespace-nowrap",
+        "transition-colors duration-200",
         active
-          ? transparent ? 'text-stone-50'  : 'text-stone-900'
-          : transparent ? 'text-stone-100 hover:text-white' : 'text-stone-600 hover:text-stone-900',
-      ].join(' ')}
+          ? transparent
+            ? "text-stone-50"
+            : "text-stone-900"
+          : transparent
+            ? "text-stone-100 hover:text-white"
+            : "text-stone-600 hover:text-stone-900",
+      ].join(" ")}
     >
       {children}
 
       {active && (
         <motion.span
           layoutId="nav-underline"
-          className={`absolute -bottom-1 left-0 right-0 h-px ${transparent ? 'bg-stone-50' : 'bg-stone-900'}`}
-          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+          className={`absolute -bottom-1 left-0 right-0 h-px ${transparent ? "bg-stone-50" : "bg-stone-900"}`}
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
         />
       )}
     </Link>
-  )
+  );
 }

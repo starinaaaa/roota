@@ -1,4 +1,5 @@
 "use client";
+import { bindPrepositions } from "@/lib/typography";
 import type * as ymaps from "yandex-maps";
 import { useEffect, useRef, useState } from "react";
 import type { DeliveryPoint } from "@/lib/delivery/model";
@@ -84,15 +85,19 @@ export default function PointsMap({
           role="status"
           className="absolute inset-0 flex items-center justify-center p-6 text-ui text-stone-600 text-center"
         >
-          {key
-            ? error
-            : "Яндекс.Карта временно недоступна. Выберите пункт из списка."}
+          {bindPrepositions(
+            key
+              ? error
+              : "Яндекс.Карта временно недоступна. Выберите пункт из списка.",
+          )}
         </div>
       )}
       {current && (
         <div className="absolute bottom-4 left-4 right-4 z-10 bg-white border border-stone-200 shadow-lg p-4 space-y-2">
           <div className="flex justify-between gap-3">
-            <p className="text-ui font-medium">{current.name}</p>
+            <p className="text-ui font-medium">
+              {bindPrepositions(current.name)}
+            </p>
             <button
               type="button"
               aria-label="Закрыть карточку пункта"
@@ -101,7 +106,9 @@ export default function PointsMap({
               ✕
             </button>
           </div>
-          <p className="text-caption text-stone-600">{current.address}</p>
+          <p className="text-caption text-stone-600">
+            {bindPrepositions(current.address)}
+          </p>
           <button
             type="button"
             onClick={() => onSelect(current)}

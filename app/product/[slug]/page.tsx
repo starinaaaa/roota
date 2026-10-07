@@ -1,3 +1,4 @@
+import { bindPrepositions } from "@/lib/typography";
 import { notFound, permanentRedirect } from "next/navigation";
 import { getProductRedirect, siteUrl } from "@/lib/seo";
 import type { Metadata } from "next";
@@ -94,12 +95,14 @@ export default async function ProductPage({ params }: Props) {
                 href={`/catalog?category=${product.category.slug}`}
                 className="hover:text-stone-700 transition-colors duration-200"
               >
-                {product.category.name}
+                {bindPrepositions(product.category.name)}
               </Link>
             </>
           )}
           <span>/</span>
-          <span className="text-stone-600">{product.name}</span>
+          <span className="text-stone-600">
+            {bindPrepositions(product.name)}
+          </span>
         </div>
       </nav>
 

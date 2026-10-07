@@ -1,3 +1,4 @@
+import { bindPrepositions } from "@/lib/typography";
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { getFilterCategories, getProductsByCategory } from "@/lib/products";
@@ -54,7 +55,7 @@ export default async function CatalogPage({ searchParams }: Props) {
             <CategoryFilter activeSlug={activeSlug} categories={categories} />
           </Suspense>
           <p className="font-body text-caption tracking-[0.08em] uppercase text-stone-600 shrink-0">
-            {countLabel}
+            {bindPrepositions(countLabel)}
           </p>
         </div>
       </section>

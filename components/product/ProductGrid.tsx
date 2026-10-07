@@ -1,12 +1,12 @@
-'use client'
+"use client";
 
-import { AnimatePresence, motion } from 'framer-motion'
-import ProductCard from './ProductCard'
-import type { Product } from '@/types'
+import { AnimatePresence, motion } from "framer-motion";
+import ProductCard from "./ProductCard";
+import type { Product } from "@/types";
 
 type Props = {
-  products: Product[]
-}
+  products: Product[];
+};
 
 export default function ProductGrid({ products }: Props) {
   if (products.length === 0) {
@@ -18,17 +18,17 @@ export default function ProductGrid({ products }: Props) {
         className="flex flex-col items-center justify-center py-32 text-center"
       >
         <p className="font-body text-caption tracking-[0.08em] uppercase text-stone-600 mb-4">
-          В этой категории пока нет работ
+          В этой категории пока нет работ
         </p>
         <p className="font-display text-price text-stone-300">Скоро появятся</p>
       </motion.div>
-    )
+    );
   }
 
   return (
     <AnimatePresence mode="wait">
       <motion.div
-        key={products.map((product) => product.id).join('-')}
+        key={products.map((product) => product.id).join("-")}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -40,5 +40,5 @@ export default function ProductGrid({ products }: Props) {
         ))}
       </motion.div>
     </AnimatePresence>
-  )
+  );
 }

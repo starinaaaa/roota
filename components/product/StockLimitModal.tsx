@@ -1,4 +1,5 @@
 "use client";
+import { bindPrepositions } from "@/lib/typography";
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -63,11 +64,13 @@ export default function StockLimitModal({
         >
           <X size={20} />
         </button>
-        <h2 className="text-copy pr-6 mb-4">{productName}</h2>
+        <h2 className="text-copy pr-6 mb-4">{bindPrepositions(productName)}</h2>
         <p className="text-ui text-stone-600 mb-5">
-          {availableQty > 0
-            ? "Доступное количество ограничено."
-            : "Сейчас изделие отсутствует в наличии."}
+          {bindPrepositions(
+            availableQty > 0
+              ? "Доступное количество ограничено."
+              : "Сейчас изделие отсутствует в наличии.",
+          )}
         </p>
         <div className="flex gap-3 mb-6">
           <button
@@ -88,8 +91,8 @@ export default function StockLimitModal({
         {tab === "preorder" && preorderEnabled && leadTimeDays ? (
           <div className="space-y-5">
             <p>
-              Изготовление: {leadTimeDays} дней. Контакты и доставку можно
-              указать при оформлении.
+              Изготовление: {leadTimeDays} дней. Контакты и доставку можно
+              указать при оформлении.
             </p>
             <button
               disabled={pending}
@@ -110,7 +113,9 @@ export default function StockLimitModal({
                 })
               }
             >
-              {pending ? "Добавляю…" : "Добавить предзаказ и оформить"}
+              {bindPrepositions(
+                pending ? "Добавляю…" : "Добавить предзаказ и оформить",
+              )}
             </button>
           </div>
         ) : (
@@ -142,12 +147,14 @@ export default function StockLimitModal({
               />
             </label>
             <button className="admin-button w-full" disabled={pending}>
-              {pending ? "Сохраняю…" : "Сообщить о поступлении"}
+              {bindPrepositions(
+                pending ? "Сохраняю…" : "Сообщить о поступлении",
+              )}
             </button>
           </form>
         )}
         <p role="status" className="text-ui mt-4">
-          {message}
+          {bindPrepositions(message)}
         </p>
       </motion.div>
     </>

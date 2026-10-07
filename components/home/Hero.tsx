@@ -1,5 +1,6 @@
 "use client";
 
+import { bindPrepositions } from "@/lib/typography";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -50,7 +51,7 @@ export default function Hero({
               transition={{ duration: 0.7, delay: 0.1 }}
               className="mb-6 md:mb-7 font-display font-normal text-page leading-[1.08] text-white whitespace-pre-line break-words"
             >
-              {title}
+              {bindPrepositions(title)}
             </motion.h1>
 
             <motion.p
@@ -59,7 +60,7 @@ export default function Hero({
               transition={{ duration: 0.7, delay: 0.2 }}
               className="mb-8 md:mb-10 max-w-[800px] font-body text-copy leading-relaxed text-white"
             >
-              {intro}
+              {bindPrepositions(intro)}
             </motion.p>
 
             <motion.div

@@ -1,5 +1,6 @@
 "use client";
 
+import { bindPrepositions } from "@/lib/typography";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
@@ -92,10 +93,10 @@ export default function AboutHero({
       <div className="absolute inset-0 -z-10 bg-gradient-to-r from-stone-950/60 via-stone-950/35 to-stone-950/15" />
       <div className="mx-auto w-full max-w-[1440px]">
         <p className="mb-8 font-body text-caption uppercase tracking-[0.08em] text-white">
-          О студии
+          О студии
         </p>
         <h1 className="max-w-[900px] font-display text-page leading-[1.08] text-white whitespace-pre-line break-words">
-          {title}
+          {bindPrepositions(title)}
         </h1>
       </div>
       {photos.length > 1 && (
@@ -104,8 +105,9 @@ export default function AboutHero({
             className="font-body text-caption tracking-[0.08em] text-white"
             aria-live="off"
           >
-            {String(active + 1).padStart(2, "0")} /{" "}
-            {String(photos.length).padStart(2, "0")}
+            {bindPrepositions(String(active + 1).padStart(2, "0"))} /
+            {bindPrepositions(" ")}
+            {bindPrepositions(String(photos.length).padStart(2, "0"))}
           </p>
           <div className="flex gap-2">
             <button

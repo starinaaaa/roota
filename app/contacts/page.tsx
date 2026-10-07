@@ -1,3 +1,5 @@
+import { bindPrepositions } from "@/lib/typography";
+import CharacterArt from "@/components/illustrations/CharacterArt";
 import type { Metadata } from "next";
 import { getSiteContent } from "@/lib/site";
 import { seller } from "@/lib/seller";
@@ -41,13 +43,19 @@ export default async function ContactsPage() {
     <div className="pt-16 md:pt-20">
       {/* ── Заголовок ── */}
       <section className="py-20 md:py-28 px-6 md:px-12 lg:px-16">
-        <div className="max-w-[1440px] mx-auto">
-          <p className="font-body text-caption text-stone-600 tracking-[0.08em] uppercase mb-8">
-            Контакты
-          </p>
-          <h1 className="font-display text-page leading-[1.05] text-stone-900 max-w-xl">
-            Напишите нам
-          </h1>
+        <div className="max-w-[1440px] mx-auto grid gap-8 md:grid-cols-[1.3fr_1fr] items-center">
+          <div>
+            <p className="font-body text-caption text-stone-600 tracking-[0.08em] uppercase mb-8">
+              Контакты
+            </p>
+            <h1 className="font-display text-page leading-[1.05] text-stone-900 max-w-xl">
+              Напишите нам
+            </h1>
+          </div>
+          <CharacterArt
+            character="flower"
+            className="h-44 w-44 md:h-64 md:w-64 justify-self-end md:mr-12 -rotate-3"
+          />
         </div>
       </section>
 
@@ -67,7 +75,7 @@ export default async function ContactsPage() {
                   className="py-8 first:pt-0 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-8 items-center"
                 >
                   <p className="font-body text-caption text-stone-600 tracking-[0.08em] uppercase">
-                    {label}
+                    {bindPrepositions(label)}
                   </p>
                   <a
                     href={href}
@@ -75,7 +83,7 @@ export default async function ContactsPage() {
                     rel={external ? "noopener noreferrer" : undefined}
                     className="sm:col-span-2 font-body text-ui text-stone-900 hover:text-stone-600 transition-colors duration-200"
                   >
-                    {value}
+                    {bindPrepositions(value)}
                   </a>
                 </div>
               ))}
@@ -95,11 +103,12 @@ export default async function ContactsPage() {
           <div className="md:col-span-8 lg:col-span-9 max-w-xl">
             <p className="font-body text-copy text-stone-900 mb-3">Москва</p>
             <p className="font-body text-copy text-stone-900 mb-3">
-              Самозанятый {seller.name}. ИНН {seller.inn}.
+              Самозанятый {bindPrepositions(seller.name)}. ИНН{" "}
+              {bindPrepositions(seller.inn)}.
             </p>
             <p className="font-body text-copy text-stone-800 leading-loose">
-              Мы работаем по предварительной записи. Посещение мастерской
-              возможно — напишите нам, чтобы договориться о времени.
+              Мы работаем по предварительной записи. Посещение мастерской
+              возможно — напишите нам, чтобы договориться о времени.
             </p>
           </div>
         </div>
@@ -115,9 +124,9 @@ export default async function ContactsPage() {
           </div>
           <div className="md:col-span-8 lg:col-span-9 max-w-xl space-y-8">
             <p className="font-body text-copy text-stone-800 leading-loose">
-              Мы открыты для индивидуальных заказов и коллабораций. Сервиз для
-              ресторана, подарочный набор, корпоративный заказ — расскажите о
-              своей идее, и мы обсудим детали.
+              Мы открыты для индивидуальных заказов и коллабораций. Сервиз
+              для ресторана, подарочный набор, корпоративный заказ — расскажите
+              о своей идее, и мы обсудим детали.
             </p>
             <a
               href={"mailto:" + site.email}

@@ -1,5 +1,6 @@
 "use client";
 
+import { bindPrepositions } from "@/lib/typography";
 import Image from "next/image";
 import Link from "next/link";
 import { Minus, Plus, X } from "lucide-react";
@@ -55,14 +56,16 @@ export default function CartLineItem({
               href={`/product/${product.slug}`}
               className="font-body text-copy tracking-[0.08em] uppercase text-stone-700 leading-snug hover:text-stone-600 transition-colors duration-200 line-clamp-2"
             >
-              {product.name}
+              {bindPrepositions(product.name)}
             </Link>
             <span className="font-body text-price tracking-[0.06em] text-stone-900 shrink-0 tabular-nums">
-              {formatPrice(product.price * quantity)}
+              {bindPrepositions(formatPrice(product.price * quantity))}
             </span>
           </div>
           {item.purchase_mode === "preorder" && (
-            <p className="text-caption">Предзаказ · {product.lead_time_days} дней</p>
+            <p className="text-caption">
+              Предзаказ · {product.lead_time_days} дней
+            </p>
           )}
 
           {/* Строка: степпер + удалить — text ×1.5 */}
@@ -139,10 +142,10 @@ export default function CartLineItem({
               href={`/product/${product.slug}`}
               className="font-body text-ui text-stone-800 hover:text-stone-600 transition-colors duration-200"
             >
-              {product.name}
+              {bindPrepositions(product.name)}
             </Link>
             <p className="font-display text-copy text-stone-900 mt-1">
-              {formatPrice(product.price)}
+              {bindPrepositions(formatPrice(product.price))}
             </p>
           </div>
           <button
@@ -186,13 +189,13 @@ export default function CartLineItem({
             </div>
             {atStockLimit && (
               <span className="font-body text-caption tracking-[0.12em] uppercase text-stone-600">
-                Макс. в наличии
+                Макс. в наличии
               </span>
             )}
           </div>
 
           <p className="font-display text-price text-stone-900">
-            {formatPrice(product.price * quantity)}
+            {bindPrepositions(formatPrice(product.price * quantity))}
           </p>
         </div>
       </div>

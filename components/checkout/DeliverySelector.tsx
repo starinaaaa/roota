@@ -1,4 +1,5 @@
 "use client";
+import { bindPrepositions } from "@/lib/typography";
 import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { normalizeRussianPhone } from "@/lib/contacts";
@@ -242,7 +243,7 @@ export default function DeliverySelector({
                 onClick={() => selectCity(c)}
                 className={`px-4 py-3 text-ui cursor-pointer hover:bg-stone-100 ${i === active ? "bg-stone-100" : ""}`}
               >
-                {c.name}
+                {bindPrepositions(c.name)}
               </li>
             ))}
           </ul>
@@ -250,7 +251,7 @@ export default function DeliverySelector({
       </div>
       {!enabled ? (
         <p role="status" className="text-ui text-stone-600">
-          Доставка временно недоступна. Свяжитесь со студией.
+          Доставка временно недоступна. Свяжитесь со студией.
         </p>
       ) : selectedCity ? (
         <>
@@ -267,7 +268,7 @@ export default function DeliverySelector({
             />
             <span className="font-body">
               <span className="block text-caption tracking-[0.12em] uppercase">
-                Ozon — доставка в пункт выдачи
+                Ozon — доставка в пункт выдачи
               </span>
               <span className="block text-caption text-stone-600 mt-2">
                 Стоимость рассчитается после выбора пункта
@@ -287,19 +288,25 @@ export default function DeliverySelector({
                 }}
                 className="font-body text-caption uppercase tracking-[0.12em] border border-stone-300 px-5 py-3 disabled:opacity-50"
               >
-                {point ? "Изменить пункт" : "Выбрать пункт выдачи"}
+                {bindPrepositions(
+                  point ? "Изменить пункт" : "Выбрать пункт выдачи",
+                )}
               </button>
               {point && (
                 <div className="font-body text-ui space-y-1">
-                  <p>{point.name}</p>
-                  <p className="text-stone-600">{point.address}</p>
+                  <p>{bindPrepositions(point.name)}</p>
+                  <p className="text-stone-600">
+                    {bindPrepositions(point.address)}
+                  </p>
                 </div>
               )}
             </>
           )}
         </>
       ) : (
-        <p className="text-caption text-stone-600">Выберите город из подсказок.</p>
+        <p className="text-caption text-stone-600">
+          Выберите город из подсказок.
+        </p>
       )}
       {busy && !open && (
         <p role="status" className="text-caption text-stone-600">
@@ -309,7 +316,7 @@ export default function DeliverySelector({
       {error && !open && (
         <div>
           <p role="alert" className="text-ui text-red-700">
-            {error}
+            {bindPrepositions(error)}
           </p>
           {point && validPhone && (
             <button
@@ -332,7 +339,7 @@ export default function DeliverySelector({
         <div className="p-4 md:p-6 space-y-4">
           <div className="flex items-center justify-between gap-4">
             <h2 id="points-title" className="font-display text-price">
-              Пункты Ozon · {selectedCity?.name}
+              Пункты Ozon · {bindPrepositions(selectedCity?.name)}
             </h2>
             <button
               type="button"
@@ -371,9 +378,11 @@ export default function DeliverySelector({
                       onClick={() => choose(p)}
                       className={`w-full text-left border p-4 hover:border-stone-500 focus-visible:border-stone-900 disabled:opacity-50 ${point?.id === p.id ? "border-stone-900" : "border-stone-200"}`}
                     >
-                      <span className="block text-ui">{p.name}</span>
+                      <span className="block text-ui">
+                        {bindPrepositions(p.name)}
+                      </span>
                       <span className="block text-caption text-stone-600 mt-1">
-                        {p.address}
+                        {bindPrepositions(p.address)}
                       </span>
                     </button>
                   </li>
@@ -381,9 +390,11 @@ export default function DeliverySelector({
               </ul>
               {!busy && !visible.length && !error && (
                 <p role="status" className="text-ui text-stone-600">
-                  {points.length
-                    ? "По этому адресу пунктов не найдено."
-                    : "Пунктов в этом городе не найдено."}
+                  {bindPrepositions(
+                    points.length
+                      ? "По этому адресу пунктов не найдено."
+                      : "Пунктов в этом городе не найдено.",
+                  )}
                 </p>
               )}
               {visible.length > listLimit && (
@@ -393,25 +404,27 @@ export default function DeliverySelector({
                   onClick={() => setListLimit((limit) => limit + 100)}
                   className="text-ui underline p-3"
                 >
-                  Показать ещё в списке
+                  Показать ещё в списке
                 </button>
               )}
             </div>
           </div>
           <p className="text-caption text-stone-600">
-            На карте все пункты города: {points.length}. После выбора проверим
-            доставку для вашего заказа и рассчитаем стоимость.
+            На карте все пункты города: {points.length}. После выбора проверим
+            доставку для вашего заказа и рассчитаем стоимость.
             {!validPhone && " Для расчёта понадобится номер телефона."}
           </p>
           {busy && (
             <p role="status" className="text-ui text-stone-600">
-              {point ? "Рассчитываем доставку…" : "Загружаем пункты…"}
+              {bindPrepositions(
+                point ? "Рассчитываем доставку…" : "Загружаем пункты…",
+              )}
             </p>
           )}
           {error && (
             <div>
               <p role="alert" className="text-ui text-red-700">
-                {error}
+                {bindPrepositions(error)}
               </p>
               <button
                 type="button"

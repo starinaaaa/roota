@@ -45,7 +45,7 @@ export default function AddToCartButton({ productId, productName }: Props) {
       onClick={handleClick}
       aria-label={`Добавить ${productName} в корзину`}
       className={[
-        'border font-body text-[10px] tracking-[0.15em] uppercase px-3 py-1.5',
+        'border font-body text-ui tracking-[0.08em] uppercase px-3 py-1.5',
         'bg-white/90 backdrop-blur-sm transition-all duration-200',
         stockError
           ? 'border-red-400 text-red-600 bg-red-50/90'

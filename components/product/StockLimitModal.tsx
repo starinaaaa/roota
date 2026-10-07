@@ -63,8 +63,8 @@ export default function StockLimitModal({
         >
           <X size={20} />
         </button>
-        <h2 className="text-lg pr-6 mb-4">{productName}</h2>
-        <p className="text-sm text-stone-600 mb-5">
+        <h2 className="text-copy pr-6 mb-4">{productName}</h2>
+        <p className="text-ui text-stone-600 mb-5">
           {availableQty > 0
             ? "Доступное количество ограничено."
             : "Сейчас изделие отсутствует в наличии."}
@@ -146,7 +146,7 @@ export default function StockLimitModal({
             </button>
           </form>
         )}
-        <p role="status" className="text-sm mt-4">
+        <p role="status" className="text-ui mt-4">
           {message}
         </p>
       </motion.div>

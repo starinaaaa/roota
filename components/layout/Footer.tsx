@@ -30,14 +30,14 @@ export default async function Footer() {
             <div className="col-span-2 md:col-span-1">
               <Link
                 href="/"
-                className="font-display text-2xl tracking-[0.15em] uppercase text-stone-900 block mb-4"
+                className="font-display text-price tracking-[0.08em] uppercase text-stone-900 block mb-4"
               >
                 Roota
               </Link>
-              <p className="font-body text-sm text-stone-800 leading-relaxed max-w-[200px]">
+              <p className="font-body text-ui text-stone-800 leading-relaxed max-w-[200px]">
                 Авторская керамика ручной работы. Москва.
               </p>
-              <p className="font-body text-xs text-stone-600 leading-relaxed mt-4">
+              <p className="font-body text-caption text-stone-600 leading-relaxed mt-4">
                 Самозанятый {seller.name}
                 <br />
                 ИНН {seller.inn}
@@ -48,7 +48,7 @@ export default async function Footer() {
 
             {/* Каталог */}
             <div>
-              <p className="font-body text-xs text-stone-400 tracking-[0.15em] uppercase mb-5">
+              <p className="font-body text-caption text-stone-600 tracking-[0.08em] uppercase mb-5">
                 Каталог
               </p>
               <ul className="space-y-3">
@@ -56,7 +56,7 @@ export default async function Footer() {
                   <li key={href}>
                     <Link
                       href={href}
-                      className="font-body text-sm text-stone-800 hover:text-stone-900 transition-colors duration-200"
+                      className="font-body text-ui text-stone-800 hover:text-stone-900 transition-colors duration-200"
                     >
                       {label}
                     </Link>
@@ -67,7 +67,7 @@ export default async function Footer() {
 
             {/* Информация */}
             <div>
-              <p className="font-body text-xs text-stone-400 tracking-[0.15em] uppercase mb-5">
+              <p className="font-body text-caption text-stone-600 tracking-[0.08em] uppercase mb-5">
                 Информация
               </p>
               <ul className="space-y-3">
@@ -75,7 +75,7 @@ export default async function Footer() {
                   <li key={href}>
                     <Link
                       href={href}
-                      className="font-body text-sm text-stone-800 hover:text-stone-900 transition-colors duration-200"
+                      className="font-body text-ui text-stone-800 hover:text-stone-900 transition-colors duration-200"
                     >
                       {label}
                     </Link>
@@ -86,14 +86,14 @@ export default async function Footer() {
 
             {/* Контакты */}
             <div>
-              <p className="font-body text-xs text-stone-400 tracking-[0.15em] uppercase mb-5">
+              <p className="font-body text-caption text-stone-600 tracking-[0.08em] uppercase mb-5">
                 Связь
               </p>
               <ul className="space-y-3">
                 <li>
                   <a
                     href={seller.phoneHref}
-                    className="font-body text-sm text-stone-800 hover:text-stone-900 transition-colors duration-200"
+                    className="font-body text-ui text-stone-800 hover:text-stone-900 transition-colors duration-200"
                   >
                     {seller.phone}
                   </a>
@@ -103,7 +103,7 @@ export default async function Footer() {
                     href={site.telegram}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-body text-sm text-stone-800 hover:text-stone-900 transition-colors duration-200"
+                    className="font-body text-ui text-stone-800 hover:text-stone-900 transition-colors duration-200"
                   >
                     Telegram
                   </a>
@@ -113,7 +113,7 @@ export default async function Footer() {
                     href={site.instagram}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-body text-sm text-stone-800 hover:text-stone-900 transition-colors duration-200"
+                    className="font-body text-ui text-stone-800 hover:text-stone-900 transition-colors duration-200"
                   >
                     Instagram
                   </a>
@@ -121,7 +121,7 @@ export default async function Footer() {
                 <li>
                   <a
                     href={"mailto:" + site.email}
-                    className="font-body text-sm text-stone-800 hover:text-stone-900 transition-colors duration-200"
+                    className="font-body text-ui text-stone-800 hover:text-stone-900 transition-colors duration-200"
                   >
                     {site.email}
                   </a>
@@ -132,25 +132,25 @@ export default async function Footer() {
 
           {/* Нижняя полоса */}
           <div className="border-t border-stone-200 pt-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <p className="font-body text-[15px] text-stone-800">
+            <p className="font-body text-ui text-stone-800">
               © {year} Roota ceramics. Все права защищены.
             </p>
             <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
               <Link
                 href="/offer"
-                className="font-body text-[15px] text-stone-800 hover:text-stone-600 transition-colors duration-200"
+                className="font-body text-ui text-stone-800 hover:text-stone-600 transition-colors duration-200"
               >
                 Оферта
               </Link>
               <Link
                 href="/privacy"
-                className="font-body text-[15px] text-stone-800 hover:text-stone-600 transition-colors duration-200"
+                className="font-body text-ui text-stone-800 hover:text-stone-600 transition-colors duration-200"
               >
                 Конфиденциальность
               </Link>
               <Link
                 href="/terms"
-                className="font-body text-[15px] text-stone-800 hover:text-stone-600 transition-colors duration-200"
+                className="font-body text-ui text-stone-800 hover:text-stone-600 transition-colors duration-200"
               >
                 Условия использования
               </Link>

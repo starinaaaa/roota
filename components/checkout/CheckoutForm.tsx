@@ -153,7 +153,7 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
 
   return (
     <div className="max-w-[1440px] mx-auto px-6 md:px-12 lg:px-16 py-12 md:py-16">
-      <h1 className="font-display text-[clamp(2rem,5vw,4rem)] text-stone-900 mb-12">
+      <h1 className="font-display text-page text-stone-900 mb-12">
         Оформление заказа
       </h1>
 
@@ -168,7 +168,7 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
           <fieldset disabled={pending} className="space-y-8">
             {/* Контактные данные */}
             <fieldset className="space-y-5">
-              <legend className="font-body text-[10px] tracking-[0.28em] uppercase text-stone-400 mb-6">
+              <legend className="font-body text-ui tracking-[0.08em] uppercase text-stone-600 mb-6">
                 Контактные данные
               </legend>
 
@@ -229,7 +229,7 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
             <div className="space-y-2">
               <label
                 htmlFor="comment"
-                className="font-body text-[10px] tracking-[0.18em] uppercase text-stone-500 block"
+                className="font-body text-ui tracking-[0.08em] uppercase text-stone-600 block"
               >
                 Комментарий
               </label>
@@ -242,9 +242,9 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
                 rows={3}
                 className="
                   w-full border border-stone-200 bg-transparent
-                  font-body text-sm text-stone-800
+                  font-body text-ui text-stone-800
                   px-4 py-3 resize-none
-                  placeholder:text-stone-300
+                  placeholder:text-stone-600
                   focus:outline-none focus:border-stone-500
                   transition-colors duration-200
                 "
@@ -260,14 +260,14 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
                 onChange={handleChange}
                 className="mt-1 w-4 h-4 accent-stone-900 cursor-pointer"
               />
-              <span className="font-body text-[13px] tracking-[0.05em] text-stone-600 group-hover:text-stone-900 transition-colors duration-200">
+              <span className="font-body text-ui tracking-[0.05em] text-stone-600 group-hover:text-stone-900 transition-colors duration-200">
                 Даю отдельное согласие на получение новостей и рекламных
                 сообщений студии по электронной почте. Отказ не влияет на заказ.
               </span>
             </label>
             <Link
               href="/newsletter-consent"
-              className="font-body text-xs text-stone-500 underline underline-offset-2"
+              className="font-body text-ui text-stone-600 underline underline-offset-2"
             >
               Условия согласия на рассылку и обработку данных для неё
             </Link>
@@ -280,7 +280,7 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
                   initial={{ opacity: 0, y: -6 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
-                  className="font-body text-sm text-red-600 mt-2"
+                  className="font-body text-ui text-red-600 mt-2"
                 >
                   {error}
                 </motion.p>
@@ -292,7 +292,7 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
         {/* ── Summary ────────────────────────────────────────── */}
         <div className="mt-12 lg:mt-0">
           <div className="lg:sticky lg:top-28 space-y-6">
-            <h2 className="font-body text-[10px] tracking-[0.28em] uppercase text-stone-400">
+            <h2 className="font-body text-caption tracking-[0.08em] uppercase text-stone-600">
               Ваш заказ
             </h2>
 
@@ -318,20 +318,20 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
                     )}
                   </div>
                   <div className="flex flex-col justify-center flex-1 min-w-0">
-                    <p className="font-body text-xs text-stone-700 truncate">
+                    <p className="font-body text-caption text-stone-700 truncate">
                       {item.product.name}
                     </p>
-                    <p className="font-body text-xs text-stone-400 mt-0.5">
+                    <p className="font-body text-caption text-stone-600 mt-0.5">
                       × {item.quantity}
                     </p>
                     {item.purchase_mode === "preorder" && (
-                      <p className="text-xs text-stone-600">
+                      <p className="text-caption text-stone-600">
                         Предзаказ · изготовление {item.product.lead_time_days}{" "}
                         дней
                       </p>
                     )}
                   </div>
-                  <p className="font-body text-sm text-stone-800 shrink-0 self-center">
+                  <p className="font-body text-ui text-stone-800 shrink-0 self-center">
                     {formatPrice(item.product.price * item.quantity)}
                   </p>
                 </div>
@@ -341,21 +341,21 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
             {/* Итого */}
             <div className="space-y-3">
               <div className="flex justify-between">
-                <span className="font-body text-sm text-stone-500">Товары</span>
-                <span className="font-body text-sm text-stone-700">
+                <span className="font-body text-ui text-stone-600">Товары</span>
+                <span className="font-body text-ui text-stone-700">
                   {formatPrice(totalPrice)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="font-body text-sm text-stone-500">
+                <span className="font-body text-ui text-stone-600">
                   Доставка
                 </span>
-                <span className="font-body text-xs text-stone-400">
+                <span className="font-body text-caption text-stone-600">
                   {quote ? formatPrice(quote.totalCost) : "нужен расчёт"}
                 </span>
               </div>
               {quote && (
-                <p className="font-body text-[10px] text-stone-400">
+                <p className="font-body text-caption text-stone-600">
                   Включая страховку {formatPrice(quote.insuranceCost)}
                   {quote.estimatedDays !== null && (
                     <>
@@ -368,10 +368,10 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
               )}
               <div className="divider pt-1" />
               <div className="flex justify-between items-baseline">
-                <span className="font-body text-xs tracking-[0.15em] uppercase text-stone-500">
+                <span className="font-body text-caption tracking-[0.08em] uppercase text-stone-600">
                   {quote ? "Итого" : "Сумма товаров"}
                 </span>
-                <span className="font-display text-2xl text-stone-900">
+                <span className="font-display text-price text-stone-900">
                   {formatPrice(finalTotal ?? totalPrice)}
                 </span>
               </div>
@@ -380,7 +380,7 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
             {/* Submit button на десктопе */}
             <div className="pt-2">
               {error && (
-                <p className="font-body text-sm text-red-600 mt-2 mb-3">
+                <p className="font-body text-ui text-red-600 mt-2 mb-3">
                   {error}
                 </p>
               )}
@@ -390,7 +390,7 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
                 disabled={pending}
                 className="
                   w-full bg-stone-900 text-stone-50
-                  font-body text-xs tracking-[0.2em] uppercase
+                  font-body text-ui tracking-[0.08em] uppercase
                   py-4
                   hover:bg-stone-700 disabled:opacity-50 disabled:cursor-not-allowed
                   transition-colors duration-300
@@ -412,7 +412,7 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
               </button>
             </div>
 
-            <p className="font-body text-[10px] text-stone-400 leading-relaxed">
+            <p className="font-body text-caption text-stone-600 leading-relaxed">
               Нажимая «Оформить заказ», вы принимаете условия{" "}
               <Link
                 href="/offer"
@@ -432,7 +432,7 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
 
             <Link
               href="/catalog"
-              className="block font-body text-[10px] tracking-[0.18em] uppercase text-stone-400 hover:text-stone-700 transition-colors duration-200"
+              className="block font-body text-ui tracking-[0.08em] uppercase text-stone-600 hover:text-stone-700 transition-colors duration-200"
             >
               ← Вернуться в каталог
             </Link>
@@ -473,7 +473,7 @@ function Field({
     <div className="space-y-2">
       <label
         htmlFor={id}
-        className="font-body text-[10px] tracking-[0.18em] uppercase text-stone-500 block"
+        className="font-body text-ui tracking-[0.08em] uppercase text-stone-600 block"
       >
         {label}
       </label>
@@ -491,15 +491,15 @@ function Field({
         required={required}
         className="
           w-full border border-stone-200 bg-transparent
-          font-body text-sm text-stone-800
+          font-body text-ui text-stone-800
           px-4 py-3
-          placeholder:text-stone-300
+          placeholder:text-stone-600
           focus:outline-none focus:border-stone-500
           transition-colors duration-200
         "
       />
       {error && (
-        <p id={id + "-error"} role="alert" className="text-xs text-red-700">
+        <p id={id + "-error"} role="alert" className="text-caption text-red-700">
           {error}
         </p>
       )}

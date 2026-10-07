@@ -37,7 +37,7 @@ export default function FeaturedProducts({ products }: FeaturedProductsProps) {
             initial={{ opacity: 0, y: 16 }}
             animate={inView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.7, ease: "easeOut" }}
-            className="font-display font-normal text-[clamp(1.8rem,3.6vw,3.15rem)] text-stone-900"
+            className="font-display font-normal text-section text-stone-900"
           >
             Избранное
           </motion.h2>
@@ -49,7 +49,7 @@ export default function FeaturedProducts({ products }: FeaturedProductsProps) {
           >
             <Link
               href="/catalog"
-              className="group hidden md:flex items-center gap-2 font-body text-xs tracking-[0.15em] uppercase text-stone-500 hover:text-stone-900 transition-colors duration-300"
+              className="group hidden md:flex items-center gap-2 font-body text-ui tracking-[0.08em] uppercase text-stone-600 hover:text-stone-900 transition-colors duration-300"
             >
               Весь каталог
               <motion.span
@@ -84,7 +84,7 @@ export default function FeaturedProducts({ products }: FeaturedProductsProps) {
           <Link
             href="/catalog"
             className="
-              font-body text-xs tracking-[0.18em] uppercase
+              font-body text-ui tracking-[0.08em] uppercase
               border border-stone-300 text-stone-700
               px-8 py-3.5
               hover:bg-stone-900 hover:text-stone-50 hover:border-stone-900
@@ -149,7 +149,7 @@ function ProductCardFeatured({
             />
           ) : (
             <div className="absolute inset-0 bg-gradient-to-br from-stone-100 to-stone-200 flex items-end p-4">
-              <span className="font-body text-[10px] text-stone-400 tracking-widest uppercase">
+              <span className="font-body text-caption text-stone-600 tracking-widest uppercase">
                 Фото скоро
               </span>
             </div>
@@ -158,7 +158,7 @@ function ProductCardFeatured({
           {/* Статус: нет в наличии / мало на складе */}
           {!product.in_stock ? (
             <div className="absolute top-4 left-4">
-              <span className="font-body text-[9px] tracking-[0.18em] uppercase bg-stone-50/90 text-stone-400 px-2.5 py-1.5">
+              <span className="font-body text-caption tracking-[0.08em] uppercase inline-block bg-stone-50/90 text-stone-600 px-2.5 py-1.5">
                 Скоро в наличии
               </span>
             </div>
@@ -166,7 +166,7 @@ function ProductCardFeatured({
             product.stock_qty > 0 &&
             product.stock_qty <= 3 ? (
             <div className="absolute top-4 left-4">
-              <span className="font-body text-[9px] tracking-[0.18em] uppercase bg-stone-50/90 text-stone-400 px-2.5 py-1.5">
+              <span className="font-body text-caption tracking-[0.08em] uppercase inline-block bg-stone-50/90 text-stone-600 px-2.5 py-1.5">
                 {product.stock_qty === 1
                   ? "Осталась 1 шт."
                   : `Осталось ${product.stock_qty} шт.`}
@@ -186,10 +186,10 @@ function ProductCardFeatured({
 
         {/* Инфо */}
         <div className="space-y-1.5">
-          <p className="font-body text-sm text-stone-400 tracking-[0.12em] uppercase group-hover:text-stone-600 transition-colors duration-300">
+          <p className="font-body text-copy text-stone-800 tracking-[0.08em] uppercase group-hover:text-stone-600 transition-colors duration-300">
             {product.name}
           </p>
-          <p className="font-display text-2xl text-stone-900">
+          <p className="font-display text-price text-stone-900">
             {formatPrice(product.price)}
           </p>
         </div>

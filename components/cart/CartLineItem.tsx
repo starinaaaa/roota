@@ -53,16 +53,16 @@ export default function CartLineItem({
           <div className="flex flex-col sm:flex-row items-start justify-between gap-2 sm:gap-4">
             <Link
               href={`/product/${product.slug}`}
-              className="font-body text-[15px] tracking-[0.16em] uppercase text-stone-700 leading-snug hover:text-stone-400 transition-colors duration-200 line-clamp-2"
+              className="font-body text-copy tracking-[0.08em] uppercase text-stone-700 leading-snug hover:text-stone-600 transition-colors duration-200 line-clamp-2"
             >
               {product.name}
             </Link>
-            <span className="font-body text-[17px] tracking-[0.06em] text-stone-900 shrink-0 tabular-nums">
+            <span className="font-body text-price tracking-[0.06em] text-stone-900 shrink-0 tabular-nums">
               {formatPrice(product.price * quantity)}
             </span>
           </div>
           {item.purchase_mode === "preorder" && (
-            <p className="text-xs">Предзаказ · {product.lead_time_days} дней</p>
+            <p className="text-caption">Предзаказ · {product.lead_time_days} дней</p>
           )}
 
           {/* Строка: степпер + удалить — text ×1.5 */}
@@ -70,12 +70,12 @@ export default function CartLineItem({
             <div className="flex items-center gap-1 sm:gap-3">
               <button
                 onClick={() => onUpdate(product.id, quantity - 1)}
-                className="p-2 min-w-9 min-h-9 font-body text-[17px] text-stone-500 hover:text-stone-800 transition-colors leading-none"
+                className="p-2 min-w-9 min-h-9 font-body text-ui text-stone-600 hover:text-stone-800 transition-colors leading-none"
                 aria-label="Уменьшить"
               >
                 —
               </button>
-              <span className="font-body text-sm sm:text-[17px] whitespace-nowrap tracking-[0.06em] text-stone-600 tabular-nums">
+              <span className="font-body text-ui whitespace-nowrap tracking-[0.06em] text-stone-600 tabular-nums">
                 [ {quantity} ] шт.
               </span>
               <button
@@ -84,17 +84,17 @@ export default function CartLineItem({
                 }
                 disabled={atStockLimit}
                 className={[
-                  "p-2 min-w-9 min-h-9 font-body text-[20px] leading-none transition-colors",
+                  "p-2 min-w-9 min-h-9 font-body text-price leading-none transition-colors",
                   atStockLimit
                     ? "text-stone-200 cursor-not-allowed"
-                    : "text-stone-400 hover:text-stone-800",
+                    : "text-stone-600 hover:text-stone-800",
                 ].join(" ")}
                 aria-label="Увеличить"
               >
                 +
               </button>
               {atStockLimit && (
-                <span className="font-body text-[12px] tracking-[0.14em] uppercase text-stone-300">
+                <span className="font-body text-caption tracking-[0.08em] uppercase text-stone-600">
                   макс.
                 </span>
               )}
@@ -102,7 +102,7 @@ export default function CartLineItem({
 
             <button
               onClick={() => onRemove(product.id)}
-              className="font-body text-xs sm:text-[14px] tracking-[0.1em] uppercase text-stone-500 hover:text-stone-700 transition-colors duration-150"
+              className="font-body text-caption sm:text-ui tracking-[0.1em] uppercase text-stone-600 hover:text-stone-700 transition-colors duration-150"
               aria-label="Удалить"
             >
               •удалить•
@@ -137,17 +137,17 @@ export default function CartLineItem({
           <div>
             <Link
               href={`/product/${product.slug}`}
-              className="font-body text-sm text-stone-800 hover:text-stone-500 transition-colors duration-200"
+              className="font-body text-ui text-stone-800 hover:text-stone-600 transition-colors duration-200"
             >
               {product.name}
             </Link>
-            <p className="font-display text-lg text-stone-900 mt-1">
+            <p className="font-display text-copy text-stone-900 mt-1">
               {formatPrice(product.price)}
             </p>
           </div>
           <button
             onClick={() => onRemove(product.id)}
-            className="p-1 text-stone-300 hover:text-stone-700 transition-colors duration-200"
+            className="p-1 text-stone-600 hover:text-stone-700 transition-colors duration-200"
             aria-label="Удалить из корзины"
           >
             <X size={15} strokeWidth={1.5} />
@@ -160,12 +160,12 @@ export default function CartLineItem({
             <div className="flex items-center gap-0 border border-stone-200">
               <button
                 onClick={() => onUpdate(product.id, quantity - 1)}
-                className="w-8 h-8 flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-stone-100 transition-colors duration-150"
+                className="w-8 h-8 flex items-center justify-center text-stone-600 hover:text-stone-900 hover:bg-stone-100 transition-colors duration-150"
                 aria-label="Уменьшить"
               >
                 <Minus size={11} strokeWidth={1.5} />
               </button>
-              <span className="w-8 h-8 flex items-center justify-center font-body text-xs text-stone-700 border-x border-stone-200">
+              <span className="w-8 h-8 flex items-center justify-center font-body text-caption text-stone-700 border-x border-stone-200">
                 {quantity}
               </span>
               <button
@@ -177,7 +177,7 @@ export default function CartLineItem({
                   "w-8 h-8 flex items-center justify-center transition-colors duration-150",
                   atStockLimit
                     ? "text-stone-200 cursor-not-allowed"
-                    : "text-stone-500 hover:text-stone-900 hover:bg-stone-100",
+                    : "text-stone-600 hover:text-stone-900 hover:bg-stone-100",
                 ].join(" ")}
                 aria-label="Увеличить"
               >
@@ -185,13 +185,13 @@ export default function CartLineItem({
               </button>
             </div>
             {atStockLimit && (
-              <span className="font-body text-[10px] tracking-[0.12em] uppercase text-stone-400">
+              <span className="font-body text-caption tracking-[0.12em] uppercase text-stone-600">
                 Макс. в наличии
               </span>
             )}
           </div>
 
-          <p className="font-display text-xl text-stone-900">
+          <p className="font-display text-price text-stone-900">
             {formatPrice(product.price * quantity)}
           </p>
         </div>

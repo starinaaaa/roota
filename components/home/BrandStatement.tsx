@@ -28,7 +28,7 @@ export default function BrandStatement({
               initial={{ opacity: 0 }}
               animate={inView ? { opacity: 1 } : {}}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="font-body text-xs text-stone-400 tracking-[0.2em] uppercase mb-8"
+              className="font-body text-caption text-stone-600 tracking-[0.08em] uppercase mb-8"
             >
               О студии
             </motion.p>
@@ -45,7 +45,7 @@ export default function BrandStatement({
                       delay: 0.2 + i * 0.1,
                       ease: [0.16, 1, 0.3, 1],
                     }}
-                    className="font-display font-normal text-[clamp(1.76rem,4vw,3.6rem)] leading-[1.1] text-stone-900"
+                    className="font-display font-normal text-section leading-[1.1] text-stone-900"
                   >
                     {line}
                   </motion.p>
@@ -61,13 +61,13 @@ export default function BrandStatement({
             transition={{ duration: 0.7, delay: 0.5 }}
             className="md:col-span-4 lg:col-span-5 md:pb-2"
           >
-            <p className="font-body text-sm text-stone-500 leading-loose mb-8 max-w-xs">
+            <p className="font-body text-copy text-stone-800 leading-loose mb-8 max-w-xs">
               {summary}
             </p>
 
             <Link
               href="/about"
-              className="group inline-flex items-center gap-2 font-body text-xs tracking-[0.18em] uppercase text-stone-900"
+              className="group inline-flex items-center gap-2 font-body text-ui tracking-[0.08em] uppercase text-stone-900"
             >
               <span className="border-b border-stone-900/30 pb-0.5 group-hover:border-stone-900/80 transition-colors duration-300">
                 Узнать больше

@@ -82,7 +82,7 @@ export default function PointsMap({
       {(!key || error) && (
         <div
           role="status"
-          className="absolute inset-0 flex items-center justify-center p-6 text-sm text-stone-500 text-center"
+          className="absolute inset-0 flex items-center justify-center p-6 text-ui text-stone-600 text-center"
         >
           {key
             ? error
@@ -92,7 +92,7 @@ export default function PointsMap({
       {current && (
         <div className="absolute bottom-4 left-4 right-4 z-10 bg-white border border-stone-200 shadow-lg p-4 space-y-2">
           <div className="flex justify-between gap-3">
-            <p className="text-sm font-medium">{current.name}</p>
+            <p className="text-ui font-medium">{current.name}</p>
             <button
               type="button"
               aria-label="Закрыть карточку пункта"
@@ -101,11 +101,11 @@ export default function PointsMap({
               ✕
             </button>
           </div>
-          <p className="text-xs text-stone-500">{current.address}</p>
+          <p className="text-caption text-stone-600">{current.address}</p>
           <button
             type="button"
             onClick={() => onSelect(current)}
-            className="bg-stone-900 text-white text-xs px-4 py-2"
+            className="bg-stone-900 text-white text-caption px-4 py-2"
           >
             Выбрать этот пункт
           </button>

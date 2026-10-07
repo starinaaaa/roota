@@ -39,7 +39,7 @@ export default function PhoneField({
     <div className="space-y-2">
       <label
         htmlFor="phone"
-        className="font-body text-[10px] tracking-[0.18em] uppercase text-stone-500 block"
+        className="font-body text-ui tracking-[0.08em] uppercase text-stone-600 block"
       >
         Телефон *
       </label>
@@ -130,14 +130,14 @@ export default function PhoneField({
           }
           commit(national.slice(0, from) + national.slice(to), from);
         }}
-        className="w-full border border-stone-200 bg-transparent font-body text-sm text-stone-800 px-4 py-3 focus:outline-none focus:border-stone-500"
+        className="w-full border border-stone-200 bg-transparent font-body text-ui text-stone-800 px-4 py-3 focus:outline-none focus:border-stone-500"
       />
       {error ? (
-        <p id="phone-error" role="alert" className="text-xs text-red-700">
+        <p id="phone-error" role="alert" className="text-caption text-red-700">
           {error}
         </p>
       ) : (
-        <p id="phone-hint" className="text-[10px] text-stone-400">
+        <p id="phone-hint" className="text-caption text-stone-600">
           Номер должен быть привязан к аккаунту выбранной службы доставки
         </p>
       )}

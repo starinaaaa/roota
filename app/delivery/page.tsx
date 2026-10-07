@@ -22,10 +22,10 @@ export default async function DeliveryPage() {
       {/* ── Заголовок ── */}
       <section className="py-20 md:py-28 px-6 md:px-12 lg:px-16">
         <div className="max-w-[1440px] mx-auto">
-          <p className="font-body text-xs text-stone-400 tracking-[0.2em] uppercase mb-8">
+          <p className="font-body text-caption text-stone-600 tracking-[0.08em] uppercase mb-8">
             Информация
           </p>
-          <h1 className="font-display text-[clamp(3rem,7vw,6.5rem)] leading-[1.05] text-stone-900 max-w-2xl">
+          <h1 className="font-display text-page leading-[1.05] text-stone-900 max-w-2xl">
             Доставка
             <br />и оплата
           </h1>
@@ -36,7 +36,7 @@ export default async function DeliveryPage() {
       <section className="border-t border-stone-200 py-20 md:py-28 px-6 md:px-12 lg:px-16">
         <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-8">
           <div className="md:col-span-4 lg:col-span-3">
-            <p className="font-body text-xs text-stone-400 tracking-[0.2em] uppercase">
+            <p className="font-body text-caption text-stone-600 tracking-[0.08em] uppercase">
               Доставка
             </p>
           </div>
@@ -47,10 +47,10 @@ export default async function DeliveryPage() {
                   key={item.title}
                   className="py-8 first:pt-0 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-8"
                 >
-                  <p className="font-body text-sm text-stone-900">
+                  <p className="font-body text-copy text-stone-900">
                     {item.title}
                   </p>
-                  <p className="sm:col-span-2 font-body text-sm text-stone-500 leading-relaxed">
+                  <p className="sm:col-span-2 font-body text-copy text-stone-800 leading-relaxed">
                     {item.text}
                   </p>
                 </div>
@@ -64,7 +64,7 @@ export default async function DeliveryPage() {
       <section className="border-t border-stone-200 py-20 md:py-28 px-6 md:px-12 lg:px-16">
         <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-8">
           <div className="md:col-span-4 lg:col-span-3">
-            <p className="font-body text-xs text-stone-400 tracking-[0.2em] uppercase">
+            <p className="font-body text-caption text-stone-600 tracking-[0.08em] uppercase">
               Оплата
             </p>
           </div>
@@ -75,10 +75,10 @@ export default async function DeliveryPage() {
                   key={item.title}
                   className="py-8 first:pt-0 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-8"
                 >
-                  <p className="font-body text-sm text-stone-900">
+                  <p className="font-body text-copy text-stone-900">
                     {item.title}
                   </p>
-                  <p className="sm:col-span-2 font-body text-sm text-stone-500 leading-relaxed">
+                  <p className="sm:col-span-2 font-body text-copy text-stone-800 leading-relaxed">
                     {item.text}
                   </p>
                 </div>
@@ -92,12 +92,12 @@ export default async function DeliveryPage() {
       <section className="border-t border-stone-200 py-20 md:py-28 px-6 md:px-12 lg:px-16 bg-stone-100">
         <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-8">
           <div className="md:col-span-4 lg:col-span-3">
-            <p className="font-body text-xs text-stone-400 tracking-[0.2em] uppercase">
+            <p className="font-body text-caption text-stone-600 tracking-[0.08em] uppercase">
               Упаковка
             </p>
           </div>
           <div className="md:col-span-8 lg:col-span-9 max-w-xl">
-            <p className="font-body text-sm text-stone-500 leading-loose">
+            <p className="font-body text-copy text-stone-800 leading-loose">
               Каждое изделие упаковывается вручную: крафтовая бумага,
               наполнитель, фирменная коробка. Хрупкие предметы дополнительно
               защищены пузырчатой плёнкой. Упаковка подходит для подарка —
@@ -111,7 +111,7 @@ export default async function DeliveryPage() {
       <section className="border-t border-stone-200 py-20 md:py-28 px-6 md:px-12 lg:px-16">
         <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-8">
           <div className="md:col-span-4 lg:col-span-3">
-            <p className="font-body text-xs text-stone-400 tracking-[0.2em] uppercase">
+            <p className="font-body text-caption text-stone-600 tracking-[0.08em] uppercase">
               Уход
             </p>
           </div>
@@ -120,7 +120,7 @@ export default async function DeliveryPage() {
               {CARE_ITEMS.map((item, i) => (
                 <li key={i} className="flex gap-4 items-start">
                   <span className="mt-2 w-1 h-1 rounded-full bg-stone-400 shrink-0" />
-                  <p className="font-body text-sm text-stone-500 leading-relaxed">
+                  <p className="font-body text-copy text-stone-800 leading-relaxed">
                     {item}
                   </p>
                 </li>

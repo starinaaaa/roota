@@ -58,7 +58,7 @@ export default function CardActions({
 
   // Shared base for both buttons so heights are always identical
   const btnBase =
-    "min-w-0 min-h-[44px] box-border flex items-center justify-center font-body text-[13px] leading-snug tracking-[0.15em] uppercase px-3 py-2 text-center transition-colors duration-200";
+    "min-w-0 min-h-[44px] box-border flex items-center justify-center font-body text-ui leading-snug tracking-[0.08em] uppercase px-3 py-2 text-center transition-colors duration-200";
 
   return (
     <div onClick={(e) => e.stopPropagation()} className="product-card-actions mt-3">
@@ -69,22 +69,22 @@ export default function CardActions({
             <div className="flex items-stretch min-w-0 min-h-[44px] border border-stone-200">
               <button
                 onClick={handleDecrement}
-                className="px-3 py-2 font-body text-[12px] text-stone-500 hover:text-stone-900 hover:bg-stone-50 transition-colors duration-150"
+                className="px-3 py-2 font-body text-ui text-stone-600 hover:text-stone-900 hover:bg-stone-50 transition-colors duration-150"
                 aria-label="Уменьшить"
               >
                 −
               </button>
-              <span className="flex-1 flex items-center justify-center font-body text-[10px] tracking-[0.1em] text-stone-700 border-x border-stone-200 tabular-nums">
+              <span className="flex-1 flex items-center justify-center font-body text-caption tracking-[0.1em] text-stone-700 border-x border-stone-200 tabular-nums">
                 {cartQty}
               </span>
               <button
                 onClick={handleIncrement}
                 disabled={atLimit}
                 className={[
-                  "px-3 py-2 font-body text-[12px] transition-colors duration-150",
+                  "px-3 py-2 font-body text-ui transition-colors duration-150",
                   atLimit
                     ? "text-stone-200 cursor-not-allowed"
-                    : "text-stone-500 hover:text-stone-900 hover:bg-stone-50",
+                    : "text-stone-600 hover:text-stone-900 hover:bg-stone-50",
                 ].join(" ")}
                 aria-label="Увеличить"
               >
@@ -113,7 +113,7 @@ export default function CardActions({
         <>
           <button
             onClick={handleModal}
-            className={`${btnBase} border border-stone-300 text-stone-500 hover:border-stone-500`}
+            className={`${btnBase} border border-stone-300 text-stone-600 hover:border-stone-500`}
           >
             Уведомить
           </button>
@@ -124,7 +124,7 @@ export default function CardActions({
                 setModalTab("preorder");
                 setModal(true);
               }}
-              className={`${btnBase} border border-stone-300 text-stone-500 hover:border-stone-500`}
+              className={`${btnBase} border border-stone-300 text-stone-600 hover:border-stone-500`}
             >
               Предзаказ
             </button>

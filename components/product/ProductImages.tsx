@@ -52,7 +52,7 @@ export default function ProductImages({ images: sourceImages, name }: Props) {
   if (images.length === 0) {
     return (
       <div className="aspect-square rounded-lg bg-stone-100 flex items-center justify-center">
-        <span className="font-body text-xs tracking-widest uppercase text-stone-400">
+        <span className="font-body text-caption tracking-widest uppercase text-stone-600">
           Фото скоро
         </span>
       </div>
@@ -234,7 +234,7 @@ export default function ProductImages({ images: sourceImages, name }: Props) {
 
           {/* Counter */}
           {multi && (
-            <p className="absolute bottom-5 left-1/2 -translate-x-1/2 font-body text-xs tracking-[0.2em] text-white/40">
+            <p className="absolute bottom-5 left-1/2 -translate-x-1/2 font-body text-caption tracking-[0.08em] text-white/90">
               {active + 1} / {images.length}
             </p>
           )}

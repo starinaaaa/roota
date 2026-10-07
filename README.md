@@ -34,3 +34,15 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Размеры текста
+
+Шесть размеров публичного сайта находятся в начале `app/globals.css`, в блоке
+`@theme`: `--text-caption` (14 px), `--text-ui` (16 px), `--text-copy` (18 px),
+`--text-price` (24 px), `--text-section` (36 px), `--text-page` (56 px).
+Меняйте значение в одном месте, чтобы обновить все элементы этой роли.
+Например, `--text-copy: 1.25rem` даст 20 px на компьютере.
+На телефонах `text-copy` использует `--text-ui`, `text-section` —
+`--text-price`, а `text-page` — `--text-section`. Эти правила находятся сразу
+под блоком размеров. Основной цвет текста — `text-stone-800`, второстепенный —
+`text-stone-600`. Семейства и толщина шрифтов при этой настройке не меняются.

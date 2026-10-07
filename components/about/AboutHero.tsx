@@ -91,17 +91,17 @@ export default function AboutHero({
       ))}
       <div className="absolute inset-0 -z-10 bg-gradient-to-r from-stone-950/60 via-stone-950/35 to-stone-950/15" />
       <div className="mx-auto w-full max-w-[1440px]">
-        <p className="mb-8 font-body text-sm uppercase tracking-[0.2em] text-white md:text-base">
+        <p className="mb-8 font-body text-caption uppercase tracking-[0.08em] text-white">
           О студии
         </p>
-        <h1 className="max-w-[900px] font-display text-[clamp(2.7rem,5.5vw,5.5rem)] leading-[1.08] text-white whitespace-pre-line break-words">
+        <h1 className="max-w-[900px] font-display text-page leading-[1.08] text-white whitespace-pre-line break-words">
           {title}
         </h1>
       </div>
       {photos.length > 1 && (
         <div className="absolute inset-x-6 bottom-8 flex items-center justify-between md:inset-x-12 lg:inset-x-16">
           <p
-            className="font-body text-xs tracking-[0.2em] text-white"
+            className="font-body text-caption tracking-[0.08em] text-white"
             aria-live="off"
           >
             {String(active + 1).padStart(2, "0")} /{" "}

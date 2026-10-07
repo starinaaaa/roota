@@ -47,10 +47,10 @@ export default function ProductCard({ product, index = 0 }: Props) {
             />
           ) : (
             <div className="absolute inset-0 flex flex-col justify-between bg-gradient-to-br from-stone-100 via-stone-100 to-stone-200 p-5">
-              <span className="font-body text-[10px] tracking-[0.24em] uppercase text-stone-300">
+              <span className="font-body text-caption tracking-[0.08em] uppercase text-stone-600">
                 Roota ceramics
               </span>
-              <span className="font-body text-[10px] tracking-[0.18em] uppercase text-stone-400">
+              <span className="font-body text-caption tracking-[0.08em] uppercase text-stone-600">
                 Фото скоро
               </span>
             </div>
@@ -59,7 +59,7 @@ export default function ProductCard({ product, index = 0 }: Props) {
           {/* Статус: нет в наличии / мало на складе */}
           {!product.in_stock ? (
             <div className="absolute top-4 left-4">
-              <span className="font-body text-[9px] tracking-[0.18em] uppercase bg-stone-50/90 text-stone-400 px-2.5 py-1.5">
+              <span className="font-body text-caption tracking-[0.08em] uppercase inline-block bg-stone-50/90 text-stone-600 px-2.5 py-1.5">
                 Скоро в наличии
               </span>
             </div>
@@ -67,7 +67,7 @@ export default function ProductCard({ product, index = 0 }: Props) {
             product.stock_qty > 0 &&
             product.stock_qty <= 3 ? (
             <div className="absolute top-4 left-4">
-              <span className="font-body text-[9px] tracking-[0.18em] uppercase bg-stone-50/90 text-stone-400 px-2.5 py-1.5">
+              <span className="font-body text-caption tracking-[0.08em] uppercase inline-block bg-stone-50/90 text-stone-600 px-2.5 py-1.5">
                 {product.stock_qty === 1
                   ? "Осталась 1 шт."
                   : `Осталось ${product.stock_qty} шт.`}
@@ -85,7 +85,7 @@ export default function ProductCard({ product, index = 0 }: Props) {
             whileHover={{ y: 0 }}
             transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
           >
-            <span className="font-body text-[10px] tracking-[0.2em] uppercase text-stone-700">
+            <span className="font-body text-caption tracking-[0.08em] uppercase text-stone-700">
               Смотреть изделие
             </span>
           </motion.div>
@@ -93,13 +93,13 @@ export default function ProductCard({ product, index = 0 }: Props) {
 
         {/* Информация */}
         <div className="space-y-1.5">
-          <p className="min-h-[1rem] font-body text-[10px] tracking-[0.18em] uppercase text-stone-400 transition-colors duration-300 group-hover:text-stone-600">
+          <p className="min-h-[1rem] font-body text-caption tracking-[0.08em] uppercase text-stone-600 transition-colors duration-300 group-hover:text-stone-600">
             {product.category?.name ?? ""}
           </p>
-          <h3 className="font-body font-light text-sm text-stone-800 group-hover:text-stone-900 transition-colors duration-200">
+          <h3 className="font-body font-light text-copy text-stone-800 group-hover:text-stone-900 transition-colors duration-200">
             {product.name}
           </h3>
-          <p className="font-display text-xl text-stone-900">
+          <p className="font-display text-price text-stone-900">
             {formatPrice(product.price)}
           </p>
         </div>

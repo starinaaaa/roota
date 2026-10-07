@@ -34,21 +34,21 @@ export default function ProductInfo({
       {/* Категория + название */}
       <div className="space-y-3">
         {product.category && (
-          <p className="font-body text-[10px] tracking-[0.25em] uppercase text-stone-400">
+          <p className="font-body text-caption tracking-[0.08em] uppercase text-stone-600">
             {product.category.name}
           </p>
         )}
-        <h1 className="font-display text-[clamp(2.2rem,4vw,3.5rem)] leading-tight text-stone-900">
+        <h1 className="font-display text-section leading-tight text-stone-900">
           {product.name}
         </h1>
-        <p className="font-display text-2xl text-stone-900">
+        <p className="font-display text-price text-stone-900">
           {formatPrice(product.price)}
         </p>
       </div>
 
       {/* Описание */}
       {product.description && (
-        <p className="font-body text-sm text-stone-500 leading-relaxed max-w-sm">
+        <p className="font-body text-copy text-stone-800 leading-relaxed max-w-sm">
           {product.description}
         </p>
       )}
@@ -63,7 +63,7 @@ export default function ProductInfo({
           product.stock_qty != null &&
           product.stock_qty > 0 &&
           product.stock_qty <= 3 && (
-            <p className="font-body text-sm text-stone-400 -mt-1">
+            <p className="font-body text-ui text-stone-600 -mt-1">
               {product.stock_qty === 1
                 ? "Осталась 1 шт."
                 : `Осталось ${product.stock_qty} шт.`}
@@ -83,20 +83,20 @@ export default function ProductInfo({
                   transition={{ duration: 0.2 }}
                   className="w-full flex items-center justify-between border border-stone-200 px-6 py-4"
                 >
-                  <span className="font-body text-xs tracking-[0.18em] uppercase text-stone-500">
+                  <span className="font-body text-caption tracking-[0.08em] uppercase text-stone-600">
                     В корзине
                   </span>
 
                   <div className="flex items-center gap-6">
                     <button
                       onClick={onDecrement}
-                      className="font-body text-lg text-stone-400 hover:text-stone-900 transition-colors w-5 text-center leading-none"
+                      className="font-body text-copy text-stone-600 hover:text-stone-900 transition-colors w-5 text-center leading-none"
                       aria-label="Уменьшить количество"
                     >
                       −
                     </button>
 
-                    <span className="font-display text-xl text-stone-900 min-w-[1.5rem] text-center tabular-nums">
+                    <span className="font-display text-price text-stone-900 min-w-[1.5rem] text-center tabular-nums">
                       {cartQty}
                     </span>
 
@@ -104,10 +104,10 @@ export default function ProductInfo({
                       onClick={atStockLimit ? undefined : onIncrement}
                       disabled={atStockLimit}
                       className={[
-                        "font-body text-lg leading-none w-5 text-center transition-colors",
+                        "font-body text-copy leading-none w-5 text-center transition-colors",
                         atStockLimit
                           ? "text-stone-200 cursor-not-allowed"
-                          : "text-stone-400 hover:text-stone-900",
+                          : "text-stone-600 hover:text-stone-900",
                       ].join(" ")}
                       aria-label="Увеличить количество"
                     >
@@ -124,7 +124,7 @@ export default function ProductInfo({
                   exit={{ opacity: 0, y: -4 }}
                   transition={{ duration: 0.2 }}
                   onClick={onIncrement}
-                  className="w-full bg-stone-900 text-stone-50 font-body text-xs tracking-[0.2em] uppercase py-4 px-8 hover:bg-stone-700 transition-colors duration-300"
+                  className="w-full bg-stone-900 text-stone-50 font-body text-ui tracking-[0.08em] uppercase py-4 px-8 hover:bg-stone-700 transition-colors duration-300"
                 >
                   Добавить в корзину
                 </motion.button>
@@ -132,7 +132,7 @@ export default function ProductInfo({
             </AnimatePresence>
 
             {atStockLimit && cartQty > 0 && (
-              <p className="font-body text-[10px] tracking-[0.14em] uppercase text-stone-400 text-center -mt-1">
+              <p className="font-body text-caption tracking-[0.08em] uppercase text-stone-600 text-center -mt-1">
                 Максимум в наличии
               </p>
             )}
@@ -141,7 +141,7 @@ export default function ProductInfo({
               href="/contacts"
               className="text-center
               w-full border border-stone-300 text-stone-700
-              font-body text-xs tracking-[0.2em] uppercase
+              font-body text-ui tracking-[0.08em] uppercase
               py-4 px-8
               hover:bg-stone-900 hover:text-stone-50 hover:border-stone-900
               transition-all duration-300
@@ -156,7 +156,7 @@ export default function ProductInfo({
               disabled
               className="
                 w-full border border-stone-200 text-stone-300
-                font-body text-xs tracking-[0.2em] uppercase
+                font-body text-ui tracking-[0.08em] uppercase
                 py-4 px-8 cursor-not-allowed
               "
             >
@@ -166,7 +166,7 @@ export default function ProductInfo({
               onClick={onUnavailable}
               className="
               w-full border border-stone-300 text-stone-700
-              font-body text-xs tracking-[0.2em] uppercase
+              font-body text-ui tracking-[0.08em] uppercase
               py-4 px-8
               hover:bg-stone-900 hover:text-stone-50 hover:border-stone-900
               transition-all duration-300
@@ -238,14 +238,14 @@ function ProductSpecs({ product }: { product: Product }) {
       <div className="divide-y divide-stone-100">
         {rows.map(({ label, value }) => (
           <div key={label} className="flex justify-between py-3">
-            <span className="font-body text-xs uppercase tracking-widest text-stone-400">
+            <span className="font-body text-ui uppercase tracking-[0.08em] text-stone-600">
               {label}
             </span>
-            <span className="font-body text-sm text-stone-700">{value}</span>
+            <span className="font-body text-ui text-stone-700">{value}</span>
           </div>
         ))}
       </div>
-      <p className="font-body text-xs text-stone-400 italic mt-4">
+      <p className="font-body text-caption text-stone-600 italic mt-4">
         Каждое изделие немного отличается — это часть ручной работы
       </p>
     </div>
@@ -270,13 +270,13 @@ function Accordion({
         onClick={onToggle}
         className="w-full flex items-center justify-between py-1 group"
       >
-        <span className="font-body text-xs tracking-[0.18em] uppercase text-stone-600 group-hover:text-stone-900 transition-colors duration-200">
+        <span className="font-body text-ui tracking-[0.08em] uppercase text-stone-600 group-hover:text-stone-900 transition-colors duration-200">
           {label}
         </span>
         <motion.span
           animate={{ rotate: open ? 45 : 0 }}
           transition={{ duration: 0.22 }}
-          className="font-body text-base text-stone-400 leading-none"
+          className="font-body text-copy text-stone-800 leading-none"
         >
           +
         </motion.span>
@@ -289,7 +289,7 @@ function Accordion({
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="overflow-hidden font-body text-sm text-stone-500 leading-relaxed pt-3 pb-1"
+            className="overflow-hidden font-body text-copy text-stone-800 leading-relaxed pt-3 pb-1"
           >
             {children}
           </motion.p>

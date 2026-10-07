@@ -20,12 +20,12 @@ export default function RelatedProducts({ products }: Props) {
         <div className="divider mb-14" />
 
         <div className="flex items-baseline justify-between mb-10 md:mb-14">
-          <h2 className="font-display text-[clamp(1.8rem,3.5vw,3rem)] text-stone-900">
+          <h2 className="font-display text-section text-stone-900">
             Другие работы
           </h2>
           <Link
             href="/catalog"
-            className="hidden md:block font-body text-xs tracking-[0.15em] uppercase text-stone-400 hover:text-stone-900 transition-colors duration-200"
+            className="hidden md:block font-body text-ui tracking-[0.08em] uppercase text-stone-600 hover:text-stone-900 transition-colors duration-200"
           >
             Весь каталог
           </Link>
@@ -60,7 +60,7 @@ export default function RelatedProducts({ products }: Props) {
                   {/* Статус: нет в наличии / мало на складе */}
                   {!p.in_stock ? (
                     <div className="absolute top-4 left-4">
-                      <span className="font-body text-[9px] tracking-[0.18em] uppercase bg-stone-50/90 text-stone-400 px-2.5 py-1.5">
+                      <span className="font-body text-caption tracking-[0.08em] uppercase inline-block bg-stone-50/90 text-stone-600 px-2.5 py-1.5">
                         Скоро в наличии
                       </span>
                     </div>
@@ -68,7 +68,7 @@ export default function RelatedProducts({ products }: Props) {
                     p.stock_qty > 0 &&
                     p.stock_qty <= 3 ? (
                     <div className="absolute top-4 left-4">
-                      <span className="font-body text-[9px] tracking-[0.18em] uppercase bg-stone-50/90 text-stone-400 px-2.5 py-1.5">
+                      <span className="font-body text-caption tracking-[0.08em] uppercase inline-block bg-stone-50/90 text-stone-600 px-2.5 py-1.5">
                         {p.stock_qty === 1
                           ? "Осталась 1 шт."
                           : `Осталось ${p.stock_qty} шт.`}
@@ -78,10 +78,10 @@ export default function RelatedProducts({ products }: Props) {
 
                   <div className="absolute inset-0 bg-stone-900/0 group-hover:bg-stone-900/6 transition-colors duration-500" />
                 </div>
-                <p className="font-body text-xs text-stone-700 mb-0.5">
+                <p className="font-body text-copy text-stone-800 mb-0.5">
                   {p.name}
                 </p>
-                <p className="font-display text-lg text-stone-900">
+                <p className="font-display text-price text-stone-900">
                   {formatPrice(p.price)}
                 </p>
               </Link>

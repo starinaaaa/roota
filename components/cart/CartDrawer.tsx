@@ -55,7 +55,7 @@ export default function CartDrawer() {
           >
             {/* ── Header — padding ×1.5: px-7→px-6 sm:px-[42px], py-5→py-[30px] ── */}
             <div className="flex items-center justify-between shrink-0 px-6 sm:px-[42px] py-[30px] border-b border-stone-100">
-              <p className="font-body text-[14px] tracking-[0.28em] uppercase text-stone-500">
+              <p className="font-body text-ui tracking-[0.08em] uppercase text-stone-600">
                 {totalItems > 0
                   ? `${totalItems} ${plural(totalItems, "предмет", "предмета", "предметов")} в корзине`
                   : "Корзина"}
@@ -63,7 +63,7 @@ export default function CartDrawer() {
               <button
                 onClick={closeDrawer}
                 aria-label="Закрыть корзину"
-                className="font-body text-[14px] tracking-[0.22em] uppercase text-stone-400 hover:text-stone-900 transition-colors duration-200"
+                className="font-body text-ui tracking-[0.08em] uppercase text-stone-600 hover:text-stone-900 transition-colors duration-200"
               >
                 •закрыть•
               </button>
@@ -78,13 +78,13 @@ export default function CartDrawer() {
                   transition={{ delay: 0.12, duration: 0.35 }}
                   className="flex flex-col items-start justify-center h-full gap-9 py-20"
                 >
-                  <p className="font-display text-6xl text-stone-200 leading-none">
+                  <p className="font-display text-section text-stone-600 leading-none">
                     Пусто
                   </p>
                   <Link
                     href="/catalog"
                     onClick={closeDrawer}
-                    className="flex items-center gap-3 font-body text-[14px] tracking-[0.24em] uppercase text-stone-400 hover:text-stone-900 transition-colors duration-200"
+                    className="flex items-center gap-3 font-body text-ui tracking-[0.08em] uppercase text-stone-600 hover:text-stone-900 transition-colors duration-200"
                   >
                     Перейти в каталог
                     <ArrowRight size={15} strokeWidth={1.5} />
@@ -110,10 +110,10 @@ export default function CartDrawer() {
               <div className="shrink-0 px-6 sm:px-[42px] pb-12 pt-[30px] border-t border-stone-100">
                 {/* Итого — mb-6→mb-9, text ×1.5 */}
                 <div className="flex items-baseline justify-between mb-9">
-                  <span className="font-body text-[14px] tracking-[0.28em] uppercase text-stone-400">
+                  <span className="font-body text-ui tracking-[0.08em] uppercase text-stone-600">
                     Итого
                   </span>
-                  <span className="font-body text-[20px] tracking-[0.04em] text-stone-900 tabular-nums">
+                  <span className="font-body text-price tracking-[0.04em] text-stone-900 tabular-nums">
                     {formatPrice(totalPrice)}
                   </span>
                 </div>
@@ -127,11 +127,11 @@ export default function CartDrawer() {
                     group
                   "
                 >
-                  <span className="font-display text-[2.4rem] leading-tight text-stone-900 group-hover:text-stone-500 transition-colors duration-300">
+                  <span className="font-display text-price leading-tight text-stone-900 group-hover:text-stone-600 transition-colors duration-300">
                     Оформить заказ
                   </span>
                   <motion.span
-                    className="text-stone-900 group-hover:text-stone-500 transition-colors duration-300"
+                    className="text-stone-900 group-hover:text-stone-600 transition-colors duration-300"
                     whileHover={{ x: 4 }}
                     transition={{ type: "spring", stiffness: 400, damping: 20 }}
                   >

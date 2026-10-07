@@ -40,18 +40,18 @@ export default async function OrderSuccessPage({ searchParams }: Props) {
           {/* Текст */}
           <div className="space-y-4 mt-10">
             {shortId && (
-              <p className="font-body text-[10px] tracking-[0.3em] uppercase text-stone-400">
+              <p className="font-body text-caption tracking-[0.08em] uppercase text-stone-600">
                 Заказ #{shortId}
               </p>
             )}
-            <h1 className="font-display text-[clamp(2.5rem,5vw,4rem)] leading-tight text-stone-900">
+            <h1 className="font-display text-page leading-tight text-stone-900">
               Заказ принят
             </h1>
-            <p className="font-body text-sm text-stone-500 leading-relaxed">
+            <p className="font-body text-copy text-stone-800 leading-relaxed">
               Мы свяжемся с вами в течение 24 часов для подтверждения заказа и
               уточнения деталей доставки.
             </p>
-            <p className="font-body text-sm text-stone-500">
+            <p className="font-body text-copy text-stone-600">
               Спасибо, что выбираете Roota ceramics.
             </p>
           </div>
@@ -61,7 +61,7 @@ export default async function OrderSuccessPage({ searchParams }: Props) {
             <Link
               href="/catalog"
               className="
-                font-body text-xs tracking-[0.2em] uppercase
+                font-body text-ui tracking-[0.08em] uppercase
                 bg-stone-900 text-stone-50
                 px-8 py-4 text-center
                 hover:bg-stone-700 transition-colors duration-300
@@ -72,7 +72,7 @@ export default async function OrderSuccessPage({ searchParams }: Props) {
             <Link
               href="/"
               className="
-                font-body text-xs tracking-[0.2em] uppercase
+                font-body text-ui tracking-[0.08em] uppercase
                 border border-stone-200 text-stone-600
                 px-8 py-4 text-center
                 hover:border-stone-400 hover:text-stone-900 transition-all duration-300

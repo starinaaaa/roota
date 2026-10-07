@@ -17,10 +17,10 @@ export default function ProductGrid({ products }: Props) {
         transition={{ duration: 0.4 }}
         className="flex flex-col items-center justify-center py-32 text-center"
       >
-        <p className="font-body text-[10px] tracking-[0.25em] uppercase text-stone-400 mb-4">
+        <p className="font-body text-caption tracking-[0.08em] uppercase text-stone-600 mb-4">
           В этой категории пока нет работ
         </p>
-        <p className="font-display text-2xl text-stone-300">Скоро появятся</p>
+        <p className="font-display text-price text-stone-300">Скоро появятся</p>
       </motion.div>
     )
   }

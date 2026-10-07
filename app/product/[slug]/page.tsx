@@ -80,7 +80,7 @@ export default async function ProductPage({ params }: Props) {
 
       {/* Хлебные крошки */}
       <nav className="px-6 md:px-12 lg:px-16 py-5 border-b border-stone-200">
-        <div className="max-w-[1440px] mx-auto flex items-center gap-3 font-body text-[10px] tracking-[0.18em] uppercase text-stone-400">
+        <div className="max-w-[1440px] mx-auto flex items-center gap-3 font-body text-caption tracking-[0.08em] uppercase text-stone-600">
           <Link
             href="/catalog"
             className="hover:text-stone-700 transition-colors duration-200"

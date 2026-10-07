@@ -7,7 +7,7 @@ import type { DeliveryCity } from "@/lib/delivery/geo";
 const PointsMap = dynamic(() => import("./PointsMap"), {
   ssr: false,
   loading: () => (
-    <div className="h-80 bg-stone-100 flex items-center justify-center text-sm">
+    <div className="h-80 bg-stone-100 flex items-center justify-center text-ui">
       Загружаем карту…
     </div>
   ),
@@ -173,13 +173,13 @@ export default function DeliverySelector({
   }
   return (
     <fieldset className="space-y-5">
-      <legend className="font-body text-[10px] tracking-[0.28em] uppercase text-stone-400 mb-6">
+      <legend className="font-body text-ui tracking-[0.08em] uppercase text-stone-600 mb-6">
         Доставка
       </legend>
       <div className="space-y-2 relative">
         <label
           htmlFor="delivery-city"
-          className="font-body text-[10px] tracking-[0.18em] uppercase text-stone-500 block"
+          className="font-body text-ui tracking-[0.08em] uppercase text-stone-600 block"
         >
           Город *
         </label>
@@ -223,7 +223,7 @@ export default function DeliverySelector({
             }
           }}
           placeholder="Начните вводить название города"
-          className="w-full border border-stone-200 bg-transparent font-body text-sm px-4 py-3"
+          className="w-full border border-stone-200 bg-transparent font-body text-ui px-4 py-3"
         />
         {suggestOpen && suggestions.length > 0 && (
           <ul
@@ -240,7 +240,7 @@ export default function DeliverySelector({
                 aria-selected={i === active}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => selectCity(c)}
-                className={`px-4 py-3 text-sm cursor-pointer hover:bg-stone-100 ${i === active ? "bg-stone-100" : ""}`}
+                className={`px-4 py-3 text-ui cursor-pointer hover:bg-stone-100 ${i === active ? "bg-stone-100" : ""}`}
               >
                 {c.name}
               </li>
@@ -249,7 +249,7 @@ export default function DeliverySelector({
         )}
       </div>
       {!enabled ? (
-        <p role="status" className="text-sm text-stone-500">
+        <p role="status" className="text-ui text-stone-600">
           Доставка временно недоступна. Свяжитесь со студией.
         </p>
       ) : selectedCity ? (
@@ -266,10 +266,10 @@ export default function DeliverySelector({
               className="accent-stone-900"
             />
             <span className="font-body">
-              <span className="block text-xs tracking-[0.12em] uppercase">
+              <span className="block text-caption tracking-[0.12em] uppercase">
                 Ozon — доставка в пункт выдачи
               </span>
-              <span className="block text-xs text-stone-500 mt-2">
+              <span className="block text-caption text-stone-600 mt-2">
                 Стоимость рассчитается после выбора пункта
               </span>
             </span>
@@ -285,37 +285,37 @@ export default function DeliverySelector({
                   setQuery("");
                   request("points");
                 }}
-                className="font-body text-xs uppercase tracking-[0.12em] border border-stone-300 px-5 py-3 disabled:opacity-50"
+                className="font-body text-caption uppercase tracking-[0.12em] border border-stone-300 px-5 py-3 disabled:opacity-50"
               >
                 {point ? "Изменить пункт" : "Выбрать пункт выдачи"}
               </button>
               {point && (
-                <div className="font-body text-sm space-y-1">
+                <div className="font-body text-ui space-y-1">
                   <p>{point.name}</p>
-                  <p className="text-stone-500">{point.address}</p>
+                  <p className="text-stone-600">{point.address}</p>
                 </div>
               )}
             </>
           )}
         </>
       ) : (
-        <p className="text-xs text-stone-500">Выберите город из подсказок.</p>
+        <p className="text-caption text-stone-600">Выберите город из подсказок.</p>
       )}
       {busy && !open && (
-        <p role="status" className="text-xs text-stone-500">
+        <p role="status" className="text-caption text-stone-600">
           Рассчитываем доставку…
         </p>
       )}
       {error && !open && (
         <div>
-          <p role="alert" className="text-sm text-red-700">
+          <p role="alert" className="text-ui text-red-700">
             {error}
           </p>
           {point && validPhone && (
             <button
               type="button"
               onClick={() => request("quote", point)}
-              className="text-xs underline mt-2"
+              className="text-caption underline mt-2"
             >
               Повторить расчёт
             </button>
@@ -331,7 +331,7 @@ export default function DeliverySelector({
       >
         <div className="p-4 md:p-6 space-y-4">
           <div className="flex items-center justify-between gap-4">
-            <h2 id="points-title" className="font-display text-xl md:text-2xl">
+            <h2 id="points-title" className="font-display text-price">
               Пункты Ozon · {selectedCity?.name}
             </h2>
             <button
@@ -351,7 +351,7 @@ export default function DeliverySelector({
               setListLimit(100);
             }}
             placeholder="Улица или название пункта"
-            className="w-full border border-stone-200 bg-transparent px-4 py-3 text-sm"
+            className="w-full border border-stone-200 bg-transparent px-4 py-3 text-ui"
           />
           <div className="grid md:grid-cols-[minmax(0,1fr)_300px] gap-4">
             {open && selectedCity && (
@@ -371,8 +371,8 @@ export default function DeliverySelector({
                       onClick={() => choose(p)}
                       className={`w-full text-left border p-4 hover:border-stone-500 focus-visible:border-stone-900 disabled:opacity-50 ${point?.id === p.id ? "border-stone-900" : "border-stone-200"}`}
                     >
-                      <span className="block text-sm">{p.name}</span>
-                      <span className="block text-xs text-stone-500 mt-1">
+                      <span className="block text-ui">{p.name}</span>
+                      <span className="block text-caption text-stone-600 mt-1">
                         {p.address}
                       </span>
                     </button>
@@ -380,7 +380,7 @@ export default function DeliverySelector({
                 ))}
               </ul>
               {!busy && !visible.length && !error && (
-                <p role="status" className="text-sm text-stone-500">
+                <p role="status" className="text-ui text-stone-600">
                   {points.length
                     ? "По этому адресу пунктов не найдено."
                     : "Пунктов в этом городе не найдено."}
@@ -391,26 +391,26 @@ export default function DeliverySelector({
                   type="button"
                   disabled={busy}
                   onClick={() => setListLimit((limit) => limit + 100)}
-                  className="text-sm underline p-3"
+                  className="text-ui underline p-3"
                 >
                   Показать ещё в списке
                 </button>
               )}
             </div>
           </div>
-          <p className="text-xs text-stone-500">
+          <p className="text-caption text-stone-600">
             На карте все пункты города: {points.length}. После выбора проверим
             доставку для вашего заказа и рассчитаем стоимость.
             {!validPhone && " Для расчёта понадобится номер телефона."}
           </p>
           {busy && (
-            <p role="status" className="text-sm text-stone-500">
+            <p role="status" className="text-ui text-stone-600">
               {point ? "Рассчитываем доставку…" : "Загружаем пункты…"}
             </p>
           )}
           {error && (
             <div>
-              <p role="alert" className="text-sm text-red-700">
+              <p role="alert" className="text-ui text-red-700">
                 {error}
               </p>
               <button
@@ -419,7 +419,7 @@ export default function DeliverySelector({
                 onClick={() =>
                   point ? request("quote", point) : request("points")
                 }
-                className="text-sm underline mt-2"
+                className="text-ui underline mt-2"
               >
                 Повторить
               </button>

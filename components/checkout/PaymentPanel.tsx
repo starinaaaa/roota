@@ -92,12 +92,12 @@ export default function PaymentPanel({
       <div className="max-w-[1440px] w-full mx-auto px-6 md:px-12 lg:px-16 py-20 md:py-32">
         <div className="max-w-md space-y-6">
           {mode === "test" && (
-            <p className="font-body text-xs text-stone-500">
+            <p className="font-body text-caption text-stone-600">
               Тестовая оплата · деньги не списываются · заказ не отправляется
             </p>
           )}
           <h1
-            className="font-display text-[clamp(2.5rem,5vw,4rem)] leading-tight text-stone-900"
+            className="font-display text-page leading-tight text-stone-900"
             aria-live="polite"
           >
             {paid
@@ -110,7 +110,7 @@ export default function PaymentPanel({
                   ? "Оплата заказа"
                   : "Ожидаем подтверждение"}
           </h1>
-          <p className="font-body text-sm text-stone-500 leading-relaxed">
+          <p className="font-body text-copy text-stone-800 leading-relaxed">
             {paid
               ? mode === "test"
                 ? "Платёжный сценарий проверен. Это тест, доставка не запускается."
@@ -118,7 +118,7 @@ export default function PaymentPanel({
               : "Статус обновится после подтверждения Robokassa. Если вы уже оплатили, повторять оплату не нужно."}
           </p>
           {checkFailed && (
-            <p role="status" className="font-body text-sm text-stone-500">
+            <p role="status" className="font-body text-ui text-stone-600">
               Не удалось обновить статус. Проверим ещё раз автоматически.
             </p>
           )}
@@ -128,12 +128,12 @@ export default function PaymentPanel({
                 type="button"
                 onClick={openPayment}
                 disabled={!ready || unavailable}
-                className="w-full bg-stone-900 text-stone-50 font-body text-xs tracking-[0.2em] uppercase py-4 disabled:opacity-50"
+                className="w-full bg-stone-900 text-stone-50 font-body text-ui tracking-[0.08em] uppercase py-4 disabled:opacity-50"
               >
                 Оплатить
               </button>
               {unavailable && (
-                <p role="status" className="font-body text-sm text-stone-500">
+                <p role="status" className="font-body text-ui text-stone-600">
                   Встроенная форма недоступна. Откройте страницу оплаты по
                   кнопке ниже.
                 </p>
@@ -153,7 +153,7 @@ export default function PaymentPanel({
                 )}
                 <button
                   type="submit"
-                  className="w-full border border-stone-300 text-stone-700 font-body text-xs py-4"
+                  className="w-full border border-stone-300 text-stone-700 font-body text-ui py-4"
                 >
                   Перейти на страницу Robokassa
                 </button>
@@ -163,14 +163,14 @@ export default function PaymentPanel({
           {!form && !paid && (
             <Link
               href={`/payment/${id}`}
-              className="block font-body text-sm underline underline-offset-4"
+              className="block font-body text-ui underline underline-offset-4"
             >
               Вернуться к оплате заказа
             </Link>
           )}
           <Link
             href="/catalog"
-            className="block font-body text-xs text-stone-500 underline underline-offset-4"
+            className="block font-body text-ui text-stone-600 underline underline-offset-4"
             target="_top"
           >
             Продолжить покупки

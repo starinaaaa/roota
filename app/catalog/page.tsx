@@ -38,10 +38,10 @@ export default async function CatalogPage({ searchParams }: Props) {
       {/* Заголовок страницы */}
       <section className="px-6 md:px-12 lg:px-16 py-16 md:py-24 border-b border-stone-200">
         <div className="max-w-[1440px] mx-auto">
-          <p className="font-body text-[10px] tracking-[0.3em] uppercase text-stone-400 mb-6">
+          <p className="font-body text-caption tracking-[0.08em] uppercase text-stone-600 mb-6">
             Авторская керамика · Roota ceramics
           </p>
-          <h1 className="font-display font-normal text-[clamp(1.8rem,3.6vw,3.15rem)] leading-none text-stone-900">
+          <h1 className="font-display font-normal text-page leading-none text-stone-900">
             Каталог
           </h1>
         </div>
@@ -53,7 +53,7 @@ export default async function CatalogPage({ searchParams }: Props) {
           <Suspense fallback={<div className="h-7" />}>
             <CategoryFilter activeSlug={activeSlug} categories={categories} />
           </Suspense>
-          <p className="font-body text-[10px] tracking-[0.18em] uppercase text-stone-400 shrink-0">
+          <p className="font-body text-caption tracking-[0.08em] uppercase text-stone-600 shrink-0">
             {countLabel}
           </p>
         </div>

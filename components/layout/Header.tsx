@@ -68,13 +68,13 @@ export default function Header({ cartCount }: Props) {
             3-колоночная сетка:
             col-1 (logo)  |  col-2 (nav center)  |  col-3 (actions right)
           */}
-          <div className="grid grid-cols-[minmax(0,1fr)_auto] md:grid-cols-3 items-center h-16 md:h-20">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center h-16 md:h-20">
 
             {/* ── COL 1: Логотип ─────────────────── */}
             <Link
               href="/"
               className={[
-                'font-display text-[1.4375rem] md:text-[1.4375rem]',
+                'font-display text-price',
                 'tracking-[0.22em] uppercase',
                 'transition-opacity duration-300 hover:opacity-55',
                 isTransparent ? 'text-stone-50' : 'text-stone-900',
@@ -84,14 +84,14 @@ export default function Header({ cartCount }: Props) {
             </Link>
 
             {/* ── COL 2: Десктопная навигация ──────── */}
-            <nav className="hidden md:flex items-center justify-center gap-4 lg:gap-6">
+            <nav className="hidden lg:flex items-center justify-center gap-3 lg:gap-5">
               {NAV_LINKS.map(({ href, label }, i) => (
                 <React.Fragment key={href}>
                   {i > 0 && (
                     <span
                       className={[
-                        'select-none text-[10px] mx-2',
-                        isTransparent ? 'text-stone-400' : 'text-stone-300',
+                        'select-none text-caption mx-2',
+                        isTransparent ? 'text-stone-600' : 'text-stone-300',
                       ].join(' ')}
                       aria-hidden
                     >
@@ -132,8 +132,8 @@ export default function Header({ cartCount }: Props) {
                       exit={{ scale: 0 }}
                       className={[
                         'absolute top-0.5 right-0.5',
-                        'w-[14px] h-[14px] rounded-full',
-                        'text-[9px] font-body',
+                        'min-w-5 h-5 px-1 rounded-full',
+                        'text-caption font-body',
                         'flex items-center justify-center',
                         isTransparent
                           ? 'bg-stone-50 text-stone-900'
@@ -151,7 +151,7 @@ export default function Header({ cartCount }: Props) {
                 onClick={() => setMobileMenuPath(pathname)}
                 aria-label="Открыть меню"
                 className={[
-                  'md:hidden p-2 -mr-2',
+                  'lg:hidden p-2 -mr-2',
                   'transition-opacity duration-200 hover:opacity-55',
                   isTransparent ? 'text-stone-50' : 'text-stone-800',
                 ].join(' ')}
@@ -207,7 +207,7 @@ export default function Header({ cartCount }: Props) {
                 <Link
                   href="/"
                   onClick={() => setMobileMenuPath(null)}
-                  className="font-display text-[1.4375rem] tracking-[0.22em] uppercase text-stone-900"
+                  className="font-display text-price tracking-[0.22em] uppercase text-stone-900"
                 >
                   Roota
                 </Link>
@@ -239,11 +239,11 @@ export default function Header({ cartCount }: Props) {
                       onClick={() => setMobileMenuPath(null)}
                       className={[
                         'block py-[18px]',
-                        'font-display text-[2.1rem] leading-tight tracking-[0.03em]',
+                        'font-display text-section leading-tight tracking-[0.03em]',
                         'transition-colors duration-200',
                         pathname.startsWith(href)
                           ? 'text-stone-900'
-                          : 'text-stone-300 hover:text-stone-900',
+                          : 'text-stone-600 hover:text-stone-900',
                       ].join(' ')}
                     >
                       {label}
@@ -261,12 +261,12 @@ export default function Header({ cartCount }: Props) {
               >
                 <button
                   onClick={() => { setMobileMenuPath(null); openDrawer() }}
-                  className="flex items-center gap-2.5 font-body text-sm text-stone-500 hover:text-stone-900 transition-colors duration-200 mb-7"
+                  className="flex items-center gap-2.5 font-body text-ui text-stone-600 hover:text-stone-900 transition-colors duration-200 mb-7"
                 >
                   <ShoppingBag size={15} strokeWidth={1.4} />
                   Корзина
                 </button>
-                <p className="font-body text-[9px] tracking-[0.3em] uppercase text-stone-400">
+                <p className="font-body text-caption tracking-[0.3em] uppercase text-stone-600">
                   Авторская керамика · Москва
                 </p>
               </motion.div>
@@ -297,11 +297,11 @@ function NavLink({
     <Link
       href={href}
       className={[
-        'relative font-body text-[13px] tracking-[0.15em] uppercase whitespace-nowrap',
+        'relative font-body text-ui tracking-[0.08em] uppercase whitespace-nowrap',
         'transition-colors duration-200',
         active
           ? transparent ? 'text-stone-50'  : 'text-stone-900'
-          : transparent ? 'text-stone-100 hover:text-white' : 'text-stone-400 hover:text-stone-900',
+          : transparent ? 'text-stone-100 hover:text-white' : 'text-stone-600 hover:text-stone-900',
       ].join(' ')}
     >
       {children}

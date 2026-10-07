@@ -42,10 +42,10 @@ export default async function ContactsPage() {
       {/* ── Заголовок ── */}
       <section className="py-20 md:py-28 px-6 md:px-12 lg:px-16">
         <div className="max-w-[1440px] mx-auto">
-          <p className="font-body text-xs text-stone-400 tracking-[0.2em] uppercase mb-8">
+          <p className="font-body text-caption text-stone-600 tracking-[0.08em] uppercase mb-8">
             Контакты
           </p>
-          <h1 className="font-display text-[clamp(3rem,7vw,6.5rem)] leading-[1.05] text-stone-900 max-w-xl">
+          <h1 className="font-display text-page leading-[1.05] text-stone-900 max-w-xl">
             Напишите нам
           </h1>
         </div>
@@ -55,7 +55,7 @@ export default async function ContactsPage() {
       <section className="border-t border-stone-200 py-20 md:py-28 px-6 md:px-12 lg:px-16">
         <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-8">
           <div className="md:col-span-4 lg:col-span-3">
-            <p className="font-body text-xs text-stone-400 tracking-[0.2em] uppercase">
+            <p className="font-body text-caption text-stone-600 tracking-[0.08em] uppercase">
               Связь
             </p>
           </div>
@@ -66,14 +66,14 @@ export default async function ContactsPage() {
                   key={label}
                   className="py-8 first:pt-0 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-8 items-center"
                 >
-                  <p className="font-body text-xs text-stone-400 tracking-[0.15em] uppercase">
+                  <p className="font-body text-caption text-stone-600 tracking-[0.08em] uppercase">
                     {label}
                   </p>
                   <a
                     href={href}
                     target={external ? "_blank" : undefined}
                     rel={external ? "noopener noreferrer" : undefined}
-                    className="sm:col-span-2 font-body text-sm text-stone-900 hover:text-stone-500 transition-colors duration-200"
+                    className="sm:col-span-2 font-body text-ui text-stone-900 hover:text-stone-600 transition-colors duration-200"
                   >
                     {value}
                   </a>
@@ -88,16 +88,16 @@ export default async function ContactsPage() {
       <section className="border-t border-stone-200 py-20 md:py-28 px-6 md:px-12 lg:px-16 bg-stone-100">
         <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-8">
           <div className="md:col-span-4 lg:col-span-3">
-            <p className="font-body text-xs text-stone-400 tracking-[0.2em] uppercase">
+            <p className="font-body text-caption text-stone-600 tracking-[0.08em] uppercase">
               Студия
             </p>
           </div>
           <div className="md:col-span-8 lg:col-span-9 max-w-xl">
-            <p className="font-body text-sm text-stone-900 mb-3">Москва</p>
-            <p className="font-body text-sm text-stone-900 mb-3">
+            <p className="font-body text-copy text-stone-900 mb-3">Москва</p>
+            <p className="font-body text-copy text-stone-900 mb-3">
               Самозанятый {seller.name}. ИНН {seller.inn}.
             </p>
-            <p className="font-body text-sm text-stone-500 leading-loose">
+            <p className="font-body text-copy text-stone-800 leading-loose">
               Мы работаем по предварительной записи. Посещение мастерской
               возможно — напишите нам, чтобы договориться о времени.
             </p>
@@ -109,19 +109,19 @@ export default async function ContactsPage() {
       <section className="border-t border-stone-200 py-20 md:py-28 px-6 md:px-12 lg:px-16">
         <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-8">
           <div className="md:col-span-4 lg:col-span-3">
-            <p className="font-body text-xs text-stone-400 tracking-[0.2em] uppercase">
+            <p className="font-body text-caption text-stone-600 tracking-[0.08em] uppercase">
               Сотрудничество
             </p>
           </div>
           <div className="md:col-span-8 lg:col-span-9 max-w-xl space-y-8">
-            <p className="font-body text-sm text-stone-500 leading-loose">
+            <p className="font-body text-copy text-stone-800 leading-loose">
               Мы открыты для индивидуальных заказов и коллабораций. Сервиз для
               ресторана, подарочный набор, корпоративный заказ — расскажите о
               своей идее, и мы обсудим детали.
             </p>
             <a
               href={"mailto:" + site.email}
-              className="inline-block font-body text-xs tracking-[0.2em] uppercase bg-stone-900 text-stone-50 px-8 py-4 hover:bg-stone-700 transition-colors duration-300"
+              className="inline-block font-body text-caption tracking-[0.08em] uppercase bg-stone-900 text-stone-50 px-8 py-4 hover:bg-stone-700 transition-colors duration-300"
             >
               Написать письмо
             </a>

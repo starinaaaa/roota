@@ -2,8 +2,8 @@ import { bindPrepositions } from "@/lib/typography";
 import type { Metadata } from "next";
 import { getSiteContent } from "@/lib/site";
 import Link from "next/link";
-import Image from "next/image";
 import AboutHero from "@/components/about/AboutHero";
+import AboutGallery from "@/components/about/AboutGallery";
 import { aboutGallery } from "@/lib/about-gallery";
 
 export const metadata: Metadata = {
@@ -17,14 +17,7 @@ export default async function AboutPage() {
   const site = await getSiteContent();
   return (
     <div className="pt-16 md:pt-20">
-      <AboutHero
-        title={site.studioTitle}
-        photos={
-          aboutGallery.length
-            ? aboutGallery
-            : [{ src: site.heroImage, alt: "Авторская керамика Roota" }]
-        }
-      />
+      <AboutHero title={site.studioTitle} />
 
       {/* ── Вступление ── */}
       <section className="border-t border-stone-200 py-20 md:py-28 px-6 md:px-12 lg:px-16">
@@ -74,19 +67,7 @@ export default async function AboutPage() {
         </div>
       </section>
 
-      {/* ── Иллюстрация ── */}
-      <section className="border-t border-stone-200 bg-white px-6 py-16 md:px-12 md:py-20 lg:px-16">
-        <div className="mx-auto max-w-[1440px]">
-          <Image
-            src="/images/about/illustration.png"
-            alt="Нарисованный персонаж с лейкой"
-            width={1076}
-            height={1012}
-            sizes="(max-width: 768px) 85vw, 520px"
-            className="mx-auto h-auto w-full max-w-[520px]"
-          />
-        </div>
-      </section>
+      <AboutGallery photos={aboutGallery} />
 
       {/* ── CTA ── */}
       <section className="border-t border-stone-200 py-20 md:py-24 px-6 md:px-12 lg:px-16">

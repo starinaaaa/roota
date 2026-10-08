@@ -1,16 +1,22 @@
-// Photos are displayed in this order.
+// Photos are displayed in filename order, 01–07.
 export const aboutGallery: { src: string; alt: string }[] = [
-  { src: "/images/about/01.jpg", alt: "Тарелки с авторскими рисунками" },
-  { src: "/images/about/02.jpg", alt: "Работа с глиной в мастерской" },
-  { src: "/images/about/03.jpg", alt: "Керамические цветы Roota" },
-  { src: "/images/about/04.jpg", alt: "Роспись тарелки вручную" },
   {
-    src: "/images/about/05.jpg",
-    alt: "Создательница студии с керамической работой",
+    src: "/images/about/studio-01.jpg",
+    alt: "Даша за рабочим столом с расписанными тарелками",
   },
-  { src: "/images/about/06.jpg", alt: "Керамический цветок в мастерской" },
-  { src: "/images/about/07.jpg", alt: "Лепка керамических деталей" },
-  { src: "/images/about/08.jpg", alt: "Рабочий стол в мастерской" },
-  { src: "/images/about/09.jpg", alt: "Две тарелки с рисунками" },
-  { src: "/images/about/10.jpg", alt: "Стопка тарелок с авторской росписью" },
+  {
+    src: "/images/about/studio-02.jpg",
+    alt: "Небольшая фигурка из глины в руках",
+  },
+  { src: "/images/about/studio-03.jpg", alt: "Работа с глиной в мастерской" },
+  { src: "/images/about/studio-04.jpg", alt: "Даша с керамической бабочкой" },
+  {
+    src: "/images/about/studio-05.jpg",
+    alt: "Керамические вазы с сухоцветами в мастерской",
+  },
+  { src: "/images/about/studio-06.jpg", alt: "Даша с глиняной чашей в руках" },
+  {
+    src: "/images/about/studio-07.jpg",
+    alt: "Даша с белой тарелкой у рабочего стола",
+  },
 ];

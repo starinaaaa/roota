@@ -86,10 +86,16 @@ export function publicPaymentStatus(payment: PaymentRow) {
   };
 }
 
-export function buildForm(payment: PaymentRow, baseUrl: string) {
+export function buildForm(
+  payment: PaymentRow,
+  baseUrl: string,
+  orderReturnPath?: string,
+) {
   if (paymentExpired(payment)) throw new Error("PAYMENT_EXPIRED");
   const base = new URL(baseUrl);
   if (base.protocol !== "https:" && base.hostname !== "localhost")
+    throw new Error("PAYMENT_CONFIG");
+  if (orderReturnPath && !/^\/order\/[a-f0-9]{64}$/.test(orderReturnPath))
     throw new Error("PAYMENT_CONFIG");
   return sdkFor(payment.mode).payment.buildPaymentForm({
     OutSum: Number(payment.amount).toFixed(2),
@@ -99,9 +105,9 @@ export function buildForm(payment: PaymentRow, baseUrl: string) {
     Email: payment.email,
     Receipt: payment.receipt ?? undefined,
     ShpFields: { Shp_mode: payment.mode, Shp_payment: payment.id },
-    SuccessURL2: `${base.origin}/payment/success`,
+    SuccessURL2: `${base.origin}${orderReturnPath || "/payment/success"}`,
     SuccessURL2Method: "GET",
-    FailURL2: `${base.origin}/payment/fail`,
+    FailURL2: `${base.origin}${orderReturnPath || "/payment/fail"}`,
     FailURL2Method: "GET",
   });
 }

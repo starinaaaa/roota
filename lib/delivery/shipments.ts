@@ -1,6 +1,7 @@
 import "server-only";
 import { createServerClient } from "@/lib/supabase/server";
 import { ozon, ozonTransport, postingFor } from "./ozon";
+import { postingInfoSchema, postingHistorySchema } from "./posting-status";
 import type { DeliveryContext, PackingRule } from "./model";
 // Call this after a trusted payment callback and order confirmation, or from the checked admin action.
 // A browser payment-success redirect must never call this function or mark an order paid.
@@ -135,24 +136,32 @@ export async function refreshShipmentStatus(orderId: string) {
     .single();
   if (error || !s?.posting_number)
     throw new Error("Отправление ещё не создано.");
-  const result = await ozonTransport().call<{
-    postings: { posting_number: string; status: string }[];
-  }>("/v1/posting/info", { posting_numbers: [s.posting_number] });
-  const posting = result.postings?.find(
+  const transport = ozonTransport();
+  const result = postingInfoSchema.parse(
+    await transport.call("/v1/posting/info", {
+      posting_numbers: [s.posting_number],
+    }),
+  );
+  const posting = result.postings.find(
     (p) => p.posting_number === s.posting_number,
   );
-  if (!posting?.status) throw new Error("Статус не получен.");
-  const history = await ozonTransport().call<unknown>(
-    "/v1/posting/status-history",
-    { posting_number: s.posting_number },
-  );
-  const { error: saveError } = await db
-    .from("order_shipments")
-    .update({
-      carrier_status: posting.status,
-      status_history: history,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("order_id", orderId);
+  if (!posting) throw new Error("Статус не получен.");
+  let history = {};
+  try {
+    history = postingHistorySchema.parse(
+      await transport.call("/v1/posting/status-history", {
+        posting_number: s.posting_number,
+      }),
+    );
+  } catch {
+    /* Current status remains useful when history is unavailable. */
+  }
+  const { error: saveError } = await db.rpc("apply_order_shipment_status", {
+    p_order: orderId,
+    p_posting: s.posting_number,
+    p_status: posting.status,
+    p_changed: posting.status_changed_at,
+    p_history: history,
+  });
   if (saveError) throw new Error("Статус не сохранён.");
 }

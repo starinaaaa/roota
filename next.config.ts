@@ -21,6 +21,18 @@ const remotePatterns: NonNullable<NextConfig["images"]>["remotePatterns"] = [
 ];
 
 const nextConfig: NextConfig = {
+  async headers() {
+    return [
+      {
+        source: "/order/:path*",
+        headers: [
+          { key: "Referrer-Policy", value: "no-referrer" },
+          { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
+          { key: "Cache-Control", value: "private, no-store" },
+        ],
+      },
+    ];
+  },
   experimental: { serverActions: { bodySizeLimit: "12mb" } },
   images: {
     remotePatterns,

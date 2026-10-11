@@ -18,6 +18,9 @@ type Props = {
   initialExpired?: boolean;
   requiresReview?: boolean;
   expiresAt?: string | null;
+  orderUrl?: string;
+  statusUrl?: string;
+  returnPaymentUrl?: string;
 };
 declare global {
   interface Window {
@@ -36,6 +39,9 @@ export default function PaymentPanel({
   initialExpired = false,
   requiresReview = false,
   expiresAt,
+  orderUrl,
+  statusUrl,
+  returnPaymentUrl,
 }: Props) {
   const [status, setStatus] = useState(initialStatus);
   const [expired, setExpired] = useState(initialExpired);
@@ -51,7 +57,7 @@ export default function PaymentPanel({
     const controller = new AbortController();
     async function check() {
       try {
-        const response = await fetch(`/api/payments/${id}`, {
+        const response = await fetch(statusUrl ?? `/api/payments/${id}`, {
           cache: "no-store",
           signal: controller.signal,
         });
@@ -75,7 +81,7 @@ export default function PaymentPanel({
       controller.abort();
       clearTimeout(timer);
     };
-  }, [id, status]);
+  }, [id, status, statusUrl]);
   function openPayment() {
     if (expiresAt && Date.parse(expiresAt) <= Date.now()) {
       setExpired(true);
@@ -209,10 +215,19 @@ export default function PaymentPanel({
           )}
           {!form && !paid && !expired && !expired && (
             <Link
-              href={`/payment/${id}`}
+              href={returnPaymentUrl ?? `/payment/${id}`}
               className="block font-body text-ui underline underline-offset-4"
             >
               Вернуться к оплате заказа
+            </Link>
+          )}
+          {orderUrl && (
+            <Link
+              href={orderUrl}
+              prefetch={false}
+              className="block border border-stone-300 px-6 py-4 text-center font-body text-ui"
+            >
+              Открыть мой заказ
             </Link>
           )}
           <Link

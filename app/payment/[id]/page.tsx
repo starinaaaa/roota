@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { paymentExpired } from "@/lib/payments/model";
 import PaymentPanel from "@/components/checkout/PaymentPanel";
+import { ensureOrderLink } from "@/lib/order-access";
 import {
   ownedPayment,
   buildForm,
@@ -44,6 +45,9 @@ export default async function PaymentPage({
       initialExpired={paymentExpired(payment)}
       requiresReview={payment.requires_review}
       expiresAt={payment.expires_at}
+      orderUrl={
+        payment.order_id ? await ensureOrderLink(payment.order_id) : undefined
+      }
       form={enabled ? buildForm(payment, base) : undefined}
     />
   );

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import PaymentPanel from "@/components/checkout/PaymentPanel";
 import { paymentExpired } from "./model";
 import { ownedPayment } from "./robokassa";
+import { ensureOrderLink } from "@/lib/order-access";
 export async function PaymentReturn({
   searchParams,
   failed,
@@ -19,6 +20,9 @@ export async function PaymentReturn({
       initialExpired={paymentExpired(payment)}
       requiresReview={payment.requires_review}
       expiresAt={payment.expires_at}
+      orderUrl={
+        payment.order_id ? await ensureOrderLink(payment.order_id) : undefined
+      }
       failed={failed}
     />
   );

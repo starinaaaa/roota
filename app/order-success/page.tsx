@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
 import { uuid } from "@/lib/validation";
+import { ensureOrderLink } from "@/lib/order-access";
 
 export const metadata: Metadata = {
   title: "Заказ принят",
@@ -29,6 +30,7 @@ export default async function OrderSuccessPage({ searchParams }: Props) {
     .maybeSingle();
   if (error || !order) notFound();
   const shortId = order.order_number;
+  const orderUrl = await ensureOrderLink(orderId);
 
   return (
     <div className="pt-16 md:pt-20 min-h-screen flex items-center">
@@ -58,6 +60,13 @@ export default async function OrderSuccessPage({ searchParams }: Props) {
 
           {/* Действия */}
           <div className="flex flex-col sm:flex-row gap-3 mt-12">
+            <Link
+              href={orderUrl}
+              prefetch={false}
+              className="font-body text-ui bg-stone-900 text-stone-50 px-8 py-4 text-center"
+            >
+              Мой заказ
+            </Link>
             <Link
               href="/catalog"
               className="

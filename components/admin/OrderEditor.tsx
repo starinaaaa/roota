@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { updateOrder, retryNotification } from "@/lib/actions/admin";
 import { orderLabels, paymentLabels } from "@/lib/validation";
 import { formatPrice } from "@/lib/products";
+import OrderLink from "./OrderLink";
 type OrderData = {
   id: string;
   order_number: string;
@@ -42,6 +43,7 @@ type OrderData = {
     posting_number: string | null;
     carrier_status: string | null;
     last_error: string | null;
+    synced_at?: string | null;
   }[];
 
   items: {
@@ -79,6 +81,11 @@ export default function OrderEditor({ order }: { order: OrderData }) {
   return (
     <div className="space-y-6">
       <h2 className="text-xl">Заказ {order.order_number}</h2>
+      <OrderLink
+        orderId={order.id}
+        email={order.customer_email}
+        orderNumber={order.order_number}
+      />
       <p>
         {new Date(order.created_at).toLocaleString("ru-RU", {
           timeZone: "Europe/Moscow",
@@ -269,6 +276,18 @@ export default function OrderEditor({ order }: { order: OrderData }) {
           {order.shipments?.[0]?.posting_number && (
             <p>Отправление: {order.shipments[0].posting_number}</p>
           )}
+          <p className="text-sm text-stone-500">
+            Статусы активных отправлений проверяются автоматически каждые 15
+            минут.
+          </p>
+          {order.shipments?.[0]?.synced_at && (
+            <p className="text-sm text-stone-500">
+              Последняя проверка:{" "}
+              {new Date(order.shipments[0].synced_at).toLocaleString("ru-RU", {
+                timeZone: "Europe/Moscow",
+              })}
+            </p>
+          )}
           {order.shipments?.[0]?.last_error && (
             <p role="alert">{order.shipments[0].last_error}</p>
           )}
@@ -362,7 +381,9 @@ export default function OrderEditor({ order }: { order: OrderData }) {
                 ? `Статус: ${orderLabels[e.old_value ?? ""] ?? "—"} → ${orderLabels[e.new_value ?? ""] ?? e.new_value}`
                 : e.kind === "payment"
                   ? `Оплата: ${paymentLabels[e.old_value ?? ""]} → ${paymentLabels[e.new_value ?? ""]}`
-                  : "Заметки или трек-номер обновлены"}{" "}
+                  : e.kind === "delivery"
+                    ? `Доставка: ${e.old_value ?? "—"} → ${e.new_value}`
+                    : "Заметки или трек-номер обновлены"}{" "}
               {e.reason && "· " + e.reason}
             </p>
           ))}

@@ -7,6 +7,8 @@ import { quoteDelivery } from "@/lib/delivery/service";
 import type { CreateOrderResult } from "@/types";
 import { paymentMode, receiptProfile } from "@/lib/payments/robokassa";
 const messages: Record<string, string> = {
+  ORDER_UNAVAILABLE:
+    "Срок резерва истёк. Соберите заказ заново, чтобы проверить наличие.",
   EMPTY_CART: "Корзина пуста",
   OUT_OF_STOCK:
     "Товар закончился или доступное количество изменилось. Проверьте корзину.",

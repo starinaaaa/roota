@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { paymentExpired } from "@/lib/payments/model";
 import PaymentPanel from "@/components/checkout/PaymentPanel";
 import {
   ownedPayment,
@@ -26,7 +27,9 @@ export default async function PaymentPage({
       ? `https://${process.env.VERCEL_BRANCH_URL}`
       : "http://localhost:3000");
   const enabled =
-    payment.status === "pending" && paymentMode() === payment.mode;
+    !paymentExpired(payment) &&
+    payment.status === "pending" &&
+    paymentMode() === payment.mode;
   if (
     enabled &&
     payment.mode === "live" &&
@@ -38,6 +41,9 @@ export default async function PaymentPage({
       id={payment.id}
       mode={payment.mode}
       initialStatus={payment.status}
+      initialExpired={paymentExpired(payment)}
+      requiresReview={payment.requires_review}
+      expiresAt={payment.expires_at}
       form={enabled ? buildForm(payment, base) : undefined}
     />
   );

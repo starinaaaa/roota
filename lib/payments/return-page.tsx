@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import PaymentPanel from "@/components/checkout/PaymentPanel";
+import { paymentExpired } from "./model";
 import { ownedPayment } from "./robokassa";
 export async function PaymentReturn({
   searchParams,
@@ -15,6 +16,9 @@ export async function PaymentReturn({
       id={payment.id}
       mode={payment.mode}
       initialStatus={payment.status}
+      initialExpired={paymentExpired(payment)}
+      requiresReview={payment.requires_review}
+      expiresAt={payment.expires_at}
       failed={failed}
     />
   );

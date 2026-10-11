@@ -24,6 +24,7 @@ export type Product = {
   material?: string | null;
   dimensions?: string | null;
   weight?: string | null;
+  capacity_ml?: number | null;
   dishwasher_safe?: boolean | null;
   microwave_safe?: boolean | null;
   care?: string | null;

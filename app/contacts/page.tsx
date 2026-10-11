@@ -62,6 +62,19 @@ export default async function ContactsPage() {
             </p>
           </div>
           <div className="md:col-span-8 lg:col-span-9">
+            <div className="mb-10 space-y-5">
+              <p className="font-body text-copy text-stone-800">
+                Ответ — в течение рабочего дня.
+              </p>
+              <a
+                href={site.telegram}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block font-body text-ui bg-stone-900 text-white px-6 py-4 hover:bg-stone-700"
+              >
+                Написать в Telegram
+              </a>
+            </div>
             <div className="divide-y divide-stone-200">
               {CONTACTS.map(({ label, value, href, external }) => (
                 <div

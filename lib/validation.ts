@@ -98,6 +98,7 @@ export const productSchema = z
     material: optionalText(300),
     dimensions: optionalText(300),
     weight: optionalText(100),
+    capacity_ml: z.number().int().min(1).max(10000).nullable().default(null),
     care: optionalText(2000),
     dishwasher_safe: z.boolean().nullable(),
     microwave_safe: z.boolean().nullable(),

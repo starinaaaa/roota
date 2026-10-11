@@ -23,6 +23,8 @@ export type PaymentRow = {
   }[];
   receipt: Receipt | null;
   paid_at: string | null;
+  expires_at: string | null;
+  requires_review?: boolean;
 };
 
 // Accept Robokassa's six-place callback amounts without floating-point comparison.
@@ -103,4 +105,16 @@ export function verifyPaymentNotification(
     amountInKopecks(fields.OutSum) !== amountInKopecks(String(payment.amount))
   )
     throw new Error("AMOUNT_MISMATCH");
+}
+
+export function paymentExpired(
+  payment: Pick<PaymentRow, "mode" | "status" | "expires_at">,
+  now = Date.now(),
+) {
+  return (
+    payment.mode === "live" &&
+    payment.status === "pending" &&
+    !!payment.expires_at &&
+    Date.parse(payment.expires_at) <= now
+  );
 }

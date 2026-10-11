@@ -29,6 +29,7 @@ const empty: ProductInput = {
   material: null,
   dimensions: null,
   weight: null,
+  capacity_ml: null,
   care: null,
   dishwasher_safe: null,
   microwave_safe: null,
@@ -174,6 +175,24 @@ export default function ProductEditor({
         {text("material", "Материал", 300)}
         {text("dimensions", "Размеры", 300)}
         {text("weight", "Вес", 100)}
+        <label className="admin-label">
+          Объём, мл (для чашек и стаканов)
+          <input
+            type="number"
+            min="1"
+            max="10000"
+            step="1"
+            className="admin-input"
+            value={data.capacity_ml ?? ""}
+            onChange={(event) =>
+              setData({
+                ...data,
+                capacity_ml:
+                  event.target.value === "" ? null : Number(event.target.value),
+              })
+            }
+          />
+        </label>
         <label>
           Доступный остаток
           <input

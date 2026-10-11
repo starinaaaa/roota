@@ -223,6 +223,8 @@ function ProductSpecs({ product }: { product: Product }) {
     rows.push({ label: "Материал", value: product.material });
   if (product.dimensions != null && product.dimensions !== "")
     rows.push({ label: "Размер", value: product.dimensions });
+  if (product.capacity_ml != null)
+    rows.push({ label: "Объём", value: `${product.capacity_ml} мл` });
   if (product.weight != null && product.weight !== "")
     rows.push({ label: "Вес", value: product.weight });
   if (product.dishwasher_safe != null)

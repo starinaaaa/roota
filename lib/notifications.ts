@@ -17,7 +17,7 @@ export async function sendOrderNotification(
   if (error || !claim) return "busy";
   const { data: order } = await db
     .from("orders")
-    .select("order_number,total_amount")
+    .select("order_number,total_amount,status,payment_status")
     .eq("id", orderId)
     .single();
   let state: "sent" | "failed" = "failed";
@@ -30,7 +30,10 @@ export async function sendOrderNotification(
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             chat_id: process.env.TELEGRAM_CHAT_ID,
-            text: `Новый заказ ${order.order_number}\nСумма изделий: ${order.total_amount} ₽\nОткройте админку студии для деталей.`,
+            text:
+              order.status === "cancelled" && order.payment_status === "paid"
+                ? `Оплата отменённого заказа ${order.order_number}\nСумма заказа: ${order.total_amount} ₽\nПроверьте наличие или согласуйте возврат. Отправка не запускается.`
+                : `Новый заказ ${order.order_number}\nСумма заказа: ${order.total_amount} ₽\nОткройте админку студии для деталей.`,
           }),
           signal: AbortSignal.timeout(8000),
         },

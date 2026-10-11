@@ -1,5 +1,6 @@
 import { bindPrepositions } from "@/lib/typography";
 import CharacterArt from "@/components/illustrations/CharacterArt";
+import Link from "next/link";
 import type { Metadata } from "next";
 import { getSiteContent } from "@/lib/site";
 
@@ -50,6 +51,42 @@ export default async function DeliveryPage() {
         </div>
       </section>
 
+      <section className="border-t border-stone-200 px-6 md:px-12 lg:px-16 py-10 md:py-14">
+        <div className="max-w-[1440px] mx-auto">
+          <h2 className="font-body text-ui tracking-[0.08em] uppercase mb-8">
+            Как получить заказ
+          </h2>
+          <ol className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              [
+                "Оформление",
+                "Добавьте изделия в корзину, укажите данные и выберите пункт Ozon. Стоимость доставки появится до оплаты.",
+              ],
+              [
+                "Оплата",
+                "Проверьте итоговую сумму и оплатите через Robokassa. Готовые изделия резервируются на 30 минут.",
+              ],
+              [
+                "Отправка",
+                "Готовые изделия отправляем за 1–3 рабочих дня после оплаты. Срок изготовления предзаказа указан в карточке.",
+              ],
+              [
+                "Получение",
+                "Следите за уведомлениями Ozon и заберите посылку в выбранном пункте. Срок перевозки указан при расчёте, если его предоставил Ozon.",
+              ],
+            ].map(([title, text], index) => (
+              <li key={title} className="space-y-3">
+                <h3 className="font-display text-price">
+                  {index + 1}. {title}
+                </h3>
+                <p className="font-body text-copy leading-relaxed text-stone-800">
+                  {bindPrepositions(text)}
+                </p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
       {/* ── Доставка ── */}
       <section className="border-t border-stone-200 py-20 md:py-28 px-6 md:px-12 lg:px-16">
         <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-8">
@@ -108,6 +145,22 @@ export default async function DeliveryPage() {
         </div>
       </section>
 
+      <section className="border-t border-stone-200 px-6 md:px-12 lg:px-16 py-10 md:py-14">
+        <div className="max-w-[1440px] mx-auto space-y-5">
+          <h2 className="font-display text-price">Повреждение и возврат</h2>
+          <p className="font-body text-copy leading-relaxed max-w-2xl">
+            Если изделие разбилось при доставке, напишите нам номер заказа. По
+            возможности приложите фотографии изделия и упаковки. Для возврата мы
+            согласуем адрес и способ обратной отправки.
+          </p>
+          <div className="flex flex-wrap gap-6 font-body text-ui underline underline-offset-4">
+            <a href={site.telegram} target="_blank" rel="noopener noreferrer">
+              Написать в Telegram
+            </a>
+            <Link href="/offer">Условия возврата</Link>
+          </div>
+        </div>
+      </section>
       {/* ── Упаковка ── */}
       <section className="border-t border-stone-200 py-20 md:py-28 px-6 md:px-12 lg:px-16 bg-stone-100">
         <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-8">

@@ -8,6 +8,7 @@ import {
   callbackFields,
   verifyPaymentNotification,
   sdkFor,
+  paymentExpired,
   type PaymentRow,
 } from "../lib/payments/model";
 
@@ -87,6 +88,38 @@ test("Result signature, exact amount, mode, invoice and payment binding", () => 
   assert.ok(!JSON.stringify(fields).includes("test-one"));
 });
 
+test("payment reservation deadline applies only to unpaid live payments", () => {
+  const deadline = new Date(1000).toISOString();
+  assert.equal(
+    paymentExpired(
+      { mode: "live", status: "pending", expires_at: deadline },
+      999,
+    ),
+    false,
+  );
+  assert.equal(
+    paymentExpired(
+      { mode: "live", status: "pending", expires_at: deadline },
+      1000,
+    ),
+    true,
+  );
+  assert.equal(
+    paymentExpired(
+      { mode: "live", status: "paid", expires_at: deadline },
+      2000,
+    ),
+    false,
+  );
+  assert.equal(
+    paymentExpired(
+      { mode: "test", status: "pending", expires_at: deadline },
+      2000,
+    ),
+    false,
+  );
+});
+
 test("SQL payment checkout, callback rollback, idempotency, test isolation and RLS", async () => {
   const db = new PGlite();
   try {
@@ -127,6 +160,18 @@ test("SQL payment checkout, callback rollback, idempotency, test isolation and R
     await db.exec(
       await readFile(
         "supabase/migrations/20261006130211_robokassa_payments.sql",
+        "utf8",
+      ),
+    );
+    await db.exec(
+      await readFile(
+        "supabase/migrations/20261011160959_reservation_expiry_and_capacity.sql",
+        "utf8",
+      ),
+    );
+    await db.exec(
+      await readFile(
+        "supabase/migrations/20261011161456_reservation_expiry_query_fix.sql",
         "utf8",
       ),
     );
@@ -306,6 +351,73 @@ test("SQL payment checkout, callback rollback, idempotency, test isolation and R
       "update orders set total_amount=total_amount-1 where id=$1",
       [live.order_id],
     );
+    await db.exec("begin");
+    await db.query(
+      'select save_product(id,to_jsonb(p)||\'{"capacity_ml":350,"publication_status":"draft"}\'::jsonb,\'[]\',updated_at) from products p where id=$1',
+      [product],
+    );
+    assert.equal(
+      (
+        await db.query<{ capacity_ml: number }>(
+          "select capacity_ml from products where id=$1",
+          [product],
+        )
+      ).rows[0].capacity_ml,
+      350,
+    );
+    await db.exec("rollback");
+    // Expiry releases stock exactly once; late verified payment remains cancelled for review.
+    await db.exec("begin");
+    await db.query(
+      "update payments set expires_at=now()-interval '1 second' where id=$1",
+      [live.id],
+    );
+    const beforeStock = (
+      await db.query<{ stock_qty: number }>(
+        "select stock_qty from products where id=$1",
+        [product],
+      )
+    ).rows[0].stock_qty;
+    assert.equal(
+      (await db.query<{ n: number }>("select release_expired_reservations() n"))
+        .rows[0].n,
+      1,
+    );
+    assert.equal(
+      (await db.query<{ n: number }>("select release_expired_reservations() n"))
+        .rows[0].n,
+      0,
+    );
+    assert.equal(
+      (
+        await db.query<{ stock_qty: number }>(
+          "select stock_qty from products where id=$1",
+          [product],
+        )
+      ).rows[0].stock_qty,
+      beforeStock + 1,
+    );
+    await confirm(live);
+    assert.equal(
+      (
+        await db.query<{ status: string }>(
+          "select status from orders where id=$1",
+          [live.order_id],
+        )
+      ).rows[0].status,
+      "cancelled",
+    );
+    assert.equal(
+      (await db.query<{ n: number }>("select release_expired_reservations() n"))
+        .rows[0].n,
+      0,
+    );
+    await db.exec("rollback");
+    assert.equal(
+      (await db.query<{ n: number }>("select release_expired_reservations() n"))
+        .rows[0].n,
+      0,
+    );
     await confirm(live);
     await confirm(live);
     assert.equal(
@@ -323,6 +435,15 @@ test("SQL payment checkout, callback rollback, idempotency, test isolation and R
         )
       ).rows[0].status,
       "paid",
+    );
+    await db.query(
+      "update payments set expires_at=now()-interval '1 second' where id=$1",
+      [live.id],
+    );
+    assert.equal(
+      (await db.query<{ n: number }>("select release_expired_reservations() n"))
+        .rows[0].n,
+      0,
     );
     await assert.rejects(
       db.query(
@@ -342,6 +463,10 @@ test("SQL payment checkout, callback rollback, idempotency, test isolation and R
         /permission denied/,
       );
       await assert.rejects(confirm(live), /permission denied/);
+      await assert.rejects(
+        db.query("select release_expired_reservations()"),
+        /permission denied/,
+      );
       await db.exec("reset role");
     }
   } finally {

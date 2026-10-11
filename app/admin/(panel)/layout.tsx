@@ -24,6 +24,7 @@ export default async function PanelLayout({
         {[
           ["orders", "Заказы"],
           ["products", "Товары"],
+          ["waitlist", "Заявки на поступление"],
           ["site", "Сайт"],
           ["delivery", "Доставка"],
         ].map(([path, label]) => (

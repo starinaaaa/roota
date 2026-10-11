@@ -112,8 +112,7 @@ async function processNotification(fields: Record<string, string>) {
           .select("status")
           .eq("id", data.order_id)
           .maybeSingle();
-        if (order && order.status !== "cancelled")
-          await sendOrderNotification(data.order_id);
+        if (order) await sendOrderNotification(data.order_id);
       } catch {
         /* The committed payment must not depend on notification delivery. */
       }

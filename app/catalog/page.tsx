@@ -15,17 +15,22 @@ export const metadata: Metadata = {
 };
 
 type Props = {
-  searchParams: Promise<{ category?: string }>;
+  searchParams: Promise<{ category?: string; stock?: string }>;
 };
 
 export default async function CatalogPage({ searchParams }: Props) {
   const params = await searchParams;
   const activeSlug = params.category || "all";
 
-  const [filtered, categories] = await Promise.all([
+  const [products, categories] = await Promise.all([
     getProductsByCategory(activeSlug),
     getFilterCategories(),
   ]);
+
+  const filtered =
+    params.stock === "1"
+      ? products.filter((p) => p.in_stock && p.stock_qty > 0)
+      : products;
 
   const countLabel = (() => {
     const n = filtered.length;

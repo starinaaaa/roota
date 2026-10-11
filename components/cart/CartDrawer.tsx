@@ -1,6 +1,7 @@
 "use client";
 
 import { bindPrepositions } from "@/lib/typography";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
@@ -14,6 +15,67 @@ export default function CartDrawer() {
   const { isOpen, close: closeDrawer } = useCartUI();
   const router = useRouter();
   const { items, updateQuantity, removeItem } = useCart();
+
+  const panelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!isOpen) return;
+    const previousFocus =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const panel = panelRef.current;
+    const focusable = () =>
+      Array.from(
+        panel?.querySelectorAll<HTMLElement>(
+          'button:not(:disabled), a[href], input:not(:disabled), [tabindex="0"]',
+        ) ?? [],
+      ).filter((element) => element.getClientRects().length > 0);
+    (focusable()[0] ?? panel)?.focus();
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeDrawer();
+      }
+      if (event.key !== "Tab") return;
+      const elements = focusable();
+      const first = elements[0],
+        last = elements[elements.length - 1];
+      if (!first) {
+        event.preventDefault();
+        panel?.focus();
+        return;
+      }
+      if (
+        event.shiftKey &&
+        (document.activeElement === first ||
+          !panel?.contains(document.activeElement))
+      ) {
+        event.preventDefault();
+        last.focus();
+      } else if (
+        !event.shiftKey &&
+        (document.activeElement === last ||
+          !panel?.contains(document.activeElement))
+      ) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+    function keepFocus(event: FocusEvent) {
+      if (event.target instanceof Node && !panel?.contains(event.target))
+        (focusable()[0] ?? panel)?.focus();
+    }
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("focusin", keepFocus);
+    return () => {
+      document.body.style.overflow = overflow;
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("focusin", keepFocus);
+      if (previousFocus?.isConnected) previousFocus.focus();
+    };
+  }, [isOpen, closeDrawer]);
 
   const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
   const totalPrice = items.reduce(
@@ -44,6 +106,11 @@ export default function CartDrawer() {
           {/* Панель — width ×1.5: 440 → 660px */}
           <motion.div
             key="cart-panel"
+            ref={panelRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Корзина"
+            tabIndex={-1}
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}

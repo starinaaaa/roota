@@ -32,7 +32,7 @@ export default function CategoryFilter({ activeSlug, categories }: Props) {
   return (
     <nav
       aria-label="Фильтр по категориям"
-      className="flex gap-0 overflow-x-auto pb-1 -mx-6 px-6 md:mx-0 md:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      className="flex flex-wrap gap-x-1 gap-y-2 pb-1"
     >
       {categories.map(({ slug, label }) => {
         const isActive = slug === activeSlug;
@@ -40,6 +40,7 @@ export default function CategoryFilter({ activeSlug, categories }: Props) {
         return (
           <button
             key={slug}
+            aria-pressed={isActive}
             onClick={() => handleSelect(slug)}
             className={`
               relative shrink-0 py-2 pr-7
@@ -59,6 +60,22 @@ export default function CategoryFilter({ activeSlug, categories }: Props) {
           </button>
         );
       })}
+      <label className="flex items-center gap-2 py-2 font-body text-ui text-stone-800 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={searchParams.get("stock") === "1"}
+          onChange={(event) => {
+            const params = new URLSearchParams(searchParams.toString());
+            if (event.target.checked) params.set("stock", "1");
+            else params.delete("stock");
+            router.push(`/catalog${params.size ? `?${params}` : ""}`, {
+              scroll: false,
+            });
+          }}
+          className="accent-stone-900"
+        />
+        В наличии
+      </label>
     </nav>
   );
 }

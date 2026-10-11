@@ -38,6 +38,7 @@ type ProductRow = {
   material: string | null;
   dimensions: string | null;
   weight: string | null;
+  capacity_ml: number | null;
   dishwasher_safe: boolean | null;
   microwave_safe: boolean | null;
   care: string | null;
@@ -67,6 +68,7 @@ const PRODUCT_SELECT = `
   material,
   dimensions,
   weight,
+  capacity_ml,
   dishwasher_safe,
   microwave_safe,
   care,
@@ -118,6 +120,7 @@ function mapProduct(row: ProductRow): Product {
     material: row.material ?? null,
     dimensions: row.dimensions ?? null,
     weight: row.weight ?? null,
+    capacity_ml: row.capacity_ml ?? null,
     dishwasher_safe: row.dishwasher_safe ?? null,
     microwave_safe: row.microwave_safe ?? null,
     care: row.care,

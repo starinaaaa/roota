@@ -1,6 +1,11 @@
 import "server-only";
 import { z } from "zod";
-import { sdkFor, type PaymentMode, type PaymentRow } from "./model";
+import {
+  paymentExpired,
+  sdkFor,
+  type PaymentMode,
+  type PaymentRow,
+} from "./model";
 import { createServerClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
 import { uuid } from "@/lib/validation";
@@ -48,13 +53,25 @@ export async function ownedPayment(id: string): Promise<PaymentRow | null> {
   const session = (await cookies()).get("cart_session")?.value;
   if (!uuid.safeParse(id).success || !uuid.safeParse(session).success)
     return null;
-  const { data, error } = await createServerClient()
+  const db = createServerClient();
+  const { error: expiryError } = await db.rpc("release_expired_reservations");
+  if (expiryError) throw new Error("PAYMENT_DATABASE");
+  const { data, error } = await db
     .from("payments")
     .select("*")
     .eq("id", id)
     .eq("cart_session", session)
     .maybeSingle();
   if (error) throw new Error("PAYMENT_DATABASE");
+  if (data?.order_id && data.status === "paid") {
+    const { data: order, error: orderError } = await db
+      .from("orders")
+      .select("status")
+      .eq("id", data.order_id)
+      .maybeSingle();
+    if (orderError) throw new Error("PAYMENT_DATABASE");
+    data.requires_review = order?.status === "cancelled";
+  }
   return data as PaymentRow | null;
 }
 
@@ -64,10 +81,13 @@ export function publicPaymentStatus(payment: PaymentRow) {
     mode: payment.mode,
     status: payment.status,
     paidAt: payment.paid_at,
+    expired: paymentExpired(payment),
+    requiresReview: payment.requires_review ?? false,
   };
 }
 
 export function buildForm(payment: PaymentRow, baseUrl: string) {
+  if (paymentExpired(payment)) throw new Error("PAYMENT_EXPIRED");
   const base = new URL(baseUrl);
   if (base.protocol !== "https:" && base.hostname !== "localhost")
     throw new Error("PAYMENT_CONFIG");

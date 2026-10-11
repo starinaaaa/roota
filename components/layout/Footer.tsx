@@ -148,12 +148,6 @@ export default async function Footer() {
                 Обработка персональных данных
               </Link>
               <Link
-                href="/newsletter-consent"
-                className="font-body text-ui text-stone-800 hover:text-stone-600 transition-colors duration-200"
-              >
-                Рекламные новости
-              </Link>
-              <Link
                 href="/terms"
                 className="font-body text-ui text-stone-800 hover:text-stone-600 transition-colors duration-200"
               >

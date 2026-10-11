@@ -15,6 +15,9 @@ type Props = {
   initialStatus: "pending" | "paid";
   form?: PaymentForm;
   failed?: boolean;
+  initialExpired?: boolean;
+  requiresReview?: boolean;
+  expiresAt?: string | null;
 };
 declare global {
   interface Window {
@@ -30,8 +33,13 @@ export default function PaymentPanel({
   initialStatus,
   form,
   failed,
+  initialExpired = false,
+  requiresReview = false,
+  expiresAt,
 }: Props) {
   const [status, setStatus] = useState(initialStatus);
+  const [expired, setExpired] = useState(initialExpired);
+  const [review, setReview] = useState(requiresReview);
   const [ready, setReady] = useState(false);
   const [opened, setOpened] = useState(false);
   const [unavailable, setUnavailable] = useState(false);
@@ -51,6 +59,8 @@ export default function PaymentPanel({
         const result = await response.json();
         if (active) {
           setStatus(result.status);
+          setExpired(result.expired);
+          setReview(result.requiresReview);
           setCheckFailed(false);
         }
         if (result.status === "paid") return;
@@ -67,6 +77,10 @@ export default function PaymentPanel({
     };
   }, [id, status]);
   function openPayment() {
+    if (expiresAt && Date.parse(expiresAt) <= Date.now()) {
+      setExpired(true);
+      return;
+    }
     if (!window.Robokassa || !ready) {
       setUnavailable(true);
       return;
@@ -81,7 +95,7 @@ export default function PaymentPanel({
   const paid = status === "paid";
   return (
     <div className="pt-16 md:pt-20 min-h-screen flex items-center">
-      {form && !paid && (
+      {form && !paid && !expired && (
         <Script
           id="robokassa-iframe"
           src="https://auth.robokassa.ru/Merchant/bundle/robokassa_iframe.js"
@@ -102,32 +116,51 @@ export default function PaymentPanel({
             aria-live="polite"
           >
             {bindPrepositions(
-              paid
-                ? mode === "test"
-                  ? "Тестовая оплата прошла"
-                  : "Заказ оплачен"
-                : failed
-                  ? "Оплата не завершена"
-                  : form && !opened
-                    ? "Оплата заказа"
-                    : "Ожидаем подтверждение",
+              review
+                ? "Оплата требует проверки"
+                : expired
+                  ? "Срок резерва истёк"
+                  : paid
+                    ? mode === "test"
+                      ? "Тестовая оплата прошла"
+                      : "Заказ оплачен"
+                    : failed
+                      ? "Оплата не завершена"
+                      : form && !opened
+                        ? "Оплата заказа"
+                        : "Ожидаем подтверждение",
             )}
           </h1>
           <p className="font-body text-copy text-stone-800 leading-relaxed">
             {bindPrepositions(
-              paid
-                ? mode === "test"
-                  ? "Платёжный сценарий проверен. Это тест, доставка не запускается."
-                  : "Спасибо! Мы свяжемся с вами для подготовки заказа."
-                : "Статус обновится после подтверждения Robokassa. Если вы уже оплатили, повторять оплату не нужно.",
+              review
+                ? "Оплата получена после отмены заказа. Свяжитесь со студией: нужно согласовать наличие изделия или возврат оплаты."
+                : expired
+                  ? "Срок резерва истёк. Чтобы продолжить покупку, оформите новый заказ и проверьте наличие. Если вы уже оплатили, свяжитесь со студией."
+                  : paid
+                    ? mode === "test"
+                      ? "Платёжный сценарий проверен. Это тест, доставка не запускается."
+                      : "Спасибо! Мы свяжемся с вами для подготовки заказа."
+                    : "Статус обновится после подтверждения Robokassa. Если вы уже оплатили, повторять оплату не нужно.",
             )}
           </p>
+          {expiresAt && !paid && !expired && (
+            <p className="font-body text-ui text-stone-600">
+              Резерв на 30 минут — до{" "}
+              {new Date(expiresAt).toLocaleTimeString("ru-RU", {
+                timeZone: "Europe/Moscow",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}{" "}
+              (МСК).
+            </p>
+          )}
           {checkFailed && (
             <p role="status" className="font-body text-ui text-stone-600">
               Не удалось обновить статус. Проверим ещё раз автоматически.
             </p>
           )}
-          {form && !paid && (
+          {form && !paid && !expired && (
             <>
               <button
                 type="button"
@@ -143,7 +176,16 @@ export default function PaymentPanel({
                   по кнопке ниже.
                 </p>
               )}
-              <form action={form.action} method="POST">
+              <form
+                onSubmit={(event) => {
+                  if (expiresAt && Date.parse(expiresAt) <= Date.now()) {
+                    event.preventDefault();
+                    setExpired(true);
+                  }
+                }}
+                action={form.action}
+                method="POST"
+              >
                 {Object.entries(form.fields).flatMap(([name, values]) =>
                   (Array.isArray(values) ? values : [values]).map(
                     (value, index) => (
@@ -165,7 +207,7 @@ export default function PaymentPanel({
               </form>
             </>
           )}
-          {!form && !paid && (
+          {!form && !paid && !expired && !expired && (
             <Link
               href={`/payment/${id}`}
               className="block font-body text-ui underline underline-offset-4"

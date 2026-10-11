@@ -12,7 +12,7 @@ export default function ProductGrid({ products }: Props) {
   if (products.length === 0) {
     return (
       <motion.div
-        initial={{ opacity: 0 }}
+        initial={false}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.4 }}
         className="flex flex-col items-center justify-center py-32 text-center"
@@ -29,11 +29,11 @@ export default function ProductGrid({ products }: Props) {
     <AnimatePresence mode="wait">
       <motion.div
         key={products.map((product) => product.id).join("-")}
-        initial={{ opacity: 0 }}
+        initial={false}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.25 }}
-        className="grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:gap-x-8 lg:gap-y-14 xl:grid-cols-3 items-start"
+        className="grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:gap-x-8 lg:gap-y-14 xl:grid-cols-3 items-stretch"
       >
         {products.map((product, i) => (
           <ProductCard key={product.id} product={product} index={i} />

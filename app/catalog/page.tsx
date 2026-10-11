@@ -37,9 +37,9 @@ export default async function CatalogPage({ searchParams }: Props) {
   return (
     <div className="pt-16 md:pt-20">
       {/* Заголовок страницы */}
-      <section className="px-6 md:px-12 lg:px-16 py-16 md:py-24 border-b border-stone-200">
+      <section className="px-6 md:px-12 lg:px-16 py-8 md:py-14 border-b border-stone-200">
         <div className="max-w-[1440px] mx-auto">
-          <p className="font-body text-caption tracking-[0.08em] uppercase text-stone-600 mb-6">
+          <p className="font-body text-caption tracking-[0.08em] uppercase text-stone-600 mb-3">
             Авторская керамика · Roota ceramics
           </p>
           <h1 className="font-display font-normal text-page leading-none text-stone-900">
@@ -49,7 +49,7 @@ export default async function CatalogPage({ searchParams }: Props) {
       </section>
 
       {/* Фильтр + счётчик */}
-      <section className="px-6 md:px-12 lg:px-16 py-7 border-b border-stone-200">
+      <section className="px-6 md:px-12 lg:px-16 py-4 md:py-6 border-b border-stone-200">
         <div className="max-w-[1440px] mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <Suspense fallback={<div className="h-7" />}>
             <CategoryFilter activeSlug={activeSlug} categories={categories} />
@@ -61,7 +61,7 @@ export default async function CatalogPage({ searchParams }: Props) {
       </section>
 
       {/* Сетка товаров */}
-      <section className="px-6 md:px-12 lg:px-16 py-16 md:py-20">
+      <section className="px-6 md:px-12 lg:px-16 pt-6 pb-12 md:py-12">
         <div className="max-w-[1440px] mx-auto">
           <ProductGrid products={filtered} />
         </div>

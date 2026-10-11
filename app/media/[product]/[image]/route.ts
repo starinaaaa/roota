@@ -26,7 +26,8 @@ export async function GET(
   return new Response(file, {
     headers: {
       "Content-Type": file.type,
-      "Cache-Control": "public, max-age=300",
+      "Cache-Control":
+        "public, max-age=300, s-maxage=300, stale-while-revalidate=60",
       "X-Content-Type-Options": "nosniff",
     },
   });

@@ -18,7 +18,26 @@ export const phone = z
   });
 export const checkoutSchema = z
   .object({
-    name: z.string().trim().min(1, "Укажите имя").max(100),
+    name: z
+      .string()
+      .trim()
+      .min(1, "Введите имя и фамилию")
+      .max(100)
+      .refine(
+        (value) => value.split(/\s+/).length >= 2,
+        "Введите имя и фамилию",
+      ),
+    telegram: z
+      .string()
+      .trim()
+      .max(33)
+      .optional()
+      .default("")
+      .transform((value) => value.replace(/^@/, ""))
+      .refine(
+        (value) => !value || /^[a-zA-Z][a-zA-Z0-9_]{4,31}$/.test(value),
+        "Укажите Telegram username, например @anna_ceramics",
+      ),
     phone,
     email: z
       .string()

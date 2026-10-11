@@ -33,7 +33,8 @@ test("migration, checkout rollback, idempotency, stock and cancellation", async 
     legalVersion: "2026-10-11",
     acceptedTerms: true,
     newsletterDataConsent: false,
-    name: "Тест",
+    name: "Тест Покупатель",
+    telegram: "test_buyer",
     phone: "+79990000000",
     email: "test@example.invalid",
     deliveryType: "russia",
@@ -91,6 +92,13 @@ test("migration, checkout rollback, idempotency, stock and cancellation", async 
   const key = randomUUID(),
     a = (await call(sessionA, key)).rows[0].result;
   assert.equal((await call(sessionA, key)).rows[0].result.id, a.id);
+  const contact = (
+    await db.query<{ telegram: string }>(
+      "select request_payload->'form'->>'telegram' telegram from orders where id=$1",
+      [a.id],
+    )
+  ).rows[0];
+  assert.equal(contact.telegram, "test_buyer");
   await assert.rejects(call(sessionB, randomUUID()), /OUT_OF_STOCK/);
   assert.equal(
     (await db.query<{ n: number }>("select stock_qty n from products")).rows[0]

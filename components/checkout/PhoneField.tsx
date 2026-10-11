@@ -139,7 +139,8 @@ export default function PhoneField({
         </p>
       ) : (
         <p id="phone-hint" className="text-caption text-stone-600">
-          Номер должен быть привязан к аккаунту выбранной службы доставки
+          Нужен Ozon для расчёта доставки и уведомлений о посылке. Используйте
+          номер вашего аккаунта Ozon.
         </p>
       )}
     </div>

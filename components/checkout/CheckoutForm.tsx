@@ -34,6 +34,7 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
 
   const [formData, setFormData] = useState<CheckoutFormData>({
     name: "",
+    telegram: "",
     phone: "+7",
     email: "",
     deliveryType: "russia",
@@ -180,14 +181,14 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
               <Field
                 error={fieldErrors.name}
                 onBlur={() => validateField("name")}
-                label="Имя *"
+                label="Имя и фамилия *"
                 id="name"
                 name="name"
                 type="text"
                 value={formData.name}
                 onChange={handleChange}
-                placeholder="Как к вам обращаться"
-                autoComplete="given-name"
+                placeholder="Анна Иванова"
+                autoComplete="name"
                 required
               />
 
@@ -219,6 +220,22 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
                 autoComplete="email"
                 required
               />
+              <Field
+                label="Telegram — необязательно"
+                id="telegram"
+                name="telegram"
+                type="text"
+                value={formData.telegram}
+                onChange={handleChange}
+                onBlur={() => validateField("telegram")}
+                error={fieldErrors.telegram}
+                placeholder="@anna_ceramics"
+                autoComplete="off"
+              />
+              <p className="text-caption text-stone-600">
+                Укажите имя пользователя из настроек Telegram, если вам удобно
+                обсудить заказ там. Не числовой ID и не имя профиля.
+              </p>
             </fieldset>
 
             <div className="divider" />
@@ -256,7 +273,7 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
               />
             </div>
 
-            <div className="space-y-5 font-body text-ui text-stone-800 leading-relaxed">
+            <div className="font-body text-caption text-stone-600 leading-relaxed">
               <div className="flex items-start gap-3">
                 <input
                   id="acceptedTerms"
@@ -272,128 +289,55 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
                   aria-invalid={Boolean(fieldErrors.acceptedTerms)}
                   className="mt-1 w-4 h-4 shrink-0 accent-stone-900"
                 />
-                <div>
-                  <label htmlFor="acceptedTerms" className="cursor-pointer">
-                    Я ознакомился с документами об обработке данных и принимаю
-                    условия покупки. *
-                  </label>
-                  <p className="mt-2 flex flex-col items-start gap-1">
-                    <Link
-                      href="/personal-data-policy"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="underline underline-offset-2"
-                    >
-                      Политика в отношении обработки персональных данных
-                    </Link>
-                    <Link
-                      href="/privacy"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="underline underline-offset-2"
-                    >
-                      Политика конфиденциальности
-                    </Link>
-                    <Link
-                      href="/terms"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="underline underline-offset-2"
-                    >
-                      Пользовательское соглашение
-                    </Link>
-                    <Link
-                      href="/offer"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="underline underline-offset-2"
-                    >
-                      Публичная оферта
-                    </Link>
-                  </p>
-                </div>
+                <label htmlFor="acceptedTerms" className="cursor-pointer">
+                  Принимаю{" "}
+                  <Link
+                    href="/offer"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline underline-offset-2"
+                  >
+                    условия покупки
+                  </Link>{" "}
+                  и{" "}
+                  <Link
+                    href="/terms"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline underline-offset-2"
+                  >
+                    соглашение
+                  </Link>
+                  ; ознакомлен с{" "}
+                  <Link
+                    href="/privacy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline underline-offset-2"
+                  >
+                    политикой конфиденциальности
+                  </Link>{" "}
+                  и{" "}
+                  <Link
+                    href="/personal-data-policy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline underline-offset-2"
+                  >
+                    обработкой данных
+                  </Link>
+                  .
+                </label>
               </div>
               {fieldErrors.acceptedTerms && (
                 <p
                   id="acceptedTerms-error"
                   role="alert"
-                  className="text-red-600"
+                  className="mt-2 text-red-600"
                 >
                   {fieldErrors.acceptedTerms}
                 </p>
               )}
-              <div className="border-t border-stone-200 pt-5 space-y-4">
-                <p className="text-stone-600">
-                  Подписка добровольная и не влияет на заказ. Для неё нужны обе
-                  отметки ниже.
-                </p>
-                <div className="flex items-start gap-3">
-                  <input
-                    id="subscribeToNews"
-                    type="checkbox"
-                    name="subscribeToNews"
-                    checked={formData.subscribeToNews}
-                    onChange={handleChange}
-                    className="mt-1 w-4 h-4 shrink-0 accent-stone-900"
-                  />
-                  <div>
-                    <label htmlFor="subscribeToNews" className="cursor-pointer">
-                      Хочу получать рекламные новости, акции и предложения Roota
-                      по email.
-                    </label>{" "}
-                    <Link
-                      href="/newsletter-consent"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="underline underline-offset-2"
-                    >
-                      Согласие на получение рекламы
-                    </Link>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <input
-                    id="newsletterDataConsent"
-                    type="checkbox"
-                    name="newsletterDataConsent"
-                    checked={formData.newsletterDataConsent}
-                    onChange={handleChange}
-                    aria-describedby={
-                      fieldErrors.newsletterDataConsent
-                        ? "newsletterDataConsent-error"
-                        : undefined
-                    }
-                    aria-invalid={Boolean(fieldErrors.newsletterDataConsent)}
-                    className="mt-1 w-4 h-4 shrink-0 accent-stone-900"
-                  />
-                  <div>
-                    <label
-                      htmlFor="newsletterDataConsent"
-                      className="cursor-pointer"
-                    >
-                      Даю отдельное согласие на обработку моего email для
-                      рекламной подписки.
-                    </label>{" "}
-                    <Link
-                      href="/newsletter-data-consent"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="underline underline-offset-2"
-                    >
-                      Условия обработки данных для подписки
-                    </Link>
-                  </div>
-                </div>
-                {fieldErrors.newsletterDataConsent && (
-                  <p
-                    id="newsletterDataConsent-error"
-                    role="alert"
-                    className="text-red-600"
-                  >
-                    {fieldErrors.newsletterDataConsent}
-                  </p>
-                )}
-              </div>
             </div>
 
             {/* Ошибка */}
@@ -543,22 +487,7 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
             </div>
 
             <p className="font-body text-caption text-stone-600 leading-relaxed">
-              Нажимая «Оформить заказ», вы принимаете условия
-              {bindPrepositions(" ")}
-              <Link
-                href="/offer"
-                className="underline underline-offset-2 hover:text-stone-600 transition-colors duration-200"
-              >
-                публичной оферты
-              </Link>
-              . Обработка данных заказа описана в{bindPrepositions(" ")}
-              <Link
-                href="/privacy"
-                className="underline underline-offset-2 hover:text-stone-600 transition-colors duration-200"
-              >
-                политике конфиденциальности
-              </Link>
-              . Доставка и страховка включены в итог после расчёта.
+              Доставка и страховка включены в итог после расчёта.
             </p>
 
             <Link

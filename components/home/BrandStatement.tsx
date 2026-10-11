@@ -13,7 +13,7 @@ export default function BrandStatement({
   summary?: string;
 }) {
   const ref = useRef<HTMLElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-80px" });
+  const inView = useInView(ref, { once: true, margin: "160px" });
 
   return (
     <section
@@ -23,7 +23,7 @@ export default function BrandStatement({
       <div className="max-w-[1440px] mx-auto">
         {/* Маленький лейбл */}
         <motion.p
-          initial={{ opacity: 0 }}
+          initial={false}
           animate={inView ? { opacity: 1 } : {}}
           transition={{ duration: 0.6, delay: 0.1 }}
           className="font-body text-caption text-stone-600 tracking-[0.08em] uppercase mb-8"
@@ -42,11 +42,11 @@ export default function BrandStatement({
                 .map((line, i) => (
                   <div key={i} className="overflow-hidden">
                     <motion.p
-                      initial={{ y: "100%" }}
+                      initial={false}
                       animate={inView ? { y: 0 } : {}}
                       transition={{
-                        duration: 0.75,
-                        delay: 0.2 + i * 0.1,
+                        duration: 0.3,
+                        delay: i * 0.03,
                         ease: [0.16, 1, 0.3, 1],
                       }}
                       className="font-display font-normal text-section leading-[1.1] text-stone-900"
@@ -60,9 +60,9 @@ export default function BrandStatement({
 
           {/* Текст + кнопка справа */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={false}
             animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.7, delay: 0.5 }}
+            transition={{ duration: 0.3 }}
             className="md:col-span-4 lg:col-span-5"
           >
             <p className="font-body text-copy text-stone-800 leading-loose mb-8 max-w-md">

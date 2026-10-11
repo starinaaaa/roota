@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { checkoutSchema } from "../lib/validation";
 const order = {
-  name: "Тест",
+  name: "Тест Покупатель",
   phone: "+79990000000",
   email: "test@example.invalid",
   deliveryType: "russia",
@@ -52,4 +52,32 @@ test("outdated document acceptance cannot be silently relabelled", () => {
     checkoutSchema.safeParse({ ...order, legalVersion: "2026-10-06" }).success,
     false,
   );
+});
+
+test("checkout requires a full name and accepts only an optional Telegram username", () => {
+  assert.equal(
+    checkoutSchema.safeParse({ ...order, name: "Анна" }).success,
+    false,
+  );
+  assert.equal(
+    checkoutSchema.parse({
+      ...order,
+      name: "Анна Иванова",
+      telegram: " @anna_ceramics ",
+    }).telegram,
+    "anna_ceramics",
+  );
+  assert.equal(checkoutSchema.parse(order).telegram, "");
+  for (const telegram of [
+    "123456789",
+    "https://t.me/anna",
+    "Анна",
+    "@abc",
+    "user/name",
+  ]) {
+    assert.equal(
+      checkoutSchema.safeParse({ ...order, telegram }).success,
+      false,
+    );
+  }
 });

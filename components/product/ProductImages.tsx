@@ -11,6 +11,7 @@ type Props = {
 
 export default function ProductImages({ images: sourceImages, name }: Props) {
   const [selected, setActive] = useState(0);
+  const [loaded, setLoaded] = useState<string[]>([]);
   const [failed, setFailed] = useState<string[]>([]);
   const images = sourceImages.filter((src) => !failed.includes(src));
   const active = Math.min(selected, Math.max(0, images.length - 1));
@@ -60,6 +61,12 @@ export default function ProductImages({ images: sourceImages, name }: Props) {
   }
 
   const multi = images.length > 1;
+  const current = images[active];
+  const currentLoaded = loaded.includes(current);
+  const gallerySizes =
+    "(max-width: 767px) calc(100vw - 48px), (max-width: 1023px) calc(100vw - 96px), (max-width: 1567px) calc(50vw - 104px), 680px";
+  const adjacent =
+    currentLoaded && multi ? images[(active + 1) % images.length] : null;
 
   return (
     <>
@@ -72,11 +79,41 @@ export default function ProductImages({ images: sourceImages, name }: Props) {
             onError={() => unavailable(images[active])}
             alt={`${name} — фото ${active + 1}`}
             fill
-            sizes="(max-width: 1024px) 100vw, 50vw"
+            sizes={gallerySizes}
+            onLoad={() =>
+              setLoaded((previous) =>
+                previous.includes(current) ? previous : [...previous, current],
+              )
+            }
             className="object-contain"
-            priority
+            {...(active === 0
+              ? { preload: true }
+              : { loading: "eager" as const, fetchPriority: "high" as const })}
           />
 
+          {!currentLoaded && (
+            <div
+              role="status"
+              className="absolute inset-0 flex items-center justify-center pointer-events-none"
+            >
+              <span className="rounded-full bg-white/90 px-4 py-2 text-caption text-stone-600">
+                Загружаем фото…
+              </span>
+            </div>
+          )}
+          {adjacent && (
+            <Image
+              src={adjacent}
+              alt=""
+              aria-hidden="true"
+              fill
+              sizes={gallerySizes}
+              loading="eager"
+              fetchPriority="low"
+              className="invisible pointer-events-none"
+              onError={() => unavailable(adjacent)}
+            />
+          )}
           {/* ── Left zone (1/5) — prev + hover tint ── */}
           {multi && (
             <button
@@ -184,7 +221,7 @@ export default function ProductImages({ images: sourceImages, name }: Props) {
               onError={() => unavailable(images[active])}
               alt={`${name} — фото ${active + 1}`}
               fill
-              sizes="100vw"
+              sizes="(max-width: 1555px) 90vw, 1400px"
               className="object-contain"
             />
           </div>

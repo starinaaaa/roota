@@ -27,7 +27,7 @@ interface FeaturedProductsProps {
 
 export default function FeaturedProducts({ products }: FeaturedProductsProps) {
   const sectionRef = useRef<HTMLElement>(null);
-  const inView = useInView(sectionRef, { once: true, margin: "-60px" });
+  const inView = useInView(sectionRef, { once: true, margin: "160px" });
 
   return (
     <section ref={sectionRef} className="pb-28 md:pb-36 px-6 md:px-12 lg:px-16">
@@ -35,18 +35,18 @@ export default function FeaturedProducts({ products }: FeaturedProductsProps) {
         {/* Шапка секции */}
         <div className="flex items-end justify-between mb-10 md:mb-14">
           <motion.h2
-            initial={{ opacity: 0, y: 16 }}
+            initial={false}
             animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.7, ease: "easeOut" }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
             className="font-display font-normal text-section text-stone-900"
           >
             Избранное
           </motion.h2>
 
           <motion.div
-            initial={{ opacity: 0 }}
+            initial={false}
             animate={inView ? { opacity: 1 } : {}}
-            transition={{ duration: 0.7, delay: 0.2 }}
+            transition={{ duration: 0.3, delay: 0.2 }}
           >
             <Link
               href="/catalog"
@@ -77,9 +77,9 @@ export default function FeaturedProducts({ products }: FeaturedProductsProps) {
 
         {/* Кнопка «Весь каталог» на мобильном */}
         <motion.div
-          initial={{ opacity: 0 }}
+          initial={false}
           animate={inView ? { opacity: 1 } : {}}
-          transition={{ duration: 0.6, delay: 0.5 }}
+          transition={{ duration: 0.3 }}
           className="mt-10 flex md:hidden justify-center"
         >
           <Link
@@ -127,16 +127,20 @@ function ProductCardFeatured({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 24 }}
+      className="h-full flex flex-col"
+      initial={false}
       animate={inView ? { opacity: 1, y: 0 } : {}}
       transition={{
-        duration: 0.65,
-        delay: 0.1 + index * 0.08,
+        duration: 0.3,
+        delay: index * 0.03,
         ease: [0.16, 1, 0.3, 1],
       }}
     >
       {/* Link wraps only image + info — CardActions sits outside to avoid nested <a> */}
-      <Link href={`/product/${product.slug}`} className="group block">
+      <Link
+        href={`/product/${product.slug}`}
+        className="group flex flex-col flex-1"
+      >
         {/* Изображение */}
         <div className="relative aspect-square overflow-hidden rounded-lg bg-stone-100 mb-4">
           {hasImage ? (

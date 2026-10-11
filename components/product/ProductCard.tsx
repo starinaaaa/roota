@@ -21,11 +21,11 @@ export default function ProductCard({ product, index = 0 }: Props) {
 
   return (
     <motion.article
-      initial={{ opacity: 0, y: 24 }}
+      initial={false}
       animate={{ opacity: 1, y: 0 }}
       transition={{
-        duration: 0.65,
-        delay: index * 0.07,
+        duration: 0.25,
+        delay: Math.min(index, 3) * 0.03,
         ease: [0.16, 1, 0.3, 1],
       }}
       className="h-full flex flex-col"
@@ -42,7 +42,8 @@ export default function ProductCard({ product, index = 0 }: Props) {
               src={imgSrc!}
               alt={product.name}
               fill
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              sizes="(max-width: 639px) calc(100vw - 48px), (max-width: 767px) calc(50vw - 36px), (max-width: 1023px) calc(50vw - 60px), (max-width: 1279px) calc(50vw - 80px), (max-width: 1567px) calc(33vw - 64px), 459px"
+              loading={index < 3 ? "eager" : "lazy"}
               className="object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.04]"
               onError={() => setImageFailed(true)}
             />

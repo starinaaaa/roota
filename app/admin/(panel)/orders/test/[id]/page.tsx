@@ -50,6 +50,19 @@ export default async function TestOrderPage({
           <p>{order.form.name ?? "—"}</p>
           <p>{order.form.phone ?? "—"}</p>
           <p className="break-all">{order.form.email ?? "—"}</p>
+          {order.form.telegram && (
+            <a
+              className="block underline"
+              target="_blank"
+              rel="noopener noreferrer"
+              href={
+                "https://t.me/" +
+                encodeURIComponent(order.form.telegram.replace(/^@/, ""))
+              }
+            >
+              Telegram: @{order.form.telegram.replace(/^@/, "")}
+            </a>
+          )}
           {order.form.comment && (
             <p className="whitespace-pre-wrap">{order.form.comment}</p>
           )}

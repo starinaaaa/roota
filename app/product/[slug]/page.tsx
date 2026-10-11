@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { bindPrepositions } from "@/lib/typography";
 import { notFound, permanentRedirect } from "next/navigation";
 import { getProductRedirect, siteUrl } from "@/lib/seo";
@@ -45,9 +46,6 @@ export default async function ProductPage({ params }: Props) {
     if (slugRedirect) permanentRedirect("/product/" + slugRedirect);
     notFound();
   }
-
-  // Fetch related now that we have the product (needs category_id + slug)
-  const relatedProducts = await getRelatedProducts(product.category_id, slug);
 
   const inCart = cartItems.some((i) => i.product_id === product.id);
 
@@ -117,7 +115,21 @@ export default async function ProductPage({ params }: Props) {
       </section>
 
       {/* Похожие работы */}
-      <RelatedProducts products={relatedProducts} />
+      <Suspense fallback={null}>
+        <ProductRecommendations categoryId={product.category_id} slug={slug} />
+      </Suspense>
     </div>
   );
+}
+
+// Recommendations must not delay the main photograph and purchase controls.
+async function ProductRecommendations({
+  categoryId,
+  slug,
+}: {
+  categoryId: string;
+  slug: string;
+}) {
+  const products = await getRelatedProducts(categoryId, slug);
+  return <RelatedProducts products={products} />;
 }

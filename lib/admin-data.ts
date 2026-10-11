@@ -38,7 +38,13 @@ export type TestOrder = {
   id: string;
   created_at: string;
   amount: number;
-  form: { name?: string; phone?: string; email?: string; comment?: string };
+  form: {
+    name?: string;
+    phone?: string;
+    email?: string;
+    telegram?: string;
+    comment?: string;
+  };
   items: { name: string; quantity: number; sum: number }[];
   delivery: {
     city?: string;

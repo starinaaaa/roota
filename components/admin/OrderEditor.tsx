@@ -15,6 +15,7 @@ type OrderData = {
   customer_name: string;
   customer_phone: string;
   customer_email: string | null;
+  request_payload?: { form?: { telegram?: string } };
   total_amount: number;
   status: string;
   payment_status: string;
@@ -102,6 +103,21 @@ export default function OrderEditor({ order }: { order: OrderData }) {
               href={"mailto:" + order.customer_email}
             >
               {order.customer_email}
+            </a>
+          )}
+          {order.request_payload?.form?.telegram && (
+            <a
+              className="block underline"
+              target="_blank"
+              rel="noopener noreferrer"
+              href={
+                "https://t.me/" +
+                encodeURIComponent(
+                  order.request_payload.form.telegram.replace(/^@/, ""),
+                )
+              }
+            >
+              Telegram: @{order.request_payload.form.telegram.replace(/^@/, "")}
             </a>
           )}
           <p>

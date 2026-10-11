@@ -148,7 +148,8 @@ test("SQL payment checkout, callback rollback, idempotency, test isolation and R
       )
     ).rows[0];
     const form = {
-      name: "Тест",
+      name: "Тест Покупатель",
+      telegram: "test_buyer",
       phone: "+79991234567",
       email: "test@example.invalid",
       deliveryType: "russia",
@@ -185,6 +186,13 @@ test("SQL payment checkout, callback rollback, idempotency, test isolation and R
       );
     await assert.rejects(checkout("test", 1), /PRICE_CHANGED/);
     const sandbox = (await checkout("test")).rows[0].result;
+    const contact = (
+      await db.query<{ telegram: string }>(
+        "select form->>'telegram' telegram from payment_test_orders where id=$1",
+        [sandbox.test_order_id],
+      )
+    ).rows[0];
+    assert.equal(contact.telegram, "test_buyer");
     assert.equal((await checkout("test")).rows[0].result.id, sandbox.id);
     await assert.rejects(
       db.query("select checkout_robokassa($1,$2,$3,$4,$5,$6) result", [

@@ -36,17 +36,21 @@ export default function RelatedProducts({ products }: Props) {
           {products.map((p, i) => (
             <motion.div
               key={p.id}
-              initial={{ opacity: 0, y: 20 }}
+              className="h-full flex flex-col"
+              initial={false}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-40px" }}
               transition={{
-                duration: 0.55,
+                duration: 0.25,
                 delay: i * 0.07,
                 ease: [0.16, 1, 0.3, 1],
               }}
             >
               {/* Link wraps only image + info — CardActions sits outside to avoid nested <a> */}
-              <Link href={`/product/${p.slug}`} className="group block">
+              <Link
+                href={`/product/${p.slug}`}
+                className="group flex flex-col flex-1"
+              >
                 <div className="relative aspect-square overflow-hidden rounded-lg bg-stone-100 mb-4">
                   {p.images[0] && (
                     <Image

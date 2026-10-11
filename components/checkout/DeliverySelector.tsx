@@ -28,6 +28,8 @@ export default function DeliverySelector({
   const [city, setCity] = useState(""),
     [selectedCity, setSelectedCity] = useState<DeliveryCity | null>(null),
     [suggestions, setSuggestions] = useState<DeliveryCity[]>([]),
+    [cityLoading, setCityLoading] = useState(false),
+    [cityError, setCityError] = useState(""),
     [suggestOpen, setSuggestOpen] = useState(false),
     [active, setActive] = useState(-1),
     [method, setMethod] = useState(false),
@@ -74,8 +76,13 @@ export default function DeliverySelector({
     const abort = new AbortController();
     if (city.trim().length < 2 || selectedCity) {
       setSuggestions([]);
+      setCityLoading(false);
+      setCityError("");
       return;
     }
+    setSuggestions([]);
+    setCityLoading(true);
+    setCityError("");
     const timer = setTimeout(async () => {
       try {
         const r = await fetch(
@@ -84,11 +91,19 @@ export default function DeliverySelector({
         );
         const data = await r.json();
         if (!abort.signal.aborted) {
-          setSuggestions(r.ok ? data.cities : []);
+          if (!r.ok) throw new Error("CITY_SEARCH_FAILED");
+          setSuggestions(data.cities);
           setActive(-1);
         }
       } catch {
-        if (!abort.signal.aborted) setSuggestions([]);
+        if (!abort.signal.aborted) {
+          setSuggestions([]);
+          setCityError(
+            "Не удалось загрузить города. Измените запрос, чтобы повторить поиск.",
+          );
+        }
+      } finally {
+        if (!abort.signal.aborted) setCityLoading(false);
       }
     }, 200);
     return () => {
@@ -168,6 +183,7 @@ export default function DeliverySelector({
       setPoint(p);
       setOpen(false);
       setError("Укажите полный номер телефона и повторите расчёт доставки.");
+      document.getElementById("phone")?.focus();
       return;
     }
     request("quote", p);
@@ -189,7 +205,13 @@ export default function DeliverySelector({
           role="combobox"
           aria-autocomplete="list"
           aria-expanded={suggestOpen && suggestions.length > 0}
-          aria-controls="delivery-cities"
+          aria-controls={
+            suggestOpen && suggestions.length > 0
+              ? "delivery-cities"
+              : undefined
+          }
+          aria-describedby="delivery-city-status"
+          aria-busy={cityLoading}
           aria-activedescendant={
             active >= 0 && suggestOpen ? `delivery-city-${active}` : undefined
           }
@@ -199,6 +221,9 @@ export default function DeliverySelector({
           onFocus={() => setSuggestOpen(true)}
           onBlur={() => setSuggestOpen(false)}
           onChange={(e) => {
+            setSuggestions([]);
+            setCityLoading(e.target.value.trim().length >= 2);
+            setCityError("");
             setCity(e.target.value);
             setSelectedCity(null);
             setSuggestOpen(true);
@@ -226,6 +251,21 @@ export default function DeliverySelector({
           placeholder="Начните вводить название города"
           className="w-full border border-stone-200 bg-transparent font-body text-ui px-4 py-3"
         />
+        <p
+          id="delivery-city-status"
+          role="status"
+          aria-live="polite"
+          className="text-caption text-stone-600"
+        >
+          {cityLoading
+            ? "Ищем города…"
+            : cityError ||
+              (!selectedCity && city.trim().length >= 2 && !suggestions.length
+                ? "Город не найден. Уточните название."
+                : !selectedCity
+                  ? "Введите минимум две буквы и выберите город из подсказок."
+                  : "")}
+        </p>
         {suggestOpen && suggestions.length > 0 && (
           <ul
             id="delivery-cities"

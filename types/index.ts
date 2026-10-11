@@ -106,6 +106,7 @@ export type OrderItem = {
 // Форма оформления заказа
 export type CheckoutFormData = {
   name: string;
+  telegram: string;
   phone: string;
   email: string;
   deliveryType: DeliveryType;

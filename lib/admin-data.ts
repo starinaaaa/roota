@@ -1,3 +1,4 @@
+import { relationList } from "./relation-list";
 import "server-only";
 import { requireAdmin } from "./auth";
 import { createServerClient } from "./supabase/server";
@@ -88,7 +89,13 @@ export async function getOrder(id: string) {
     .eq("id", id)
     .maybeSingle();
   if (error) throw new Error("Не удалось загрузить заказ");
-  return data;
+  return data
+    ? {
+        ...data,
+        shipments: relationList(data.shipments),
+        notification: relationList(data.notification),
+      }
+    : null;
 }
 export async function listAdminProducts() {
   await requireAdmin();

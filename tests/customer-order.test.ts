@@ -1,3 +1,4 @@
+import { relationList } from "../lib/relation-list";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
@@ -201,4 +202,12 @@ test("private order links rotate atomically; shipment status is trusted, ordered
   } finally {
     await db.close();
   }
+});
+
+test("one-to-one shipment and owner notification relations are displayed", () => {
+  const shipment = { posting_number: "POST-1", carrier_status: "on_way" };
+  assert.equal(relationList(shipment)[0].posting_number, "POST-1");
+  assert.equal(relationList([shipment])[0].carrier_status, "on_way");
+  assert.deepEqual(relationList(null), []);
+  assert.equal(relationList({ state: "sent" })[0].state, "sent");
 });

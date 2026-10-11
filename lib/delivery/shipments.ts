@@ -145,7 +145,10 @@ export async function refreshShipmentStatus(orderId: string) {
   const posting = result.postings.find(
     (p) => p.posting_number === s.posting_number,
   );
-  if (!posting) throw new Error("Статус не получен.");
+  if (!posting)
+    throw new Error(
+      "Ozon не нашёл отправление. Проверьте его номер и аккаунт Ozon.",
+    );
   let history = {};
   try {
     history = postingHistorySchema.parse(

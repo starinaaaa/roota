@@ -28,7 +28,7 @@ export async function syncOrderShipments() {
     const syncOne = async (row: (typeof rows)[number]) => {
       try {
         const posting = byNumber.get(row.posting_number);
-        if (!posting) throw new Error("Нет статуса отправления");
+        if (!posting) throw new Error("POSTING_NOT_FOUND");
         const { data: previous } = await db
           .from("order_shipments")
           .select("carrier_status,status_history")
@@ -60,12 +60,15 @@ export async function syncOrderShipments() {
         );
         if (saveError) throw new Error("Не удалось сохранить статус");
         if (data) result.updated++;
-      } catch {
+      } catch (error) {
         result.failed++;
         await db
           .from("order_shipments")
           .update({
-            last_error: "Не удалось обновить доставку. Повторим автоматически.",
+            last_error:
+              error instanceof Error && error.message === "POSTING_NOT_FOUND"
+                ? "Ozon не нашёл отправление. Проверьте его номер и аккаунт Ozon. Повторим проверку автоматически."
+                : "Не удалось обновить доставку. Повторим автоматически.",
             next_sync_at: new Date(Date.now() + 15 * 60000).toISOString(),
             sync_claim: null,
           })

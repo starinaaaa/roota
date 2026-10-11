@@ -1,3 +1,4 @@
+import { relationList } from "@/lib/relation-list";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -72,7 +73,7 @@ export default async function CustomerOrderPage({
     order.status !== "cancelled" &&
     order.payment_status === "pending" &&
     paymentMode() === "live";
-  const shipment = order.shipments?.[0];
+  const shipment = relationList(order.shipments)[0];
   const tracking = order.tracking_number || shipment?.posting_number;
   const point = order.delivery_details?.point;
   const contact = new URL(site.telegram);

@@ -30,6 +30,9 @@ test("migration, checkout rollback, idempotency, stock and cancellation", async 
     sessionB = randomUUID(),
     actor = randomUUID();
   const form = {
+    legalVersion: "2026-10-11",
+    acceptedTerms: true,
+    newsletterDataConsent: false,
     name: "Тест",
     phone: "+79990000000",
     email: "test@example.invalid",

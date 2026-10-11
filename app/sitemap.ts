@@ -4,7 +4,19 @@ import { siteUrl } from "@/lib/seo";
 export const dynamic = "force-dynamic";
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
-    ...["/", "/catalog", "/about", "/contacts", "/delivery"].map((path) => ({
+    ...[
+      "/",
+      "/catalog",
+      "/about",
+      "/contacts",
+      "/delivery",
+      "/offer",
+      "/terms",
+      "/privacy",
+      "/personal-data-policy",
+      "/newsletter-consent",
+      "/newsletter-data-consent",
+    ].map((path) => ({
       url: siteUrl(path),
     })),
     ...(await getProducts()).map((p) => ({

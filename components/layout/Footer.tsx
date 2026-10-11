@@ -39,7 +39,7 @@ export default async function Footer() {
                 Авторская керамика ручной работы. Москва.
               </p>
               <p className="font-body text-caption text-stone-600 leading-relaxed mt-4">
-                Самозанятый {bindPrepositions(seller.name)}
+                Самозанятая {bindPrepositions(seller.name)}
                 <br />
                 ИНН {bindPrepositions(seller.inn)}
                 <br />
@@ -93,14 +93,6 @@ export default async function Footer() {
               <ul className="space-y-3">
                 <li>
                   <a
-                    href={seller.phoneHref}
-                    className="font-body text-ui text-stone-800 hover:text-stone-900 transition-colors duration-200"
-                  >
-                    {bindPrepositions(seller.phone)}
-                  </a>
-                </li>
-                <li>
-                  <a
                     href={site.telegram}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -147,13 +139,25 @@ export default async function Footer() {
                 href="/privacy"
                 className="font-body text-ui text-stone-800 hover:text-stone-600 transition-colors duration-200"
               >
-                Конфиденциальность
+                Политика конфиденциальности
+              </Link>
+              <Link
+                href="/personal-data-policy"
+                className="font-body text-ui text-stone-800 hover:text-stone-600 transition-colors duration-200"
+              >
+                Обработка персональных данных
+              </Link>
+              <Link
+                href="/newsletter-consent"
+                className="font-body text-ui text-stone-800 hover:text-stone-600 transition-colors duration-200"
+              >
+                Рекламные новости
               </Link>
               <Link
                 href="/terms"
                 className="font-body text-ui text-stone-800 hover:text-stone-600 transition-colors duration-200"
               >
-                Условия использования
+                Пользовательское соглашение
               </Link>
             </div>
           </div>

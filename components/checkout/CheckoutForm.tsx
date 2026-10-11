@@ -13,6 +13,7 @@ import type { CartItem, CheckoutFormData } from "@/types";
 
 import PhoneField from "./PhoneField";
 import DeliverySelector from "./DeliverySelector";
+import { LEGAL_VERSION } from "@/lib/legal";
 import { checkoutSchema } from "@/lib/validation";
 import type { DeliveryQuote } from "@/lib/delivery/model";
 
@@ -38,6 +39,9 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
     deliveryType: "russia",
     address: "",
     comment: "",
+    legalVersion: LEGAL_VERSION,
+    acceptedTerms: false,
+    newsletterDataConsent: false,
     subscribeToNews: false,
   });
 
@@ -252,26 +256,145 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
               />
             </div>
 
-            {/* Подписка на новости */}
-            <label className="flex items-start gap-3 cursor-pointer group">
-              <input
-                type="checkbox"
-                name="subscribeToNews"
-                checked={formData.subscribeToNews}
-                onChange={handleChange}
-                className="mt-1 w-4 h-4 accent-stone-900 cursor-pointer"
-              />
-              <span className="font-body text-ui tracking-[0.05em] text-stone-600 group-hover:text-stone-900 transition-colors duration-200">
-                Даю отдельное согласие на получение новостей и рекламных
-                сообщений студии по электронной почте. Отказ не влияет на заказ.
-              </span>
-            </label>
-            <Link
-              href="/newsletter-consent"
-              className="font-body text-ui text-stone-600 underline underline-offset-2"
-            >
-              Условия согласия на рассылку и обработку данных для неё
-            </Link>
+            <div className="space-y-5 font-body text-ui text-stone-800 leading-relaxed">
+              <div className="flex items-start gap-3">
+                <input
+                  id="acceptedTerms"
+                  type="checkbox"
+                  name="acceptedTerms"
+                  checked={formData.acceptedTerms}
+                  onChange={handleChange}
+                  aria-describedby={
+                    fieldErrors.acceptedTerms
+                      ? "acceptedTerms-error"
+                      : undefined
+                  }
+                  aria-invalid={Boolean(fieldErrors.acceptedTerms)}
+                  className="mt-1 w-4 h-4 shrink-0 accent-stone-900"
+                />
+                <div>
+                  <label htmlFor="acceptedTerms" className="cursor-pointer">
+                    Я ознакомился с документами об обработке данных и принимаю
+                    условия покупки. *
+                  </label>
+                  <p className="mt-2 flex flex-col items-start gap-1">
+                    <Link
+                      href="/personal-data-policy"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline underline-offset-2"
+                    >
+                      Политика в отношении обработки персональных данных
+                    </Link>
+                    <Link
+                      href="/privacy"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline underline-offset-2"
+                    >
+                      Политика конфиденциальности
+                    </Link>
+                    <Link
+                      href="/terms"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline underline-offset-2"
+                    >
+                      Пользовательское соглашение
+                    </Link>
+                    <Link
+                      href="/offer"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline underline-offset-2"
+                    >
+                      Публичная оферта
+                    </Link>
+                  </p>
+                </div>
+              </div>
+              {fieldErrors.acceptedTerms && (
+                <p
+                  id="acceptedTerms-error"
+                  role="alert"
+                  className="text-red-600"
+                >
+                  {fieldErrors.acceptedTerms}
+                </p>
+              )}
+              <div className="border-t border-stone-200 pt-5 space-y-4">
+                <p className="text-stone-600">
+                  Подписка добровольная и не влияет на заказ. Для неё нужны обе
+                  отметки ниже.
+                </p>
+                <div className="flex items-start gap-3">
+                  <input
+                    id="subscribeToNews"
+                    type="checkbox"
+                    name="subscribeToNews"
+                    checked={formData.subscribeToNews}
+                    onChange={handleChange}
+                    className="mt-1 w-4 h-4 shrink-0 accent-stone-900"
+                  />
+                  <div>
+                    <label htmlFor="subscribeToNews" className="cursor-pointer">
+                      Хочу получать рекламные новости, акции и предложения Roota
+                      по email.
+                    </label>{" "}
+                    <Link
+                      href="/newsletter-consent"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline underline-offset-2"
+                    >
+                      Согласие на получение рекламы
+                    </Link>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <input
+                    id="newsletterDataConsent"
+                    type="checkbox"
+                    name="newsletterDataConsent"
+                    checked={formData.newsletterDataConsent}
+                    onChange={handleChange}
+                    aria-describedby={
+                      fieldErrors.newsletterDataConsent
+                        ? "newsletterDataConsent-error"
+                        : undefined
+                    }
+                    aria-invalid={Boolean(fieldErrors.newsletterDataConsent)}
+                    className="mt-1 w-4 h-4 shrink-0 accent-stone-900"
+                  />
+                  <div>
+                    <label
+                      htmlFor="newsletterDataConsent"
+                      className="cursor-pointer"
+                    >
+                      Даю отдельное согласие на обработку моего email для
+                      рекламной подписки.
+                    </label>{" "}
+                    <Link
+                      href="/newsletter-data-consent"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline underline-offset-2"
+                    >
+                      Условия обработки данных для подписки
+                    </Link>
+                  </div>
+                </div>
+                {fieldErrors.newsletterDataConsent && (
+                  <p
+                    id="newsletterDataConsent-error"
+                    role="alert"
+                    className="text-red-600"
+                  >
+                    {fieldErrors.newsletterDataConsent}
+                  </p>
+                )}
+              </div>
+            </div>
 
             {/* Ошибка */}
             <AnimatePresence>

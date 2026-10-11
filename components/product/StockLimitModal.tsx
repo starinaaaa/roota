@@ -137,8 +137,10 @@ export default function StockLimitModal({
             }}
           >
             <label>
-              Email или телефон
+              Email
               <input
+                type="email"
+                autoComplete="email"
                 className="admin-input"
                 required
                 value={contact}

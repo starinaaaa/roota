@@ -111,6 +111,9 @@ export type CheckoutFormData = {
   deliveryType: DeliveryType;
   address: string;
   comment: string;
+  legalVersion: string;
+  acceptedTerms: boolean;
+  newsletterDataConsent: boolean;
   subscribeToNews: boolean;
   deliveryQuoteId?: string;
 };

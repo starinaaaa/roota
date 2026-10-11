@@ -15,12 +15,6 @@ export default async function ContactsPage() {
   const site = await getSiteContent();
   const CONTACTS = [
     {
-      label: "Телефон",
-      value: seller.phone,
-      href: seller.phoneHref,
-      external: false,
-    },
-    {
       label: "Email",
       value: site.email,
       href: "mailto:" + site.email,
@@ -103,7 +97,7 @@ export default async function ContactsPage() {
           <div className="md:col-span-8 lg:col-span-9 max-w-xl">
             <p className="font-body text-copy text-stone-900 mb-3">Москва</p>
             <p className="font-body text-copy text-stone-900 mb-3">
-              Самозанятый {bindPrepositions(seller.name)}. ИНН{" "}
+              Самозанятая {bindPrepositions(seller.name)}. ИНН{" "}
               {bindPrepositions(seller.inn)}.
             </p>
             <p className="font-body text-copy text-stone-800 leading-loose">

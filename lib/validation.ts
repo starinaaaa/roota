@@ -1,3 +1,4 @@
+import { LEGAL_VERSION } from "./legal";
 import { normalizeRussianPhone } from "./contacts";
 import { z } from "zod";
 export const uuid = z.string().uuid();
@@ -31,8 +32,23 @@ export const checkoutSchema = z
     deliveryType: z.enum(["moscow", "russia", "pickup"]),
     address: z.string().trim().max(500),
     comment: z.string().trim().max(2000),
+    legalVersion: z.literal(LEGAL_VERSION, {
+      error:
+        "Документы обновлены. Обновите страницу и подтвердите условия заново",
+    }),
+    acceptedTerms: z
+      .boolean()
+      .refine(
+        (value) => value,
+        "Подтвердите ознакомление с документами и принятие условий",
+      ),
+    newsletterDataConsent: z.boolean().optional().default(false),
     subscribeToNews: z.boolean().optional().default(false),
     deliveryQuoteId: uuid.optional(),
+  })
+  .refine((v) => !v.subscribeToNews || v.newsletterDataConsent, {
+    message: "Для подписки подтвердите отдельное согласие на обработку email",
+    path: ["newsletterDataConsent"],
   })
   .refine((v) => v.deliveryType === "pickup" || v.address.length >= 5, {
     message: "Укажите адрес доставки",

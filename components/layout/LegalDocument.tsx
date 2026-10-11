@@ -32,7 +32,6 @@ export default function LegalDocument({
             <Link href="/personal-data-policy">
               Обработка персональных данных
             </Link>
-            <Link href="/newsletter-consent">Рекламные новости</Link>
           </nav>
           <div className="md:col-span-8 lg:col-span-9 max-w-2xl space-y-12">
             {sections.map((section) => (

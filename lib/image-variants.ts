@@ -12,8 +12,6 @@ export async function prepareImageVariants(original: Buffer) {
             .rotate()
             .resize({
               width,
-              height: width,
-              fit: "inside",
               withoutEnlargement: true,
             })
             .webp({ quality: width <= 960 ? 78 : 84 })

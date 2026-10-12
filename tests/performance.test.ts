@@ -113,3 +113,16 @@ test("city dictionary and bounded cached pickup snapshots support all-city addre
     await db.close();
   }
 });
+
+test("portrait variants provide the declared width instead of shrinking into a square", async () => {
+  const original = await sharp({
+    create: { width: 900, height: 1600, channels: 3, background: "#b49167" },
+  })
+    .jpeg()
+    .toBuffer();
+  const variants = await prepareImageVariants(original);
+  const small = variants.find((v) => v.width === 360)!;
+  const m = await sharp(small.data).metadata();
+  assert.equal(m.width, 360);
+  assert.equal(m.height, 640);
+});

@@ -1,4 +1,4 @@
-import { imageWidths } from "@/lib/image-sizes";
+import { imageWidths, imageVariantVersion } from "@/lib/image-sizes";
 import { getSiteContent } from "@/lib/site";
 import { createServerClient } from "@/lib/supabase/server";
 import { uuid } from "@/lib/validation";
@@ -18,10 +18,16 @@ export async function GET(
     !imageWidths.some((size) => size === width)
   )
     return new Response(null, { status: 400 });
+  const version = new URL(request.url).searchParams.get("v");
+  if (version !== null && version !== String(imageVariantVersion))
+    return new Response(null, { status: 400 });
+  const variantSuffix = version
+    ? `.v${version}.w${width}.webp`
+    : `.w${width}.webp`;
   const storage = createServerClient().storage.from("product-drafts");
   const path = `site/${image}.webp`;
   let downloaded = await storage.download(
-    width ? `${path}.w${width}.webp` : path,
+    width ? `${path}${variantSuffix}` : path,
   );
   if (downloaded.error && width) downloaded = await storage.download(path);
   const { data, error } = downloaded;

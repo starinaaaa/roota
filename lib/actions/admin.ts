@@ -1,4 +1,5 @@
 "use server";
+import { imageVariantVersion } from "@/lib/image-sizes";
 import { prepareImageVariants } from "@/lib/image-variants";
 import { requireAdmin } from "@/lib/auth";
 import { createServerClient } from "@/lib/supabase/server";
@@ -155,10 +156,14 @@ export async function uploadImage(form: FormData) {
     for (let start = 0; start < variants.length; start += 3) {
       const results = await Promise.all(
         variants.slice(start, start + 3).map((variant) =>
-          storage.upload(`${path}.w${variant.width}.webp`, variant.data, {
-            contentType: "image/webp",
-            upsert: false,
-          }),
+          storage.upload(
+            `${path}.v${imageVariantVersion}.w${variant.width}.webp`,
+            variant.data,
+            {
+              contentType: "image/webp",
+              upsert: false,
+            },
+          ),
         ),
       );
       if (results.some((result) => result.error))

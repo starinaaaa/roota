@@ -1,6 +1,6 @@
 "use client";
 import manifest from "./local-image-manifest.json";
-import { preparedImageWidth } from "./image-sizes";
+import { preparedImageWidth, imageVariantVersion } from "./image-sizes";
 export default function imageLoader({
   src,
   width,
@@ -12,6 +12,7 @@ export default function imageLoader({
   const size = preparedImageWidth(width);
   const local = (manifest as Record<string, string>)[src];
   if (local) return `${local}-${size}.webp`;
-  if (/^\/(media|site-media)\//.test(src)) return `${src}?w=${size}`;
+  if (/^\/(media|site-media)\//.test(src))
+    return `${src}?w=${size}&v=${imageVariantVersion}`;
   return src;
 }

@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { imageVariantVersion } from "../lib/image-sizes";
 import { prepareImageVariants } from "../lib/image-variants";
 async function main() {
   const db = createClient(
@@ -21,7 +22,8 @@ async function main() {
       ? [{ bucket: "product-drafts", storage_path: `site/${hero[1]}.webp` }]
       : []),
   ];
-  let prepared = 0;
+  let prepared = 0,
+    skipped = 0;
   const failures: string[] = [];
   for (let start = 0; start < rows.length; start += 3) {
     await Promise.all(
@@ -31,6 +33,14 @@ async function main() {
           const { data: file, error } = await storage.download(
             row.storage_path,
           );
+          if (
+            error &&
+            String(error.statusCode) === "404" &&
+            process.argv.includes("--skip-missing")
+          ) {
+            skipped++;
+            return;
+          }
           if (error || !file) throw Error("download");
           const variants = await prepareImageVariants(
             Buffer.from(await file.arrayBuffer()),
@@ -41,7 +51,7 @@ async function main() {
                 .slice(i, i + 3)
                 .map((v) =>
                   storage.upload(
-                    `${row.storage_path}.w${v.width}.webp`,
+                    `${row.storage_path}.v${imageVariantVersion}.w${v.width}.webp`,
                     v.data,
                     { contentType: "image/webp", upsert: true },
                   ),
@@ -55,7 +65,12 @@ async function main() {
         }
       }),
     );
-    console.log({ prepared, total: rows.length, failed: failures.length });
+    console.log({
+      prepared,
+      skipped,
+      total: rows.length,
+      failed: failures.length,
+    });
   }
   if (failures.length) {
     console.error({ failedPaths: failures });

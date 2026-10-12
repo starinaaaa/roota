@@ -105,7 +105,7 @@ export const ozon: DeliveryAdapter = {
       insurance = r.posting.estimated_insurance_cost;
     if (delivery?.currency_code !== "RUB" || insurance?.currency_code !== "RUB")
       throw new Error(
-        "Не удалось получить стоимость доставки и страховки. Повторите расчёт.",
+        "Не удалось получить стоимость доставки. Повторите расчёт.",
       );
     return {
       deliveryCost: moneyToKopecks(delivery.amount) / 100,

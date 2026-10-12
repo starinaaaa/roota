@@ -78,10 +78,11 @@ export default async function TestOrderPage({
                 ПВЗ: {order.delivery.point.id}
               </p>
               <p>
-                Доставка: {formatPrice(order.delivery.delivery_amount ?? 0)}
-              </p>
-              <p>
-                Страхование: {formatPrice(order.delivery.insurance_amount ?? 0)}
+                Доставка:{" "}
+                {formatPrice(
+                  Number(order.delivery.delivery_amount ?? 0) +
+                    Number(order.delivery.insurance_amount ?? 0),
+                )}
               </p>
             </>
           ) : (

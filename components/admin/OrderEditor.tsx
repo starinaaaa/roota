@@ -159,7 +159,7 @@ export default function OrderEditor({ order }: { order: OrderData }) {
           ))}
           {order.delivery_amount != null && (
             <p>
-              Доставка и страховка:{" "}
+              Доставка:{" "}
               {formatPrice(
                 Number(order.delivery_amount) +
                   Number(order.insurance_amount ?? 0),

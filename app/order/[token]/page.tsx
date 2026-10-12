@@ -255,14 +255,13 @@ export default async function CustomerOrderPage({
             </div>
             <div className="flex justify-between gap-3">
               <span>Доставка</span>
-              <span>{formatPrice(Number(order.delivery_amount ?? 0))}</span>
+              <span>
+                {formatPrice(
+                  Number(order.delivery_amount ?? 0) +
+                    Number(order.insurance_amount ?? 0),
+                )}
+              </span>
             </div>
-            {Number(order.insurance_amount) > 0 && (
-              <div className="flex justify-between gap-3">
-                <span>Страховка</span>
-                <span>{formatPrice(Number(order.insurance_amount))}</span>
-              </div>
-            )}
             <div className="flex justify-between gap-3 text-copy border-t border-stone-200 pt-4">
               <span>Итого</span>
               <span>{formatPrice(order.total_amount)}</span>

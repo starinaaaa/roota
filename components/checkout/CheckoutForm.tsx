@@ -427,16 +427,9 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
                   )}
                 </span>
               </div>
-              {quote && (
+              {quote?.estimatedDays != null && (
                 <p className="font-body text-caption text-stone-600">
-                  Включая страховку{" "}
-                  {bindPrepositions(formatPrice(quote.insuranceCost))}
-                  {quote.estimatedDays !== null && (
-                    <>
-                      {bindPrepositions(" ")}· ориентировочно{" "}
-                      {quote.estimatedDays} дн. после передачи Ozon
-                    </>
-                  )}
+                  Ориентировочно {quote.estimatedDays} дн. после передачи Ozon
                 </p>
               )}
               <div className="divider pt-1" />
@@ -487,7 +480,7 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
             </div>
 
             <p className="font-body text-caption text-stone-600 leading-relaxed">
-              Доставка и страховка включены в итог после расчёта.
+              Стоимость доставки включена в итог после расчёта.
             </p>
 
             <Link

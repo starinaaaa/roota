@@ -80,112 +80,86 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Public projection of the carrier catalogue; never expose private delivery rows.
+// Cities and prepared carrier snapshots contain no customer data.
 export async function GET(request: NextRequest) {
-  const { addressCity, coordinates, majorCities, normalizeCity } =
-    await import("@/lib/delivery/geo");
-  const action = request.nextUrl.searchParams.get("action"),
-    query = request.nextUrl.searchParams.get("q")?.trim() ?? "";
+  const { normalizeCity } = await import("@/lib/delivery/geo");
+  const params = request.nextUrl.searchParams;
+  const action = params.get("action"),
+    query = params.get("q")?.trim() ?? "";
   if (
     !["cities", "catalog"].includes(action ?? "") ||
     query.length < 2 ||
     query.length > 100
   )
     return NextResponse.json({ error: "Укажите город." }, { status: 422 });
-  const search = normalizeCity(query);
-  const pattern = "%" + search.replace(/[\\%_]/g, "\\$&") + "%";
-  const offset = Number(request.nextUrl.searchParams.get("offset") ?? 0);
-  if (!Number.isInteger(offset) || offset < 0 || offset > 100000)
+  const city = normalizeCity(query),
+    db = createServerClient();
+  const headers = {
+    "Cache-Control": "public, max-age=300",
+    "Vercel-CDN-Cache-Control":
+      "public, s-maxage=3600, stale-while-revalidate=300",
+  };
+  if (action === "cities") {
+    const pattern = city.replace(/[\\%_]/g, "\\$&") + "%";
+    const { data, error } = await db
+      .from("delivery_city_catalog")
+      .select("name,latitude,longitude")
+      .like("city_key", pattern)
+      .order("name")
+      .limit(12);
+    if (error)
+      return NextResponse.json(
+        { error: "Не удалось загрузить города." },
+        { status: 503 },
+      );
+    return NextResponse.json({ cities: data ?? [] }, { headers });
+  }
+  const coordinate = (key: string, bound: number) => {
+    const value = params.get(key);
+    if (value === null) return null;
+    const number = Number(value);
+    if (!value || !Number.isFinite(number) || Math.abs(number) > bound)
+      throw new Error("COORDINATES");
+    return number;
+  };
+  try {
+    const lat = coordinate("lat", 90),
+      lon = coordinate("lon", 180);
+    const bounds = params.has("bounds")
+      ? params.get("bounds")!.split(",").map(Number)
+      : null;
+    if (
+      bounds &&
+      (bounds.length !== 4 ||
+        bounds.some((n) => !Number.isFinite(n)) ||
+        Math.abs(bounds[0]) > 90 ||
+        Math.abs(bounds[2]) > 90 ||
+        Math.abs(bounds[1]) > 180 ||
+        Math.abs(bounds[3]) > 180 ||
+        bounds[0] > bounds[2] ||
+        bounds[1] > bounds[3])
+    )
+      throw new Error("BOUNDS");
+    const address = params.get("address")?.trim() ?? "";
+    if (address.length > 100) throw new Error("ADDRESS");
+    const { data, error } = await db.rpc("delivery_catalog_slice", {
+      p_city: city,
+      p_lat: lat,
+      p_lon: lon,
+      p_bounds: bounds,
+      p_query: address,
+      p_limit: 150,
+    });
+    if (error)
+      return NextResponse.json(
+        { error: "Не удалось загрузить пункты выдачи." },
+        { status: 503 },
+      );
+    return NextResponse.json(data, { headers });
+  } catch {
     return NextResponse.json(
-      { error: "Некорректная страница." },
+      { error: "Проверьте область поиска." },
       { status: 422 },
     );
-  const db = createServerClient();
-  const { data, error, count } = await db
-    .from("delivery_points")
-    .select("data", { count: "exact" })
-    .eq("provider", "ozon")
-    .eq("active", true)
-    .ilike("address", pattern)
-    .order("address")
-    .order("id")
-    .range(
-      action === "cities" ? 0 : offset,
-      action === "cities" ? 999 : offset + 999,
-    );
-  if (error)
-    return NextResponse.json(
-      { error: "Не удалось загрузить пункты выдачи." },
-      { status: 503 },
-    );
-  if (action === "cities") {
-    const cities = new Map(
-      majorCities
-        .filter((c) => normalizeCity(c.name).startsWith(search))
-        .map((c) => [c.name, c]),
-    );
-    for (const row of data ?? []) {
-      const name = addressCity(row.data.full_address),
-        position = coordinates(row.data.coordinates);
-      if (
-        name &&
-        position &&
-        normalizeCity(name).startsWith(search) &&
-        !cities.has(name)
-      )
-        cities.set(name, { name, ...position });
-    }
-    return NextResponse.json(
-      { cities: [...cities.values()].slice(0, 12) },
-      { headers: { "Cache-Control": "public, max-age=60" } },
-    );
   }
-  // PostgREST caps a response at 1,000 rows. Fetch every city page on the
-  // server so the map and address search are complete from their first render.
-  const rows = [...(data ?? [])];
-  const starts: number[] = [];
-  for (let start = offset + 1000; start < (count ?? 0); start += 1000)
-    starts.push(start);
-  for (let batch = 0; batch < starts.length; batch += 8) {
-    const pages = await Promise.all(
-      starts.slice(batch, batch + 8).map((start) =>
-        db
-          .from("delivery_points")
-          .select("data")
-          .eq("provider", "ozon")
-          .eq("active", true)
-          .ilike("address", pattern)
-          .order("address")
-          .order("id")
-          .range(start, start + 999),
-      ),
-    );
-    if (pages.some((page) => page.error))
-      return NextResponse.json(
-        { error: "Не удалось загрузить все пункты выдачи. Повторите позже." },
-        { status: 503 },
-      );
-    for (const page of pages) rows.push(...(page.data ?? []));
-  }
-  if (!data?.length && !offset) {
-    const { count } = await createServerClient()
-      .from("delivery_points")
-      .select("id", { count: "exact", head: true })
-      .eq("provider", "ozon")
-      .eq("active", true);
-    if (!count)
-      return NextResponse.json(
-        { error: "Каталог пунктов Ozon временно недоступен. Повторите позже." },
-        { status: 503 },
-      );
-  }
-  return NextResponse.json(
-    {
-      points: rows
-        .filter((p) => pointInCity(p.data.full_address, search))
-        .map((p) => publicPoint(p.data)),
-      nextOffset: null,
-    },
-    { headers: { "Cache-Control": "public, max-age=300" } },
-  );
 }

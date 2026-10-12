@@ -10,6 +10,7 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 // ── Internal row shapes ───────────────────────────────────────────────────────
 
 type ProductImageRow = {
+  id: string;
   public_url: string;
   alt_text: string | null;
   sort_order: number;
@@ -85,6 +86,7 @@ const PRODUCT_SELECT = `
     sort_order
   ),
   product_images (
+    id,
     public_url,
     alt_text,
     sort_order,
@@ -101,7 +103,7 @@ function mapProduct(row: ProductRow): Product {
       if (a.is_primary !== b.is_primary) return a.is_primary ? -1 : 1;
       return a.sort_order - b.sort_order;
     })
-    .map((img) => img.public_url);
+    .map((img) => `/media/${row.id}/${img.id}`);
 
   return {
     id: row.id,

@@ -49,7 +49,12 @@ export async function proxy(request: NextRequest) {
     response.headers.set("Cache-Control", "private, no-store");
     response.headers.set("X-Robots-Tag", "noindex, nofollow");
   }
-  if (!request.cookies.get("cart_session"))
+  const publicCatalogue =
+    request.method === "GET" &&
+    (request.nextUrl.pathname === "/api/delivery" ||
+      request.nextUrl.pathname.startsWith("/media/") ||
+      request.nextUrl.pathname.startsWith("/site-media/"));
+  if (!publicCatalogue && !request.cookies.get("cart_session"))
     response.cookies.set("cart_session", crypto.randomUUID(), {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",

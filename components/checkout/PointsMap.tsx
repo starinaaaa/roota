@@ -5,72 +5,110 @@ import { useEffect, useRef, useState } from "react";
 import type { DeliveryPoint } from "@/lib/delivery/model";
 import type { DeliveryCity } from "@/lib/delivery/geo";
 import { loadYandexMaps } from "@/lib/delivery/yandex-map";
+type Viewport = { lat: number; lon: number; bounds: number[] };
 export default function PointsMap({
   city,
   points,
   onSelect,
+  onViewport,
 }: {
   city: DeliveryCity;
   points: DeliveryPoint[];
   onSelect: (point: DeliveryPoint) => void;
+  onViewport: (value: Viewport) => void;
 }) {
-  const element = useRef<HTMLDivElement>(null);
+  const element = useRef<HTMLDivElement>(null),
+    cluster = useRef<ymaps.Clusterer | null>(null);
+  const latest = useRef({ points, onViewport });
+  useEffect(() => {
+    latest.current = { points, onViewport };
+  }, [points, onViewport]);
   const [error, setError] = useState(""),
     [selected, setSelected] = useState<DeliveryPoint | null>(null);
   const key = process.env.NEXT_PUBLIC_YANDEX_MAPS_API_KEY;
+  const updateMarkers = useRef<(() => void) | null>(null);
   useEffect(() => {
     if (!key) return;
     let disposed = false,
-      map: ymaps.Map | undefined;
+      map: ymaps.Map | undefined,
+      timer: ReturnType<typeof setTimeout> | undefined;
     const observer = new ResizeObserver(() => map?.container.fitToViewport());
+    const report = () => {
+      if (!map || disposed) return;
+      const bounds = map.getBounds(),
+        centre = map.getCenter();
+      if (!bounds) return;
+      const round = (n: number) => Math.round(n * 1000) / 1000;
+      latest.current.onViewport({
+        lat: round(centre[0]),
+        lon: round(centre[1]),
+        bounds: [
+          Math.floor(bounds[0][0] * 1000) / 1000,
+          Math.floor(bounds[0][1] * 1000) / 1000,
+          Math.ceil(bounds[1][0] * 1000) / 1000,
+          Math.ceil(bounds[1][1] * 1000) / 1000,
+        ],
+      });
+    };
     async function mount() {
       const api = await loadYandexMaps(key!);
       if (disposed || !element.current) return;
       map = new api.Map(element.current, {
         center: [city.latitude, city.longitude],
-        zoom: 11,
+        zoom: 12,
         controls: ["zoomControl", "fullscreenControl"],
       });
       observer.observe(element.current);
-      const clusterOptions = {
-        preset: "islands#invertedBlueClusterIcons" as const,
+      const options = {
+        preset: "islands#invertedBlueClusterIcons",
         groupByCoordinates: false,
         clusterDisableClickZoom: false,
         clusterOpenBalloonOnClick: false,
       };
-      const cluster = new api.Clusterer(clusterOptions);
-      const markers = points
-        .filter((p) => p.coordinates)
-        .map((p) => {
-          const marker = new api.Placemark(
-            [p.coordinates!.latitude, p.coordinates!.longitude],
-            {},
-            { preset: "islands#blueDotIcon", openBalloonOnClick: false },
-          );
-          marker.events.add("click", () => {
-            if (!disposed) setSelected(p);
-          });
-          return marker;
-        });
-      cluster.add(markers);
-      // Yandex supports Clusterer here; community typings omit that overload.
-      map.geoObjects.add(cluster as unknown as ymaps.IGeoObject);
-      // Keep the selected city's centre even when only the first page of points is loaded.
-    }
-    mount().catch((e) => {
-      if (!disposed)
-        setError(
-          e instanceof Error
-            ? e.message
-            : "Не удалось открыть Яндекс.Карты. Выберите пункт из списка.",
+      cluster.current = new api.Clusterer(options);
+      map.geoObjects.add(cluster.current as unknown as ymaps.IGeoObject);
+      updateMarkers.current = () => {
+        if (disposed || !cluster.current) return;
+        cluster.current.removeAll();
+        cluster.current.add(
+          latest.current.points
+            .filter((p) => p.coordinates)
+            .map((p) => {
+              const marker = new api.Placemark(
+                [p.coordinates!.latitude, p.coordinates!.longitude],
+                {},
+                { preset: "islands#blueDotIcon", openBalloonOnClick: false },
+              );
+              marker.events.add("click", () => {
+                if (!disposed) setSelected(p);
+              });
+              return marker;
+            }),
         );
+      };
+      updateMarkers.current();
+      map.events.add("boundschange", () => {
+        clearTimeout(timer);
+        timer = setTimeout(report, 180);
+      });
+      report();
+    }
+    mount().catch(() => {
+      if (!disposed)
+        setError("Не удалось открыть карту. Выберите пункт из списка.");
     });
     return () => {
       disposed = true;
+      clearTimeout(timer);
       observer.disconnect();
       map?.destroy();
+      cluster.current = null;
+      updateMarkers.current = null;
     };
-  }, [city, points, key]);
+  }, [city.latitude, city.longitude, key]);
+  useEffect(() => {
+    updateMarkers.current?.();
+  }, [points]);
   const current =
     selected && points.some((p) => p.id === selected.id) ? selected : null;
   return (

@@ -1,4 +1,5 @@
 "use server";
+import { prepareImageVariants } from "@/lib/image-variants";
 import { requireAdmin } from "@/lib/auth";
 import { createServerClient } from "@/lib/supabase/server";
 import { orderChangeSchema, productSchema, uuid } from "@/lib/validation";
@@ -134,16 +135,8 @@ export async function uploadImage(form: FormData) {
       meta = await processor.metadata();
     if (!["jpeg", "png", "webp"].includes(meta.format ?? ""))
       return { error: "Формат изображения не поддерживается" };
-    const display = await processor
-      .rotate()
-      .resize({
-        width: 2400,
-        height: 2400,
-        fit: "inside",
-        withoutEnlargement: true,
-      })
-      .webp({ quality: 92 })
-      .toBuffer();
+    const variants = await prepareImageVariants(original);
+    const display = variants[variants.length - 1].data;
     const id = crypto.randomUUID(),
       path = `${productId}/${id}.webp`,
       db = createServerClient(),
@@ -159,6 +152,20 @@ export async function uploadImage(form: FormData) {
       upsert: false,
     });
     if (error) return { error: "Не удалось загрузить фото" };
+    for (let start = 0; start < variants.length; start += 3) {
+      const results = await Promise.all(
+        variants.slice(start, start + 3).map((variant) =>
+          storage.upload(`${path}.w${variant.width}.webp`, variant.data, {
+            contentType: "image/webp",
+            upsert: false,
+          }),
+        ),
+      );
+      if (results.some((result) => result.error))
+        return {
+          error: "Не удалось сохранить размеры фотографии. Повторите загрузку.",
+        };
+    }
     const { data: signed } = await storage.createSignedUrl(path, 3600);
     return {
       image: {

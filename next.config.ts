@@ -24,6 +24,15 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        source: "/optimized/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
         source: "/order/:path*",
         headers: [
           { key: "Referrer-Policy", value: "no-referrer" },
@@ -35,6 +44,8 @@ const nextConfig: NextConfig = {
   },
   experimental: { serverActions: { bodySizeLimit: "12mb" } },
   images: {
+    loader: "custom",
+    loaderFile: "./lib/image-loader.ts",
     remotePatterns,
     deviceSizes: [360, 480, 640, 750, 828, 1080, 1200, 1440, 1920, 2048],
   },

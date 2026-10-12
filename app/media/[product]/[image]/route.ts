@@ -1,8 +1,9 @@
+import { imageWidths } from "@/lib/image-sizes";
 import { createClient } from "@supabase/supabase-js";
 import { createServerClient } from "@/lib/supabase/server";
 import { uuid } from "@/lib/validation";
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ product: string; image: string }> },
 ) {
   const { product, image } = await params;
@@ -19,15 +20,27 @@ export async function GET(
     .eq("product_id", product)
     .maybeSingle();
   if (error || !data) return new Response(null, { status: 404 });
-  const { data: file, error: storageError } = await createServerClient()
-    .storage.from(data.bucket)
-    .download(data.storage_path);
+  const width = Number(new URL(request.url).searchParams.get("w"));
+  if (
+    new URL(request.url).searchParams.has("w") &&
+    !imageWidths.some((size) => size === width)
+  )
+    return new Response(null, { status: 400 });
+  const storage = createServerClient().storage.from(data.bucket);
+  let downloaded = await storage.download(
+    width ? `${data.storage_path}.w${width}.webp` : data.storage_path,
+  );
+  if (downloaded.error && width)
+    downloaded = await storage.download(data.storage_path);
+  const { data: file, error: storageError } = downloaded;
   if (storageError || !file) return new Response(null, { status: 404 });
   return new Response(file, {
     headers: {
       "Content-Type": file.type,
       "Cache-Control":
         "public, max-age=300, s-maxage=300, stale-while-revalidate=60",
+      "Vercel-CDN-Cache-Control":
+        "public, s-maxage=3600, stale-while-revalidate=60",
       "X-Content-Type-Options": "nosniff",
     },
   });

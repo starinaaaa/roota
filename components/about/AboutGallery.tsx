@@ -1,29 +1,41 @@
 "use client";
-
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-
 type Photo = { src: string; alt: string };
-
 export default function AboutGallery({ photos }: { photos: Photo[] }) {
   const track = useRef<HTMLDivElement>(null);
-  const [edges, setEdges] = useState({ start: true, end: false });
-
+  const position = useRef(0);
+  const [active, setActive] = useState(0);
+  const count = photos.length;
+  useLayoutEffect(() => {
+    const element = track.current;
+    if (!element || count < 2) return;
+    const align = () => {
+      const stride = (element.firstElementChild as HTMLElement).offsetWidth + 8;
+      element.scrollTo({
+        left: (count * 2 + position.current) * stride,
+        behavior: "instant",
+      });
+    };
+    align();
+    const observer = new ResizeObserver(align);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [count]);
   const step = (direction: number) => {
     const element = track.current;
     if (!element) return;
-    const photo = element.firstElementChild as HTMLElement | null;
+    const stride = (element.firstElementChild as HTMLElement).offsetWidth + 8;
     element.scrollBy({
-      left: direction * ((photo?.offsetWidth ?? element.clientWidth) + 8),
+      left: direction * stride,
       behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
         ? "instant"
         : "smooth",
     });
   };
-
-  if (!photos.length) return null;
-
+  if (!count) return null;
+  const copies = count > 1 ? 5 : 1;
   return (
     <section
       aria-label="Фотографии мастерской Roota"
@@ -32,51 +44,72 @@ export default function AboutGallery({ photos }: { photos: Photo[] }) {
       <div
         ref={track}
         role="region"
-        aria-label="Лента фотографий — листайте по горизонтали"
+        aria-label="Бесконечная лента фотографий — листайте по горизонтали"
         tabIndex={0}
+        onKeyDown={(event) => {
+          if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+            event.preventDefault();
+            step(event.key === "ArrowRight" ? 1 : -1);
+          }
+        }}
         onScroll={(event) => {
-          const element = event.currentTarget;
-          setEdges({
-            start: element.scrollLeft <= 1,
-            end:
-              element.scrollLeft + element.clientWidth >=
-              element.scrollWidth - 1,
-          });
+          if (count < 2) return;
+          const el = event.currentTarget;
+          const stride = (el.firstElementChild as HTMLElement).offsetWidth + 8,
+            period = count * stride,
+            centre = 2 * period;
+          const left = el.scrollLeft;
+          // Equivalent copies on both sides allow touch, trackpad and arrows to wrap without an empty edge.
+          if (left < centre - period / 2 - 1)
+            el.scrollTo({ left: left + period, behavior: "instant" });
+          else if (left > centre + period / 2 + 1)
+            el.scrollTo({ left: left - period, behavior: "instant" });
+          const index = ((Math.round(left / stride) % count) + count) % count;
+          position.current = index;
+          setActive(index);
         }}
         className="flex gap-2 overflow-x-auto snap-x snap-mandatory overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden focus-visible:outline-2 focus-visible:outline-stone-700 focus-visible:outline-offset-4"
       >
-        {photos.map((photo) => (
-          <div
-            key={photo.src}
-            className="relative aspect-square shrink-0 basis-[78%] snap-start sm:basis-[calc((100%_-_8px)/2)] md:basis-[calc((100%_-_16px)/3)] lg:basis-[calc((100%_-_24px)/4)]"
-          >
-            <Image
-              src={photo.src}
-              alt={photo.alt}
-              fill
-              sizes="(max-width: 640px) 78vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              className="object-cover"
-            />
-          </div>
-        ))}
+        {Array.from({ length: copies }, (_, copy) =>
+          photos.map((photo, index) => (
+            <div
+              key={`${copy}-${photo.src}`}
+              aria-hidden={copies > 1 && copy !== 2 ? true : undefined}
+              className="relative aspect-square shrink-0 basis-[78%] snap-start sm:basis-[calc((100%_-_8px)/2)] md:basis-[calc((100%_-_16px)/3)] lg:basis-[calc((100%_-_24px)/4)]"
+            >
+              <Image
+                src={photo.src}
+                alt={copies > 1 && copy !== 2 ? "" : photo.alt}
+                fill
+                sizes="(max-width: 640px) 78vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                className="object-cover"
+                loading={copy === 2 && index < 4 ? "eager" : "lazy"}
+              />
+            </div>
+          )),
+        )}
       </div>
-      {photos.length > 1 && (
-        <div className="mt-6 flex justify-end gap-2 px-6 md:px-12 lg:px-16">
+      {count > 1 && (
+        <div className="mt-6 flex items-center justify-end gap-2 px-6 md:px-12 lg:px-16">
+          <span
+            className="mr-auto font-body text-caption text-stone-500"
+            aria-live="polite"
+          >
+            {active + 1} / {count}
+          </span>
           <button
             type="button"
             aria-label="Предыдущие фотографии"
-            disabled={edges.start}
             onClick={() => step(-1)}
-            className="flex h-11 w-11 items-center justify-center rounded-full border border-stone-300 text-stone-900 transition-colors hover:bg-stone-100 focus-visible:outline-2 disabled:opacity-30 disabled:cursor-default"
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-stone-300 text-stone-900 hover:bg-stone-100 focus-visible:outline-2"
           >
             <ChevronLeft size={20} strokeWidth={1.5} />
           </button>
           <button
             type="button"
             aria-label="Следующие фотографии"
-            disabled={edges.end}
             onClick={() => step(1)}
-            className="flex h-11 w-11 items-center justify-center rounded-full border border-stone-300 text-stone-900 transition-colors hover:bg-stone-100 focus-visible:outline-2 disabled:opacity-30 disabled:cursor-default"
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-stone-300 text-stone-900 hover:bg-stone-100 focus-visible:outline-2"
           >
             <ChevronRight size={20} strokeWidth={1.5} />
           </button>

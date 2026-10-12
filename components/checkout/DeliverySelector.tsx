@@ -1,6 +1,6 @@
 "use client";
 import { bindPrepositions } from "@/lib/typography";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { normalizeRussianPhone } from "@/lib/contacts";
 import type { DeliveryPoint, DeliveryQuote } from "@/lib/delivery/model";
@@ -39,7 +39,15 @@ export default function DeliverySelector({
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [open, setOpen] = useState(false),
-    [listLimit, setListLimit] = useState(100);
+    [listLimit, setListLimit] = useState(100),
+    [viewport, setViewport] = useState<{
+      lat: number;
+      lon: number;
+      bounds: number[];
+    } | null>(null),
+    [catalogLoading, setCatalogLoading] = useState(false),
+    [hasMore, setHasMore] = useState(false);
+  const catalogController = useRef<AbortController | null>(null);
   const dialog = useRef<HTMLDialogElement>(null),
     controller = useRef<AbortController | null>(null),
     revision = useRef(0),
@@ -49,6 +57,9 @@ export default function DeliverySelector({
   function reset() {
     revision.current++;
     controller.current?.abort();
+    catalogController.current?.abort();
+    setViewport(null);
+    setCatalogLoading(false);
     setPoint(null);
     setPoints([]);
     setListLimit(100);
@@ -118,8 +129,72 @@ export default function DeliverySelector({
     setSuggestOpen(false);
     setMethod(false);
   }
+  const loadPoints = useCallback(async () => {
+    if (!selectedCity) return;
+    catalogController.current?.abort();
+    const abort = new AbortController();
+    catalogController.current = abort;
+    setCatalogLoading(true);
+    setError("");
+    const params = new URLSearchParams({
+      action: "catalog",
+      q: selectedCity.name,
+    });
+    if (query.trim().length >= 2) params.set("address", query.trim());
+    else if (viewport) {
+      params.set("lat", String(viewport.lat));
+      params.set("lon", String(viewport.lon));
+      params.set("bounds", viewport.bounds.join(","));
+    }
+    try {
+      const response = await fetch(`/api/delivery?${params}`, {
+        signal: abort.signal,
+      });
+      const data = await response.json();
+      if (abort.signal.aborted) return;
+      if (!response.ok)
+        throw new Error(data.error || "Не удалось загрузить пункты.");
+      setPoints(data.points);
+      setHasMore(data.hasMore);
+      setListLimit(100);
+    } catch (error) {
+      if (!abort.signal.aborted)
+        setError(
+          error instanceof Error
+            ? error.message
+            : "Не удалось загрузить пункты.",
+        );
+    } finally {
+      if (!abort.signal.aborted) setCatalogLoading(false);
+    }
+  }, [selectedCity, viewport, query]);
+  useEffect(() => {
+    if (!open) {
+      catalogController.current?.abort();
+      return;
+    }
+    const timer = setTimeout(() => {
+      void loadPoints();
+    }, 180);
+    return () => {
+      clearTimeout(timer);
+      catalogController.current?.abort();
+    };
+  }, [open, loadPoints]);
+  const onViewport = useCallback(
+    (value: { lat: number; lon: number; bounds: number[] }) => {
+      setViewport((old) =>
+        JSON.stringify(old) === JSON.stringify(value) ? old : value,
+      );
+    },
+    [],
+  );
   async function request(action: "points" | "quote", selected?: DeliveryPoint) {
     if (!selectedCity) return;
+    if (action === "points") {
+      void loadPoints();
+      return;
+    }
     controller.current?.abort();
     const abort = new AbortController();
     controller.current = abort;
@@ -131,34 +206,23 @@ export default function DeliverySelector({
       onQuoteRef.current(null);
     }
     try {
-      const response =
-        action === "points"
-          ? await fetch(
-              `/api/delivery?action=catalog&q=${encodeURIComponent(selectedCity.name)}`,
-              { signal: abort.signal },
-            )
-          : await fetch("/api/delivery", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                action,
-                phone,
-                city: selectedCity.name,
-                pointId: selected?.id,
-              }),
-              signal: abort.signal,
-            });
+      const response = await fetch("/api/delivery", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action,
+          phone,
+          city: selectedCity.name,
+          pointId: selected?.id,
+        }),
+        signal: abort.signal,
+      });
       const result = await response.json();
       if (version !== revision.current) return;
       if (!response.ok)
         throw new Error(result.error || "Не удалось рассчитать доставку.");
-      if (action === "points") {
-        setPoints(result.points);
-        setListLimit(100);
-      } else {
-        onQuoteRef.current(result.quote);
-        setOpen(false);
-      }
+      onQuoteRef.current(result.quote);
+      setOpen(false);
     } catch (e) {
       if (version === revision.current && !abort.signal.aborted)
         setError(
@@ -169,15 +233,7 @@ export default function DeliverySelector({
     }
   }
   const validPhone = Boolean(normalizeRussianPhone(phone));
-  const visible = useMemo(
-    () =>
-      points.filter((p) =>
-        (p.name + " " + p.address)
-          .toLocaleLowerCase("ru")
-          .includes(query.toLocaleLowerCase("ru")),
-      ),
-    [points, query],
-  );
+  const visible = points;
   function choose(p: DeliveryPoint) {
     if (!validPhone) {
       setPoint(p);
@@ -324,7 +380,6 @@ export default function DeliverySelector({
                 onClick={() => {
                   setOpen(true);
                   setQuery("");
-                  request("points");
                 }}
                 className="font-body text-caption uppercase tracking-[0.12em] border border-stone-300 px-5 py-3 disabled:opacity-50"
               >
@@ -406,6 +461,7 @@ export default function DeliverySelector({
                 city={selectedCity}
                 points={visible}
                 onSelect={choose}
+                onViewport={onViewport}
               />
             )}
             <div className="max-h-[30dvh] md:max-h-[55dvh] overflow-y-auto space-y-2">
@@ -428,7 +484,7 @@ export default function DeliverySelector({
                   </li>
                 ))}
               </ul>
-              {!busy && !visible.length && !error && (
+              {!busy && !catalogLoading && !visible.length && !error && (
                 <p role="status" className="text-ui text-stone-600">
                   {bindPrepositions(
                     points.length
@@ -450,10 +506,22 @@ export default function DeliverySelector({
             </div>
           </div>
           <p className="text-caption text-stone-600">
-            На карте все пункты города: {points.length}. После выбора проверим
-            доставку для вашего заказа и рассчитаем стоимость.
+            Показано пунктов: {points.length}. Перемещайте карту или ищите по
+            адресу. После выбора проверим доставку для вашего заказа
+            и рассчитаем стоимость.
             {!validPhone && " Для расчёта понадобится номер телефона."}
           </p>
+          {hasMore && (
+            <p className="text-caption text-stone-600">
+              Приблизьте карту или уточните адрес, чтобы увидеть остальные
+              пункты.
+            </p>
+          )}
+          {catalogLoading && (
+            <p role="status" className="text-ui text-stone-600">
+              Загружаем пункты…
+            </p>
+          )}
           {busy && (
             <p role="status" className="text-ui text-stone-600">
               {bindPrepositions(

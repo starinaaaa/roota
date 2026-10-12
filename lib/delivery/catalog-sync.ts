@@ -134,7 +134,14 @@ export async function syncCatalog(
     do {
       const page = await syncCatalogPage(db, transport, method);
       count += page.count;
-      if (!page.more) return { count, more: false };
+      if (!page.more) {
+        const { error: snapshotError } = await db.rpc(
+          "refresh_delivery_city_catalog",
+        );
+        if (snapshotError)
+          throw new Error("Не удалось обновить справочник городов.");
+        return { count, more: false };
+      }
     } while (Date.now() - start < budgetMs);
     return { count, more: true };
   } finally {

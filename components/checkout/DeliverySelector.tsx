@@ -378,6 +378,7 @@ export default function DeliverySelector({
                 type="button"
                 disabled={busy}
                 onClick={() => {
+                  setCatalogLoading(true);
                   setOpen(true);
                   setQuery("");
                 }}

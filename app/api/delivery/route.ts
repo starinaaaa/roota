@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
 
 // Cities and prepared carrier snapshots contain no customer data.
 export async function GET(request: NextRequest) {
-  const { normalizeCity } = await import("@/lib/delivery/geo");
+  const { normalizeCity, majorCities } = await import("@/lib/delivery/geo");
   const params = request.nextUrl.searchParams;
   const action = params.get("action"),
     query = params.get("q")?.trim() ?? "";
@@ -112,7 +112,16 @@ export async function GET(request: NextRequest) {
         { error: "Не удалось загрузить города." },
         { status: 503 },
       );
-    return NextResponse.json({ cities: data ?? [] }, { headers });
+    const preferred = majorCities.filter((candidate) =>
+      normalizeCity(candidate.name).startsWith(city),
+    );
+    const suggestions = new Map(preferred.map((city) => [city.name, city]));
+    for (const city of data ?? [])
+      if (!suggestions.has(city.name)) suggestions.set(city.name, city);
+    return NextResponse.json(
+      { cities: [...suggestions.values()].slice(0, 12) },
+      { headers },
+    );
   }
   const coordinate = (key: string, bound: number) => {
     const value = params.get(key);

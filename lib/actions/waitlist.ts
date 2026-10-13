@@ -19,29 +19,18 @@ export async function addToWaitlist(
   const value = email.data.toLowerCase();
   try {
     const db = createServerClient();
-    const { data } = await db
-      .from("products")
-      .select("id")
-      .eq("id", productId)
-      .eq("publication_status", "published")
-      .maybeSingle();
-    if (!data) return { error: "Изделие недоступно" };
-    const { error } = await db
-      .from("waitlist")
-      .upsert(
-        { product_id: productId, contact: value },
-        { onConflict: "product_id,contact", ignoreDuplicates: true },
-      );
-    if (error) return { error: "Не удалось сохранить заявку" };
-    const { error: consentError } = await db.rpc("request_email_subscription", {
+    const { error: consentError } = await db.rpc("subscribe_restock", {
       p_email: value,
-      p_purpose: "restock",
-      p_resource: productId,
+      p_product: productId,
       p_token: randomBytes(32).toString("hex"),
-      p_version: "restock-2026-10-14",
+      p_version: "restock-direct-2026-10-14",
     });
     if (consentError)
-      return { error: "Не удалось отправить подтверждение. Попробуйте позже." };
+      return {
+        error: consentError.message.includes("RATE_LIMIT")
+          ? "Слишком много заявок. Попробуйте позже."
+          : "Не удалось сохранить подписку. Проверьте email или попробуйте позже.",
+      };
     return {};
   } catch {
     return { error: "Не удалось связаться со студией" };

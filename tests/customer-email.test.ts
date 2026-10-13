@@ -14,7 +14,7 @@ async function database() {
  create table order_access(order_id uuid references orders,token text);
  create table carts(id uuid primary key default gen_random_uuid(),session_id text unique);
  create table cart_items(cart_id uuid references carts,product_id uuid references products,quantity integer);
- create table waitlist(id uuid primary key default gen_random_uuid(),product_id uuid references products,contact text,notified_at timestamptz);
+ create table waitlist(id uuid primary key default gen_random_uuid(),product_id uuid references products,contact text,notified_at timestamptz,unique(product_id,contact));
  create function mutate_cart(s text,p uuid,q integer,op text,mode text) returns void language plpgsql set search_path=public as $$ declare c uuid; begin
  if not exists(select 1 from products where id=p and stock_qty>=q and publication_status='published') then raise exception 'OUT_OF_STOCK'; end if;
  insert into carts(session_id) values(s) on conflict(session_id) do nothing;select id into c from carts where session_id=s;
@@ -31,6 +31,12 @@ async function database() {
   await db.exec(
     await readFile(
       "supabase/migrations/20261013223502_review_delivery_guard.sql",
+      "utf8",
+    ),
+  );
+  await db.exec(
+    await readFile(
+      "supabase/migrations/20261013231515_restock_direct_consent.sql",
       "utf8",
     ),
   );
@@ -498,6 +504,71 @@ test("review submission rejects missing delivery, preserves any rating and dedup
         state: "pending",
       },
     ]);
+  } finally {
+    await db.close();
+  }
+});
+
+test("direct restock consent activates immediately without confirming ownership, deduplicates and respects revocation", async () => {
+  const db = await database();
+  try {
+    const p = randomUUID(),
+      token = "b".repeat(64);
+    await db.query(
+      "insert into products values($1,'Тарелка','plate',1,'published')",
+      [p],
+    );
+    await db.query(
+      "select subscribe_restock('direct@example.com',$1,$2,'direct-v1')",
+      [p, token],
+    );
+    await db.query(
+      "select subscribe_restock('direct@example.com',$1,$2,'direct-v1')",
+      [p, "c".repeat(64)],
+    );
+    const c = (
+      await db.query<{
+        confirmed_at: null;
+        direct_consent_at: string;
+        token: string;
+      }>("select confirmed_at,direct_consent_at,token from email_subscriptions")
+    ).rows;
+    assert.equal(c.length, 1);
+    assert.equal(c[0].confirmed_at, null);
+    assert.ok(c[0].direct_consent_at);
+    assert.equal(c[0].token, token);
+    assert.equal(
+      (await db.query("select * from email_messages where kind='confirm'")).rows
+        .length,
+      0,
+    );
+    await db.query("select open_email_restock($1)", [p]);
+    await db.exec("select prepare_email_queue()");
+    assert.equal(
+      (await db.query("select * from claim_email_messages(10)")).rows.length,
+      1,
+    );
+    await db.query("select revoke_email_subscription($1,false)", [token]);
+    await db.exec(
+      "update email_messages set state='pending'; select claim_email_messages(10)",
+    );
+    assert.equal(
+      (await db.query<{ state: string }>("select state from email_messages"))
+        .rows[0].state,
+      "cancelled",
+    );
+    await db.query(
+      "select subscribe_restock('direct@example.com',$1,$2,'direct-v1')",
+      [p, "d".repeat(64)],
+    );
+    assert.equal(
+      (
+        await db.query<{ revoked_at: null }>(
+          "select revoked_at from email_subscriptions",
+        )
+      ).rows[0].revoked_at,
+      null,
+    );
   } finally {
     await db.close();
   }

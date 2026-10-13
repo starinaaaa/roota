@@ -33,7 +33,7 @@ export default async function ReviewPage({
   )
     notFound();
   return (
-    <main className="max-w-xl mx-auto px-6 py-16 space-y-6">
+    <div className="max-w-xl mx-auto px-6 pt-32 pb-16 space-y-6">
       <h1 className="font-display text-page">Как вам ваша тарелочка?</h1>
       <p>
         Заказ {order.data.order_number}. Будем рады честному отзыву — любая
@@ -88,6 +88,6 @@ export default async function ReviewPage({
           <button className="admin-button">Отправить отзыв</button>
         </form>
       )}
-    </main>
+    </div>
   );
 }

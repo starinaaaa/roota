@@ -26,7 +26,7 @@ export default async function EmailPage({
   const expired =
     Date.parse(s.expires_at) < new Date().getTime() && !s.confirmed_at;
   return (
-    <main className="max-w-xl mx-auto px-6 py-16 space-y-6">
+    <div className="max-w-xl mx-auto px-6 pt-32 pb-16 space-y-6">
       <h1 className="font-display text-page">Почта Roota</h1>
       {query.confirmed && <p role="status">Email подтверждён. Спасибо!</p>}
       {query.unsubscribed && (
@@ -71,6 +71,6 @@ export default async function EmailPage({
       <a href="/privacy" className="underline">
         Политика конфиденциальности
       </a>
-    </main>
+    </div>
   );
 }

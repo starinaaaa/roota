@@ -11,7 +11,7 @@ export default async function ReviewsPage() {
     .limit(50);
   if (error) throw new Error("Не удалось загрузить отзывы");
   return (
-    <main className="max-w-3xl mx-auto px-6 py-16 space-y-8">
+    <div className="max-w-3xl mx-auto px-6 pt-32 pb-16 space-y-8">
       <h1 className="font-display text-page">Отзывы</h1>
       {!data.length && <p>Здесь скоро появятся отзывы покупателей.</p>}
       {data.map((r) => (
@@ -37,6 +37,6 @@ export default async function ReviewsPage() {
           </div>
         </article>
       ))}
-    </main>
+    </div>
   );
 }

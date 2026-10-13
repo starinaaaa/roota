@@ -36,7 +36,7 @@ export default async function RestorePage({
     .maybeSingle();
   if (!d) notFound();
   return (
-    <main className="max-w-xl mx-auto px-6 py-16 space-y-6">
+    <div className="max-w-xl mx-auto px-6 pt-32 pb-16 space-y-6">
       <h1 className="font-display text-page">Ваша корзина</h1>
       <ul>
         {d.items.map(
@@ -69,6 +69,6 @@ export default async function RestorePage({
       <a href="/catalog" className="underline">
         Перейти в каталог
       </a>
-    </main>
+    </div>
   );
 }

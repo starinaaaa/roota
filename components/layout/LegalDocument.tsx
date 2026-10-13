@@ -9,7 +9,7 @@ export default function LegalDocument({
   sections: { heading: string; paragraphs: string[] }[];
 }) {
   return (
-    <div className="pt-16 md:pt-20">
+    <div className="pt-16 md:pt-20 [overflow-wrap:anywhere]">
       <section className="py-16 md:py-24 px-6 md:px-12 lg:px-16">
         <div className="max-w-[1440px] mx-auto">
           <p className="font-body text-caption text-stone-600 uppercase mb-8">
@@ -33,7 +33,7 @@ export default function LegalDocument({
               Обработка персональных данных
             </Link>
           </nav>
-          <div className="md:col-span-8 lg:col-span-9 max-w-2xl space-y-12">
+          <div className="min-w-0 md:col-span-8 lg:col-span-9 max-w-2xl space-y-12">
             {sections.map((section) => (
               <section key={section.heading}>
                 <h2 className="font-body text-caption uppercase text-stone-600 mb-5">

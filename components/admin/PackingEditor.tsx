@@ -10,7 +10,7 @@ type Props = {
   rules: PackingRule[];
   categories: { id: string; name: string }[];
   configured: boolean;
-  pointCount: number;
+  pointCount: number | null;
   syncedAt: string | null;
 };
 export default function PackingEditor({
@@ -44,7 +44,7 @@ export default function PackingEditor({
             ? "Настройки приложения заданы"
             : "Добавьте OZON_CLIENT_ID, OZON_CLIENT_SECRET и OZON_SHIPMENT_METHOD_ID (необязателен, если в Ozon один активный метод) в Vercel."}
         </p>
-        <p>Загружено активных ПВЗ: {pointCount}</p>
+        <p>Загружено активных ПВЗ: {pointCount ?? "статистика недоступна"}</p>
         {syncedAt && (
           <p className="text-sm text-stone-500">
             Последнее обновление:{" "}

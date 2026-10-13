@@ -121,6 +121,7 @@ export default function SiteEditor({
         <h3 className="text-lg">Избранные изделия и порядок</h3>
         <select
           className="admin-input"
+          aria-label="Добавить избранное изделие"
           value=""
           onChange={(e) => {
             if (e.target.value)
@@ -159,10 +160,17 @@ export default function SiteEditor({
           >
             <p className="flex-1 min-w-40">
               {products.find((p) => p.id === id)?.name ?? "Недоступное изделие"}
+              {products.find((p) => p.id === id)?.publication_status !==
+                "published" && (
+                <span className="block text-sm text-amber-800">
+                  Не опубликовано · не показывается на главной
+                </span>
+              )}
             </p>
             <button
               className="admin-secondary"
               onClick={() => move(n, n - 1)}
+              disabled={n === 0}
               aria-label="Выше"
             >
               ↑
@@ -170,6 +178,7 @@ export default function SiteEditor({
             <button
               className="admin-secondary"
               onClick={() => move(n, n + 1)}
+              disabled={n === data.featuredIds.length - 1}
               aria-label="Ниже"
             >
               ↓

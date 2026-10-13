@@ -31,7 +31,7 @@ export default function ProductInfo({
     product.stock_qty != null && cartQty >= product.stock_qty;
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="min-w-0 flex flex-col gap-8">
       {/* Категория + название */}
       <div className="space-y-3">
         {product.category && (
@@ -39,7 +39,7 @@ export default function ProductInfo({
             {bindPrepositions(product.category.name)}
           </p>
         )}
-        <h1 className="font-display text-section leading-tight text-stone-900">
+        <h1 className="font-display text-section leading-tight text-stone-900 [overflow-wrap:anywhere]">
           {bindPrepositions(product.name)}
         </h1>
         <p className="font-body text-copy text-stone-900">
@@ -49,7 +49,7 @@ export default function ProductInfo({
 
       {/* Описание */}
       {product.description && (
-        <p className="font-body text-copy text-stone-800 leading-relaxed max-w-sm">
+        <p className="font-body text-copy text-stone-800 leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere]">
           {bindPrepositions(product.description)}
         </p>
       )}
@@ -241,19 +241,22 @@ function ProductSpecs({ product }: { product: Product }) {
   if (rows.length === 0) return null;
 
   return (
-    <div className="mt-6 mb-6">
-      <div className="divide-y divide-stone-100">
+    <div>
+      <dl className="divide-y divide-stone-200">
         {rows.map(({ label, value }) => (
-          <div key={label} className="flex justify-between py-3">
-            <span className="font-body text-ui uppercase tracking-[0.08em] text-stone-600">
+          <div
+            key={label}
+            className="grid grid-cols-1 min-[480px]:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] gap-x-6 gap-y-2 py-4"
+          >
+            <dt className="font-body text-ui uppercase tracking-[0.08em] text-stone-600 [overflow-wrap:anywhere]">
               {bindPrepositions(label)}
-            </span>
-            <span className="font-body text-ui text-stone-700">
+            </dt>
+            <dd className="font-body text-ui text-stone-700 whitespace-pre-wrap [overflow-wrap:anywhere] min-[480px]:text-right">
               {bindPrepositions(value)}
-            </span>
+            </dd>
           </div>
         ))}
-      </div>
+      </dl>
       <p className="font-body text-caption text-stone-600 italic mt-4">
         Каждое изделие немного отличается — это часть ручной работы
       </p>
@@ -277,6 +280,7 @@ function Accordion({
     <div>
       <button
         onClick={onToggle}
+        aria-expanded={open}
         className="w-full flex items-center justify-between py-1 group"
       >
         <span className="font-body text-ui tracking-[0.08em] uppercase text-stone-600 group-hover:text-stone-900 transition-colors duration-200">
@@ -298,7 +302,7 @@ function Accordion({
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="overflow-hidden font-body text-copy text-stone-800 leading-relaxed pt-3 pb-1"
+            className="overflow-hidden font-body text-copy text-stone-800 leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere] pt-3 pb-1"
           >
             {children}
           </motion.p>

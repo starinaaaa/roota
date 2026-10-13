@@ -1,0 +1,37 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+const sections = [
+  ["orders", "Заказы"],
+  ["products", "Товары"],
+  ["waitlist", "Заявки на поступление"],
+  ["site", "Сайт"],
+  ["delivery", "Доставка"],
+] as const;
+
+export default function AdminNavigation() {
+  const pathname = usePathname();
+  return (
+    <nav
+      className="flex flex-wrap gap-2 mb-8 border-b border-stone-200 pb-4"
+      aria-label="Админка"
+    >
+      {sections.map(([path, label]) => {
+        const href = `/admin/${path}`;
+        const active = pathname === href || pathname.startsWith(`${href}/`);
+        return (
+          <Link
+            key={path}
+            href={href}
+            aria-current={active ? "page" : undefined}
+            className={`admin-secondary ${active ? "border-stone-900 bg-stone-100 font-medium" : "hover:border-stone-500"}`}
+          >
+            {label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}

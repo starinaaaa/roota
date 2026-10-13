@@ -19,7 +19,7 @@ export default async function DeliveryPage() {
       .eq("provider", "ozon")
       .maybeSingle(),
   ]);
-  if (rules.error || categories.error || points.error)
+  if (rules.error || categories.error)
     throw new Error("Не удалось загрузить настройки доставки.");
   let connection = "Ключи Ozon не настроены.";
   if (ozonConfigured())
@@ -34,11 +34,17 @@ export default async function DeliveryPage() {
       <p className="mb-6 text-sm" role="status">
         {connection}
       </p>
+      {(points.error || sync.error) && (
+        <p className="admin-card mb-6 text-amber-800" role="status">
+          Не удалось загрузить статистику пунктов выдачи. Правила упаковки
+          доступны. Обновите страницу, чтобы повторить загрузку статистики.
+        </p>
+      )}
       <PackingEditor
         rules={rules.data ?? []}
         categories={categories.data ?? []}
         configured={ozonConfigured()}
-        pointCount={points.count ?? 0}
+        pointCount={points.error ? null : (points.count ?? 0)}
         syncedAt={sync.data?.updated_at ?? null}
       />
     </>

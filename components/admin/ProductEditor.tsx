@@ -1,6 +1,7 @@
 "use client";
 import { useRef, useState, useTransition } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { saveProduct, uploadImage } from "@/lib/actions/admin";
 import { publicationLabels, type ProductInput } from "@/lib/validation";
@@ -129,9 +130,26 @@ export default function ProductEditor({
         });
       }}
     >
-      <h2 className="text-xl">
-        {product ? "Редактирование изделия" : "Новое изделие"}
-      </h2>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-xl">
+          {product ? "Редактирование изделия" : "Новое изделие"}
+        </h2>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/admin/products" className="admin-secondary">
+            К списку товаров
+          </Link>
+          {product?.publication_status === "published" && (
+            <Link
+              href={`/product/${product.slug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="admin-secondary"
+            >
+              Открыть на сайте
+            </Link>
+          )}
+        </div>
+      </div>
       <section className="admin-card grid md:grid-cols-2 gap-5">
         {text("name", "Название *", 150)}
         {text("slug", "Адрес страницы *", 120)}
@@ -144,6 +162,9 @@ export default function ProductEditor({
             onChange={(e) => set("description", e.target.value)}
             maxLength={5000}
           />
+          <span className="text-sm text-stone-600">
+            Переносы строк и абзацы сохраняются на странице изделия.
+          </span>
         </label>
         <label>
           Цена, ₽

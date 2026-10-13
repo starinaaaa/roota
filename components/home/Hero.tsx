@@ -4,6 +4,8 @@ import { bindPrepositions } from "@/lib/typography";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
+import { useState } from "react";
+import { imageVariantVersion } from "@/lib/image-sizes";
 
 export default function Hero({
   title = "Каждое изделие —\nотдельная история",
@@ -14,12 +16,21 @@ export default function Hero({
   intro?: string;
   image?: string;
 }) {
+  const [recovery, setRecovery] = useState({ image: "", attempt: 0 });
+  const attempt = recovery.image === image ? recovery.attempt : 0;
+  const source =
+    attempt === 1 ? `${image}?w=960&v=${imageVariantVersion}` : image;
   return (
     <section className="relative w-full min-h-svh overflow-hidden bg-stone-900">
       {/* Background image — bg-stone-900 above acts as dark fallback */}
       <div className="absolute inset-0">
         <Image
-          src={image}
+          src={source}
+          unoptimized={attempt > 0}
+          onError={() => {
+            if (!image.startsWith("/site-media/") || attempt >= 2) return;
+            setRecovery({ image, attempt: attempt + 1 });
+          }}
           alt="Авторская керамика"
           fill
           priority

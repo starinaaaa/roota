@@ -67,6 +67,14 @@ export async function createOrder(
       .maybeSingle();
     if (lookupError) throw new Error("Не удалось проверить заказ.");
     if (!previous) {
+      const { error: cleanupError } = await db.rpc(
+        "prune_unpublished_cart_items",
+        {
+          p_session: session,
+        },
+      );
+      if (cleanupError)
+        throw new Error("Не удалось проверить корзину. Повторите отправку.");
       const { data: stored, error: quoteError } = await db
         .from("delivery_quotes")
         .select("city,point,phone,expires_at")

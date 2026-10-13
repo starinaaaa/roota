@@ -3,7 +3,6 @@
 import { bindPrepositions } from "@/lib/typography";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
@@ -58,10 +57,21 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
   ) {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
-    setFormData((prev) => ({
-      ...prev,
+    const next = {
+      ...formData,
       [name]: type === "checkbox" ? checked : value,
-    }));
+    };
+    setFormData(next);
+    if (fieldErrors[name]) {
+      const parsed = checkoutSchema.safeParse(next);
+      setFieldErrors((prev) => ({
+        ...prev,
+        [name]: parsed.success
+          ? ""
+          : (parsed.error.issues.find((i) => i.path[0] === name)?.message ??
+            ""),
+      }));
+    }
     setError(null);
   }
 
@@ -72,6 +82,7 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
       deliveryQuoteId: next?.id,
       address: next?.point.address ?? "",
     }));
+    if (next) setError(null);
   }
   function validateField(name: string) {
     const parsed = checkoutSchema.safeParse(formData);
@@ -121,6 +132,7 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
       document.getElementById(Object.keys(fields)[0])?.focus();
       return;
     }
+    setFieldErrors({});
     if (!quote || finalTotal === null) {
       setError("Выберите пункт выдачи и рассчитайте доставку.");
       return;
@@ -339,21 +351,6 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
                 </p>
               )}
             </div>
-
-            {/* Ошибка */}
-            <AnimatePresence>
-              {error && (
-                <motion.p
-                  role="alert"
-                  initial={{ opacity: 0, y: -6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className="font-body text-ui text-red-600 mt-2"
-                >
-                  {bindPrepositions(error)}
-                </motion.p>
-              )}
-            </AnimatePresence>
           </fieldset>
         </form>
 
@@ -446,7 +443,10 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
             {/* Submit button на десктопе */}
             <div className="pt-2">
               {error && (
-                <p className="font-body text-ui text-red-600 mt-2 mb-3">
+                <p
+                  role="alert"
+                  className="font-body text-ui text-red-600 mt-2 mb-3"
+                >
                   {bindPrepositions(error)}
                 </p>
               )}

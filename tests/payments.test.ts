@@ -229,6 +229,86 @@ test("SQL payment checkout, callback rollback, idempotency, test isolation and R
         "select checkout_robokassa($1,$2,$3,$4,$5,$6) result",
         [session, k, form, total, quote, mode],
       );
+    await db.exec(
+      await readFile(
+        "supabase/migrations/20261013145938_checkout_hidden_cart_cleanup.sql",
+        "utf8",
+      ),
+    );
+    const hidden = randomUUID(),
+      otherSession = randomUUID(),
+      otherCart = randomUUID();
+    await db.query(
+      "insert into products(id,category_id,slug,name,description,price,stock_qty,publication_status) values($1,$2,'hidden-test','Старый тест','Описание',500,10,'draft')",
+      [hidden, category],
+    );
+    await db.query("insert into carts(id,session_id) values($1,$2)", [
+      otherCart,
+      otherSession,
+    ]);
+    await db.query(
+      "insert into cart_items(cart_id,product_id,quantity) values($1,$3,1),($2,$3,1)",
+      [cart, otherCart, hidden],
+    );
+    // Reproduce a visible 100-ruble basket whose hidden draft blocks checkout.
+    await assert.rejects(checkout("test"), /UNAVAILABLE/);
+    assert.equal(
+      (
+        await db.query<{ removed: number }>(
+          "select prune_unpublished_cart_items($1) removed",
+          [session],
+        )
+      ).rows[0].removed,
+      1,
+    );
+    assert.equal(
+      (
+        await db.query<{ removed: number }>(
+          "select prune_unpublished_cart_items($1) removed",
+          [session],
+        )
+      ).rows[0].removed,
+      0,
+    );
+    assert.equal(
+      (
+        await db.query<{ n: number }>(
+          "select count(*)::int n from cart_items where cart_id=$1",
+          [otherCart],
+        )
+      ).rows[0].n,
+      1,
+    );
+    assert.equal(
+      (
+        await db.query<{ qty: number }>(
+          "select stock_qty qty from products where id=$1",
+          [hidden],
+        )
+      ).rows[0].qty,
+      10,
+    );
+    const permissions = (
+      await db.query<{ anon: boolean; authenticated: boolean }>(
+        "select has_function_privilege('anon','public.prune_unpublished_cart_items(text)','EXECUTE') anon,has_function_privilege('authenticated','public.prune_unpublished_cart_items(text)','EXECUTE') authenticated",
+      )
+    ).rows[0];
+    assert.deepEqual(permissions, { anon: false, authenticated: false });
+    // Published products with changed stock must remain for stock validation.
+    await db.query("update products set stock_qty=0 where id=$1", [product]);
+    assert.equal(
+      (
+        await db.query<{ removed: number }>(
+          "select prune_unpublished_cart_items($1) removed",
+          [session],
+        )
+      ).rows[0].removed,
+      0,
+    );
+    await assert.rejects(checkout("test"), /UNAVAILABLE/);
+    await db.query("update products set stock_qty=2 where id=$1", [product]);
+    await db.query("delete from carts where id=$1", [otherCart]);
+    await db.query("delete from products where id=$1", [hidden]);
     await assert.rejects(checkout("test", 1), /PRICE_CHANGED/);
     const sandbox = (await checkout("test")).rows[0].result;
     const contact = (

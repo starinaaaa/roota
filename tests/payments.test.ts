@@ -175,6 +175,14 @@ test("SQL payment checkout, callback rollback, idempotency, test isolation and R
         "utf8",
       ),
     );
+    for (const file of [
+      "20261011182937_customer_order_access.sql",
+      "20261011183647_shipment_status_sync.sql",
+      "20261013222235_customer_email_flows.sql",
+    ]) {
+      await db.exec(await readFile(`supabase/migrations/${file}`, "utf8"));
+    }
+    await db.exec("update email_settings set enabled=true,test_mode=false");
     await db.query(
       "insert into products(id,category_id,slug,name,description,price,stock_qty,publication_status) values($1,$2,'plate','Тарелка','Описание',100,2,'published')",
       [product, category],
@@ -311,6 +319,14 @@ test("SQL payment checkout, callback rollback, idempotency, test isolation and R
     await db.query("delete from products where id=$1", [hidden]);
     await assert.rejects(checkout("test", 1), /PRICE_CHANGED/);
     const sandbox = (await checkout("test")).rows[0].result;
+    assert.equal(
+      (
+        await db.query<{ n: number }>(
+          "select count(*)::int n from email_messages",
+        )
+      ).rows[0].n,
+      0,
+    );
     const contact = (
       await db.query<{ telegram: string }>(
         "select form->>'telegram' telegram from payment_test_orders where id=$1",

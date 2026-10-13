@@ -23,6 +23,16 @@ const remotePatterns: NonNullable<NextConfig["images"]>["remotePatterns"] = [
 const nextConfig: NextConfig = {
   async headers() {
     return [
+      ...["/email/:path*", "/review/:path*", "/cart/restore/:path*"].map(
+        (source) => ({
+          source,
+          headers: [
+            { key: "Referrer-Policy", value: "no-referrer" },
+            { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
+            { key: "Cache-Control", value: "private, no-store" },
+          ],
+        }),
+      ),
       {
         source: "/optimized/:path*",
         headers: [

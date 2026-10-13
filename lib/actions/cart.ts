@@ -1,4 +1,5 @@
 "use server";
+import { touchCheckoutEmail } from "./email";
 import { cookies } from "next/headers";
 import { createServerClient } from "@/lib/supabase/server";
 import { getProductsByIds } from "@/lib/products";
@@ -66,6 +67,11 @@ async function mutate(
       return {
         error: messages[error.message] ?? "Не удалось изменить корзину.",
       };
+    }
+    try {
+      await touchCheckoutEmail();
+    } catch {
+      /* The committed cart is independent of reminders. */
     }
     return {};
   } catch {

@@ -63,6 +63,7 @@ export const checkoutSchema = z
       ),
     newsletterDataConsent: z.boolean().optional().default(false),
     subscribeToNews: z.boolean().optional().default(false),
+    reviewConsent: z.boolean().optional().default(false),
     deliveryQuoteId: uuid.optional(),
   })
   .refine((v) => !v.subscribeToNews || v.newsletterDataConsent, {

@@ -6,6 +6,9 @@ export type EmailResult =
 
 export interface EmailMessage {
   to: string;
+  unsubscribeUrl?: string;
+  transactional?: boolean;
+  metadata?: Record<string, string>;
   subject: string;
   html: string;
   plaintext: string;
@@ -41,7 +44,16 @@ export async function sendUnisenderEmail(
         signal: AbortSignal.timeout(15000),
         body: JSON.stringify({
           message: {
-            recipients: [{ email: message.to }],
+            recipients: [{ email: message.to, metadata: message.metadata }],
+            track_links: 0,
+            track_read: 0,
+            ...(message.unsubscribeUrl
+              ? {
+                  headers: {
+                    "List-Unsubscribe": `<${message.unsubscribeUrl}>`,
+                  },
+                }
+              : {}),
             from_email: "hello@roota.moscow",
             from_name: "ROOTA",
             reply_to: "hello@roota.moscow",
@@ -51,8 +63,10 @@ export async function sendUnisenderEmail(
             template_engine: "none",
             global_language: "ru",
             idempotence_key: message.idempotenceKey,
-            // Keep provider unsubscribe and suppression rules enabled.
-            skip_unsubscribe: 0,
+            // Marketing respects unsubscribe. Necessary order updates bypass only
+            // advertising opt-out, never complaints or unavailable-address blocks.
+            skip_unsubscribe: message.transactional ? 1 : 0,
+            ...(message.transactional ? { bypass_unsubscribed: 1 } : {}),
           },
         }),
       },

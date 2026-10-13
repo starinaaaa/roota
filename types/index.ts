@@ -117,6 +117,7 @@ export type CheckoutFormData = {
   acceptedTerms: boolean;
   newsletterDataConsent: boolean;
   subscribeToNews: boolean;
+  reviewConsent?: boolean;
   deliveryQuoteId?: string;
 };
 

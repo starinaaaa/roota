@@ -1,0 +1,399 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { PGlite } from "@electric-sql/pglite";
+import { readFile } from "node:fs/promises";
+import { randomUUID, createHash } from "node:crypto";
+import { renderEmail } from "../lib/email/templates";
+import { parseSignedEmailWebhook, deliveryState } from "../lib/email/webhook";
+const migration = "supabase/migrations/20261013222235_customer_email_flows.sql";
+async function database() {
+  const db = new PGlite();
+  await db.exec(`create role anon;create role authenticated;create role service_role bypassrls;
+ create table products(id uuid primary key,name text,slug text,stock_qty integer,publication_status text);
+ create table orders(id uuid primary key,customer_email text,status text default 'new',payment_status text default 'pending',delivery_stage text,cart_session text,reservation_state text default 'active',request_payload jsonb default '{}');
+ create table order_access(order_id uuid references orders,token text);
+ create table carts(id uuid primary key default gen_random_uuid(),session_id text unique);
+ create table cart_items(cart_id uuid references carts,product_id uuid references products,quantity integer);
+ create table waitlist(id uuid primary key default gen_random_uuid(),product_id uuid references products,contact text,notified_at timestamptz);
+ create function mutate_cart(s text,p uuid,q integer,op text,mode text) returns void language plpgsql set search_path=public as $$ declare c uuid; begin
+ if not exists(select 1 from products where id=p and stock_qty>=q and publication_status='published') then raise exception 'OUT_OF_STOCK'; end if;
+ insert into carts(session_id) values(s) on conflict(session_id) do nothing;select id into c from carts where session_id=s;
+ delete from cart_items where cart_id=c and product_id=p;insert into cart_items values(c,p,q);end $$;
+ create function save_product(uuid,jsonb,jsonb,timestamptz default null) returns uuid language sql as $$ select $1 $$;
+ grant usage on schema public to service_role,anon,authenticated;grant all on all tables in schema public to service_role;`);
+  await db.exec(await readFile(migration, "utf8"));
+  await db.exec("update email_settings set enabled=true,test_mode=false;");
+  return db;
+}
+test("email templates escape buyer content and preserve literal substitutions", () => {
+  const result = renderEmail(
+    { subject: "Заказ {{number}}", body: "{{items}}" },
+    { number: "X\r\nBCC:x", items: "<script>alert(1)</script> {{number}}" },
+    "https://roota.moscow/order/abc",
+    "Открыть",
+  );
+  assert.doesNotMatch(result.subject, /[\r\n]/);
+  assert.match(result.html, /&lt;script&gt;/);
+  assert.doesNotMatch(result.html, /<script>/);
+  assert.match(result.plaintext, /\{\{number\}\}/);
+});
+test("provider webhook authenticates exact bytes, rejects tampering and distinguishes sent from delivered", () => {
+  const key = "test-key";
+  const base = JSON.stringify({
+    auth: key,
+    events_by_user: [
+      {
+        events: [
+          {
+            event_name: "transactional_email_status",
+            event_data: {
+              email: "a@example.com",
+              job_id: "j",
+              status: "delivered",
+            },
+          },
+        ],
+      },
+    ],
+  });
+  const signature = createHash("md5").update(base).digest("hex");
+  const raw = base.replace(key, signature);
+  assert.equal(parseSignedEmailWebhook(raw, key)?.length, 1);
+  assert.equal(
+    parseSignedEmailWebhook(raw.replace("delivered", "spam"), key),
+    null,
+  );
+  assert.equal(parseSignedEmailWebhook(raw, "wrong"), null);
+  assert.equal(deliveryState("sent"), null);
+  assert.equal(deliveryState("soft_bounced"), null);
+  assert.equal(deliveryState("delivered"), "delivered");
+});
+test("atomic order events deduplicate, pickup differs from receipt, reviews require consent and cancellations stop queue", async () => {
+  const db = await database();
+  try {
+    const id = randomUUID();
+    await db.query<{ n: number; state: string; completed_at: string }>(
+      "insert into orders(id,customer_email,cart_session,request_payload) values($1,'buyer@example.com','s',$2)",
+      [id, { form: { reviewConsent: true } }],
+    );
+    await db.query<{ n: number; state: string; completed_at: string }>(
+      "update orders set payment_status='paid' where id=$1",
+      [id],
+    );
+    await db.query<{ n: number; state: string; completed_at: string }>(
+      "update orders set payment_status='paid' where id=$1",
+      [id],
+    );
+    await db.query<{ n: number; state: string; completed_at: string }>(
+      "update orders set delivery_stage='in_transit' where id=$1",
+      [id],
+    );
+    await db.query<{ n: number; state: string; completed_at: string }>(
+      "update orders set delivery_stage='ready_for_pickup' where id=$1",
+      [id],
+    );
+    assert.equal(
+      (
+        await db.query<{ n: number; state: string; completed_at: string }>(
+          "select count(*)::int n from email_messages where kind='review_invite'",
+        )
+      ).rows[0].n,
+      0,
+    );
+    await db.query<{ n: number; state: string; completed_at: string }>(
+      "update orders set delivery_stage='delivered',status='delivered' where id=$1",
+      [id],
+    );
+    await db.query<{ n: number; state: string; completed_at: string }>(
+      "update orders set delivery_stage='delivered' where id=$1",
+      [id],
+    );
+    assert.equal(
+      (
+        await db.query<{ n: number; state: string; completed_at: string }>(
+          "select count(*)::int n from email_messages",
+        )
+      ).rows[0].n,
+      6,
+    );
+    assert.equal(
+      (
+        await db.query<{ ok: boolean }>(
+          "select scheduled_at>=now()+interval '47 hours' ok from email_messages where kind='review_invite'",
+        )
+      ).rows[0].ok,
+      true,
+    );
+    await db.query<{ n: number; state: string; completed_at: string }>(
+      "update orders set payment_status='refunded' where id=$1",
+      [id],
+    );
+    assert.equal(
+      (
+        await db.query<{ n: number; state: string; completed_at: string }>(
+          "select count(*)::int n from claim_email_messages(20)",
+        )
+      ).rows[0].n,
+      0,
+    );
+    const noConsent = randomUUID();
+    await db.query<{ n: number; state: string; completed_at: string }>(
+      "insert into orders(id,customer_email) values($1,'other@example.com')",
+      [noConsent],
+    );
+    await db.query<{ n: number; state: string; completed_at: string }>(
+      "update orders set payment_status='paid',delivery_stage='delivered' where id=$1",
+      [noConsent],
+    );
+    assert.equal(
+      (
+        await db.query<{ n: number; state: string; completed_at: string }>(
+          "select count(*)::int n from email_messages where order_id=$1 and kind='review_invite'",
+          [noConsent],
+        )
+      ).rows[0].n,
+      0,
+    );
+    await db.exec("set role anon");
+    await assert.rejects(
+      db.query<{ n: number; state: string; completed_at: string }>(
+        "select * from email_messages",
+      ),
+      /permission denied/,
+    );
+    await assert.rejects(
+      db.query<{ n: number; state: string; completed_at: string }>(
+        "select * from claim_email_messages(10)",
+      ),
+      /permission denied/,
+    );
+  } finally {
+    await db.close();
+  }
+});
+test("confirmed waitlist batches three at a time, stops at sold out, and never treats reserve release as replenishment", async () => {
+  const db = await database();
+  try {
+    const p = randomUUID();
+    await db.query<{ n: number; state: string; completed_at: string }>(
+      "insert into products values($1,'Тарелочка','plate',1,'published')",
+      [p],
+    );
+    for (let i = 0; i < 5; i++) {
+      const email = `buyer${i}@example.com`,
+        token = String(i + 1).padStart(64, "a");
+      await db.query<{ n: number; state: string; completed_at: string }>(
+        "insert into waitlist(product_id,contact) values($1,$2)",
+        [p, email],
+      );
+      await db.query<{ n: number; state: string; completed_at: string }>(
+        "select request_email_subscription($1,'restock',$2,$3,'v1')",
+        [email, p, token],
+      );
+      if (i < 4)
+        await db.query<{ n: number; state: string; completed_at: string }>(
+          "select confirm_email_subscription($1)",
+          [token],
+        );
+    }
+    await db.query<{ n: number; state: string; completed_at: string }>(
+      "select open_email_restock($1)",
+      [p],
+    );
+    await db.exec("select prepare_email_queue();select prepare_email_queue();");
+    assert.equal(
+      (
+        await db.query<{ n: number; state: string; completed_at: string }>(
+          "select count(*)::int n from email_messages where kind='restock'",
+        )
+      ).rows[0].n,
+      3,
+    );
+    await db.query<{ n: number; state: string; completed_at: string }>(
+      "update products set stock_qty=0 where id=$1",
+      [p],
+    );
+    await db.exec("select prepare_email_queue();");
+    await db.exec("select claim_email_messages(20)");
+    assert.equal(
+      (
+        await db.query<{ n: number; state: string; completed_at: string }>(
+          "select count(*)::int n from email_messages where kind='restock' and state='sending'",
+        )
+      ).rows[0].n,
+      0,
+    );
+    assert.equal(
+      (
+        await db.query<{ n: number; state: string; completed_at: string }>(
+          "select count(*)::int n from waitlist where notified_at is not null",
+        )
+      ).rows[0].n,
+      0,
+    );
+    await db.query<{ n: number; state: string; completed_at: string }>(
+      "update products set stock_qty=1 where id=$1",
+      [p],
+    );
+    await db.exec("select prepare_email_queue();");
+    assert.equal(
+      (
+        await db.query<{ n: number; state: string; completed_at: string }>(
+          "select count(*)::int n from email_restock_events where active",
+        )
+      ).rows[0].n,
+      0,
+    );
+  } finally {
+    await db.close();
+  }
+});
+test("cart double opt-in, expiry, payment cancellation, current activity and atomic restore protect buyers", async () => {
+  const db = await database();
+  try {
+    const p = randomUUID(),
+      token = "b".repeat(64);
+    await db.query<{ n: number; state: string; completed_at: string }>(
+      "insert into products values($1,'Тарелочка','plate',2,'published')",
+      [p],
+    );
+    await db.query<{ n: number; state: string; completed_at: string }>(
+      "select request_email_subscription('buyer@example.com','cart','session',$1,'v1',$2)",
+      [token, [{ product_id: p, quantity: 1, name: "Тарелочка" }]],
+    );
+    await db.exec(
+      "update checkout_drafts set last_activity_at=now()-interval '3 hours';select prepare_email_queue();",
+    );
+    assert.equal(
+      (
+        await db.query<{ n: number; state: string; completed_at: string }>(
+          "select count(*)::int n from email_messages where kind='cart_reminder'",
+        )
+      ).rows[0].n,
+      0,
+    );
+    await db.query<{ n: number; state: string; completed_at: string }>(
+      "select confirm_email_subscription($1)",
+      [token],
+    );
+    await db.exec("select prepare_email_queue();");
+    assert.equal(
+      (
+        await db.query<{ n: number; state: string; completed_at: string }>(
+          "select count(*)::int n from email_messages where kind='cart_reminder'",
+        )
+      ).rows[0].n,
+      1,
+    );
+    await db.query<{ n: number; state: string; completed_at: string }>(
+      "select mutate_cart('current',$1,1,'set','stock')",
+      [p],
+    );
+    await assert.rejects(
+      db.query<{ n: number; state: string; completed_at: string }>(
+        "select restore_email_cart($1,'current',false)",
+        [token],
+      ),
+      /CART_NOT_EMPTY/,
+    );
+    await db.query<{ n: number; state: string; completed_at: string }>(
+      "update products set stock_qty=0 where id=$1",
+      [p],
+    );
+    await assert.rejects(
+      db.query<{ n: number; state: string; completed_at: string }>(
+        "select restore_email_cart($1,'current',true)",
+        [token],
+      ),
+      /OUT_OF_STOCK/,
+    );
+    assert.equal(
+      (
+        await db.query<{ n: number; state: string; completed_at: string }>(
+          "select count(*)::int n from cart_items",
+        )
+      ).rows[0].n,
+      1,
+    );
+    await db.query<{ n: number; state: string; completed_at: string }>(
+      "update products set stock_qty=2 where id=$1",
+      [p],
+    );
+    await db.query<{ n: number; state: string; completed_at: string }>(
+      "select restore_email_cart($1,'current',true)",
+      [token],
+    );
+    assert.equal(
+      (
+        await db.query<{ n: number; state: string; completed_at: string }>(
+          "select state from email_messages where kind='cart_reminder'",
+        )
+      ).rows[0].state,
+      "cancelled",
+    );
+    await db.query<{ n: number; state: string; completed_at: string }>(
+      "insert into orders(id,customer_email,cart_session) values($1,'buyer@example.com','session')",
+      [randomUUID()],
+    );
+    assert.notEqual(
+      (
+        await db.query<{ n: number; state: string; completed_at: string }>(
+          "select completed_at from checkout_drafts",
+        )
+      ).rows[0].completed_at,
+      null,
+    );
+    await db.query<{ n: number; state: string; completed_at: string }>(
+      "select revoke_email_subscription($1,true)",
+      [token],
+    );
+    await db.exec("select claim_email_messages(20)");
+    assert.equal(
+      (
+        await db.query<{ n: number; state: string; completed_at: string }>(
+          "select count(*)::int n from email_messages where kind='order_created' and state='sending'",
+        )
+      ).rows[0].n,
+      1,
+    );
+  } finally {
+    await db.close();
+  }
+});
+test("test mode leaves real recipients untouched and stale send leases become unknown, never pending", async () => {
+  const db = await database();
+  try {
+    await db.exec(
+      "update email_settings set test_mode=true;insert into orders(id,customer_email) values(gen_random_uuid(),'buyer@example.com'),(gen_random_uuid(),'hello@roota.moscow');",
+    );
+    assert.equal(
+      (
+        await db.query<{ n: number; state: string; completed_at: string }>(
+          "select count(*)::int n from claim_email_messages(10)",
+        )
+      ).rows[0].n,
+      1,
+    );
+    await db.exec(
+      "update email_messages set claimed_at=now()-interval '11 minutes' where state='sending';select prepare_email_queue();",
+    );
+    assert.equal(
+      (
+        await db.query<{ n: number; state: string; completed_at: string }>(
+          "select state from email_messages where recipient='hello@roota.moscow'",
+        )
+      ).rows[0].state,
+      "unknown",
+    );
+    assert.equal(
+      (
+        await db.query<{ n: number; state: string; completed_at: string }>(
+          "select count(*)::int n from claim_email_messages(10)",
+        )
+      ).rows[0].n,
+      0,
+    );
+  } finally {
+    await db.close();
+  }
+});

@@ -10,6 +10,8 @@ import { formatPrice } from "@/lib/products";
 import { createOrder } from "@/lib/actions/orders";
 import type { CartItem, CheckoutFormData } from "@/types";
 
+import { touchCheckoutEmail } from "@/lib/actions/email";
+import CartEmail from "./CartEmail";
 import PhoneField from "./PhoneField";
 import DeliverySelector from "./DeliverySelector";
 import { LEGAL_VERSION } from "@/lib/legal";
@@ -43,6 +45,7 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
     acceptedTerms: false,
     newsletterDataConsent: false,
     subscribeToNews: false,
+    reviewConsent: false,
   });
 
   const totalPrice = initialItems.reduce(
@@ -110,6 +113,12 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
       i.purchase_mode,
     ]),
   );
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void touchCheckoutEmail().catch(() => {});
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [formData, cartKey]);
   const finalTotal = quote
     ? Math.round((totalPrice + quote.totalCost) * 100) / 100
     : null;
@@ -232,6 +241,18 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
                 autoComplete="email"
                 required
               />
+              <CartEmail email={formData.email} />
+              <label className="flex items-start gap-3 text-caption text-stone-600">
+                <input
+                  type="checkbox"
+                  name="reviewConsent"
+                  checked={formData.reviewConsent}
+                  onChange={handleChange}
+                />
+                Получить одно письмо с приглашением оставить честный отзыв после
+                получения заказа. Согласен на обработку email для приглашения;
+                отписка доступна в письме.
+              </label>
               <Field
                 label="Telegram — необязательно"
                 id="telegram"

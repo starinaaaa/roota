@@ -4,8 +4,10 @@ import { bindPrepositions } from "@/lib/typography";
 export default function LegalDocument({
   title,
   sections,
+  updatedAt = "11 октября 2026",
 }: {
   title: string;
+  updatedAt?: string;
   sections: { heading: string; paragraphs: string[] }[];
 }) {
   return (
@@ -52,7 +54,7 @@ export default function LegalDocument({
               </section>
             ))}
             <p className="border-t border-stone-200 pt-8 font-body text-caption text-stone-600">
-              Последнее обновление: 11 октября 2026
+              Последнее обновление: {updatedAt}
             </p>
           </div>
         </div>

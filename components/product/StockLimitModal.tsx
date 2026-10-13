@@ -125,10 +125,10 @@ export default function StockLimitModal({
               e.preventDefault();
               start(async () => {
                 try {
-                  const result = await addToWaitlist(productId, contact);
+                  const result = await addToWaitlist(productId, contact, true);
                   setMessage(
                     result.error ??
-                      "Заявка сохранена. Мы сообщим о поступлении.",
+                      "Проверьте почту и подтвердите email. После этого сообщим о поступлении.",
                   );
                 } catch {
                   setMessage("Не удалось сохранить заявку");
@@ -147,6 +147,15 @@ export default function StockLimitModal({
                 maxLength={254}
                 onChange={(e) => setContact(e.target.value)}
               />
+            </label>
+            <label className="flex items-start gap-2 text-caption">
+              <input type="checkbox" required />
+              Согласен на обработку email и уведомление о поступлении этого
+              изделия. Подписка включится после подтверждения адреса; отписка
+              доступна в письме.{" "}
+              <a href="/privacy" className="underline">
+                Политика
+              </a>
             </label>
             <button className="admin-button w-full" disabled={pending}>
               {bindPrepositions(

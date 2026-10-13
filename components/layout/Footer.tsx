@@ -15,6 +15,7 @@ const INFO_LINKS = [
   { href: "/about", label: "О студии" },
   { href: "/delivery", label: "Доставка и оплата" },
   { href: "/contacts", label: "Контакты" },
+  { href: "/reviews", label: "Отзывы" },
 ];
 
 export default async function Footer() {

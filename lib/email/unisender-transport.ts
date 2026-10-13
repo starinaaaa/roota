@@ -6,8 +6,6 @@ export type EmailResult =
 
 export interface EmailMessage {
   to: string;
-  unsubscribeUrl?: string;
-  transactional?: boolean;
   metadata?: Record<string, string>;
   subject: string;
   html: string;
@@ -45,15 +43,6 @@ export async function sendUnisenderEmail(
         body: JSON.stringify({
           message: {
             recipients: [{ email: message.to, metadata: message.metadata }],
-            track_links: 0,
-            track_read: 0,
-            ...(message.unsubscribeUrl
-              ? {
-                  headers: {
-                    "List-Unsubscribe": `<${message.unsubscribeUrl}>`,
-                  },
-                }
-              : {}),
             from_email: "hello@roota.moscow",
             from_name: "ROOTA",
             reply_to: "hello@roota.moscow",
@@ -63,10 +52,9 @@ export async function sendUnisenderEmail(
             template_engine: "none",
             global_language: "ru",
             idempotence_key: message.idempotenceKey,
-            // Marketing respects unsubscribe. Necessary order updates bypass only
-            // advertising opt-out, never complaints or unavailable-address blocks.
-            skip_unsubscribe: message.transactional ? 1 : 0,
-            ...(message.transactional ? { bypass_unsubscribed: 1 } : {}),
+            // Keep all provider suppression rules enabled. Roota advertising
+            // preferences are checked separately from necessary order messages.
+            skip_unsubscribe: 0,
           },
         }),
       },

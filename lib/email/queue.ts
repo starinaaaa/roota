@@ -140,10 +140,8 @@ export async function processEmailQueue() {
         throw new Error("CONSENT");
       const result = await sendEmail({
         to: m.recipient,
-        transactional: m.kind.startsWith("order_"),
         idempotenceKey: m.id,
         ...renderEmail(template, values, url, label, unsubscribe),
-        unsubscribeUrl: marketingKinds.has(m.kind) ? unsubscribe : undefined,
         metadata: { message_id: m.id },
       });
       if (result.state === "disabled" || result.state === "unconfigured")

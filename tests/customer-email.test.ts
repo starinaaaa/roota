@@ -22,6 +22,18 @@ async function database() {
  create function save_product(uuid,jsonb,jsonb,timestamptz default null) returns uuid language sql as $$ select $1 $$;
  grant usage on schema public to service_role,anon,authenticated;grant all on all tables in schema public to service_role;`);
   await db.exec(await readFile(migration, "utf8"));
+  await db.exec(
+    await readFile(
+      "supabase/migrations/20261013223200_email_queue_claim_guards.sql",
+      "utf8",
+    ),
+  );
+  await db.exec(
+    await readFile(
+      "supabase/migrations/20261013223502_review_delivery_guard.sql",
+      "utf8",
+    ),
+  );
   await db.exec("update email_settings set enabled=true,test_mode=false;");
   return db;
 }
@@ -393,6 +405,99 @@ test("test mode leaves real recipients untouched and stale send leases become un
       ).rows[0].n,
       0,
     );
+  } finally {
+    await db.close();
+  }
+});
+
+test("a changed checkout contact invalidates old cart letters; cancelled rows do not delay valid messages", async () => {
+  const db = await database();
+  try {
+    const product = randomUUID(),
+      oldToken = "c".repeat(64),
+      newToken = "d".repeat(64);
+    await db.query(
+      "insert into products values($1,'Изделие','plate',1,'published')",
+      [product],
+    );
+    const items = [{ product_id: product, name: "Изделие", quantity: 1 }];
+    await db.query(
+      "select request_email_subscription('old@example.com','cart','same-session',$1,'v1',$2)",
+      [oldToken, items],
+    );
+    await db.query("select confirm_email_subscription($1)", [oldToken]);
+    await db.query(
+      "select request_email_subscription('new@example.com','cart','same-session',$1,'v1',$2)",
+      [newToken, items],
+    );
+    await db.query("select confirm_email_subscription($1)", [newToken]);
+    await db.exec(
+      "update email_messages set state='cancelled' where kind='confirm';",
+    );
+    const claimed = await db.query<{ recipient: string }>(
+      "select recipient from claim_email_messages(1)",
+    );
+    assert.equal(claimed.rows.length, 1);
+    assert.equal(claimed.rows[0].recipient, "new@example.com");
+    assert.equal(
+      (
+        await db.query<{ state: string }>(
+          "select state from email_messages where recipient='old@example.com' and kind='cart_link'",
+        )
+      ).rows[0].state,
+      "cancelled",
+    );
+  } finally {
+    await db.close();
+  }
+});
+
+test("review submission rejects missing delivery, preserves any rating and deduplicates replies", async () => {
+  const db = await database();
+  try {
+    const id = randomUUID(),
+      token = "e".repeat(64);
+    await db.query(
+      "insert into orders(id,customer_email,payment_status) values($1,'buyer@example.com','paid')",
+      [id],
+    );
+    await db.query("insert into order_access(order_id,token) values($1,$2)", [
+      id,
+      token,
+    ]);
+    await assert.rejects(
+      db.query(
+        "select submit_customer_review($1,1,'Не понравилось',array[]::text[],true)",
+        [token],
+      ),
+      /ORDER_UNAVAILABLE/,
+    );
+    await db.query(
+      "update orders set delivery_stage='delivered',status='delivered' where id=$1",
+      [id],
+    );
+    await db.query(
+      "select submit_customer_review($1,1,'Не понравилось',array[]::text[],true)",
+      [token],
+    );
+    await db.query(
+      "select submit_customer_review($1,5,'Дубликат',array[]::text[],false)",
+      [token],
+    );
+    const { rows } = await db.query<{
+      rating: number;
+      body: string;
+      publication_consent: boolean;
+      state: string;
+    }>("select rating,body,publication_consent,state from customer_reviews");
+    assert.deepEqual(rows, [
+      {
+        rating: 1,
+        body: "Не понравилось",
+        publication_consent: true,
+        state: "pending",
+      },
+    ]);
   } finally {
     await db.close();
   }

@@ -179,6 +179,7 @@ test("SQL payment checkout, callback rollback, idempotency, test isolation and R
       "20261011182937_customer_order_access.sql",
       "20261011183647_shipment_status_sync.sql",
       "20261013222235_customer_email_flows.sql",
+      "20261013223200_email_queue_claim_guards.sql",
     ]) {
       await db.exec(await readFile(`supabase/migrations/${file}`, "utf8"));
     }

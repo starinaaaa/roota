@@ -102,24 +102,3 @@ test("invalid email headers and oversized idempotence keys never reach the provi
     "rejected",
   );
 });
-
-test("necessary order messages bypass only advertising opt-out and omit provider unsubscribe", async () => {
-  const mock = (async (_url, options) => {
-    const body = JSON.parse(String(options?.body)).message;
-    assert.equal(body.skip_unsubscribe, 1);
-    assert.equal(body.bypass_unsubscribed, 1);
-    assert.equal(body.bypass_complained, undefined);
-    assert.equal(body.bypass_unavailable, undefined);
-    assert.equal(body.bypass_global, undefined);
-    return Response.json({
-      status: "success",
-      job_id: "j",
-      emails: [message.to],
-    });
-  }) as typeof fetch;
-  assert.equal(
-    (await sendUnisenderEmail("key", { ...message, transactional: true }, mock))
-      .state,
-    "accepted",
-  );
-});

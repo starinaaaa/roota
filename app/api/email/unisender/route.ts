@@ -1,6 +1,10 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { parseSignedEmailWebhook, deliveryState } from "@/lib/email/webhook";
 export const runtime = "nodejs";
+// Provider availability probe. GET never reads or changes customer data.
+export async function GET() {
+  return Response.json({ ok: true });
+}
 export async function POST(request: Request) {
   if (Number(request.headers.get("content-length") ?? 0) > 1024 * 1024)
     return new Response(null, { status: 413 });
@@ -44,12 +48,10 @@ export async function POST(request: Request) {
       );
     if (save) return new Response(null, { status: 503 });
     if (["bounced", "complained", "unsubscribed"].includes(state)) {
-      const { error: block } = await db
-        .from("email_blocks")
-        .upsert({
-          email: recipient,
-          reason: state === "unsubscribed" ? "marketing_unsubscribed" : state,
-        });
+      const { error: block } = await db.from("email_blocks").upsert({
+        email: recipient,
+        reason: state === "unsubscribed" ? "marketing_unsubscribed" : state,
+      });
       if (block) return new Response(null, { status: 503 });
       let cancellation = db
         .from("email_messages")

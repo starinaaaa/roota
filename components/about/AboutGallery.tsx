@@ -1,49 +1,46 @@
 "use client";
+
 import Image from "next/image";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import useEmblaCarousel from "embla-carousel-react";
+import { WheelGesturesPlugin } from "embla-carousel-wheel-gestures";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+
 type Photo = { src: string; alt: string };
+
 export default function AboutGallery({ photos }: { photos: Photo[] }) {
-  const track = useRef<HTMLDivElement>(null);
-  const position = useRef(0);
+  const [viewport, carousel] = useEmblaCarousel(
+    { loop: true, align: "start", duration: 35 },
+    [WheelGesturesPlugin()],
+  );
   const [active, setActive] = useState(0);
   const count = photos.length;
-  useLayoutEffect(() => {
-    const element = track.current;
-    if (!element || count < 2) return;
-    const align = () => {
-      const stride = (element.firstElementChild as HTMLElement).offsetWidth + 8;
-      element.scrollTo({
-        left: (count * 2 + position.current) * stride,
-        behavior: "instant",
-      });
+
+  useEffect(() => {
+    if (!carousel) return;
+    const select = () => setActive(carousel.selectedScrollSnap());
+    carousel.on("select", select).on("reInit", select);
+    return () => {
+      carousel.off("select", select).off("reInit", select);
     };
-    align();
-    const observer = new ResizeObserver(align);
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [count]);
-  const step = (direction: number) => {
-    const element = track.current;
-    if (!element) return;
-    const stride = (element.firstElementChild as HTMLElement).offsetWidth + 8;
-    element.scrollBy({
-      left: direction * stride,
-      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-        ? "instant"
-        : "smooth",
-    });
-  };
+  }, [carousel]);
+
+  function step(direction: number) {
+    const jump = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (direction > 0) carousel?.scrollNext(jump);
+    else carousel?.scrollPrev(jump);
+  }
+
   if (!count) return null;
-  const copies = count > 1 ? 5 : 1;
   return (
     <section
       aria-label="Фотографии мастерской Roota"
       className="border-t border-stone-200 bg-white py-8 md:py-12"
     >
       <div
-        ref={track}
+        ref={viewport}
         role="region"
+        aria-roledescription="карусель"
         aria-label="Бесконечная лента фотографий — листайте по горизонтали"
         tabIndex={0}
         onKeyDown={(event) => {
@@ -52,42 +49,28 @@ export default function AboutGallery({ photos }: { photos: Photo[] }) {
             step(event.key === "ArrowRight" ? 1 : -1);
           }
         }}
-        onScroll={(event) => {
-          if (count < 2) return;
-          const el = event.currentTarget;
-          const stride = (el.firstElementChild as HTMLElement).offsetWidth + 8,
-            period = count * stride,
-            centre = 2 * period;
-          const left = el.scrollLeft;
-          // Equivalent copies on both sides allow touch, trackpad and arrows to wrap without an empty edge.
-          if (left < centre - period / 2 - 1)
-            el.scrollTo({ left: left + period, behavior: "instant" });
-          else if (left > centre + period / 2 + 1)
-            el.scrollTo({ left: left - period, behavior: "instant" });
-          const index = ((Math.round(left / stride) % count) + count) % count;
-          position.current = index;
-          setActive(index);
-        }}
-        className="flex gap-2 overflow-x-auto snap-x snap-mandatory overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden focus-visible:outline-2 focus-visible:outline-stone-700 focus-visible:outline-offset-4"
+        className="overflow-hidden focus-visible:outline-2 focus-visible:outline-stone-700 focus-visible:outline-offset-4"
       >
-        {Array.from({ length: copies }, (_, copy) =>
-          photos.map((photo, index) => (
+        <div className="flex gap-2 [touch-action:pan-y_pinch-zoom] select-none cursor-grab active:cursor-grabbing">
+          {photos.map((photo, index) => (
             <div
-              key={`${copy}-${photo.src}`}
-              aria-hidden={copies > 1 && copy !== 2 ? true : undefined}
-              className="relative aspect-square shrink-0 basis-[78%] snap-start sm:basis-[calc((100%_-_8px)/2)] md:basis-[calc((100%_-_16px)/3)] lg:basis-[calc((100%_-_24px)/4)]"
+              key={photo.src}
+              role="group"
+              aria-label={`Фото ${index + 1} из ${count}`}
+              className="relative min-w-0 aspect-square shrink-0 basis-[78%] sm:basis-[calc((100%_-_8px)/2)] md:basis-[calc((100%_-_16px)/3)] lg:basis-[calc((100%_-_24px)/4)]"
             >
               <Image
                 src={photo.src}
-                alt={copies > 1 && copy !== 2 ? "" : photo.alt}
+                alt={photo.alt}
                 fill
+                draggable={false}
                 sizes="(max-width: 640px) 78vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
                 className="object-cover"
-                loading={copy === 2 && index < 4 ? "eager" : "lazy"}
+                loading={index < 4 ? "eager" : "lazy"}
               />
             </div>
-          )),
-        )}
+          ))}
+        </div>
       </div>
       {count > 1 && (
         <div className="mt-6 flex items-center justify-end gap-2 px-6 md:px-12 lg:px-16">

@@ -19,12 +19,14 @@ export default async function EmailPage({
   if (!/^[a-f0-9]{64}$/.test(token)) notFound();
   const { data: s } = await createServerClient()
     .from("email_subscriptions")
-    .select("purpose,confirmed_at,revoked_at,expires_at")
+    .select("purpose,confirmed_at,direct_consent_at,revoked_at,expires_at")
     .eq("token", token)
     .maybeSingle();
   if (!s) notFound();
+  const activeConsent =
+    !!s.confirmed_at || (s.purpose === "restock" && !!s.direct_consent_at);
   const expired =
-    Date.parse(s.expires_at) < new Date().getTime() && !s.confirmed_at;
+    Date.parse(s.expires_at) < new Date().getTime() && !activeConsent;
   return (
     <div className="max-w-xl mx-auto px-6 pt-32 pb-16 space-y-6">
       <h1 className="font-display text-page">Почта Roota</h1>
@@ -35,7 +37,7 @@ export default async function EmailPage({
           приходить.
         </p>
       )}
-      {!s.confirmed_at && !s.revoked_at && !expired ? (
+      {!activeConsent && !s.revoked_at && !expired ? (
         <form action={confirmEmail}>
           <input type="hidden" name="token" value={token} />
           <p className="mb-4">
@@ -55,7 +57,7 @@ export default async function EmailPage({
             ? "Срок ссылки истёк. Запросите новое письмо."
             : s.revoked_at
               ? "Подписка отключена."
-              : "Подписка подтверждена."}
+              : "Подписка активна."}
         </p>
       )}
       {!s.revoked_at && (

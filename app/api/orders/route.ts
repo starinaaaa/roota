@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { getAdmin } from "@/lib/auth";
+import { isTrustedRequestOrigin } from "@/lib/request-origin";
 
 export const dynamic = "force-dynamic";
 
@@ -62,7 +63,7 @@ export async function GET(request: NextRequest) {
 // ── POST /api/orders ─────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
-  if (request.headers.get("origin") !== request.nextUrl.origin)
+  if (!isTrustedRequestOrigin(request))
     return NextResponse.json({ error: "Доступ запрещён" }, { status: 403 });
   let body: unknown;
   try {

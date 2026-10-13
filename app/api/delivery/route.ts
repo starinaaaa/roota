@@ -9,6 +9,7 @@ import {
 } from "@/lib/delivery/service";
 import { pointInCity } from "@/lib/delivery/model";
 import { ozon } from "@/lib/delivery/ozon";
+import { isTrustedRequestOrigin } from "@/lib/request-origin";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 const requestSchema = z.object({
@@ -19,7 +20,7 @@ const requestSchema = z.object({
   offset: z.number().int().min(0).max(50000).optional(),
 });
 export async function POST(request: NextRequest) {
-  if (request.headers.get("origin") !== request.nextUrl.origin)
+  if (!isTrustedRequestOrigin(request))
     return NextResponse.json({ error: "Доступ запрещён" }, { status: 403 });
   try {
     const input = requestSchema.safeParse(await request.json());

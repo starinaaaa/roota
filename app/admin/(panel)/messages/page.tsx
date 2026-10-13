@@ -18,7 +18,7 @@ export default async function MessagesPage() {
     db
       .from("email_messages")
       .select(
-        "id,kind,recipient,state,scheduled_at,attempts,provider_job_id,last_error",
+        "id,kind,recipient,state,scheduled_at,attempts,provider_job_id,last_error,payload",
       )
       .order("created_at", { ascending: false })
       .limit(100),
@@ -180,7 +180,10 @@ export default async function MessagesPage() {
           <tbody>
             {messages.data.map((m) => (
               <tr key={m.id} className="border-b">
-                <td className="p-2">{m.kind}</td>
+                <td className="p-2">
+                  {m.payload?.test ? "Тест · " : ""}
+                  {m.kind}
+                </td>
                 <td>{m.recipient}</td>
                 <td>
                   {m.state}

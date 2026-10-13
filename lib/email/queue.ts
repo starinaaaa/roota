@@ -138,12 +138,15 @@ export async function processEmailQueue() {
       }
       if (marketingKinds.has(m.kind) && !unsubscribe)
         throw new Error("CONSENT");
-      const result = await sendEmail({
-        to: m.recipient,
-        idempotenceKey: m.id,
-        ...renderEmail(template, values, url, label, unsubscribe),
-        metadata: { message_id: m.id },
-      });
+      const result = await sendEmail(
+        {
+          to: m.recipient,
+          idempotenceKey: m.id,
+          ...renderEmail(template, values, url, label, unsubscribe),
+          metadata: { message_id: m.id },
+        },
+        m.kind,
+      );
       if (result.state === "disabled" || result.state === "unconfigured")
         throw new Error("DISABLED");
       const state = result.state === "rejected" ? "failed" : result.state;

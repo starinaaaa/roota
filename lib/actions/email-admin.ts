@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
 import { createServerClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { emailProviderKey } from "@/lib/email/provider-config";
 import { renderEmail, templateKinds } from "@/lib/email/templates";
 import { sendUnisenderEmail } from "@/lib/email/unisender-transport";
 import { randomUUID } from "node:crypto";
@@ -55,7 +56,7 @@ export async function saveEmailTemplate(form: FormData) {
 export async function testEmailTemplate(form: FormData) {
   await requireAdmin();
   const kind = z.enum(templateKinds).parse(form.get("kind"));
-  const key = process.env.UNISENDER_GO_API_KEY;
+  const key = emailProviderKey(kind, process.env);
   if (!key) throw new Error("API-ключ не настроен");
   const { data: t, error } = await createServerClient()
     .from("email_templates")
@@ -63,9 +64,24 @@ export async function testEmailTemplate(form: FormData) {
     .eq("kind", kind)
     .single();
   if (error || !t) throw new Error("Шаблон недоступен");
+  const db = createServerClient();
+  const messageId = randomUUID();
+  const { error: queueError } = await db.from("email_messages").insert({
+    id: messageId,
+    event_key: `test:${messageId}`,
+    kind,
+    recipient: "hello@roota.moscow",
+    state: "sending",
+    attempts: 1,
+    claim: messageId,
+    claimed_at: new Date().toISOString(),
+    payload: { test: true },
+  });
+  if (queueError) throw new Error("Не удалось записать тест в журнал");
   const result = await sendUnisenderEmail(key, {
     to: "hello@roota.moscow",
-    idempotenceKey: `test-${randomUUID()}`,
+    idempotenceKey: messageId,
+    metadata: { message_id: messageId },
     ...renderEmail(
       t,
       {
@@ -80,6 +96,21 @@ export async function testEmailTemplate(form: FormData) {
       "Открыть Roota",
     ),
   });
+  const { error: saveError } = await db
+    .from("email_messages")
+    .update({
+      state: result.state === "rejected" ? "failed" : result.state,
+      provider_job_id: result.state === "accepted" ? result.jobId : null,
+      last_error:
+        result.state === "accepted"
+          ? null
+          : "Проверьте статус теста в Unisender перед повтором",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", messageId)
+    .eq("state", "sending");
+  if (saveError)
+    throw new Error("Проверьте доставку теста в Unisender перед повтором");
   if (result.state !== "accepted")
     throw new Error("Проверьте статус в Unisender перед повтором");
   revalidatePath("/admin/messages");

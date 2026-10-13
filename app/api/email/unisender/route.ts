@@ -1,3 +1,4 @@
+import { emailWebhookKeys } from "@/lib/email/provider-config";
 import { createServerClient } from "@/lib/supabase/server";
 import { parseSignedEmailWebhook, deliveryState } from "@/lib/email/webhook";
 export const runtime = "nodejs";
@@ -8,10 +9,10 @@ export async function GET() {
 export async function POST(request: Request) {
   if (Number(request.headers.get("content-length") ?? 0) > 1024 * 1024)
     return new Response(null, { status: 413 });
-  const events = parseSignedEmailWebhook(
-    await request.text(),
-    process.env.UNISENDER_GO_API_KEY ?? "",
-  );
+  const raw = await request.text();
+  const events = emailWebhookKeys(process.env)
+    .map((key) => parseSignedEmailWebhook(raw, key))
+    .find((events) => events !== null);
   if (!events) return new Response(null, { status: 401 });
   const db = createServerClient();
   for (const event of events) {

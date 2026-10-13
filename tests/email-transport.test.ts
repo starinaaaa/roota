@@ -102,3 +102,35 @@ test("invalid email headers and oversized idempotence keys never reach the provi
     "rejected",
   );
 });
+
+test("provider projects separate order messages from subscription letters and retain the account fallback", async () => {
+  const { emailProviderKey, emailWebhookKeys } =
+    await import("../lib/email/provider-config");
+  const env = {
+    UNISENDER_GO_API_KEY: "account",
+    UNISENDER_GO_SERVICE_API_KEY: "orders",
+    UNISENDER_GO_MARKETING_API_KEY: "subscriptions",
+  };
+  assert.equal(emailProviderKey("order_paid", env), "orders");
+  for (const kind of [
+    "confirm",
+    "restock",
+    "cart_link",
+    "cart_reminder",
+    "review_invite",
+  ])
+    assert.equal(emailProviderKey(kind, env), "subscriptions");
+  assert.equal(
+    emailProviderKey("order_paid", { UNISENDER_GO_API_KEY: "account" }),
+    "account",
+  );
+  assert.equal(
+    emailProviderKey("restock", { UNISENDER_GO_API_KEY: "account" }),
+    "account",
+  );
+  assert.deepEqual(emailWebhookKeys(env), [
+    "account",
+    "orders",
+    "subscriptions",
+  ]);
+});

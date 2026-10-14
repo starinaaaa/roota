@@ -201,6 +201,7 @@ export async function retryNotification(orderId: string) {
   if (!uuid.safeParse(orderId).success) return { error: "Некорректный заказ" };
   const { sendOrderNotification } = await import("@/lib/notifications");
   const state = await sendOrderNotification(orderId);
+  revalidatePath(`/admin/orders/${orderId}`);
   return {
     message:
       state === "sent"

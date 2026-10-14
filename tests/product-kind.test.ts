@@ -54,13 +54,19 @@ test("database restricts unique inventory and atomically saves its kind without 
     await db.exec(`create role anon;create role authenticated;create role service_role bypassrls;
 create table products(id uuid primary key,name text,slug text unique,description text,category_id uuid,price integer,stock_qty integer default 0,material text,dimensions text,weight text,capacity_ml integer,care text,dishwasher_safe boolean,microwave_safe boolean,publication_status text,preorder_enabled boolean default false,lead_time_days integer,featured boolean,seo_title text,seo_description text,updated_at timestamptz default now());
 create table orders(id uuid primary key,reservation_state text);
-create table order_items(order_id uuid,product_id uuid,purchase_mode text);
+create table order_items(order_id uuid,product_id uuid,purchase_mode text,quantity integer default 1);
 create table product_redirects(old_slug text primary key,product_id uuid);
 create table product_images(id uuid,product_id uuid,storage_path text,public_url text,bucket text,alt_text text,sort_order integer,is_primary boolean);
 create function save_product(uuid,jsonb,jsonb,timestamptz default null) returns uuid language plpgsql as $$ begin return public.save_product_without_email($1,$2,$3,$4); end $$;`);
     await db.exec(
       await readFile(
         "supabase/migrations/20261014094529_product_kind.sql",
+        "utf8",
+      ),
+    );
+    await db.exec(
+      await readFile(
+        "supabase/migrations/20261014100038_unique_reservation_guard.sql",
         "utf8",
       ),
     );
@@ -98,7 +104,7 @@ create function save_product(uuid,jsonb,jsonb,timestamptz default null) returns 
     );
     await db.query("update products set stock_qty=0 where id=$1", [id]);
     await db.exec(
-      `insert into orders values('00000000-0000-4000-8000-000000000002','active');insert into order_items values('00000000-0000-4000-8000-000000000002','${id}','stock');`,
+      `insert into orders values('00000000-0000-4000-8000-000000000002','active');insert into order_items(order_id,product_id,purchase_mode) values('00000000-0000-4000-8000-000000000002','${id}','stock');`,
     );
     const stamp = (
       await db.query<{ updated_at: Date }>(
@@ -114,6 +120,30 @@ create function save_product(uuid,jsonb,jsonb,timestamptz default null) returns 
         stamp,
       ]),
       /UNIQUE_ALREADY_RESERVED/,
+    );
+    await db.query("update products set product_kind='batch' where id=$1", [
+      id,
+    ]);
+    await db.query("update order_items set quantity=2 where product_id=$1", [
+      id,
+    ]);
+    await assert.rejects(
+      db.query("select save_product($1,$2,$3,$4)", [
+        id,
+        JSON.stringify({ ...input, stock_qty: 0 }),
+        "[]",
+        stamp,
+      ]),
+      /UNIQUE_ALREADY_RESERVED/,
+    );
+    assert.equal(
+      (
+        await db.query<{ product_kind: string }>(
+          "select product_kind from products where id=$1",
+          [id],
+        )
+      ).rows[0].product_kind,
+      "batch",
     );
     await assert.rejects(
       db.exec(

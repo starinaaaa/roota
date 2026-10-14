@@ -345,16 +345,8 @@ export default function CheckoutForm({
                 autoComplete="email"
                 required
               />
-              <EmailConsent
-                email={consentEmail}
-                checked={!!formData.emailConsent}
-                onChange={(checked) => {
-                  setConsentEmail(formData.email);
-                  setFormData((prev) => ({ ...prev, emailConsent: checked }));
-                }}
-              />
               <Field
-                label="Telegram — необязательно"
+                label="Telegram"
                 id="telegram"
                 name="telegram"
                 type="text"
@@ -366,10 +358,6 @@ export default function CheckoutForm({
                 prefix="@"
                 autoComplete="off"
               />
-              <p className="text-caption text-stone-600">
-                Укажите имя пользователя из настроек Telegram, если вам удобно
-                обсудить заказ там. Не числовой ID и не имя профиля.
-              </p>
             </fieldset>
 
             <div className="divider" />
@@ -407,73 +395,6 @@ export default function CheckoutForm({
                   transition-colors duration-200
                 "
               />
-            </div>
-
-            <div className="font-body text-caption text-stone-600 leading-relaxed">
-              <div className="flex items-start gap-3">
-                <input
-                  id="acceptedTerms"
-                  type="checkbox"
-                  name="acceptedTerms"
-                  checked={formData.acceptedTerms}
-                  onChange={handleChange}
-                  aria-describedby={
-                    fieldErrors.acceptedTerms
-                      ? "acceptedTerms-error"
-                      : undefined
-                  }
-                  aria-invalid={Boolean(fieldErrors.acceptedTerms)}
-                  className="mt-1 w-4 h-4 shrink-0 accent-stone-900"
-                />
-                <label htmlFor="acceptedTerms" className="cursor-pointer">
-                  Принимаю{" "}
-                  <Link
-                    href="/offer"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline underline-offset-2"
-                  >
-                    условия покупки
-                  </Link>{" "}
-                  и{" "}
-                  <Link
-                    href="/terms"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline underline-offset-2"
-                  >
-                    соглашение
-                  </Link>
-                  ; ознакомлен с{" "}
-                  <Link
-                    href="/privacy"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline underline-offset-2"
-                  >
-                    политикой конфиденциальности
-                  </Link>{" "}
-                  и{" "}
-                  <Link
-                    href="/personal-data-policy"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline underline-offset-2"
-                  >
-                    обработкой данных
-                  </Link>
-                  .
-                </label>
-              </div>
-              {fieldErrors.acceptedTerms && (
-                <p
-                  id="acceptedTerms-error"
-                  role="alert"
-                  className="mt-2 text-red-600"
-                >
-                  {fieldErrors.acceptedTerms}
-                </p>
-              )}
             </div>
           </fieldset>
         </form>
@@ -566,6 +487,83 @@ export default function CheckoutForm({
 
             {/* Submit button на десктопе */}
             <div className="pt-2">
+              <fieldset disabled={pending} className="space-y-4 mb-5">
+                <div className="font-body text-caption text-stone-600 leading-relaxed">
+                  <div className="flex items-start gap-3">
+                    <input
+                      id="acceptedTerms"
+                      form="checkout-form"
+                      type="checkbox"
+                      name="acceptedTerms"
+                      checked={formData.acceptedTerms}
+                      onChange={handleChange}
+                      aria-describedby={
+                        fieldErrors.acceptedTerms
+                          ? "acceptedTerms-error"
+                          : undefined
+                      }
+                      aria-invalid={Boolean(fieldErrors.acceptedTerms)}
+                      className="mt-1 w-4 h-4 shrink-0 accent-stone-900"
+                    />
+                    <label htmlFor="acceptedTerms" className="cursor-pointer">
+                      Принимаю{" "}
+                      <Link
+                        href="/offer"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline underline-offset-2"
+                      >
+                        условия покупки
+                      </Link>{" "}
+                      и{" "}
+                      <Link
+                        href="/terms"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline underline-offset-2"
+                      >
+                        соглашение
+                      </Link>
+                      ; ознакомлен с{" "}
+                      <Link
+                        href="/privacy"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline underline-offset-2"
+                      >
+                        политикой конфиденциальности
+                      </Link>{" "}
+                      и{" "}
+                      <Link
+                        href="/personal-data-policy"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline underline-offset-2"
+                      >
+                        обработкой данных
+                      </Link>
+                      .
+                    </label>
+                  </div>
+                  {fieldErrors.acceptedTerms && (
+                    <p
+                      id="acceptedTerms-error"
+                      role="alert"
+                      className="mt-2 text-red-600"
+                    >
+                      {fieldErrors.acceptedTerms}
+                    </p>
+                  )}
+                </div>
+                <EmailConsent
+                  email={consentEmail}
+                  checked={!!formData.emailConsent}
+                  onChange={(checked) => {
+                    setConsentEmail(formData.email);
+                    setFormData((prev) => ({ ...prev, emailConsent: checked }));
+                  }}
+                />
+              </fieldset>
               {error && (
                 <p
                   role="alert"
@@ -656,11 +654,17 @@ function Field({
       >
         {bindPrepositions(label)}
       </label>
-      <div className="relative">
+      <div
+        className={
+          prefix
+            ? "flex items-baseline border border-stone-200 px-4 focus-within:border-stone-500 transition-colors duration-200"
+            : undefined
+        }
+      >
         {prefix && (
           <span
             aria-hidden="true"
-            className="absolute left-4 top-3 font-body text-ui text-stone-600 pointer-events-none"
+            className="shrink-0 font-body text-ui text-stone-600 pointer-events-none"
           >
             {prefix}
           </span>
@@ -677,15 +681,18 @@ function Field({
           placeholder={placeholder}
           autoComplete={autoComplete}
           required={required}
-          style={prefix ? { paddingLeft: "2.25rem" } : undefined}
-          className="
+          className={
+            prefix
+              ? "w-full min-w-0 border-0 bg-transparent font-body text-ui text-stone-800 pl-2 py-3 placeholder:text-stone-600 focus:outline-none"
+              : `
           w-full border border-stone-200 bg-transparent
           font-body text-ui text-stone-800
           px-4 py-3
           placeholder:text-stone-600
           focus:outline-none focus:border-stone-500
           transition-colors duration-200
-        "
+        `
+          }
         />
       </div>
       {error && (

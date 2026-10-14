@@ -37,6 +37,7 @@ export default function EmailConsent({
         <input
           type="checkbox"
           name="emailConsent"
+          form="checkout-form"
           checked={checked}
           onChange={(e) => {
             setTouched(true);

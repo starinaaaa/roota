@@ -116,6 +116,7 @@ export const productSchema = z
     category_id: uuid.nullable(),
     price: z.number().int().min(0).max(10000000),
     stock_qty: z.number().int().min(0).max(100000),
+    product_kind: z.enum(["batch", "unique"]).optional().default("batch"),
     material: optionalText(300),
     dimensions: optionalText(300),
     weight: optionalText(100),
@@ -129,6 +130,14 @@ export const productSchema = z
     featured: z.boolean(),
     seo_title: optionalText(100),
     seo_description: optionalText(300),
+  })
+  .refine((v) => v.product_kind !== "unique" || v.stock_qty <= 1, {
+    message: "Единственный экземпляр: остаток не больше одной штуки",
+    path: ["stock_qty"],
+  })
+  .refine((v) => v.product_kind !== "unique" || !v.preorder_enabled, {
+    message: "Для единственного экземпляра предзаказ недоступен",
+    path: ["preorder_enabled"],
   })
   .refine((v) => !v.preorder_enabled || v.lead_time_days !== null, {
     message: "Укажите срок изготовления",

@@ -102,7 +102,7 @@ export async function listAdminProducts() {
   const { data, error } = await createServerClient()
     .from("products")
     .select(
-      "id,name,slug,price,stock_qty,publication_status,preorder_enabled,featured",
+      "id,name,slug,price,stock_qty,product_kind,publication_status,preorder_enabled,featured",
     )
     .order("created_at", { ascending: false });
   if (error) throw new Error("Не удалось загрузить товары");

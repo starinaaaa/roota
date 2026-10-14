@@ -107,11 +107,13 @@ export async function saveProduct(
   if (error)
     return {
       error:
-        error.message === "PRODUCT_CHANGED"
-          ? "Изделие изменилось, возможно, появился новый заказ. Обновите страницу и проверьте остаток перед повторным сохранением."
-          : error.code === "23505" || error.message === "SLUG_RESERVED"
-            ? "Этот адрес уже занят. Выберите другой."
-            : "Не удалось сохранить товар.",
+        error.message === "UNIQUE_ALREADY_RESERVED"
+          ? "Этот экземпляр уже зарезервирован заказом. Не увеличивайте остаток; сначала проверьте заказ."
+          : error.message === "PRODUCT_CHANGED"
+            ? "Изделие изменилось, возможно, появился новый заказ. Обновите страницу и проверьте остаток перед повторным сохранением."
+            : error.code === "23505" || error.message === "SLUG_RESERVED"
+              ? "Этот адрес уже занят. Выберите другой."
+              : "Не удалось сохранить товар.",
     };
   revalidatePath("/catalog");
   revalidatePath("/");

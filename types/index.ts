@@ -19,6 +19,7 @@ export type Product = {
   images: string[];
   in_stock: boolean;
   stock_qty: number;
+  product_kind?: "batch" | "unique";
   created_at: string;
   updated_at: string;
   material?: string | null;

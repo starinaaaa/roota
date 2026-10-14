@@ -431,11 +431,7 @@ export default function DeliverySelector({
             </>
           )}
         </>
-      ) : (
-        <p className="text-caption text-stone-600">
-          Выберите город из подсказок.
-        </p>
-      )}
+      ) : null}
       {busy && !open && (
         <p role="status" className="text-caption text-stone-600">
           Рассчитываем доставку…

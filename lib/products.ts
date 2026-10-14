@@ -34,6 +34,7 @@ type ProductRow = {
   price: number;
   in_stock: boolean;
   stock_qty: number;
+  product_kind: "batch" | "unique";
   created_at: string;
   updated_at: string;
   material: string | null;
@@ -64,6 +65,7 @@ const PRODUCT_SELECT = `
   price,
   in_stock,
   stock_qty,
+  product_kind,
   created_at,
   updated_at,
   material,
@@ -117,6 +119,7 @@ function mapProduct(row: ProductRow): Product {
     images,
     in_stock: row.in_stock,
     stock_qty: row.stock_qty,
+    product_kind: row.product_kind,
     created_at: row.created_at,
     updated_at: row.updated_at,
     material: row.material ?? null,

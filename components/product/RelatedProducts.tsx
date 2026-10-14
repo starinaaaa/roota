@@ -1,5 +1,6 @@
 "use client";
 
+import { productBadge } from "@/lib/product-badge";
 import { bindPrepositions } from "@/lib/typography";
 import Link from "next/link";
 import Image from "next/image";
@@ -63,25 +64,13 @@ export default function RelatedProducts({ products }: Props) {
                   )}
 
                   {/* Статус: нет в наличии / мало на складе */}
-                  {!p.in_stock ? (
+                  {productBadge(p) && (
                     <div className="absolute top-4 left-4">
                       <span className="font-body text-caption tracking-[0.08em] uppercase inline-block bg-stone-50/90 text-stone-600 px-2.5 py-1.5">
-                        Скоро в наличии
+                        {bindPrepositions(productBadge(p)!)}
                       </span>
                     </div>
-                  ) : p.stock_qty != null &&
-                    p.stock_qty > 0 &&
-                    p.stock_qty <= 3 ? (
-                    <div className="absolute top-4 left-4">
-                      <span className="font-body text-caption tracking-[0.08em] uppercase inline-block bg-stone-50/90 text-stone-600 px-2.5 py-1.5">
-                        {bindPrepositions(
-                          p.stock_qty === 1
-                            ? "Осталась 1 шт."
-                            : `Осталось ${p.stock_qty} шт.`,
-                        )}
-                      </span>
-                    </div>
-                  ) : null}
+                  )}
 
                   <div className="absolute inset-0 bg-stone-900/0 group-hover:bg-stone-900/6 transition-colors duration-500" />
                 </div>

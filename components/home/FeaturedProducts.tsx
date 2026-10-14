@@ -1,5 +1,6 @@
 "use client";
 
+import { productBadge } from "@/lib/product-badge";
 import { bindPrepositions } from "@/lib/typography";
 import { useRef, useState } from "react";
 import Link from "next/link";
@@ -20,6 +21,7 @@ interface FeaturedProductsProps {
     | "primary_image_url"
     | "in_stock"
     | "stock_qty"
+    | "product_kind"
     | "preorder_enabled"
     | "lead_time_days"
   >[];
@@ -115,6 +117,7 @@ function ProductCardFeatured({
     | "primary_image_url"
     | "in_stock"
     | "stock_qty"
+    | "product_kind"
     | "preorder_enabled"
     | "lead_time_days"
   >;
@@ -161,25 +164,13 @@ function ProductCardFeatured({
           )}
 
           {/* Статус: нет в наличии / мало на складе */}
-          {!product.in_stock ? (
+          {productBadge(product) && (
             <div className="absolute top-4 left-4">
               <span className="font-body text-caption tracking-[0.08em] uppercase inline-block bg-stone-50/90 text-stone-600 px-2.5 py-1.5">
-                Скоро в наличии
+                {bindPrepositions(productBadge(product)!)}
               </span>
             </div>
-          ) : product.stock_qty != null &&
-            product.stock_qty > 0 &&
-            product.stock_qty <= 3 ? (
-            <div className="absolute top-4 left-4">
-              <span className="font-body text-caption tracking-[0.08em] uppercase inline-block bg-stone-50/90 text-stone-600 px-2.5 py-1.5">
-                {bindPrepositions(
-                  product.stock_qty === 1
-                    ? "Осталась 1 шт."
-                    : `Осталось ${product.stock_qty} шт.`,
-                )}
-              </span>
-            </div>
-          ) : null}
+          )}
 
           {/* Оверлей при hover */}
           <div

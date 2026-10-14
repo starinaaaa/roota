@@ -27,6 +27,7 @@ const empty: ProductInput = {
   category_id: null,
   price: 0,
   stock_qty: 0,
+  product_kind: "batch",
   material: null,
   dimensions: null,
   weight: null,
@@ -214,12 +215,29 @@ export default function ProductEditor({
             }
           />
         </label>
+        <label className="admin-label">
+          Тип изделия
+          <select
+            className="admin-input"
+            value={data.product_kind}
+            onChange={(e) =>
+              set("product_kind", e.target.value as "batch" | "unique")
+            }
+          >
+            <option value="batch">Партия</option>
+            <option value="unique">Единственный экземпляр</option>
+          </select>
+          <span className="text-sm text-stone-600">
+            Для единственного экземпляра — остаток 0 или 1, без предзаказа.
+          </span>
+        </label>
         <label>
           Доступный остаток
           <input
             className="admin-input"
             type="number"
             min={0}
+            max={data.product_kind === "unique" ? 1 : undefined}
             step={1}
             value={data.stock_qty}
             onChange={(e) => set("stock_qty", Number(e.target.value))}

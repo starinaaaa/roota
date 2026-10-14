@@ -66,9 +66,11 @@ export default function ProductInfo({
           product.stock_qty <= 3 && (
             <p className="font-body text-ui text-stone-600 -mt-1">
               {bindPrepositions(
-                product.stock_qty === 1
-                  ? "Осталась 1 шт."
-                  : `Осталось ${product.stock_qty} шт.`,
+                product.product_kind === "unique"
+                  ? "Единственный экземпляр"
+                  : product.stock_qty === 1
+                    ? "Осталась 1 шт."
+                    : `Осталось ${product.stock_qty} шт.`,
               )}
             </p>
           )}

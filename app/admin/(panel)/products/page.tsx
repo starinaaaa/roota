@@ -18,7 +18,14 @@ export default async function ProductsPage() {
           href={`/admin/products/${p.id}`}
           className="admin-card grid md:grid-cols-[2fr_1fr_1fr_1fr] gap-3 hover:border-stone-500"
         >
-          <strong>{p.name}</strong>
+          <div>
+            <strong>{p.name}</strong>
+            <p className="text-sm text-stone-600">
+              {p.product_kind === "unique"
+                ? "Единственный экземпляр"
+                : "Партия"}
+            </p>
+          </div>
           <p>{formatPrice(p.price)}</p>
           <p>Доступно: {p.stock_qty}</p>
           <p>

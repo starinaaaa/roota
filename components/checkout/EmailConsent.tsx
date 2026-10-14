@@ -14,7 +14,7 @@ export default function EmailConsent({
   const [touched, setTouched] = useState(false);
   const [error, setError] = useState("");
   useEffect(() => {
-    if ((!checked && !touched) || (checked && !email)) return;
+    if (!touched || (checked && !email)) return;
     let current = true;
     const timer = setTimeout(() => {
       void syncCheckoutEmailConsent(email, checked)
@@ -47,8 +47,8 @@ export default function EmailConsent({
           className="mt-1 h-4 w-4 shrink-0 accent-stone-900"
         />
         <span>
-          Согласен на обработку email и письма Roota о заказах, корзине, отзывах
-          и новых коллекциях.
+          Согласен на обработку email и рассылку Roota: новые коллекции,
+          напоминания и отзывы.
         </span>
       </label>
       {error && (

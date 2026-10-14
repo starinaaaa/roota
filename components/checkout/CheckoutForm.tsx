@@ -62,11 +62,11 @@ export default function CheckoutForm({
     address: "",
     comment: "",
     legalVersion: LEGAL_VERSION,
-    acceptedTerms: false,
+    acceptedTerms: true,
     newsletterDataConsent: false,
     subscribeToNews: false,
     reviewConsent: false,
-    emailConsent: false,
+    emailConsent: true,
   });
 
   useEffect(() => {
@@ -384,7 +384,7 @@ export default function CheckoutForm({
                 name="comment"
                 value={formData.comment ?? ""}
                 onChange={handleChange}
-                placeholder="Пожелания к заказу, удобное время доставки"
+                placeholder="Пожелания к заказу"
                 rows={3}
                 className="
                   w-full border border-stone-200 bg-transparent
@@ -601,10 +601,6 @@ export default function CheckoutForm({
               </button>
             </div>
 
-            <p className="font-body text-caption text-stone-600 leading-relaxed">
-              Стоимость доставки включена в итог после расчёта.
-            </p>
-
             <Link
               href="/catalog"
               className="block font-body text-ui tracking-[0.08em] uppercase text-stone-600 hover:text-stone-700 transition-colors duration-200"
@@ -683,7 +679,7 @@ function Field({
           required={required}
           className={
             prefix
-              ? "w-full min-w-0 border-0 bg-transparent font-body text-ui text-stone-800 pl-2 py-3 placeholder:text-stone-600 focus:outline-none"
+              ? "w-full min-w-0 border-0 bg-transparent font-body text-ui text-stone-800 pl-0 py-3 placeholder:text-stone-600 focus:outline-none"
               : `
           w-full border border-stone-200 bg-transparent
           font-body text-ui text-stone-800

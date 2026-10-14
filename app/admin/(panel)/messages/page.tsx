@@ -149,16 +149,27 @@ export default async function MessagesPage() {
               renderEmail(
                 t,
                 {
-                  number: "123",
+                  number: "GL-ТЕСТ",
                   total: "3500",
                   items: "Тарелочка × 1",
                   reservation: "Резерв 30 минут",
                   product: "Тарелочка",
+                  date: "14 октября 2026, 12:00 МСК",
+                  shipping: "350 ₽",
+                  payment: "Оплачено · пример",
+                  recipient: "Покупатель Roota",
+                  delivery: "Пункт выдачи Ozon",
+                  address: "Адрес выбранного пункта",
+                  tracking: "Появится после оформления отправления",
+                  fulfillment:
+                    "Готовые изделия передаём в доставку в течение 1–3 рабочих дней после оплаты.",
                   purpose: "уведомление",
                 },
                 "https://roota.moscow",
                 "Открыть Roota",
                 "https://roota.moscow",
+                t.kind.startsWith("order_"),
+                [{ name: "Тарелочка", quantity: 1, price: 3150 }],
               ).html
             }
           />

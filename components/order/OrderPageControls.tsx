@@ -1,7 +1,12 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-export default function OrderPageControls() {
+import Link from "next/link";
+export default function OrderPageControls({
+  confirmationUrl,
+}: {
+  confirmationUrl: string;
+}) {
   const router = useRouter();
   const [message, setMessage] = useState("");
   useEffect(() => {
@@ -40,6 +45,13 @@ export default function OrderPageControls() {
       >
         Сохранить ссылку
       </button>
+      <Link
+        href={confirmationUrl}
+        prefetch={false}
+        className="underline underline-offset-4"
+      >
+        Подтверждение покупки
+      </Link>
       <span role="status">{message}</span>
     </div>
   );

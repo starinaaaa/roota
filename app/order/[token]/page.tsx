@@ -119,7 +119,7 @@ export default async function CustomerOrderPage({
             Оплатить заказ
           </Link>
         )}
-        <OrderPageControls />
+        <OrderPageControls confirmationUrl={`/order/${token}/confirmation`} />
         <p className="font-body text-caption text-stone-500">
           Сохраните персональную ссылку: по ней можно вернуться к заказу без
           регистрации.

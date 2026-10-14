@@ -85,15 +85,27 @@ export async function testEmailTemplate(form: FormData) {
     ...renderEmail(
       t,
       {
-        number: "ТЕСТ",
+        number: "GL-ТЕСТ",
         total: "3500",
         items: "Тарелочка × 1 — 3500 ₽",
         product: "Тарелочка",
+        date: "14 октября 2026, 12:00 МСК",
+        shipping: "350 ₽",
+        payment: "Оплачено · пример",
+        recipient: "Покупатель Roota",
+        delivery: "Пункт выдачи Ozon",
+        address: "Адрес выбранного пункта",
+        tracking: "Появится после оформления отправления",
+        fulfillment:
+          "Готовые изделия передаём в доставку в течение 1–3 рабочих дней после оплаты.",
         reservation: "Тестовый резерв",
         purpose: "тестовое уведомление",
       },
       siteUrl("/"),
       "Открыть Roota",
+      undefined,
+      kind.startsWith("order_"),
+      [{ name: "Тарелочка", quantity: 1, price: 3150 }],
     ),
   });
   const { error: saveError } = await db

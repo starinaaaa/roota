@@ -1,0 +1,35 @@
+@media print {
+  @page {
+    size: A4;
+    margin: 16mm;
+  }
+  body:has(.order-confirmation) {
+    background: white !important;
+    font-size: 11pt;
+  }
+  body:has(.order-confirmation) > :not(main) {
+    display: none !important;
+  }
+  body:has(.order-confirmation) main > div {
+    padding: 0 !important;
+    max-width: none !important;
+  }
+  .confirmation-actions {
+    display: none !important;
+  }
+  .order-confirmation {
+    border: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+  }
+  .confirmation-item,
+  .confirmation-seller {
+    break-inside: avoid;
+  }
+  .order-confirmation thead {
+    display: table-header-group;
+  }
+  .order-confirmation tfoot {
+    break-inside: avoid;
+  }
+}

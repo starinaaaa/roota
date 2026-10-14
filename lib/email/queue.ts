@@ -5,7 +5,7 @@ import { createServerClient } from "@/lib/supabase/server";
 import { ensureOrderLink } from "@/lib/order-access";
 import { siteUrl } from "@/lib/seo";
 import { sendEmail } from "./server";
-import { renderEmail, marketingKinds } from "./templates";
+import { renderEmail, marketingKinds, type EmailOrderItem } from "./templates";
 export async function processEmailQueue() {
   if (
     process.env.CUSTOMER_EMAILS_ENABLED !== "true" ||
@@ -28,6 +28,7 @@ export async function processEmailQueue() {
     if (claimed.error) throw new Error("Не удалось получить очередь");
     const m = claimed.data?.[0];
     if (!m) break;
+    let providerAttempted = false;
     try {
       const { data: template, error } = await db
         .from("email_templates")
@@ -39,8 +40,9 @@ export async function processEmailQueue() {
         label = "Открыть Roota",
         unsubscribe: string | undefined;
       const values: Record<string, string> = {
-        product: m.payload.product ?? "",
+        product: m.payload?.product ?? "",
       };
+      let orderItems: EmailOrderItem[] | undefined;
       let subscription = m.subscription_id
         ? (
             await db
@@ -54,7 +56,7 @@ export async function processEmailQueue() {
         const { data: o, error: oe } = await db
           .from("orders")
           .select(
-            "order_number,created_at,customer_name,total_amount,delivery_amount,insurance_amount,delivery_type,delivery_address,delivery_details,tracking_number,order_items(product_name,quantity,price),payments(expires_at,status,paid_at)",
+            "order_number,created_at,customer_name,total_amount,delivery_amount,insurance_amount,delivery_type,delivery_address,delivery_details,tracking_number,order_items(product_id,product_name,quantity,price,purchase_mode,lead_time_days),payments(expires_at,status,paid_at),order_shipments(posting_number)",
           )
           .eq("id", m.order_id)
           .single();
@@ -83,7 +85,39 @@ export async function processEmailQueue() {
           Number(o.delivery_amount ?? 0) + Number(o.insurance_amount ?? 0),
         );
         values.tracking =
-          o.tracking_number || "Появится после оформления отправления";
+          o.tracking_number ||
+          relationList(o.order_shipments)[0]?.posting_number ||
+          "Появится после оформления отправления";
+        const productIds = o.order_items
+          .map((i) => i.product_id)
+          .filter(Boolean);
+        const images = productIds.length
+          ? (
+              await db
+                .from("product_images")
+                .select("product_id,public_url")
+                .in("product_id", productIds)
+                .eq("is_primary", true)
+            ).data
+          : [];
+        const imageByProduct = new Map(
+          (images ?? []).map((i) => [i.product_id, i.public_url]),
+        );
+        orderItems = o.order_items.map((i) => ({
+          name: i.product_name,
+          quantity: i.quantity,
+          price: Number(i.price),
+          imageUrl: imageByProduct.get(i.product_id),
+        }));
+        const leadDays = Math.max(
+          0,
+          ...o.order_items.map((i) => i.lead_time_days ?? 0),
+        );
+        values.fulfillment = o.order_items.some(
+          (i) => i.purchase_mode === "preorder",
+        )
+          ? `В заказе есть изделие на заказ.${leadDays ? ` Срок изготовления — до ${leadDays} дней.` : " Срок изготовления согласуем с вами."} О передаче в доставку сообщим отдельным письмом.`
+          : "Готовые изделия передаём в доставку в течение 1–3 рабочих дней после оплаты. О передаче в доставку сообщим отдельным письмом.";
         const paidAt = relationList(o.payments).find(
           (p: { status: string }) => p.status === "paid",
         )?.paid_at;
@@ -103,6 +137,9 @@ export async function processEmailQueue() {
           ? `Резерв до ${new Date(deadline).toLocaleString("ru-RU", { timeZone: "Europe/Moscow" })} МСК. Актуальная оплата — на странице заказа.`
           : "Подробности и актуальный статус — на странице заказа.";
         url = await ensureOrderLink(m.order_id);
+        values.document_url = `${url}/confirmation`;
+        if (m.kind !== "order_created" && m.kind !== "order_paid")
+          values.fulfillment = "";
         label = "Открыть заказ";
         if (m.kind === "review_invite") {
           if (!subscription) {
@@ -172,24 +209,26 @@ export async function processEmailQueue() {
       }
       if (marketingKinds.has(m.kind) && !unsubscribe)
         throw new Error("CONSENT");
-      const result = await sendEmail(
-        {
-          to: m.recipient,
-          idempotenceKey: m.id,
-          ...renderEmail(
-            template,
-            values,
-            url,
-            label,
-            unsubscribe,
-            m.kind.startsWith("order_"),
-          ),
-          metadata: { message_id: m.id },
-        },
-        m.kind,
-      );
-      if (result.state === "disabled" || result.state === "unconfigured")
+      const message = {
+        to: m.recipient,
+        idempotenceKey: m.id,
+        ...renderEmail(
+          template,
+          values,
+          url,
+          label,
+          unsubscribe,
+          m.kind.startsWith("order_"),
+          orderItems,
+        ),
+        metadata: { message_id: m.id },
+      };
+      providerAttempted = true;
+      const result = await sendEmail(message, m.kind);
+      if (result.state === "disabled" || result.state === "unconfigured") {
+        providerAttempted = false;
         throw new Error("DISABLED");
+      }
       const state = result.state === "rejected" ? "failed" : result.state;
       const saved = await db
         .from("email_messages")
@@ -222,14 +261,24 @@ export async function processEmailQueue() {
             .is("notified_at", null);
       } else if (state === "unknown") unknown++;
       else failed++;
-    } catch {
-      // Never retry automatically: the process may have failed after provider acceptance.
-      unknown++;
+    } catch (error) {
+      // Only failures after a provider attempt are ambiguous. Preparation errors
+      // are safe to retry manually and must not be mistaken for sent messages.
+      const state = providerAttempted ? "unknown" : "failed";
+      if (providerAttempted) unknown++;
+      else failed++;
+      const reason =
+        error instanceof Error &&
+        ["TEMPLATE", "ORDER", "CONSENT", "DISABLED"].includes(error.message)
+          ? error.message
+          : "PREPARATION";
       await db
         .from("email_messages")
         .update({
-          state: "unknown",
-          last_error: "Проверьте настройки и доставку перед повтором",
+          state,
+          last_error: providerAttempted
+            ? "Проверьте доставку перед повтором"
+            : `Письмо не отправлялось: ошибка подготовки (${reason})`,
           updated_at: new Date().toISOString(),
         })
         .eq("id", m.id)

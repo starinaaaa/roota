@@ -2,7 +2,7 @@
 import { bindPrepositions } from "@/lib/typography";
 import Script from "next/script";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type PaymentForm = {
   action: string;
@@ -30,7 +30,11 @@ type Props = {
 declare global {
   interface Window {
     Robokassa?: {
-      Render?: (fields: Record<string, string | string[]>) => void;
+      Render?: (
+        fields: Record<string, string | string[]>,
+        container?: string,
+      ) => void;
+      ClosePaymentForm?: () => void;
       StartPayment: (fields: Record<string, string | string[]>) => void;
     };
   }
@@ -57,6 +61,12 @@ export default function PaymentPanel({
   const [opened, setOpened] = useState(false);
   const [unavailable, setUnavailable] = useState(false);
   const [checkFailed, setCheckFailed] = useState(false);
+  const paymentHost = useRef<HTMLDivElement>(null);
+  const paymentHostId = `roota-payment-${id}`;
+  useEffect(() => {
+    if (status === "paid" || expired) window.Robokassa?.ClosePaymentForm?.();
+    return () => window.Robokassa?.ClosePaymentForm?.();
+  }, [status, expired]);
   useEffect(() => {
     if (status === "paid") return;
     let active = true;
@@ -100,12 +110,15 @@ export default function PaymentPanel({
     }
     try {
       if (window.Robokassa.Render) {
-        window.Robokassa.Render({
-          ...form!.fields,
-          Settings: JSON.stringify({
-            Mode: "modal",
-          }),
-        });
+        window.Robokassa.Render(
+          {
+            ...form!.fields,
+            Settings: JSON.stringify({
+              Mode: "widget",
+            }),
+          },
+          paymentHostId,
+        );
       } else {
         window.Robokassa.StartPayment(form!.fields);
       }
@@ -192,11 +205,30 @@ export default function PaymentPanel({
               <button
                 type="button"
                 onClick={openPayment}
-                disabled={!ready || unavailable}
+                disabled={!ready || unavailable || opened}
                 className="w-full bg-stone-900 text-stone-50 font-body text-ui tracking-[0.08em] uppercase py-4 disabled:opacity-50"
               >
-                Перейти к оплате
+                {opened ? "Форма оплаты открыта ниже" : "Перейти к оплате"}
               </button>
+              <div
+                id={paymentHostId}
+                ref={paymentHost}
+                aria-label="Защищённая форма оплаты Robokassa"
+                className={`-mx-5 min-w-[320px] sm:mx-0 sm:min-w-0 ${opened ? "h-[680px]" : "h-0"}`}
+              />
+              {opened && (
+                <button
+                  type="button"
+                  className="font-body text-ui text-stone-600 underline underline-offset-4"
+                  onClick={() => {
+                    window.Robokassa?.ClosePaymentForm?.();
+                    paymentHost.current?.replaceChildren();
+                    setOpened(false);
+                  }}
+                >
+                  Закрыть форму оплаты
+                </button>
+              )}
               {unavailable && (
                 <p role="status" className="font-body text-ui text-stone-600">
                   Встроенная форма недоступна. Откройте страницу оплаты
@@ -249,6 +281,15 @@ export default function PaymentPanel({
               className="block border border-stone-300 px-6 py-4 text-center font-body text-ui"
             >
               Открыть мой заказ
+            </Link>
+          )}
+          {orderUrl && paid && mode === "live" && (
+            <Link
+              href={`${orderUrl}/confirmation`}
+              prefetch={false}
+              className="block font-body text-ui text-stone-600 underline underline-offset-4"
+            >
+              Подтверждение покупки · сохранить или распечатать
             </Link>
           )}
           <Link

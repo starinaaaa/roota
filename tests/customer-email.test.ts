@@ -752,3 +752,50 @@ test("order email includes purchase and delivery details, escapes content and no
   assert.match(result.plaintext, /Номер отправления: 123456/);
   assert.doesNotMatch(result.html, /\\n/);
 });
+
+test("purchase email shows photos, unit prices and a printable confirmation without unsafe image URLs", () => {
+  const values = {
+    number: "GL-20261014-TEST",
+    items: "Изделие × 2 — 300 ₽",
+    total: "421",
+    shipping: "121 ₽",
+    date: "14 октября",
+    recipient: "Покупатель",
+    delivery: "Ozon",
+    address: "Москва",
+    tracking: "POST-1",
+    payment: "Оплачено",
+    fulfillment: "Передадим в доставку за 1–3 рабочих дня.",
+    document_url: "https://roota.moscow/order/token/confirmation",
+  };
+  const result = renderEmail(
+    { subject: "Заказ {{number}}", body: "Спасибо!" },
+    values,
+    "https://roota.moscow/order/token",
+    "Открыть заказ",
+    undefined,
+    true,
+    [
+      {
+        name: "Тарелка <Лес>",
+        quantity: 2,
+        price: 150,
+        imageUrl: "https://roota.moscow/media/product/image",
+      },
+      { name: "Чашка", quantity: 1, price: 1, imageUrl: "javascript:alert(1)" },
+    ],
+  );
+  assert.match(
+    result.html,
+    /<img src="https:\/\/roota.moscow\/media\/product\/image"/,
+  );
+  assert.match(result.html, /Тарелка &lt;Лес&gt;/);
+  assert.match(result.html, /2 шт. × 150/);
+  assert.match(result.html, /Сохранить подтверждение покупки/);
+  assert.match(
+    result.plaintext,
+    /Подтверждение покупки: https:\/\/roota.moscow\/order\/token\/confirmation/,
+  );
+  assert.match(result.html, /Передадим в доставку за 1–3 рабочих дня/);
+  assert.doesNotMatch(result.html, /javascript:/);
+});

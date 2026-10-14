@@ -13,28 +13,38 @@ const PointsMap = dynamic(() => import("./PointsMap"), {
     </div>
   ),
 });
+import type { CheckoutDeliveryDraft } from "@/lib/checkout-draft";
+
 type Props = {
   phone: string;
   cartKey: string;
   enabled: boolean;
   onQuote: (quote: DeliveryQuote | null) => void;
+  initialSelection?: CheckoutDeliveryDraft | null;
+  onSelection?: (value: CheckoutDeliveryDraft) => void;
 };
 export default function DeliverySelector({
   phone,
   cartKey,
   enabled,
   onQuote,
+  initialSelection,
+  onSelection,
 }: Props) {
-  const [city, setCity] = useState(""),
-    [selectedCity, setSelectedCity] = useState<DeliveryCity | null>(null),
+  const [city, setCity] = useState(initialSelection?.city?.name ?? ""),
+    [selectedCity, setSelectedCity] = useState<DeliveryCity | null>(
+      initialSelection?.city ?? null,
+    ),
     [suggestions, setSuggestions] = useState<DeliveryCity[]>([]),
     [cityLoading, setCityLoading] = useState(false),
     [cityError, setCityError] = useState(""),
     [suggestOpen, setSuggestOpen] = useState(false),
     [active, setActive] = useState(-1),
-    [method, setMethod] = useState(false),
+    [method, setMethod] = useState(initialSelection?.method ?? false),
     [points, setPoints] = useState<DeliveryPoint[]>([]),
-    [point, setPoint] = useState<DeliveryPoint | null>(null),
+    [point, setPoint] = useState<DeliveryPoint | null>(
+      initialSelection?.point ?? null,
+    ),
     [query, setQuery] = useState(""),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
@@ -67,15 +77,37 @@ export default function DeliverySelector({
     setBusy(false);
     onQuoteRef.current(null);
   }
+  const previousContext = useRef({ phone, cartKey });
   useEffect(() => {
     const counter = revision;
-    reset();
+    if (
+      previousContext.current.phone !== phone ||
+      previousContext.current.cartKey !== cartKey
+    )
+      reset();
+    previousContext.current = { phone, cartKey };
     setOpen(false);
     return () => {
       counter.current++;
       controller.current?.abort();
     };
   }, [phone, cartKey]);
+  useEffect(() => {
+    onSelection?.({ city: selectedCity, point, method });
+  }, [selectedCity, point, method, onSelection]);
+  useEffect(() => {
+    // Restore the choice, never a cached price: the server checks the current cart again.
+    if (
+      !initialSelection?.city ||
+      !initialSelection.point ||
+      !initialSelection.method ||
+      !normalizeRussianPhone(phone)
+    )
+      return;
+    void request("quote", initialSelection.point);
+    // This runs only when the selector mounts with the saved draft.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   useEffect(() => {
     if (open) dialog.current?.showModal();
     else if (dialog.current?.open) {

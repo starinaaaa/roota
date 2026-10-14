@@ -1,4 +1,5 @@
 import "server-only";
+import { ozonCheckoutError } from "./checkout-errors";
 import { OzonTransport, activeShipmentMethod } from "./ozon-transport";
 import {
   moneyToKopecks,
@@ -97,10 +98,27 @@ export const ozon: DeliveryAdapter = {
       },
     );
     const r = data.results?.find((r) => r.request_id === 1);
-    if (!r || r.error || !r.posting)
-      throw new Error(
-        "Доставка в этот пункт недоступна для вашего заказа. Выберите другой пункт.",
+    if (!r || r.error || !r.posting) {
+      const rawCode =
+        r?.error && typeof r.error === "object" && "code" in r.error
+          ? r.error.code
+          : "unknown";
+      const code =
+        typeof rawCode === "string" && /^[a-zA-Z0-9_]{1,80}$/.test(rawCode)
+          ? rawCode
+          : "unknown";
+      const goodsAmount = context.items.reduce(
+        (sum, item) => sum + item.price * item.quantity,
+        0,
       );
+      console.warn("Ozon checkout rejected", {
+        code,
+        goodsAmount,
+        pointId,
+        shipmentMethodId: context.shipmentMethodId,
+      });
+      throw new Error(ozonCheckoutError(code, goodsAmount));
+    }
     const delivery = r.posting.estimated_delivery_cost,
       insurance = r.posting.estimated_insurance_cost;
     if (delivery?.currency_code !== "RUB" || insurance?.currency_code !== "RUB")

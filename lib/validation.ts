@@ -18,15 +18,9 @@ export const phone = z
   });
 export const checkoutSchema = z
   .object({
-    name: z
-      .string()
-      .trim()
-      .min(1, "Введите имя и фамилию")
-      .max(100)
-      .refine(
-        (value) => value.split(/\s+/).length >= 2,
-        "Введите имя и фамилию",
-      ),
+    name: z.string().trim().max(100).optional().default(""),
+    firstName: z.string().trim().min(1, "Введите имя").max(50).optional(),
+    lastName: z.string().trim().min(1, "Введите фамилию").max(50).optional(),
     telegram: z
       .string()
       .trim()
@@ -67,6 +61,21 @@ export const checkoutSchema = z
     emailConsent: z.boolean().optional(),
     deliveryQuoteId: uuid.optional(),
   })
+  .refine(
+    (v) =>
+      v.firstName !== undefined ||
+      v.name.split(/\s+/).filter(Boolean).length >= 2,
+    { message: "Введите имя и фамилию", path: ["name"] },
+  )
+  .refine((v) => (v.firstName === undefined) === (v.lastName === undefined), {
+    message: "Введите имя и фамилию",
+    path: ["lastName"],
+  })
+  .transform((v) =>
+    v.firstName !== undefined && v.lastName !== undefined
+      ? { ...v, name: `${v.firstName} ${v.lastName}` }
+      : v,
+  )
   .transform((v) =>
     v.emailConsent === undefined
       ? v

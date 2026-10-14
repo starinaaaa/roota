@@ -1,7 +1,7 @@
 "use client";
 
 import { bindPrepositions } from "@/lib/typography";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -18,12 +18,22 @@ import { LEGAL_VERSION } from "@/lib/legal";
 import { checkoutSchema } from "@/lib/validation";
 import type { DeliveryQuote } from "@/lib/delivery/model";
 
+import {
+  readCheckoutDraft,
+  type CheckoutDeliveryDraft,
+} from "@/lib/checkout-draft";
+
 type Props = {
   initialItems: CartItem[];
   deliveryEnabled: boolean;
+  draftKey: string;
 };
 
-export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
+export default function CheckoutForm({
+  initialItems,
+  deliveryEnabled,
+  draftKey,
+}: Props) {
   const router = useRouter();
   const requestKey = useRef<string | null>(null);
   const submitting = useRef(false);
@@ -34,7 +44,16 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [formData, setFormData] = useState<CheckoutFormData>({
+  const [draftReady, setDraftReady] = useState(false);
+  const [deliveryDraft, setDeliveryDraft] =
+    useState<CheckoutDeliveryDraft | null>(null);
+  const initialDelivery = useRef<CheckoutDeliveryDraft | null>(null);
+  const storageKey = `roota:checkout:v1:${draftKey}`;
+  const [formData, setFormData] = useState<
+    CheckoutFormData & { firstName: string; lastName: string }
+  >({
+    firstName: "",
+    lastName: "",
     name: "",
     telegram: "",
     phone: "+7",
@@ -49,6 +68,57 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
     reviewConsent: false,
     emailConsent: false,
   });
+
+  useEffect(() => {
+    try {
+      const draft = readCheckoutDraft(localStorage.getItem(storageKey));
+      if (draft) {
+        setFormData((prev) => ({
+          ...prev,
+          firstName: draft.firstName,
+          lastName: draft.lastName,
+          name: `${draft.firstName} ${draft.lastName}`.trim(),
+          phone: draft.phone,
+          email: draft.email,
+          telegram: draft.telegram,
+          comment: draft.comment,
+          emailConsent: draft.emailConsent,
+        }));
+        setConsentEmail(draft.email);
+        initialDelivery.current = draft.delivery;
+        setDeliveryDraft(draft.delivery);
+      }
+    } catch {
+      /* Private browsing or disabled storage must not prevent checkout. */
+    }
+    setDraftReady(true);
+  }, [storageKey]);
+  useEffect(() => {
+    if (!draftReady) return;
+    try {
+      localStorage.setItem(
+        storageKey,
+        JSON.stringify({
+          savedAt: Date.now(),
+          legalVersion: LEGAL_VERSION,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          phone: formData.phone,
+          email: formData.email,
+          telegram: formData.telegram,
+          comment: formData.comment,
+          emailConsent: !!formData.emailConsent,
+          delivery: deliveryDraft,
+        }),
+      );
+    } catch {
+      /* Checkout also works without local storage. */
+    }
+  }, [draftReady, storageKey, formData, deliveryDraft]);
+  const saveDeliveryDraft = useCallback(
+    (value: CheckoutDeliveryDraft) => setDeliveryDraft(value),
+    [],
+  );
 
   const totalPrice = initialItems.reduce(
     (sum, i) => sum + i.product.price * i.quantity,
@@ -66,6 +136,9 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
       ...formData,
       [name]: type === "checkbox" ? checked : value,
     };
+    if (name === "firstName" || name === "lastName")
+      next.name = `${next.firstName.trim()} ${next.lastName.trim()}`.trim();
+    if (name === "telegram") next.telegram = value.replace(/^@+/, "");
     setFormData(next);
     if (name === "email") setConsentEmail("");
     if (fieldErrors[name]) {
@@ -167,6 +240,9 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
     }
 
     if (result.success) {
+      try {
+        localStorage.removeItem(storageKey);
+      } catch {}
       router.push(
         result.paymentId
           ? `/payment/${result.paymentId}`
@@ -180,6 +256,13 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
       submitting.current = false;
     }
   }
+
+  if (!draftReady)
+    return (
+      <p role="status" className="px-6 py-12 text-ui">
+        Загружаем данные заказа…
+      </p>
+    );
 
   return (
     <div className="max-w-[1440px] mx-auto px-6 md:px-12 lg:px-16 py-12 md:py-16">
@@ -202,19 +285,34 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
                 Контактные данные
               </legend>
 
-              <Field
-                error={fieldErrors.name}
-                onBlur={() => validateField("name")}
-                label="Имя и фамилия *"
-                id="name"
-                name="name"
-                type="text"
-                value={formData.name}
-                onChange={handleChange}
-                placeholder="Анна Иванова"
-                autoComplete="name"
-                required
-              />
+              <div className="grid gap-5 sm:grid-cols-2">
+                <Field
+                  error={fieldErrors.firstName}
+                  onBlur={() => validateField("firstName")}
+                  label="Имя *"
+                  id="firstName"
+                  name="firstName"
+                  type="text"
+                  value={formData.firstName}
+                  onChange={handleChange}
+                  placeholder="Анна"
+                  autoComplete="given-name"
+                  required
+                />
+                <Field
+                  error={fieldErrors.lastName}
+                  onBlur={() => validateField("lastName")}
+                  label="Фамилия *"
+                  id="lastName"
+                  name="lastName"
+                  type="text"
+                  value={formData.lastName}
+                  onChange={handleChange}
+                  placeholder="Иванова"
+                  autoComplete="family-name"
+                  required
+                />
+              </div>
 
               <PhoneField
                 value={formData.phone}
@@ -264,7 +362,8 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
                 onChange={handleChange}
                 onBlur={() => validateField("telegram")}
                 error={fieldErrors.telegram}
-                placeholder="@anna_ceramics"
+                placeholder="anna_ceramics"
+                prefix="@"
                 autoComplete="off"
               />
               <p className="text-caption text-stone-600">
@@ -280,6 +379,8 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
               cartKey={cartKey}
               enabled={deliveryEnabled}
               onQuote={receiveQuote}
+              initialSelection={initialDelivery.current}
+              onSelection={saveDeliveryDraft}
             />
 
             {/* Комментарий */}
@@ -532,6 +633,7 @@ function Field({
   required,
   error,
   onBlur,
+  prefix,
 }: {
   label: string;
   id: string;
@@ -544,6 +646,7 @@ function Field({
   required?: boolean;
   error?: string;
   onBlur?: () => void;
+  prefix?: string;
 }) {
   return (
     <div className="space-y-2">
@@ -553,19 +656,29 @@ function Field({
       >
         {bindPrepositions(label)}
       </label>
-      <input
-        id={id}
-        name={name}
-        type={type}
-        value={value}
-        onChange={onChange}
-        onBlur={onBlur}
-        aria-invalid={Boolean(error)}
-        aria-describedby={error ? id + "-error" : undefined}
-        placeholder={placeholder}
-        autoComplete={autoComplete}
-        required={required}
-        className="
+      <div className="relative">
+        {prefix && (
+          <span
+            aria-hidden="true"
+            className="absolute left-4 top-3 font-body text-ui text-stone-600 pointer-events-none"
+          >
+            {prefix}
+          </span>
+        )}
+        <input
+          id={id}
+          name={name}
+          type={type}
+          value={value}
+          onChange={onChange}
+          onBlur={onBlur}
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? id + "-error" : undefined}
+          placeholder={placeholder}
+          autoComplete={autoComplete}
+          required={required}
+          style={prefix ? { paddingLeft: "2.25rem" } : undefined}
+          className="
           w-full border border-stone-200 bg-transparent
           font-body text-ui text-stone-800
           px-4 py-3
@@ -573,7 +686,8 @@ function Field({
           focus:outline-none focus:border-stone-500
           transition-colors duration-200
         "
-      />
+        />
+      </div>
       {error && (
         <p
           id={id + "-error"}

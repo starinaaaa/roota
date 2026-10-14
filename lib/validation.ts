@@ -64,8 +64,19 @@ export const checkoutSchema = z
     newsletterDataConsent: z.boolean().optional().default(false),
     subscribeToNews: z.boolean().optional().default(false),
     reviewConsent: z.boolean().optional().default(false),
+    emailConsent: z.boolean().optional(),
     deliveryQuoteId: uuid.optional(),
   })
+  .transform((v) =>
+    v.emailConsent === undefined
+      ? v
+      : {
+          ...v,
+          subscribeToNews: v.emailConsent,
+          newsletterDataConsent: v.emailConsent,
+          reviewConsent: v.emailConsent,
+        },
+  )
   .refine((v) => !v.subscribeToNews || v.newsletterDataConsent, {
     message: "Для подписки подтвердите отдельное согласие на обработку email",
     path: ["newsletterDataConsent"],

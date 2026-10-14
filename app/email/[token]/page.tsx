@@ -24,9 +24,11 @@ export default async function EmailPage({
     .maybeSingle();
   if (!s) notFound();
   const activeConsent =
-    !!s.confirmed_at || (s.purpose === "restock" && !!s.direct_consent_at);
+    !!s.confirmed_at ||
+    (["restock", "cart", "news"].includes(s.purpose) && !!s.direct_consent_at);
   const expired =
-    Date.parse(s.expires_at) < new Date().getTime() && !activeConsent;
+    Date.parse(s.expires_at) < new Date().getTime() &&
+    (s.purpose === "cart" || !activeConsent);
   return (
     <div className="max-w-xl mx-auto px-6 pt-32 pb-16 space-y-6">
       <h1 className="font-display text-page">Почта Roota</h1>

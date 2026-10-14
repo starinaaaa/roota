@@ -11,7 +11,7 @@ import { createOrder } from "@/lib/actions/orders";
 import type { CartItem, CheckoutFormData } from "@/types";
 
 import { touchCheckoutEmail } from "@/lib/actions/email";
-import CartEmail from "./CartEmail";
+import EmailConsent from "./EmailConsent";
 import PhoneField from "./PhoneField";
 import DeliverySelector from "./DeliverySelector";
 import { LEGAL_VERSION } from "@/lib/legal";
@@ -28,6 +28,7 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
   const requestKey = useRef<string | null>(null);
   const submitting = useRef(false);
 
+  const [consentEmail, setConsentEmail] = useState("");
   const [quote, setQuote] = useState<DeliveryQuote | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [pending, setPending] = useState(false);
@@ -46,6 +47,7 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
     newsletterDataConsent: false,
     subscribeToNews: false,
     reviewConsent: false,
+    emailConsent: false,
   });
 
   const totalPrice = initialItems.reduce(
@@ -65,6 +67,7 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
       [name]: type === "checkbox" ? checked : value,
     };
     setFormData(next);
+    if (name === "email") setConsentEmail("");
     if (fieldErrors[name]) {
       const parsed = checkoutSchema.safeParse(next);
       setFieldErrors((prev) => ({
@@ -230,7 +233,10 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
 
               <Field
                 error={fieldErrors.email}
-                onBlur={() => validateField("email")}
+                onBlur={() => {
+                  validateField("email");
+                  setConsentEmail(formData.email);
+                }}
                 label="Email *"
                 id="email"
                 name="email"
@@ -241,18 +247,14 @@ export default function CheckoutForm({ initialItems, deliveryEnabled }: Props) {
                 autoComplete="email"
                 required
               />
-              <CartEmail email={formData.email} />
-              <label className="flex items-start gap-3 text-caption text-stone-600">
-                <input
-                  type="checkbox"
-                  name="reviewConsent"
-                  checked={formData.reviewConsent}
-                  onChange={handleChange}
-                />
-                Получить одно письмо с приглашением оставить честный отзыв после
-                получения заказа. Согласен на обработку email для приглашения;
-                отписка доступна в письме.
-              </label>
+              <EmailConsent
+                email={consentEmail}
+                checked={!!formData.emailConsent}
+                onChange={(checked) => {
+                  setConsentEmail(formData.email);
+                  setFormData((prev) => ({ ...prev, emailConsent: checked }));
+                }}
+              />
               <Field
                 label="Telegram — необязательно"
                 id="telegram"

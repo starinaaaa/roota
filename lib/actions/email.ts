@@ -6,31 +6,36 @@ import { z } from "zod";
 import { createServerClient } from "@/lib/supabase/server";
 import { uuid } from "@/lib/validation";
 import { getCart } from "./cart";
-export async function requestCartEmail(email: string, consent: boolean) {
-  const parsed = z.string().trim().email().max(254).safeParse(email);
+export async function syncCheckoutEmailConsent(
+  email: string,
+  consent: boolean,
+) {
   const session = (await cookies()).get("cart_session")?.value;
-  if (!parsed.success || consent !== true || !uuid.safeParse(session).success)
-    return { error: "Укажите email и подтвердите согласие на напоминание" };
-  const { items } = await getCart();
-  if (!items.length || items.some((i) => i.purchase_mode === "preorder"))
-    return { error: "Ссылка доступна для корзины с изделиями в наличии" };
+  if (typeof consent !== "boolean" || !uuid.safeParse(session).success)
+    return { error: "Обновите страницу и попробуйте снова." };
+  const parsed = z.string().trim().email().max(254).safeParse(email);
+  if (consent && !parsed.success) return { error: "Укажите корректный email." };
+  const items = consent ? (await getCart()).items : [];
   const { error } = await createServerClient().rpc(
-    "request_email_subscription",
+    "sync_checkout_email_consent",
     {
-      p_email: parsed.data.toLowerCase(),
-      p_purpose: "cart",
-      p_resource: session,
-      p_token: randomBytes(32).toString("hex"),
-      p_version: "cart-reminder-2026-10-14",
-      p_items: items.map((i) => ({
-        product_id: i.product_id,
-        quantity: i.quantity,
-        name: i.product.name,
-      })),
+      p_session: session,
+      p_email: parsed.success ? parsed.data.toLowerCase() : "",
+      p_enabled: consent,
+      p_cart_token: randomBytes(32).toString("hex"),
+      p_news_token: randomBytes(32).toString("hex"),
+      p_version: "checkout-email-2026-10-14",
+      p_items: items
+        .filter((i) => i.purchase_mode !== "preorder")
+        .map((i) => ({
+          product_id: i.product_id,
+          quantity: i.quantity,
+          name: i.product.name,
+        })),
     },
   );
   return error
-    ? { error: "Не удалось сохранить корзину. Попробуйте позже." }
+    ? { error: "Не удалось сохранить согласие. Попробуйте ещё раз." }
     : {};
 }
 export async function confirmEmail(form: FormData) {

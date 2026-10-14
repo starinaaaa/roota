@@ -40,6 +40,12 @@ async function database() {
       "utf8",
     ),
   );
+  await db.exec(
+    await readFile(
+      "supabase/migrations/20261014001738_checkout_email_consent.sql",
+      "utf8",
+    ),
+  );
   await db.exec("update email_settings set enabled=true,test_mode=false;");
   return db;
 }
@@ -568,6 +574,135 @@ test("direct restock consent activates immediately without confirming ownership,
         )
       ).rows[0].revoked_at,
       null,
+    );
+  } finally {
+    await db.close();
+  }
+});
+
+test("single checkout consent saves news and cart directly, suppresses confirmation, restores safely and revokes only its session", async () => {
+  const db = await database();
+  try {
+    const p = randomUUID(),
+      session = randomUUID();
+    await db.query(
+      "insert into products values($1,'Тарелка','plate',2,'published')",
+      [p],
+    );
+    const items = [{ product_id: p, name: "Тарелка", quantity: 1 }];
+    await db.query(
+      "select sync_checkout_email_consent($1,'all@example.com',true,$2,$3,'all-v1',$4)",
+      [session, "a".repeat(64), "b".repeat(64), items],
+    );
+    const c = (
+      await db.query<{
+        purpose: string;
+        direct_consent_at: string;
+        confirmed_at: null;
+      }>(
+        "select purpose,direct_consent_at,confirmed_at from email_subscriptions order by purpose",
+      )
+    ).rows;
+    assert.deepEqual(
+      c.map((x) => x.purpose),
+      ["cart", "news"],
+    );
+    assert.ok(c.every((x) => x.direct_consent_at && x.confirmed_at === null));
+    assert.equal(
+      (await db.query("select * from email_messages")).rows.length,
+      0,
+    );
+    await db.exec(
+      "update checkout_drafts set last_activity_at=now()-interval '3 hours'; select prepare_email_queue();",
+    );
+    assert.equal(
+      (
+        await db.query(
+          "select * from claim_email_messages(10) where kind='cart_reminder'",
+        )
+      ).rows.length,
+      1,
+    );
+    await db.query("select restore_email_cart($1,$2,false)", [
+      "a".repeat(64),
+      randomUUID(),
+    ]);
+    await db.query(
+      "select sync_checkout_email_consent('other-session','all@example.com',true,$1,$2,'all-v1',$3)",
+      ["c".repeat(64), "d".repeat(64), items],
+    );
+    await db.query(
+      "select sync_checkout_email_consent($1,'',false,$2,$3,'all-v1','[]')",
+      [session, "e".repeat(64), "f".repeat(64)],
+    );
+    assert.equal(
+      (
+        await db.query<{ n: number }>(
+          "select count(*)::int n from email_subscriptions where resource=$1 and revoked_at is null",
+          [session],
+        )
+      ).rows[0].n,
+      0,
+    );
+    assert.equal(
+      (
+        await db.query<{ n: number }>(
+          "select count(*)::int n from email_subscriptions where resource='other-session' and revoked_at is null",
+        )
+      ).rows[0].n,
+      2,
+    );
+    await db.query(
+      "select sync_checkout_email_consent('other-session','new@example.com',true,$1,$2,'all-v1',$3)",
+      ["e".repeat(64), "f".repeat(64), items],
+    );
+    assert.equal(
+      (
+        await db.query<{ n: number }>(
+          "select count(*)::int n from email_subscriptions where email='all@example.com' and revoked_at is null",
+        )
+      ).rows[0].n,
+      0,
+    );
+    assert.equal(
+      (
+        await db.query<{ n: number }>(
+          "select count(*)::int n from email_subscriptions where email='new@example.com' and revoked_at is null",
+        )
+      ).rows[0].n,
+      2,
+    );
+  } finally {
+    await db.close();
+  }
+});
+
+test("committed real order records unified news consent even before autosave and does not subscribe unchecked buyers", async () => {
+  const db = await database();
+  try {
+    await db.query(
+      "insert into orders(id,customer_email,cart_session,request_payload) values($1,'yes@example.com','yes-session',$2)",
+      [randomUUID(), { form: { emailConsent: true, reviewConsent: true } }],
+    );
+    await db.query(
+      "insert into orders(id,customer_email,cart_session,request_payload) values($1,'no@example.com','no-session',$2)",
+      [randomUUID(), { form: { emailConsent: false } }],
+    );
+    assert.equal(
+      (
+        await db.query<{ n: number }>(
+          "select count(*)::int n from email_subscriptions where purpose='news' and email='yes@example.com' and direct_consent_at is not null and confirmed_at is null",
+        )
+      ).rows[0].n,
+      1,
+    );
+    assert.equal(
+      (
+        await db.query(
+          "select * from email_subscriptions where email='no@example.com'",
+        )
+      ).rows.length,
+      0,
     );
   } finally {
     await db.close();

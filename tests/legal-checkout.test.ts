@@ -81,3 +81,27 @@ test("checkout requires a full name and accepts only an optional Telegram userna
     );
   }
 });
+
+test("one optional email choice supplies news, data and review consent without accepting purchase terms", () => {
+  const enabled = checkoutSchema.parse({ ...order, emailConsent: true });
+  assert.equal(enabled.subscribeToNews, true);
+  assert.equal(enabled.newsletterDataConsent, true);
+  assert.equal(enabled.reviewConsent, true);
+  const disabled = checkoutSchema.parse({
+    ...order,
+    emailConsent: false,
+    reviewConsent: true,
+    subscribeToNews: true,
+    newsletterDataConsent: true,
+  });
+  assert.equal(disabled.subscribeToNews, false);
+  assert.equal(disabled.reviewConsent, false);
+  assert.equal(
+    checkoutSchema.safeParse({
+      ...order,
+      emailConsent: true,
+      acceptedTerms: false,
+    }).success,
+    false,
+  );
+});

@@ -22,7 +22,7 @@ export default async function RestorePage({
     .select("id")
     .eq("token", token)
     .eq("purpose", "cart")
-    .not("confirmed_at", "is", null)
+    .or("confirmed_at.not.is.null,direct_consent_at.not.is.null")
     .is("revoked_at", null)
     .gt("expires_at", new Date().toISOString())
     .maybeSingle();

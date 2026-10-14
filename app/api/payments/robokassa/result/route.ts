@@ -1,5 +1,6 @@
 import { after, NextRequest } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
+import { processEmailQueue } from "@/lib/email/queue";
 import { sendOrderNotification } from "@/lib/notifications";
 import {
   callbackFields,
@@ -106,6 +107,11 @@ async function processNotification(fields: Record<string, string>) {
   });
   if (data.mode === "live" && data.order_id) {
     after(async () => {
+      try {
+        await processEmailQueue();
+      } catch {
+        console.error("customer_email_queue_failed");
+      }
       try {
         const { data: order } = await db
           .from("orders")

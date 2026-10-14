@@ -30,6 +30,10 @@ test("SMZ receipt names, quantities, delivery and insurance exactly match paymen
     },
     profile,
   );
+  assert.equal(receipt.items.length, 2);
+  assert.equal(receipt.items[1].name, "Доставка");
+  assert.equal(receipt.items[1].sum, 55.03);
+  assert.doesNotMatch(JSON.stringify(receipt), /страхова/i);
   assert.equal(receipt.items[0].quantity, 2);
   assert.equal(receipt.items[0].sum, 12000);
   assert.equal(receipt.items[0].name, "Тарелка «Поцелуй»");
@@ -107,4 +111,21 @@ test("live POST contains signed URL-encoded receipt and uses production rather t
       .digest("hex"),
   );
   assert.ok(!JSON.stringify(f).includes("live-p1"));
+});
+
+test("receipt keeps service lines separate when fiscal attributes differ", () => {
+  const receipt = buildReceipt(
+    {
+      amount: "115",
+      items: [
+        { name: "Тарелка", quantity: 1, sum: 100, kind: "goods" },
+        { name: "Доставка", quantity: 1, sum: 10, kind: "delivery" },
+        { name: "Страхование", quantity: 1, sum: 5, kind: "insurance" },
+      ],
+    },
+    { ...profile, insurance: { tax: "vat0" } },
+  );
+  assert.equal(receipt.items.length, 3);
+  assert.equal(receipt.items[2].tax, "vat0");
+  assert.equal(receipt.items[2].name, "Доставка");
 });

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import PaymentPanel from "@/components/checkout/PaymentPanel";
 import { paymentExpired } from "./model";
-import { ownedPayment } from "./robokassa";
+import { ownedPayment, orderNumberForPayment } from "./robokassa";
 import { ensureOrderLink } from "@/lib/order-access";
 export async function PaymentReturn({
   searchParams,
@@ -12,8 +12,14 @@ export async function PaymentReturn({
 }) {
   const payment = await ownedPayment((await searchParams).Shp_payment ?? "");
   if (!payment) notFound();
+  const orderNumber = await orderNumberForPayment(payment);
   return (
     <PaymentPanel
+      summary={{
+        number: orderNumber,
+        amount: payment.amount,
+        items: payment.items,
+      }}
       id={payment.id}
       mode={payment.mode}
       initialStatus={payment.status}

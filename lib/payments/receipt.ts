@@ -96,10 +96,37 @@ export function buildReceipt(
   payment: Pick<PaymentRow, "items" | "amount">,
   profile: ReceiptProfile,
 ): Receipt {
+  const delivery = payment.items.filter((item) => item.kind !== "goods");
+  // Merge only fiscally equivalent services. Keep the original payment breakdown.
+  const sameFiscal =
+    profile.delivery.tax === profile.insurance.tax &&
+    profile.delivery.payment_method === profile.insurance.payment_method &&
+    profile.delivery.payment_object === profile.insurance.payment_object;
+  const items =
+    sameFiscal && delivery.length
+      ? [
+          ...payment.items.filter((item) => item.kind === "goods"),
+          {
+            kind: "delivery" as const,
+            name: "Доставка",
+            quantity: 1,
+            sum:
+              Number(
+                delivery.reduce(
+                  (sum, item) => sum + amountInKopecks(String(item.sum)),
+                  BigInt(0),
+                ),
+              ) / 100,
+          },
+        ]
+      : payment.items;
   const receipt = {
     ...(profile.sno ? { sno: profile.sno } : {}),
-    items: payment.items.map((item) => ({
-      name: item.name.trim().replace(/\s+/g, " ").slice(0, 128),
+    items: items.map((item) => ({
+      name:
+        item.kind === "goods"
+          ? item.name.trim().replace(/\s+/g, " ").slice(0, 128)
+          : "Доставка",
       quantity: item.quantity,
       sum: Number(item.sum),
       ...profile[item.kind],

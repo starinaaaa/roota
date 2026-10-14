@@ -19,12 +19,18 @@ type Props = {
   requiresReview?: boolean;
   expiresAt?: string | null;
   orderUrl?: string;
+  summary?: {
+    number: string;
+    amount: string;
+    items: { name: string; quantity: number; sum: number; kind: string }[];
+  };
   statusUrl?: string;
   returnPaymentUrl?: string;
 };
 declare global {
   interface Window {
     Robokassa?: {
+      Render?: (fields: Record<string, string | string[]>) => void;
       StartPayment: (fields: Record<string, string | string[]>) => void;
     };
   }
@@ -40,6 +46,7 @@ export default function PaymentPanel({
   requiresReview = false,
   expiresAt,
   orderUrl,
+  summary,
   statusUrl,
   returnPaymentUrl,
 }: Props) {
@@ -92,7 +99,16 @@ export default function PaymentPanel({
       return;
     }
     try {
-      window.Robokassa.StartPayment(form!.fields);
+      if (window.Robokassa.Render) {
+        window.Robokassa.Render({
+          ...form!.fields,
+          Settings: JSON.stringify({
+            Mode: "modal",
+          }),
+        });
+      } else {
+        window.Robokassa.StartPayment(form!.fields);
+      }
       setOpened(true);
     } catch {
       setUnavailable(true);
@@ -100,7 +116,7 @@ export default function PaymentPanel({
   }
   const paid = status === "paid";
   return (
-    <div className="pt-16 md:pt-20 min-h-screen flex items-center">
+    <div className="pt-24 md:pt-32 min-h-screen">
       {form && !paid && !expired && (
         <Script
           id="robokassa-iframe"
@@ -110,15 +126,15 @@ export default function PaymentPanel({
           onError={() => setUnavailable(true)}
         />
       )}
-      <div className="max-w-[1440px] w-full mx-auto px-6 md:px-12 lg:px-16 py-20 md:py-32">
-        <div className="max-w-md space-y-6">
+      <div className="max-w-6xl w-full mx-auto px-5 md:px-12 py-12 md:py-20 grid lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] gap-10 lg:gap-20 items-start">
+        <div className="min-w-0 space-y-6">
           {mode === "test" && (
             <p className="font-body text-caption text-stone-600">
               Тестовая оплата · деньги не списываются · заказ не отправляется
             </p>
           )}
           <h1
-            className="font-display text-page leading-tight text-stone-900"
+            className="font-display text-[clamp(2rem,4vw,3.5rem)] leading-[1.12] text-stone-900 [overflow-wrap:normal] [word-break:normal] [hyphens:none]"
             aria-live="polite"
           >
             {bindPrepositions(
@@ -134,7 +150,7 @@ export default function PaymentPanel({
                       ? "Оплата не завершена"
                       : form && !opened
                         ? "Оплата заказа"
-                        : "Ожидаем подтверждение",
+                        : "Подтверждаем оплату",
             )}
           </h1>
           <p className="font-body text-copy text-stone-800 leading-relaxed">
@@ -146,10 +162,15 @@ export default function PaymentPanel({
                   : paid
                     ? mode === "test"
                       ? "Платёжный сценарий проверен. Это тест, доставка не запускается."
-                      : "Спасибо! Мы свяжемся с вами для подготовки заказа."
+                      : "Спасибо за покупку! Начинаем готовить ваш заказ. Состав, доставка и актуальный статус доступны на странице заказа."
                     : "Статус обновится после подтверждения Robokassa. Если вы уже оплатили, повторять оплату не нужно.",
             )}
           </p>
+          {form && !paid && !expired && (
+            <p className="font-body text-ui text-stone-600">
+              Доступные способы оплаты появятся в защищённой форме Robokassa.
+            </p>
+          )}
           {expiresAt && !paid && !expired && (
             <p className="font-body text-ui text-stone-600">
               Резерв на 30 минут — до{" "}
@@ -174,7 +195,7 @@ export default function PaymentPanel({
                 disabled={!ready || unavailable}
                 className="w-full bg-stone-900 text-stone-50 font-body text-ui tracking-[0.08em] uppercase py-4 disabled:opacity-50"
               >
-                Оплатить
+                Перейти к оплате
               </button>
               {unavailable && (
                 <p role="status" className="font-body text-ui text-stone-600">
@@ -213,7 +234,7 @@ export default function PaymentPanel({
               </form>
             </>
           )}
-          {!form && !paid && !expired && !expired && (
+          {!form && !paid && !expired && (
             <Link
               href={returnPaymentUrl ?? `/payment/${id}`}
               className="block font-body text-ui underline underline-offset-4"
@@ -238,7 +259,66 @@ export default function PaymentPanel({
             Продолжить покупки
           </Link>
         </div>
+        {summary && (
+          <aside
+            className="bg-white border border-stone-200 p-6 md:p-8 font-body text-ui"
+            aria-label="Состав и сумма заказа"
+          >
+            <p className="text-caption uppercase tracking-widest text-stone-500 mb-2">
+              Ваш заказ
+            </p>
+            <h2 className="font-display text-price mb-6 [overflow-wrap:normal]">
+              № {summary.number}
+            </h2>
+            <ul className="divide-y divide-stone-100">
+              {summary.items
+                .filter((item) => item.kind === "goods")
+                .map((item, index) => (
+                  <li key={index} className="flex justify-between gap-4 py-4">
+                    <span className="min-w-0">
+                      {item.name}
+                      <span className="block text-caption text-stone-500">
+                        {item.quantity} шт.
+                      </span>
+                    </span>
+                    <span className="shrink-0 whitespace-nowrap">
+                      {money(item.sum)}
+                    </span>
+                  </li>
+                ))}
+            </ul>
+            <div className="flex justify-between gap-4 border-t border-stone-200 py-5">
+              <span>Доставка</span>
+              <span className="shrink-0 whitespace-nowrap">
+                {money(
+                  summary.items
+                    .filter((item) => item.kind !== "goods")
+                    .reduce((sum, item) => sum + Number(item.sum), 0),
+                )}
+              </span>
+            </div>
+            <div className="flex justify-between gap-4 border-t border-stone-200 pt-5 text-price">
+              <span>{paid ? "Оплачено" : "К оплате"}</span>
+              <span className="whitespace-nowrap">
+                {money(Number(summary.amount))}
+              </span>
+            </div>
+            <p className="text-caption text-stone-500 mt-5">
+              {paid
+                ? "Чек об оплате направляет Robokassa на email, указанный при оформлении."
+                : "Доставка уже включена в итоговую сумму."}
+            </p>
+          </aside>
+        )}
       </div>
     </div>
   );
+}
+
+function money(amount: number) {
+  return new Intl.NumberFormat("ru-RU", {
+    style: "currency",
+    currency: "RUB",
+    maximumFractionDigits: 2,
+  }).format(amount);
 }

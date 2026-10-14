@@ -1,12 +1,18 @@
 "use server";
 import { createServerClient } from "@/lib/supabase/server";
 import { checkoutSchema, uuid } from "@/lib/validation";
+import { after } from "next/server";
+import { processEmailQueue } from "@/lib/email/queue";
 import { cookies } from "next/headers";
 import { sendOrderNotification } from "@/lib/notifications";
 import { quoteDelivery } from "@/lib/delivery/service";
 import type { CreateOrderResult } from "@/types";
 import { buildReceipt } from "@/lib/payments/receipt";
-import { paymentMode, receiptProfile } from "@/lib/payments/robokassa";
+import {
+  paymentMode,
+  receiptProfile,
+  orderNumberForPayment,
+} from "@/lib/payments/robokassa";
 const messages: Record<string, string> = {
   ORDER_UNAVAILABLE:
     "Срок резерва истёк. Соберите заказ заново, чтобы проверить наличие.",
@@ -132,10 +138,22 @@ export async function createOrder(
         if (receiptError)
           throw new Error("Не удалось подготовить оплату. Повторите отправку.");
       }
+      if (mode === "live")
+        after(async () => {
+          try {
+            await processEmailQueue();
+          } catch {
+            console.error("customer_email_queue_failed");
+          }
+        });
       return {
         success: true,
         orderId: data.order_id ?? data.test_order_id,
-        orderNumber: String(data.inv_id),
+        orderNumber: await orderNumberForPayment({
+          mode,
+          order_id: data.order_id,
+          inv_id: String(data.inv_id),
+        }),
         paymentId: data.id,
       };
     }
@@ -144,6 +162,13 @@ export async function createOrder(
         success: false,
         error: "Не удалось подтвердить сохранение заказа.",
       };
+    after(async () => {
+      try {
+        await processEmailQueue();
+      } catch {
+        console.error("customer_email_queue_failed");
+      }
+    });
     try {
       await sendOrderNotification(data.id);
     } catch {

@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { PGlite } from "@electric-sql/pglite";
 import { readFile } from "node:fs/promises";
 import { randomUUID, createHash } from "node:crypto";
+import { relationList } from "../lib/relation-list";
 import { renderEmail } from "../lib/email/templates";
 import { parseSignedEmailWebhook, deliveryState } from "../lib/email/webhook";
 const migration = "supabase/migrations/20261013222235_customer_email_flows.sql";
@@ -707,4 +708,47 @@ test("committed real order records unified news consent even before autosave and
   } finally {
     await db.close();
   }
+});
+
+test("one-to-one payment relation supplies paid date and reservation without crashing order emails", () => {
+  const payment = {
+    status: "paid",
+    paid_at: "2026-10-14T09:46:52Z",
+    expires_at: null,
+  };
+  for (const relation of [payment, [payment], null]) {
+    const payments = relationList(relation);
+    assert.equal(
+      payments.find((p) => p.status === "paid")?.paid_at,
+      relation ? payment.paid_at : undefined,
+    );
+  }
+});
+test("order email includes purchase and delivery details, escapes content and normalizes stored line breaks", () => {
+  const result = renderEmail(
+    { subject: "Заказ {{number}}", body: "Оплата получена.\\\\nСпасибо!" },
+    {
+      number: "GL-20261014-0F81B91A",
+      date: "14 октября",
+      items: "Тарелка <Поцелуй> × 2 — 200 ₽",
+      total: "321",
+      shipping: "121 ₽",
+      recipient: "Покупатель",
+      delivery: "Ozon",
+      address: "Москва",
+      tracking: "123456",
+      payment: "Оплачено",
+    },
+    "https://roota.moscow/order/abc",
+    "Открыть заказ",
+    undefined,
+    true,
+  );
+  assert.equal(result.subject, "Заказ GL-20261014-0F81B91A");
+  assert.match(result.plaintext, /Заказ № GL-20261014-0F81B91A/);
+  assert.doesNotMatch(result.html + result.plaintext, /страхова/i);
+  assert.match(result.html, /&lt;Поцелуй&gt;/);
+  assert.match(result.plaintext, /Доставка: 121 ₽/);
+  assert.match(result.plaintext, /Номер отправления: 123456/);
+  assert.doesNotMatch(result.html, /\\n/);
 });

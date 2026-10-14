@@ -69,6 +69,7 @@ export function publicPaymentStatus(payment: PaymentRow) {
 export function buildForm(
   payment: PaymentRow,
   baseUrl: string,
+  orderNumber: string,
   orderReturnPath?: string,
 ) {
   if (paymentExpired(payment)) throw new Error("PAYMENT_EXPIRED");
@@ -81,7 +82,7 @@ export function buildForm(
   return sdkFor(payment.mode).payment.buildPaymentForm({
     OutSum: Number(payment.amount).toFixed(2),
     InvID: String(payment.inv_id),
-    Description: `Roota заказ ${payment.inv_id}`,
+    Description: `Roota заказ ${orderNumber}`,
     Culture: "ru",
     Email: payment.email,
     Receipt: payment.receipt ?? undefined,
@@ -91,4 +92,20 @@ export function buildForm(
     FailURL2: `${base.origin}${orderReturnPath || "/payment/fail"}`,
     FailURL2Method: "GET",
   });
+}
+
+// Read the same public order number used on the order page and in customer emails.
+// Robokassa's numeric invoice is kept only as the provider's payment identifier.
+export async function orderNumberForPayment(
+  payment: Pick<PaymentRow, "mode" | "order_id" | "inv_id">,
+): Promise<string> {
+  if (payment.mode === "test") return `ТЕСТ-${payment.inv_id}`;
+  if (!payment.order_id) throw new Error("PAYMENT_ORDER_MISSING");
+  const { data, error } = await createServerClient()
+    .from("orders")
+    .select("order_number")
+    .eq("id", payment.order_id)
+    .single();
+  if (error || !data?.order_number) throw new Error("PAYMENT_ORDER_MISSING");
+  return String(data.order_number);
 }

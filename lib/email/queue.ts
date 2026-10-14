@@ -1,4 +1,5 @@
 import "server-only";
+import { relationList } from "@/lib/relation-list";
 import { randomBytes } from "node:crypto";
 import { createServerClient } from "@/lib/supabase/server";
 import { ensureOrderLink } from "@/lib/order-access";
@@ -8,7 +9,11 @@ import { renderEmail, marketingKinds } from "./templates";
 export async function processEmailQueue() {
   if (
     process.env.CUSTOMER_EMAILS_ENABLED !== "true" ||
-    !process.env.UNISENDER_GO_API_KEY
+    !(
+      process.env.UNISENDER_GO_API_KEY ||
+      process.env.UNISENDER_GO_SERVICE_API_KEY ||
+      process.env.UNISENDER_GO_MARKETING_API_KEY
+    )
   )
     return { disabled: true };
   const db = createServerClient();
@@ -49,20 +54,49 @@ export async function processEmailQueue() {
         const { data: o, error: oe } = await db
           .from("orders")
           .select(
-            "order_number,total_amount,order_items(product_name,quantity,price),payments(expires_at,status)",
+            "order_number,created_at,customer_name,total_amount,delivery_amount,insurance_amount,delivery_type,delivery_address,delivery_details,tracking_number,order_items(product_name,quantity,price),payments(expires_at,status,paid_at)",
           )
           .eq("id", m.order_id)
           .single();
         if (oe || !o) throw new Error("ORDER");
         values.number = o.order_number;
-        values.total = String(o.total_amount);
+        values.total = new Intl.NumberFormat("ru-RU", {
+          maximumFractionDigits: 2,
+        }).format(Number(o.total_amount));
+        values.date =
+          new Date(o.created_at).toLocaleString("ru-RU", {
+            timeZone: "Europe/Moscow",
+            day: "numeric",
+            month: "long",
+            hour: "2-digit",
+            minute: "2-digit",
+          }) + " МСК";
+        values.recipient = o.customer_name ?? "";
+        values.delivery =
+          o.delivery_details?.point?.name ||
+          (o.delivery_type === "pickup" ? "Самовывоз" : "Доставка");
+        values.address =
+          o.delivery_details?.point?.address ||
+          o.delivery_address ||
+          "Адрес уточняется";
+        values.shipping = money(
+          Number(o.delivery_amount ?? 0) + Number(o.insurance_amount ?? 0),
+        );
+        values.tracking =
+          o.tracking_number || "Появится после оформления отправления";
+        const paidAt = relationList(o.payments).find(
+          (p: { status: string }) => p.status === "paid",
+        )?.paid_at;
+        values.payment = paidAt
+          ? `Оплачено ${new Date(paidAt).toLocaleString("ru-RU", { timeZone: "Europe/Moscow" })} МСК`
+          : "Актуальный статус оплаты — на странице заказа";
         values.items = (o.order_items ?? [])
           .map(
             (i: { product_name: string; quantity: number; price: number }) =>
-              `${i.product_name} × ${i.quantity} — ${i.price * i.quantity} ₽`,
+              `${i.product_name} × ${i.quantity} — ${money(i.price * i.quantity)}`,
           )
           .join("\n");
-        const deadline = (o.payments ?? []).find(
+        const deadline = relationList(o.payments).find(
           (p: { status: string }) => p.status === "pending",
         )?.expires_at;
         values.reservation = deadline
@@ -142,7 +176,14 @@ export async function processEmailQueue() {
         {
           to: m.recipient,
           idempotenceKey: m.id,
-          ...renderEmail(template, values, url, label, unsubscribe),
+          ...renderEmail(
+            template,
+            values,
+            url,
+            label,
+            unsubscribe,
+            m.kind.startsWith("order_"),
+          ),
           metadata: { message_id: m.id },
         },
         m.kind,
@@ -197,4 +238,12 @@ export async function processEmailQueue() {
     }
   }
   return { accepted, failed, unknown };
+}
+
+function money(value: number) {
+  return new Intl.NumberFormat("ru-RU", {
+    style: "currency",
+    currency: "RUB",
+    maximumFractionDigits: 2,
+  }).format(value);
 }

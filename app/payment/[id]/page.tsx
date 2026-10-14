@@ -6,6 +6,7 @@ import { ensureOrderLink } from "@/lib/order-access";
 import {
   ownedPayment,
   buildForm,
+  orderNumberForPayment,
   paymentMode,
   receiptProfile,
 } from "@/lib/payments/robokassa";
@@ -22,6 +23,7 @@ export default async function PaymentPage({
 }) {
   const payment = await ownedPayment((await params).id);
   if (!payment) notFound();
+  const orderNumber = await orderNumberForPayment(payment);
   const base =
     process.env.PAYMENT_BASE_URL ||
     (process.env.VERCEL_BRANCH_URL
@@ -39,6 +41,11 @@ export default async function PaymentPage({
     throw new Error("Оплата временно недоступна");
   return (
     <PaymentPanel
+      summary={{
+        number: orderNumber,
+        amount: payment.amount,
+        items: payment.items,
+      }}
       id={payment.id}
       mode={payment.mode}
       initialStatus={payment.status}
@@ -48,7 +55,7 @@ export default async function PaymentPage({
       orderUrl={
         payment.order_id ? await ensureOrderLink(payment.order_id) : undefined
       }
-      form={enabled ? buildForm(payment, base) : undefined}
+      form={enabled ? buildForm(payment, base, orderNumber) : undefined}
     />
   );
 }

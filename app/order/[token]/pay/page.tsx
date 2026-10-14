@@ -3,6 +3,7 @@ import { paymentForOrderToken } from "@/lib/order-access";
 import { paymentExpired } from "@/lib/payments/model";
 import {
   buildForm,
+  orderNumberForPayment,
   paymentMode,
   receiptProfile,
 } from "@/lib/payments/robokassa";
@@ -22,6 +23,7 @@ export default async function OrderPaymentPage({
   const { token } = await params;
   const payment = await paymentForOrderToken(token);
   if (!payment) notFound();
+  const orderNumber = await orderNumberForPayment(payment);
   const enabled =
     payment.status === "pending" &&
     !paymentExpired(payment) &&
@@ -32,11 +34,17 @@ export default async function OrderPaymentPage({
     ? buildForm(
         payment,
         process.env.PAYMENT_BASE_URL || siteUrl("/"),
+        orderNumber,
         `/order/${token}`,
       )
     : undefined;
   return (
     <PaymentPanel
+      summary={{
+        number: orderNumber,
+        amount: payment.amount,
+        items: payment.items,
+      }}
       id={payment.id}
       mode={payment.mode}
       initialStatus={payment.status}

@@ -141,6 +141,11 @@ export async function createOrder(
       if (mode === "live")
         after(async () => {
           try {
+            await sendOrderNotification(data.order_id);
+          } catch {
+            console.error("order_notification_failed");
+          }
+          try {
             await processEmailQueue();
           } catch {
             console.error("customer_email_queue_failed");

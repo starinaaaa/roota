@@ -3,12 +3,14 @@ export function emailProviderKey(
   env: Record<string, string | undefined>,
 ) {
   // Order updates and voluntary subscriptions can use isolated provider projects.
-  // The existing account key remains the fallback until support enables projects.
-  return (
-    (kind.startsWith("order_")
-      ? env.UNISENDER_GO_SERVICE_API_KEY
-      : env.UNISENDER_GO_MARKETING_API_KEY) || env.UNISENDER_GO_API_KEY
-  );
+  // Once either project is configured, never cross back to the shared account.
+  // A missing project key must fail closed instead of mixing the two audiences.
+  const projectKey = kind.startsWith("order_")
+    ? env.UNISENDER_GO_SERVICE_API_KEY
+    : env.UNISENDER_GO_MARKETING_API_KEY;
+  return env.UNISENDER_GO_SERVICE_API_KEY || env.UNISENDER_GO_MARKETING_API_KEY
+    ? projectKey
+    : env.UNISENDER_GO_API_KEY;
 }
 export function emailWebhookKeys(env: Record<string, string | undefined>) {
   return [

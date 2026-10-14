@@ -133,4 +133,18 @@ test("provider projects separate order messages from subscription letters and re
     "orders",
     "subscriptions",
   ]);
+  assert.equal(
+    emailProviderKey("order_paid", {
+      UNISENDER_GO_API_KEY: "account",
+      UNISENDER_GO_MARKETING_API_KEY: "marketing",
+    }),
+    undefined,
+  );
+  assert.equal(
+    emailProviderKey("restock", {
+      UNISENDER_GO_API_KEY: "account",
+      UNISENDER_GO_SERVICE_API_KEY: "orders",
+    }),
+    undefined,
+  );
 });

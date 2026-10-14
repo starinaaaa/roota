@@ -86,6 +86,7 @@ export async function getOrder(id: string) {
     .select(
       "*,items:order_items(*),events:order_events(*),notification:notification_outbox(state,attempts),shipments:order_shipments(*)",
     )
+    .eq("notification.event", "created")
     .eq("id", id)
     .maybeSingle();
   if (error) throw new Error("Не удалось загрузить заказ");

@@ -118,7 +118,7 @@ async function processNotification(fields: Record<string, string>) {
           .select("status")
           .eq("id", data.order_id)
           .maybeSingle();
-        if (order) await sendOrderNotification(data.order_id);
+        if (order) await sendOrderNotification(data.order_id, "paid");
       } catch {
         /* The committed payment must not depend on notification delivery. */
       }

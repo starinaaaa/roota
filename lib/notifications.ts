@@ -33,6 +33,11 @@ export async function sendOrderNotification(
         process.env.TELEGRAM_BOT_TOKEN,
         process.env.TELEGRAM_CHAT_ID,
         orderNotificationText(order, event),
+        fetch,
+        {
+          url: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/telegram-order-notification`,
+          serviceKey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        },
       );
       if (result.ok) state = "sent";
       else console.error("telegram_notification_failed", result.reason);

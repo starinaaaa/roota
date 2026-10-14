@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { PGlite } from "@electric-sql/pglite";
 import { readFile } from "node:fs/promises";
+import { telegramRelay } from "../supabase/functions/telegram-order-notification/handler.js";
 import {
   orderNotificationText,
   sendTelegramMessage,
@@ -97,4 +98,64 @@ test("creation and payment each claim once, while unpaid orders cannot claim pay
   } finally {
     await db.close();
   }
+});
+
+test("private relay rejects public callers and never returns Telegram secrets", async () => {
+  let calls = 0;
+  const relay = telegramRelay("server-secret", async () => {
+    calls++;
+    return Response.json({
+      ok: true,
+      result: { text: "private buyer", chat: { id: 123 } },
+    });
+  });
+  assert.equal(
+    (await relay(new Request("https://example.test", { method: "POST" })))
+      .status,
+    401,
+  );
+  assert.equal(calls, 0);
+  const body = {
+    token: "123:secret",
+    chatId: "123",
+    text: "Новый заказ GL-TEST",
+  };
+  const request = (payload: unknown) =>
+    new Request("https://example.test", {
+      method: "POST",
+      headers: { Authorization: "Bearer server-secret" },
+      body: JSON.stringify(payload),
+    });
+  assert.equal(
+    (await relay(request({ ...body, token: "invalid/redirect" }))).status,
+    400,
+  );
+  assert.equal(calls, 0);
+  assert.deepEqual(await (await relay(request(body))).json(), { ok: true });
+  assert.equal(calls, 1);
+});
+
+test("server uses authenticated relay without a second direct Telegram attempt", async () => {
+  let calls = 0;
+  const mock = (async (url, options) => {
+    calls++;
+    assert.equal(
+      url,
+      "https://project.supabase.co/functions/v1/telegram-order-notification",
+    );
+    assert.equal(
+      new Headers(options?.headers).get("Authorization"),
+      "Bearer service-key",
+    );
+    assert.equal(JSON.parse(String(options?.body)).token, "123:secret");
+    return Response.json({ ok: true });
+  }) as typeof fetch;
+  assert.deepEqual(
+    await sendTelegramMessage("123:secret", "123", "test", mock, {
+      url: "https://project.supabase.co/functions/v1/telegram-order-notification",
+      serviceKey: "service-key",
+    }),
+    { ok: true },
+  );
+  assert.equal(calls, 1);
 });

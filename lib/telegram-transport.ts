@@ -25,15 +25,25 @@ export async function sendTelegramMessage(
   chatId: string,
   text: string,
   request: typeof fetch = fetch,
+  relay?: { url: string; serviceKey: string },
 ): Promise<{ ok: true } | { ok: false; reason: string }> {
   try {
     const response = await request(
-      `https://api.telegram.org/bot${token.trim()}/sendMessage`,
+      relay
+        ? relay.url
+        : `https://api.telegram.org/bot${token.trim()}/sendMessage`,
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chat_id: chatId.trim(), text }),
-        signal: AbortSignal.timeout(15000),
+        headers: {
+          "Content-Type": "application/json",
+          ...(relay ? { Authorization: `Bearer ${relay.serviceKey}` } : {}),
+        },
+        body: JSON.stringify(
+          relay
+            ? { token: token.trim(), chatId: chatId.trim(), text }
+            : { chat_id: chatId.trim(), text },
+        ),
+        signal: AbortSignal.timeout(relay ? 25000 : 15000),
         cache: "no-store",
       },
     );

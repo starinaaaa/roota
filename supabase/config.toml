@@ -1,0 +1,4 @@
+[functions.telegram-order-notification]
+# Required: handler checks the role of JWTs verified by this gateway.
+verify_jwt = true
+entrypoint = "./functions/telegram-order-notification/index.js"

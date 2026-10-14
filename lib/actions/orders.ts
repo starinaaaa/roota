@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { sendOrderNotification } from "@/lib/notifications";
 import { quoteDelivery } from "@/lib/delivery/service";
 import type { CreateOrderResult } from "@/types";
+import { buildReceipt } from "@/lib/payments/receipt";
 import { paymentMode, receiptProfile } from "@/lib/payments/robokassa";
 const messages: Record<string, string> = {
   ORDER_UNAVAILABLE:
@@ -121,22 +122,7 @@ export async function createOrder(
       };
     if (mode && data?.id) {
       if (fiscal && !data.receipt) {
-        const receipt = {
-          ...(fiscal.sno ? { sno: fiscal.sno } : {}),
-          items: data.items.map(
-            (item: {
-              name: string;
-              quantity: number;
-              sum: number;
-              kind: "goods" | "delivery" | "insurance";
-            }) => ({
-              name: item.name.slice(0, 128),
-              quantity: item.quantity,
-              sum: Number(item.sum),
-              ...fiscal[item.kind],
-            }),
-          ),
-        };
+        const receipt = buildReceipt(data, fiscal);
         const { error: receiptError } = await db
           .from("payments")
           .update({ receipt })
@@ -169,7 +155,7 @@ export async function createOrder(
       success: false,
       error:
         e instanceof Error &&
-        !/PAYMENT_CONFIG|RECEIPT_NOT_APPROVED|ZodError|Unexpected/i.test(
+        !/PAYMENT_CONFIG|RECEIPT_|INVALID_AMOUNT|ZodError|Unexpected/i.test(
           e.message,
         ) &&
         !/fetch|JSON|network|abort|timeout/i.test(e.message)

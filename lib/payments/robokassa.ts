@@ -1,5 +1,5 @@
 import "server-only";
-import { z } from "zod";
+import { parseReceiptProfile, validateReceipt } from "./receipt";
 import {
   paymentExpired,
   sdkFor,
@@ -25,28 +25,8 @@ export function paymentMode(): PaymentMode | null {
   return mode;
 }
 
-const fiscalItem = z
-  .object({
-    tax: z.string().min(1),
-    payment_method: z.string().min(1),
-    payment_object: z.string().min(1),
-  })
-  .strict();
-const profileSchema = z
-  .object({
-    goods: fiscalItem,
-    delivery: fiscalItem,
-    insurance: fiscalItem,
-    sno: z.string().min(1).optional(),
-  })
-  .strict();
 export function receiptProfile(mode: PaymentMode) {
-  const raw = process.env.ROBOKASSA_RECEIPT_PROFILE;
-  if (!raw) {
-    if (mode === "live") throw new Error("RECEIPT_NOT_APPROVED");
-    return null; // Sandbox payment plumbing; fiscal parameters must be agreed separately.
-  }
-  return profileSchema.parse(JSON.parse(raw));
+  return parseReceiptProfile(process.env.ROBOKASSA_RECEIPT_PROFILE, mode);
 }
 
 export async function ownedPayment(id: string): Promise<PaymentRow | null> {
@@ -92,6 +72,7 @@ export function buildForm(
   orderReturnPath?: string,
 ) {
   if (paymentExpired(payment)) throw new Error("PAYMENT_EXPIRED");
+  if (payment.mode === "live") validateReceipt(payment.receipt, payment.amount);
   const base = new URL(baseUrl);
   if (base.protocol !== "https:" && base.hostname !== "localhost")
     throw new Error("PAYMENT_CONFIG");

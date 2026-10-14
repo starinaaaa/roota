@@ -1,0 +1,5 @@
+{
+  "goods": { "tax": "none" },
+  "delivery": { "tax": "none" },
+  "insurance": { "tax": "none" }
+}

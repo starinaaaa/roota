@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 const sections = [
   ["orders", "Заказы"],
+  ["analytics", "Воронка"],
   ["products", "Товары"],
   ["messages", "Сообщения"],
   ["reviews", "Отзывы"],

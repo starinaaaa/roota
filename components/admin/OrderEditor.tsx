@@ -383,8 +383,12 @@ export default function OrderEditor({ order }: { order: OrderData }) {
                   ? `Оплата: ${paymentLabels[e.old_value ?? ""]} → ${paymentLabels[e.new_value ?? ""]}`
                   : e.kind === "delivery"
                     ? `Доставка: ${e.old_value ?? "—"} → ${e.new_value}`
-                    : "Заметки или трек-номер обновлены"}{" "}
-              {e.reason && "· " + e.reason}
+                    : e.reason || "Заметки или трек-номер обновлены"}{" "}
+              {e.reason &&
+                (e.kind === "status" ||
+                  e.kind === "payment" ||
+                  e.kind === "delivery") &&
+                "· " + e.reason}
             </p>
           ))}
         {!order.events.length && (

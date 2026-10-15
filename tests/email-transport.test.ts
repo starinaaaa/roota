@@ -148,3 +148,14 @@ test("provider projects separate order messages from subscription letters and re
     undefined,
   );
 });
+
+test("identical project keys disable sending instead of mixing unsubscribe lists", async () => {
+  const { emailProviderKey } = await import("../lib/email/provider-config");
+  const env = {
+    UNISENDER_GO_API_KEY: "old",
+    UNISENDER_GO_SERVICE_API_KEY: "same",
+    UNISENDER_GO_MARKETING_API_KEY: "same",
+  };
+  assert.equal(emailProviderKey("order_paid", env), undefined);
+  assert.equal(emailProviderKey("restock", env), undefined);
+});

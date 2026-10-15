@@ -57,6 +57,7 @@ export function sdkFor(
     login: env.ROBOKASSA_MERCHANT_LOGIN,
     password1: p1,
     password2: p2,
+    password3: mode === "live" ? env.ROBOKASSA_PASSWORD3 : undefined,
     testPassword1: mode === "test" ? p1 : undefined,
     testPassword2: mode === "test" ? p2 : undefined,
     isTest: mode === "test",

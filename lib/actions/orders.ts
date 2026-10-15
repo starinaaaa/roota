@@ -1,4 +1,5 @@
 "use server";
+import { recordFunnelEvent } from "@/lib/analytics/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { checkoutSchema, uuid } from "@/lib/validation";
 import { after } from "next/server";
@@ -30,7 +31,7 @@ const messages: Record<string, string> = {
     "Корзина изменилась. Обновите страницу и пересчитайте доставку.",
   INVALID_INPUT: "Проверьте данные заказа.",
 };
-export async function createOrder(
+async function createOrderInternal(
   formData: unknown,
   requestKey: unknown,
   expectedTotal: unknown,
@@ -193,4 +194,15 @@ export async function createOrder(
           : "Не удалось связаться со студией. Попробуйте ещё раз.",
     };
   }
+}
+
+export async function createOrder(
+  formData: unknown,
+  requestKey: unknown,
+  expectedTotal: unknown,
+): Promise<CreateOrderResult> {
+  const result = await createOrderInternal(formData, requestKey, expectedTotal);
+  if (!result.success)
+    await recordFunnelEvent("checkout_error", "order_submission");
+  return result;
 }

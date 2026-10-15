@@ -36,6 +36,14 @@ export default async function MessagesPage() {
           ? "Транспорт включён."
           : "Транспорт отключён переменной приложения."}
       </p>
+      <p className="text-sm text-stone-600">
+        {process.env.UNISENDER_GO_SERVICE_API_KEY &&
+        process.env.UNISENDER_GO_MARKETING_API_KEY &&
+        process.env.UNISENDER_GO_SERVICE_API_KEY !==
+          process.env.UNISENDER_GO_MARKETING_API_KEY
+          ? "Раздельные ключи проектов настроены: статусы заказа — Orders; подписки, напоминания и отзывы — Marketing."
+          : "Разделение проектов не завершено: проверьте два разных проектных API-ключа на сервере."}
+      </p>
       <form action={saveEmailSettings} className="admin-card space-y-4">
         <label className="flex gap-2">
           <input type="checkbox" name="enabled" defaultChecked={s.enabled} />

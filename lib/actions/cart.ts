@@ -1,4 +1,5 @@
 "use server";
+import { recordFunnelEvent } from "@/lib/analytics/server";
 import { touchCheckoutEmail } from "./email";
 import { cookies } from "next/headers";
 import { createServerClient } from "@/lib/supabase/server";
@@ -68,6 +69,7 @@ async function mutate(
         error: messages[error.message] ?? "Не удалось изменить корзину.",
       };
     }
+    if (operation === "add" && qty > 0) await recordFunnelEvent("add_to_cart", productId);
     try {
       await touchCheckoutEmail();
     } catch {

@@ -61,6 +61,27 @@ export default function PaymentPanel({
   const [opened, setOpened] = useState(false);
   const [unavailable, setUnavailable] = useState(false);
   const [checkFailed, setCheckFailed] = useState(false);
+  const reportedErrors = useRef(new Set<string>());
+  useEffect(() => {
+    if (mode !== "live" || status === "paid") return;
+    const error = unavailable
+      ? "payment_widget"
+      : expired
+        ? "payment_expired"
+        : failed
+          ? "payment_failed"
+          : checkFailed
+            ? "payment_status"
+            : null;
+    if (!error || reportedErrors.current.has(error)) return;
+    reportedErrors.current.add(error);
+    void fetch("/api/analytics", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      keepalive: true,
+      body: JSON.stringify({ page: "/checkout", error }),
+    }).catch(() => {});
+  }, [mode, status, unavailable, expired, failed, checkFailed]);
   const paymentHost = useRef<HTMLDivElement>(null);
   const paymentHostId = `roota-payment-${id}`;
   useEffect(() => {

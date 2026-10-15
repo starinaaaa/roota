@@ -10,6 +10,7 @@ const unbounded = Unbounded({
 });
 import Footer from "@/components/layout/Footer";
 import CartDrawer from "@/components/cart/CartDrawer";
+import FunnelTracker from "@/components/analytics/FunnelTracker";
 import CookieBanner from "@/components/layout/CookieBanner";
 import { CartUIProvider } from "@/contexts/CartUIContext";
 import { getCart } from "@/lib/actions/cart";
@@ -50,6 +51,7 @@ export default async function RootLayout({
           <Footer />
           <CartDrawer />
           <CookieBanner />
+          <FunnelTracker />
         </CartUIProvider>
       </body>
     </html>

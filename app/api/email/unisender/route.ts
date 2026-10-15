@@ -49,9 +49,9 @@ export async function POST(request: Request) {
       );
     if (save) return new Response(null, { status: 503 });
     if (["bounced", "complained", "unsubscribed"].includes(state)) {
-      const { error: block } = await db.from("email_blocks").upsert({
-        email: recipient,
-        reason: state === "unsubscribed" ? "marketing_unsubscribed" : state,
+      const { error: block } = await db.rpc("block_email_recipient", {
+        p_email: recipient,
+        p_reason: state === "unsubscribed" ? "marketing_unsubscribed" : state,
       });
       if (block) return new Response(null, { status: 503 });
       let cancellation = db

@@ -799,3 +799,49 @@ test("purchase email shows photos, unit prices and a printable confirmation with
   assert.match(result.html, /Передадим в доставку за 1–3 рабочих дня/);
   assert.doesNotMatch(result.html, /javascript:/);
 });
+
+test("marketing unsubscribe cancels subscription mail while order mail remains eligible; hard bounce blocks both", async () => {
+  const db = await database();
+  try {
+    const order = randomUUID();
+    await db.query(
+      "insert into orders(id,customer_email,cart_session) values($1,'isolated@example.test',$2)",
+      [order, randomUUID()],
+    );
+    await db.exec(
+      "insert into email_blocks(email,reason) values('isolated@example.test','marketing_unsubscribed'); insert into email_messages(event_key,kind,recipient) values('marketing-test','confirm','isolated@example.test');",
+    );
+    const claimed = await db.query<{ kind: string }>(
+      "select kind from claim_email_messages(10)",
+    );
+    assert.deepEqual(
+      claimed.rows.map((row) => row.kind),
+      ["order_created"],
+    );
+    assert.equal(
+      (
+        await db.query<{ state: string }>(
+          "select state from email_messages where event_key='marketing-test'",
+        )
+      ).rows[0].state,
+      "cancelled",
+    );
+    await db.exec(
+      "update email_blocks set reason='bounced'; insert into email_messages(event_key,kind,recipient) values('service-test','order_paid','isolated@example.test');",
+    );
+    assert.equal(
+      (await db.query("select * from claim_email_messages(10)")).rows.length,
+      0,
+    );
+    assert.equal(
+      (
+        await db.query<{ state: string }>(
+          "select state from email_messages where event_key='service-test'",
+        )
+      ).rows[0].state,
+      "cancelled",
+    );
+  } finally {
+    await db.close();
+  }
+});

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
-import { funnelPagePattern, campaignValue } from "@/lib/analytics/model";
+import { funnelPagePattern, campaignValue } from "@/lib/analytics/values";
 
 export default function FunnelTracker() {
   const pathname = usePathname();

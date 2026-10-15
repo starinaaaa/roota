@@ -11,14 +11,16 @@ export async function recordFunnelEvent(
   try {
     const session = (await cookies()).get("cart_session")?.value;
     if (!uuid.safeParse(session).success) return;
-    const { error } = await createServerClient().rpc("record_funnel_event", {
-      p_session: session,
-      p_kind: kind,
-      p_detail: detail,
-      p_source: attribution?.source ?? "",
-      p_medium: attribution?.medium ?? "",
-      p_campaign: attribution?.campaign ?? "",
-    });
+    const { error } = await createServerClient()
+      .rpc("record_funnel_event", {
+        p_session: session,
+        p_kind: kind,
+        p_detail: detail,
+        p_source: attribution?.source ?? "",
+        p_medium: attribution?.medium ?? "",
+        p_campaign: attribution?.campaign ?? "",
+      })
+      .abortSignal(AbortSignal.timeout(1500));
     if (error) console.warn("funnel_event_not_recorded");
   } catch {
     /* Analytics never blocks shopping. */

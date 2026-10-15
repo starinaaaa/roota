@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 // Never store query strings, personal order links, contact details or raw errors.
-export const funnelPagePattern =
-  /^\/(?:catalog|checkout|product\/[a-zA-Z0-9_-]+)?$/;
+import { funnelPagePattern } from "./values";
+export { campaignValue } from "./values";
 export const analyticsInput = z.object({
   error: z
     .enum([
@@ -29,6 +29,3 @@ export const analyticsInput = z.object({
     .regex(/^[\p{L}\p{N}_. -]*$/u)
     .default(""),
 });
-export function campaignValue(value: string | null) {
-  return (value ?? "").replace(/[^\p{L}\p{N}_. -]/gu, "").slice(0, 80);
-}

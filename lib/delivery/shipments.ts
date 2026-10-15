@@ -1,11 +1,13 @@
 import "server-only";
-import { createServerClient } from "@/lib/supabase/server";
+import { createServerClient } from "@/lib/db";
 import { ozon, ozonTransport, postingFor } from "./ozon";
 import { postingInfoSchema, postingHistorySchema } from "./posting-status";
 import type { DeliveryContext, PackingRule } from "./model";
 // Call this after a trusted payment callback and order confirmation, or from the checked admin action.
 // A browser payment-success redirect must never call this function or mark an order paid.
 export async function createPaidShipment(orderId: string) {
+  if (process.env.APP_ENV !== "production" || process.env.OZON_SHIPMENTS_ENABLED !== "true")
+    throw new Error("Создание реальных отправлений отключено для этого окружения.");
   const db = createServerClient();
   const { data: o, error } = await db
     .from("orders")

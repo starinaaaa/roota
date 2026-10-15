@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTestOrder } from "@/lib/admin-data";
-import { formatPrice } from "@/lib/products";
+import { formatPrice } from "@/lib/format-price";
 import { paymentLabels } from "@/lib/validation";
 
 const date = (value: string) =>

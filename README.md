@@ -1,4 +1,6 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+Roota — магазин авторской керамики на Next.js.
+
+Перенос на серверный PostgreSQL, приватный S3 и Better Auth описан в [инструкции Timeweb](docs/migration/TIMEWEB.md). Фактический статус и ещё не завершённые проверки — в [протоколе](docs/migration/VERIFICATION.md). Окружение новой версии приведено в `.env.example`; исходные Supabase-ключи нужны только для разового полного резервирования.
 
 ## Getting Started
 

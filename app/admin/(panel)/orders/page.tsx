@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { listOrders } from "@/lib/admin-data";
 import { orderLabels, paymentLabels } from "@/lib/validation";
-import { formatPrice } from "@/lib/products";
+import { formatPrice } from "@/lib/format-price";
 export default async function OrdersPage({
   searchParams,
 }: {

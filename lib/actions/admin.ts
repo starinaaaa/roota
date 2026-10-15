@@ -2,9 +2,9 @@
 import { imageVariantVersion } from "@/lib/image-sizes";
 import { prepareImageVariants } from "@/lib/image-variants";
 import { requireAdmin } from "@/lib/auth";
-import { createServerClient } from "@/lib/supabase/server";
+import { createServerClient } from "@/lib/db";
 import { orderChangeSchema, productSchema, uuid } from "@/lib/validation";
-import { revalidatePath } from "next/cache";
+import { revalidateTag, revalidatePath } from "next/cache";
 import { z } from "zod";
 import sharp from "sharp";
 
@@ -39,6 +39,7 @@ export async function updateOrder(input: unknown) {
       error: messages[error.message] ?? "Не удалось сохранить изменения.",
     };
   }
+  revalidateTag("catalog", { expire: 0 });
   revalidatePath("/admin/orders");
   revalidatePath("/catalog");
   revalidatePath("/");
@@ -115,6 +116,7 @@ export async function saveProduct(
               ? "Этот адрес уже занят. Выберите другой."
               : "Не удалось сохранить товар.",
     };
+  revalidateTag("catalog", { expire: 0 });
   revalidatePath("/catalog");
   revalidatePath("/");
   revalidatePath("/admin/products");

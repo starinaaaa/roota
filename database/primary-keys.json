@@ -1,0 +1,108 @@
+{
+  "categories": [
+    "id"
+  ],
+  "products": [
+    "id"
+  ],
+  "product_images": [
+    "id"
+  ],
+  "customers": [
+    "id"
+  ],
+  "carts": [
+    "id"
+  ],
+  "cart_items": [
+    "id"
+  ],
+  "orders": [
+    "id"
+  ],
+  "order_items": [
+    "id"
+  ],
+  "waitlist": [
+    "id"
+  ],
+  "preorders": [
+    "id"
+  ],
+  "order_events": [
+    "id"
+  ],
+  "product_redirects": [
+    "old_slug"
+  ],
+  "site_drafts": [
+    "id"
+  ],
+  "site_pages": [
+    "id"
+  ],
+  "customer_reviews": [
+    "id"
+  ],
+  "notification_outbox": [
+    "id"
+  ],
+  "delivery_packing_rules": [
+    "id"
+  ],
+  "delivery_points": [
+    "provider",
+    "id"
+  ],
+  "delivery_sync": [
+    "provider"
+  ],
+  "delivery_quotes": [
+    "id"
+  ],
+  "order_shipments": [
+    "order_id"
+  ],
+  "payment_test_orders": [
+    "id"
+  ],
+  "payments": [
+    "id"
+  ],
+  "order_access": [
+    "order_id"
+  ],
+  "delivery_city_catalog": [
+    "city_key"
+  ],
+  "email_settings": [
+    "id"
+  ],
+  "email_templates": [
+    "kind"
+  ],
+  "email_subscriptions": [
+    "id"
+  ],
+  "checkout_drafts": [
+    "id"
+  ],
+  "email_messages": [
+    "id"
+  ],
+  "email_blocks": [
+    "email"
+  ],
+  "email_restock_events": [
+    "id"
+  ],
+  "order_returns": [
+    "id"
+  ],
+  "funnel_sessions": [
+    "id"
+  ],
+  "funnel_events": [
+    "id"
+  ]
+}

@@ -2,7 +2,7 @@ import "server-only";
 import { coordinates } from "./geo";
 import { cookies } from "next/headers";
 import { getCart } from "@/lib/actions/cart";
-import { createServerClient } from "@/lib/supabase/server";
+import { createServerClient } from "@/lib/db";
 import { phone, uuid } from "@/lib/validation";
 import {
   cartSnapshot,

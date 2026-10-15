@@ -1,5 +1,5 @@
 import { after, NextRequest } from "next/server";
-import { createServerClient } from "@/lib/supabase/server";
+import { createServerClient } from "@/lib/db";
 import { processEmailQueue } from "@/lib/email/queue";
 import { sendOrderNotification } from "@/lib/notifications";
 import {

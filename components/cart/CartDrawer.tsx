@@ -8,7 +8,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { useCartUI } from "@/contexts/CartUIContext";
 import { useCart } from "@/hooks/useCart";
-import { formatPrice } from "@/lib/products";
+import { formatPrice } from "@/lib/format-price";
 import CartLineItem from "./CartLineItem";
 
 export default function CartDrawer() {

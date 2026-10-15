@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
-import { createServerClient } from "@/lib/supabase/server";
+import { createServerClient } from "@/lib/db";
 import { markWaitlistNotified } from "@/lib/actions/waitlist-admin";
 import { siteUrl } from "@/lib/seo";
 export const dynamic = "force-dynamic";

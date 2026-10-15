@@ -6,7 +6,7 @@ import {
   type PaymentMode,
   type PaymentRow,
 } from "./model";
-import { createServerClient } from "@/lib/supabase/server";
+import { createServerClient } from "@/lib/db";
 import { cookies } from "next/headers";
 import { uuid } from "@/lib/validation";
 
@@ -16,7 +16,8 @@ export function paymentMode(): PaymentMode | null {
   if (mode !== "test" && mode !== "live") throw new Error("PAYMENT_CONFIG");
   if (
     mode === "live" &&
-    (process.env.VERCEL_ENV === "preview" ||
+    (process.env.APP_ENV !== "production" ||
+      process.env.VERCEL_ENV === "preview" ||
       process.env.ROBOKASSA_LIVE_ENABLED !== "true" ||
       process.env.ROBOKASSA_SMZ_READY !== "true")
   )

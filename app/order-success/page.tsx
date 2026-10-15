@@ -3,7 +3,7 @@ import Link from "next/link";
 import OrderSuccessClient from "./OrderSuccessClient";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
-import { createServerClient } from "@/lib/supabase/server";
+import { createServerClient } from "@/lib/db";
 import { uuid } from "@/lib/validation";
 import { ensureOrderLink } from "@/lib/order-access";
 

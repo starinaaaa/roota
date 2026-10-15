@@ -1,4 +1,4 @@
-import { createServerClient } from "@/lib/supabase/server";
+import { createServerClient } from "@/lib/db";
 import { getAdmin } from "@/lib/auth";
 export async function GET(
   _: Request,

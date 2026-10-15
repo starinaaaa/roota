@@ -1,23 +1,20 @@
 import "server-only";
-import { cache } from "react";
-import { createClient } from "@supabase/supabase-js";
+import { unstable_cache } from "next/cache";
 import { defaultSite, siteSchema, type SiteContent } from "./site-schema";
 import { requireAdmin } from "./auth";
-import { createServerClient } from "./supabase/server";
+import { createServerClient } from "./db";
 import { getProducts } from "./products";
-export const getSiteContent = cache(async (): Promise<SiteContent> => {
-  const db = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  );
-  const { data } = await db
+export const getSiteContent = unstable_cache(async (): Promise<SiteContent> => {
+  const db = createServerClient();
+  const { data, error } = await db
     .from("site_pages")
     .select("payload")
     .eq("id", 1)
     .maybeSingle();
+  if (error) throw new Error("SITE_CONTENT_UNAVAILABLE");
   const parsed = siteSchema.safeParse(data?.payload);
   return parsed.success ? parsed.data : defaultSite;
-});
+}, ["public-site-content"], { tags: ["site"], revalidate: 60 });
 export async function getSiteDraft() {
   await requireAdmin();
   const db = createServerClient();

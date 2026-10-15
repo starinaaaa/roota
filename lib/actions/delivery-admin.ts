@@ -4,7 +4,7 @@ import { syncCatalog } from "@/lib/delivery/catalog-sync";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { uuid } from "@/lib/validation";
-import { createServerClient } from "@/lib/supabase/server";
+import { createServerClient } from "@/lib/db";
 import { ozonTransport, shipmentMethodId } from "@/lib/delivery/ozon";
 import {
   createPaidShipment,

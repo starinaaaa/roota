@@ -1,6 +1,6 @@
 "use server";
 import { requireAdmin } from "@/lib/auth";
-import { createServerClient } from "@/lib/supabase/server";
+import { createServerClient } from "@/lib/db";
 import { uuid } from "@/lib/validation";
 import { revalidatePath } from "next/cache";
 

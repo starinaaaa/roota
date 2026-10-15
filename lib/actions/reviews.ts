@@ -3,7 +3,7 @@ import { z } from "zod";
 import sharp from "sharp";
 import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
-import { createServerClient } from "@/lib/supabase/server";
+import { createServerClient } from "@/lib/db";
 import { orderIdForToken } from "@/lib/order-access";
 export async function submitReview(form: FormData) {
   const token = String(form.get("token") ?? "");

@@ -7,7 +7,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { updateOrder, retryNotification } from "@/lib/actions/admin";
 import { orderLabels, paymentLabels } from "@/lib/validation";
-import { formatPrice } from "@/lib/products";
+import { formatPrice } from "@/lib/format-price";
 import OrderLink from "./OrderLink";
 type OrderData = {
   id: string;

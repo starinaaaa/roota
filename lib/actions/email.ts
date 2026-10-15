@@ -3,7 +3,7 @@ import { randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { createServerClient } from "@/lib/supabase/server";
+import { createServerClient } from "@/lib/db";
 import { uuid } from "@/lib/validation";
 import { getCart } from "./cart";
 export async function syncCheckoutEmailConsent(

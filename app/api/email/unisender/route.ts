@@ -1,5 +1,5 @@
 import { emailWebhookKeys } from "@/lib/email/provider-config";
-import { createServerClient } from "@/lib/supabase/server";
+import { createServerClient } from "@/lib/db";
 import { parseSignedEmailWebhook, deliveryState } from "@/lib/email/webhook";
 export const runtime = "nodejs";
 // Provider availability probe. GET never reads or changes customer data.

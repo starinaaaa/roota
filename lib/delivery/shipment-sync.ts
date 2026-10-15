@@ -1,5 +1,5 @@
 import "server-only";
-import { createServerClient } from "@/lib/supabase/server";
+import { createServerClient } from "@/lib/db";
 import { ozonTransport } from "./ozon";
 import { postingInfoSchema, postingHistorySchema } from "./posting-status";
 

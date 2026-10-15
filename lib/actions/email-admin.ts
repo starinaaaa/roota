@@ -1,7 +1,7 @@
 "use server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
-import { createServerClient } from "@/lib/supabase/server";
+import { createServerClient } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { emailProviderKey } from "@/lib/email/provider-config";
 import { renderEmail, templateKinds } from "@/lib/email/templates";

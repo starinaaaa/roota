@@ -2,7 +2,7 @@
 import { recordFunnelEvent } from "@/lib/analytics/server";
 import { touchCheckoutEmail } from "./email";
 import { cookies } from "next/headers";
-import { createServerClient } from "@/lib/supabase/server";
+import { createServerClient } from "@/lib/db";
 import { getProductsByIds } from "@/lib/products";
 import { uuid } from "@/lib/validation";
 import type { CartItem } from "@/types";
@@ -13,7 +13,7 @@ export async function getCart(): Promise<{ items: CartItem[] }> {
   const session = await sessionId();
   if (
     !uuid.safeParse(session).success ||
-    !process.env.SUPABASE_SERVICE_ROLE_KEY
+    !process.env.DATABASE_URL
   )
     return { items: [] };
   try {

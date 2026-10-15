@@ -1,6 +1,6 @@
 import "server-only";
 import { randomBytes } from "node:crypto";
-import { createServerClient } from "./supabase/server";
+import { createServerClient } from "./db";
 import { siteUrl } from "./seo";
 import { uuid } from "./validation";
 import type { PaymentRow } from "./payments/model";

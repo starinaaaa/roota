@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@/lib/supabase/server";
+import { createServerClient } from "@/lib/db";
 import { syncCatalog } from "@/lib/delivery/catalog-sync";
 import { ozonTransport, shipmentMethodId } from "@/lib/delivery/ozon";
 

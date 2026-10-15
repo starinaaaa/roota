@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { createServerClient } from "@/lib/supabase/server";
+import { createServerClient } from "@/lib/db";
 import { orderIdForToken } from "@/lib/order-access";
 import { submitReview } from "@/lib/actions/reviews";
 export const dynamic = "force-dynamic";

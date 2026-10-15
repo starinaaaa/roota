@@ -1,6 +1,6 @@
 import { relationList } from "@/lib/relation-list";
 import { requireAdmin } from "@/lib/auth";
-import { createServerClient } from "@/lib/supabase/server";
+import { createServerClient } from "@/lib/db";
 import { moderateReview } from "@/lib/actions/email-admin";
 export const dynamic = "force-dynamic";
 export default async function ReviewsAdmin() {

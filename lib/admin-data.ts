@@ -1,7 +1,7 @@
 import { relationList } from "./relation-list";
 import "server-only";
 import { requireAdmin } from "./auth";
-import { createServerClient } from "./supabase/server";
+import { createServerClient } from "./db";
 import { uuid, orderLabels, paymentLabels } from "./validation";
 export async function listOrders(
   q = "",

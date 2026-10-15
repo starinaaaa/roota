@@ -1,6 +1,7 @@
 "use server";
 import { recordFunnelEvent } from "@/lib/analytics/server";
-import { createServerClient } from "@/lib/supabase/server";
+import { revalidateTag } from "next/cache";
+import { createServerClient } from "@/lib/db";
 import { checkoutSchema, uuid } from "@/lib/validation";
 import { after } from "next/server";
 import { processEmailQueue } from "@/lib/email/queue";
@@ -127,6 +128,7 @@ async function createOrderInternal(
           messages[error.message] ??
           "Не удалось сохранить заказ. Попробуйте ещё раз.",
       };
+    revalidateTag("catalog", { expire: 0 });
     if (mode && data?.id) {
       if (fiscal && !data.receipt) {
         const receipt = buildReceipt(data, fiscal);

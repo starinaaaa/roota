@@ -1,0 +1,69 @@
+{
+  "order_returns": [],
+  "funnel_sessions": [],
+  "funnel_events": [],
+  "customers": [],
+  "order_items": [],
+  "carts": [],
+  "cart_items": [],
+  "orders": [
+    "request_payload",
+    "delivery_details"
+  ],
+  "site_drafts": [
+    "payload"
+  ],
+  "site_pages": [
+    "payload"
+  ],
+  "product_redirects": [],
+  "product_images": [],
+  "categories": [],
+  "waitlist": [],
+  "preorders": [],
+  "notification_outbox": [],
+  "products": [],
+  "order_events": [],
+  "delivery_sync": [],
+  "delivery_packing_rules": [
+    "composition"
+  ],
+  "delivery_points": [
+    "data"
+  ],
+  "delivery_quotes": [
+    "point",
+    "packing",
+    "cart_snapshot"
+  ],
+  "payments": [
+    "items",
+    "receipt"
+  ],
+  "payment_test_orders": [
+    "request_payload",
+    "form",
+    "items",
+    "delivery"
+  ],
+  "order_shipments": [
+    "request_payload",
+    "status_history"
+  ],
+  "order_access": [],
+  "delivery_city_catalog": [
+    "points"
+  ],
+  "email_subscriptions": [],
+  "email_settings": [],
+  "email_templates": [],
+  "checkout_drafts": [
+    "items"
+  ],
+  "email_messages": [
+    "payload"
+  ],
+  "email_blocks": [],
+  "email_restock_events": [],
+  "customer_reviews": []
+}

@@ -1,5 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 export function proxy(request: NextRequest) {
+  if (
+    process.env.APP_ENV === "migration" &&
+    process.env.MIGRATION_MAINTENANCE === "true"
+  ) {
+    // The staging health probe needs HTTP 200 at /. No page, API, cookie or
+    // database work runs while the isolated database is being restored.
+    return new NextResponse("Проверочная версия временно недоступна.", {
+      status:
+        request.nextUrl.pathname === "/" && request.method === "GET"
+          ? 200
+          : 503,
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-store",
+        "Retry-After": "60",
+        "X-Robots-Tag": "noindex, nofollow",
+      },
+    });
+  }
   const response = NextResponse.next({ request });
   const path = request.nextUrl.pathname;
   const privatePath = [

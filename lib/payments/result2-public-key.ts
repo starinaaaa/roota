@@ -1,0 +1,3 @@
+// Official Robokassa ResultUrl2 certificate: https://docs.robokassa.ru/media/files/jwtsign.cer
+// SHA-256 fingerprint: D0:71:D4:38:90:A5:F2:ED:7B:E1:50:A9:C2:6F:C4:3B:94:13:14:DF:AC:E4:8F:72:FB:D2:9A:18:57:C1:D0:89
+export const result2PublicKey = "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAmuBz1WbxjGlhaFdOam7V\nyDucVNUnSi+gYcx4xl7qORLXyZqwIqbSLKJhzqTJsIL3tnhRgkLzWM3L/XAPq51K\ncWcqqbGYzwLp+uPIpMtqEvrq7R3kHrEOk1ETB8pty+SY+sgXmOWZupQNSdzFWokK\nTAhmsziObD4NnnVrpT6qujMgtZwhwMeAjCqH1+byc7mxd6VUeuTXewQK8byLnLt8\nJwMKn+2G8EOEZFqz1ivhqI9ouWxgzPwX2STsNETeLqld81sarFmMgQq1JjWD17G9\nnmE+tT6LMtE/5Vk132cSje1jXsyoVZdx4wya/tcVcxEJ1L7ksm+KvNs/8m2Z2dhR\ncQIDAQAB\n-----END PUBLIC KEY-----\n";

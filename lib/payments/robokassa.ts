@@ -88,6 +88,9 @@ export function buildForm(
     Email: payment.email,
     Receipt: payment.receipt ?? undefined,
     ShpFields: { Shp_mode: payment.mode, Shp_payment: payment.id },
+    ...(payment.mode === "test" && process.env.APP_ENV === "migration" && process.env.ROBOKASSA_TEST_RESULT2 === "true" && base.protocol === "https:"
+      ? { ResultURL2: `${base.origin}/api/payments/robokassa/test-result2` }
+      : {}),
     SuccessURL2: `${base.origin}${orderReturnPath || "/payment/success"}`,
     SuccessURL2Method: "GET",
     FailURL2: `${base.origin}${orderReturnPath || "/payment/fail"}`,

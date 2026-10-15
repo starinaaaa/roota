@@ -18,8 +18,10 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export default async function PaymentPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ failed?: string }>;
 }) {
   const payment = await ownedPayment((await params).id);
   if (!payment) notFound();
@@ -49,6 +51,7 @@ export default async function PaymentPage({
       id={payment.id}
       mode={payment.mode}
       initialStatus={payment.status}
+      failed={(await searchParams).failed === "1"}
       initialExpired={paymentExpired(payment)}
       requiresReview={payment.requires_review}
       expiresAt={payment.expires_at}

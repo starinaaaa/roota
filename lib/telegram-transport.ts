@@ -25,7 +25,12 @@ export async function sendTelegramMessage(
   chatId: string,
   text: string,
   request: typeof fetch = fetch,
-  relay?: { url: string; serviceKey: string },
+  relay?: {
+    url: string;
+    serviceKey: string;
+    protocol?: "fixed-chat";
+    idempotencyKey?: string;
+  },
 ): Promise<{ ok: true } | { ok: false; reason: string }> {
   try {
     const response = await request(
@@ -40,7 +45,9 @@ export async function sendTelegramMessage(
         },
         body: JSON.stringify(
           relay
-            ? { token: token.trim(), chatId: chatId.trim(), text }
+            ? relay.protocol === "fixed-chat"
+              ? { text, key: relay.idempotencyKey }
+              : { token: token.trim(), chatId: chatId.trim(), text }
             : { chat_id: chatId.trim(), text },
         ),
         signal: AbortSignal.timeout(relay ? 25000 : 15000),

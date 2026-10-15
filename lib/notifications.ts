@@ -9,10 +9,23 @@ export async function sendOrderNotification(
   orderId: string,
   event: "created" | "paid" = "created",
 ): Promise<"disabled" | "sent" | "failed" | "busy"> {
+  const relayUrl = process.env.TELEGRAM_RELAY_URL;
+  const relaySecret = process.env.TELEGRAM_RELAY_SECRET;
+  const relayConfigured = Boolean(relayUrl && relaySecret);
+  if (relayUrl || relaySecret) {
+    if (!relayConfigured || relaySecret!.length < 32) return "failed";
+    try {
+      const url = new URL(relayUrl!);
+      if (url.protocol !== "https:" || url.username || url.password)
+        return "failed";
+    } catch {
+      return "failed";
+    }
+  }
   if (
     process.env.NOTIFICATIONS_ENABLED !== "true" ||
-    !process.env.TELEGRAM_BOT_TOKEN ||
-    !process.env.TELEGRAM_CHAT_ID
+    (!relayConfigured &&
+      (!process.env.TELEGRAM_BOT_TOKEN || !process.env.TELEGRAM_CHAT_ID))
   )
     return "disabled";
   const db = createServerClient();
@@ -30,11 +43,18 @@ export async function sendOrderNotification(
   try {
     if (order) {
       const result = await sendTelegramMessage(
-        process.env.TELEGRAM_BOT_TOKEN,
-        process.env.TELEGRAM_CHAT_ID,
+        process.env.TELEGRAM_BOT_TOKEN ?? "",
+        process.env.TELEGRAM_CHAT_ID ?? "",
         orderNotificationText(order, event),
         fetch,
-
+        relayConfigured
+          ? {
+              url: relayUrl!,
+              serviceKey: relaySecret!,
+              protocol: "fixed-chat",
+              idempotencyKey: claim,
+            }
+          : undefined,
       );
       if (result.ok) state = "sent";
       else console.error("telegram_notification_failed", result.reason);

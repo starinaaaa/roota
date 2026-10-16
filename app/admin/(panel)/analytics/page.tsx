@@ -1,5 +1,5 @@
 import { requireAdmin } from "@/lib/auth";
-import { createServerClient } from "@/lib/supabase/server";
+import { createServerClient } from "@/lib/db";
 export const dynamic = "force-dynamic";
 type Counts = {
   views: number;

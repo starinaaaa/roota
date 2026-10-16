@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
-import { formatPrice } from "@/lib/products";
+import { formatPrice } from "@/lib/format-price";
 import { createOrder } from "@/lib/actions/orders";
 import type { CartItem, CheckoutFormData } from "@/types";
 

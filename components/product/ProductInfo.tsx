@@ -4,7 +4,7 @@ import { bindPrepositions } from "@/lib/typography";
 import { useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { formatPrice } from "@/lib/products";
+import { formatPrice } from "@/lib/format-price";
 import type { Product } from "@/types";
 
 type Props = {

@@ -3,6 +3,10 @@ import CharacterArt from "@/components/illustrations/CharacterArt";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { getSiteContent } from "@/lib/site";
+import { paymentMode } from "@/lib/payments/robokassa";
+import { paymentInformation } from "@/lib/payments/public-mode";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/delivery" },
@@ -20,6 +24,7 @@ const CARE_ITEMS = [
 
 export default async function DeliveryPage() {
   const site = await getSiteContent();
+  const payment = paymentInformation(paymentMode());
   return (
     <div className="pt-16 md:pt-20">
       {/* ── Заголовок ── */}
@@ -127,7 +132,7 @@ export default async function DeliveryPage() {
           </div>
           <div className="md:col-span-8 lg:col-span-9">
             <div className="divide-y divide-stone-200">
-              {site.payment.map((item) => (
+              {[payment].map((item) => (
                 <div
                   key={item.title}
                   className="py-8 first:pt-0 space-y-3 max-w-2xl"

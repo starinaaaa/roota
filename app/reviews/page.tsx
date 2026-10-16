@@ -1,4 +1,4 @@
-import { createServerClient } from "@/lib/supabase/server";
+import { createServerClient } from "@/lib/db";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Отзывы — Roota" };
 export default async function ReviewsPage() {

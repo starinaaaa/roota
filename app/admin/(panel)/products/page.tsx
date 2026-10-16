@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { listAdminProducts } from "@/lib/admin-data";
 import { publicationLabels } from "@/lib/validation";
-import { formatPrice } from "@/lib/products";
+import { formatPrice } from "@/lib/format-price";
 export default async function ProductsPage() {
   const products = await listAdminProducts();
   return (

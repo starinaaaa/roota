@@ -5,7 +5,7 @@ import { bindPrepositions } from "@/lib/typography";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { formatPrice } from "@/lib/products";
+import { formatPrice } from "@/lib/format-price";
 import CardActions from "./CardActions";
 import type { Product } from "@/types";
 

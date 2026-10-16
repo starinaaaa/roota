@@ -1,8 +1,24 @@
 "use client";
 import { useActionState } from "react";
-import { login } from "@/lib/actions/auth";
+import { authClient } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
+async function login(form: FormData) {
+  try {
+    const { error } = await authClient.signIn.email({
+      email: String(form.get("email") ?? ""),
+      password: String(form.get("password") ?? ""),
+    });
+    if (!error) return { error: "" };
+  } catch { /* Uniform response for unknown accounts and wrong passwords. */ }
+  return { error: "Не удалось войти. Проверьте данные и доступ к админке." };
+}
 export default function LoginForm() {
-  const [state, action, pending] = useActionState(login, { error: "" });
+  const router = useRouter();
+  const [state, action, pending] = useActionState(async (_previous: {error:string}, form:FormData) => {
+    const result=await login(form);
+    if (!result.error) { router.push("/admin/orders"); router.refresh(); }
+    return result;
+  }, { error: "" });
   return (
     <div className="min-h-screen pt-32 px-6">
       <form

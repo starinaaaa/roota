@@ -1,6 +1,5 @@
 import { imageWidths, imageVariantVersion } from "@/lib/image-sizes";
-import { createClient } from "@supabase/supabase-js";
-import { createServerClient } from "@/lib/supabase/server";
+import { createServerClient } from "@/lib/db";
 import { uuid } from "@/lib/validation";
 export async function GET(
   request: Request,
@@ -9,10 +8,9 @@ export async function GET(
   const { product, image } = await params;
   if (!uuid.safeParse(product).success || !uuid.safeParse(image).success)
     return new Response(null, { status: 404 });
-  const publicDb = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  );
+  const publicDb = createServerClient();
+  const { data: published, error: publicationError } = await publicDb.from("products").select("id").eq("id",product).eq("publication_status","published").eq("is_active",true).maybeSingle();
+  if (publicationError || !published) return new Response(null,{status:404,headers:{"Cache-Control":"no-store"}});
   const { data, error } = await publicDb
     .from("product_images")
     .select("bucket,storage_path")

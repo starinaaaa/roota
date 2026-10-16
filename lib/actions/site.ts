@@ -1,8 +1,8 @@
 "use server";
 import { requireAdmin } from "@/lib/auth";
-import { createServerClient } from "@/lib/supabase/server";
+import { createServerClient } from "@/lib/db";
 import { siteSchema } from "@/lib/site-schema";
-import { revalidatePath } from "next/cache";
+import { revalidateTag, revalidatePath } from "next/cache";
 export async function saveSite(input: unknown, publish = false) {
   await requireAdmin();
   const parsed = siteSchema.safeParse(input);
@@ -26,6 +26,10 @@ export async function saveSite(input: unknown, publish = false) {
         .from("site_drafts")
         .upsert({ id: 1, payload, updated_at: new Date().toISOString() });
   if (error) return { error: "Не удалось сохранить содержимое" };
+  if (publish) {
+    revalidateTag("site", { expire: 0 });
+    revalidateTag("catalog", { expire: 0 });
+  }
   for (const path of ["/", "/about", "/contacts", "/delivery", "/admin/site"])
     revalidatePath(path);
   return { success: true };

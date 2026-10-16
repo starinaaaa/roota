@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
-import { createServerClient } from "@/lib/supabase/server";
-import { formatPrice } from "@/lib/products";
+import { createServerClient } from "@/lib/db";
+import { formatPrice } from "@/lib/format-price";
 import { orderLabels, paymentLabels } from "@/lib/validation";
 import ReturnEditor, { type ReturnData } from "./ReturnEditor";
 

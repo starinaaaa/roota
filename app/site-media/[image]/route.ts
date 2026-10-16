@@ -1,6 +1,6 @@
 import { imageWidths, imageVariantVersion } from "@/lib/image-sizes";
 import { getSiteContent } from "@/lib/site";
-import { createServerClient } from "@/lib/supabase/server";
+import { createServerClient } from "@/lib/db";
 import { uuid } from "@/lib/validation";
 import { cachedSiteImage } from "@/lib/site-image-cache";
 export async function GET(

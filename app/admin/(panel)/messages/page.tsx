@@ -1,11 +1,12 @@
 import { requireAdmin } from "@/lib/auth";
-import { createServerClient } from "@/lib/supabase/server";
+import { createServerClient } from "@/lib/db";
 import {
   saveEmailSettings,
   saveEmailTemplate,
   testEmailTemplate,
   cancelEmailMessage,
   retryRejectedEmail,
+  testStudioNotification,
 } from "@/lib/actions/email-admin";
 import { renderEmail } from "@/lib/email/templates";
 export const dynamic = "force-dynamic";
@@ -30,6 +31,20 @@ export default async function MessagesPage() {
   return (
     <div className="space-y-8">
       <h1 className="font-display text-page">Сообщения</h1>
+      <section className="admin-card space-y-3">
+        <h2 className="text-lg">Уведомления студии</h2>
+        <p>
+          Новые заказы и подтверждённые оплаты — на hello@roota.moscow. В письме
+          только номер, сумма и статус; данные покупателя доступны в админке.
+        </p>
+        <form action={testStudioNotification}>
+          <button className="admin-secondary">Проверить письмо студии</button>
+        </form>
+        <p className="text-sm text-stone-600">
+          Проверка отправляет одно помеченное тестовое письмо только в почту
+          студии. Результат появится в журнале ниже.
+        </p>
+      </section>
       <p>
         Отправитель: ROOTA &lt;hello@roota.moscow&gt;. Ответы — в почту студии.{" "}
         {process.env.CUSTOMER_EMAILS_ENABLED === "true"

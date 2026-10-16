@@ -1,5 +1,5 @@
 "use server";
-import { createServerClient } from "@/lib/supabase/server";
+import { createServerClient } from "@/lib/db";
 import { uuid } from "@/lib/validation";
 import { randomBytes } from "node:crypto";
 import { z } from "zod";

@@ -1,0 +1,10 @@
+{
+  "products": [
+    { "id": "8f1bf675-238d-47d6-a38b-89302b6c0010", "name": "Колыбельный" },
+    { "id": "1ad0f756-813a-4edb-81f5-1ef9496bd6a1", "name": "Солнышко" },
+    { "id": "83ebeba3-43eb-4761-81e9-6dad11d7835e", "name": "Невидимка" },
+    { "id": "33431ee3-447f-41d5-8531-b067de8f5043", "name": "Поцелуй" }
+  ],
+  "categoryIds": ["64d9cd8d-c121-49bf-8766-d1e682ea3696"],
+  "stockPolicy": "preserve"
+}

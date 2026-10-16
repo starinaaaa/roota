@@ -1,6 +1,8 @@
 import { emailWebhookKeys } from "@/lib/email/provider-config";
-import { createServerClient } from "@/lib/supabase/server";
+import { createServerClient } from "@/lib/db";
 import { parseSignedEmailWebhook, deliveryState } from "@/lib/email/webhook";
+import { getPool } from "@/lib/db/pool";
+import { applyStudioDeliveryEvent } from "@/lib/email/studio-notifications";
 export const runtime = "nodejs";
 // Provider availability probe. GET never reads or changes customer data.
 export async function GET() {
@@ -19,6 +21,11 @@ export async function POST(request: Request) {
     const state = deliveryState(event.status ?? "");
     if (!state || !event.email) continue;
     const recipient = event.email.toLowerCase();
+    try {
+      if (await applyStudioDeliveryEvent(getPool(), event, state)) continue;
+    } catch {
+      return new Response(null, { status: 503 });
+    }
     let lookup = db
       .from("email_messages")
       .select("id,kind,subscription_id")

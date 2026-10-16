@@ -1,11 +1,10 @@
 import { cache } from "react";
-import { createClient } from "@supabase/supabase-js";
+import { unstable_cache } from "next/cache";
+import "server-only";
+import { createServerClient } from "./db";
 import type { Product, Category } from "@/types";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+const supabase = createServerClient;
 
 // ── Internal row shapes ───────────────────────────────────────────────────────
 
@@ -146,168 +145,36 @@ function mapProduct(row: ProductRow): Product {
   };
 }
 
-// ── Public queries ────────────────────────────────────────────────────────────
+// Only public catalogue DTOs enter the shared cache. Carts and orders never do.
+// Keep the current route rendering model; Cache Components can be enabled separately.
+export const getCategories = unstable_cache(async (): Promise<Category[]> => {
+  const { data, error } = await supabase().from("categories").select("id,slug,name,sort_order").eq("is_active",true).order("sort_order");
+  if (error) throw new Error("CATALOGUE_UNAVAILABLE");
+  return data ?? [];
+}, ["public-categories"], { tags: ["catalog"], revalidate: 60 });
 
-export async function getCategories(): Promise<Category[]> {
-  const { data, error } = await supabase
-    .from("categories")
-    .select("id, slug, name, sort_order")
-    .eq("is_active", true)
-    .order("sort_order", { ascending: true });
-
-  if (error) {
-    console.error("getCategories error:", error);
-    return [];
-  }
-
-  return (data ?? []) as Category[];
-}
+export const getProducts = unstable_cache(async (): Promise<Product[]> => {
+  const { data, error } = await supabase().from("products").select(PRODUCT_SELECT).eq("publication_status","published").eq("is_active",true).order("created_at",{ascending:false});
+  if (error) throw new Error("CATALOGUE_UNAVAILABLE");
+  return (data ?? []).map(row=>mapProduct(row as unknown as ProductRow));
+}, ["public-products"], { tags: ["catalog"], revalidate: 60 });
 
 export async function getFilterCategories() {
-  const categories = await getCategories();
-  return [
-    { slug: "all", label: "Все работы" },
-    ...categories.map((c) => ({ slug: c.slug, label: c.name })),
-  ];
+  return [{slug:"all",label:"Все работы"},...(await getCategories()).map(c=>({slug:c.slug,label:c.name}))];
 }
+export const getProductBySlug = cache(async (slug: string) => (await getProducts()).find(p=>p.slug===slug));
 
-export async function getProducts(): Promise<Product[]> {
-  const { data, error } = await supabase
-    .from("products")
-    .select(PRODUCT_SELECT)
-    .eq("is_active", true)
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    console.error("getProducts error:", error);
-    return [];
-  }
-
-  return (data ?? []).map((row) => mapProduct(row as unknown as ProductRow));
-}
-
-// cache() memoises per request: generateMetadata and ProductPage both call
-// this function with the same slug — only the first call hits the DB.
-export const getProductBySlug = cache(
-  async (slug: string): Promise<Product | undefined> => {
-    const { data, error } = await supabase
-      .from("products")
-      .select(PRODUCT_SELECT)
-      .eq("slug", slug)
-      .eq("is_active", true)
-      .single();
-
-    if (error) {
-      console.error("Product lookup failed");
-      return undefined;
-    }
-
-    return mapProduct(data as unknown as ProductRow);
-  },
-);
-
-// Targeted fetch — used by getCart() to hydrate only the products
-// actually present in the cart, not the entire catalog.
+// Checkout/cart hydration reads current inventory without shared caching.
 export async function getProductsByIds(ids: string[]): Promise<Product[]> {
-  if (ids.length === 0) return [];
-
-  const { data, error } = await supabase
-    .from("products")
-    .select(PRODUCT_SELECT)
-    .in("id", ids)
-    .eq("is_active", true);
-
-  if (error) {
-    console.error("getProductsByIds error:", error);
-    return [];
-  }
-
-  return (data ?? []).map((row) => mapProduct(row as unknown as ProductRow));
+  if (!ids.length) return [];
+  const { data, error } = await supabase().from("products").select(PRODUCT_SELECT).in("id",ids).eq("publication_status","published").eq("is_active",true);
+  if (error) throw new Error("CATALOGUE_UNAVAILABLE");
+  return (data ?? []).map(row=>mapProduct(row as unknown as ProductRow));
 }
-
-// Fetches up to `limit` products related to a given category, excluding the
-// current product.  Two-step:
-//   1. Same-category products first (most relevant).
-//   2. If fewer than `limit` found, fill remaining slots from any other category.
-// Uses chained .neq() for exclusion — safer than raw PostgREST not-in strings.
-export async function getRelatedProducts(
-  categoryId: string,
-  excludeSlug: string,
-  limit = 4,
-): Promise<Product[]> {
-  // Step 1 — same category, excluding current product
-  const { data: sameData, error: sameErr } = await supabase
-    .from("products")
-    .select(PRODUCT_SELECT)
-    .eq("is_active", true)
-    .eq("category_id", categoryId)
-    .neq("slug", excludeSlug)
-    .order("created_at", { ascending: false })
-    .limit(limit);
-
-  if (sameErr) console.error("getRelatedProducts (same) error:", sameErr);
-
-  const same = (sameData ?? []).map((r) =>
-    mapProduct(r as unknown as ProductRow),
-  );
-  if (same.length >= limit) return same;
-
-  // Step 2 — fill remaining slots from any category
-  const needed = limit - same.length;
-  const takenSlugs = [excludeSlug, ...same.map((p) => p.slug)];
-
-  // Start with a fully-typed builder; .neq() returns the same builder type
-  // so TypeScript infers the chain correctly without any `any` annotation.
-  let fallbackQuery = supabase
-    .from("products")
-    .select(PRODUCT_SELECT)
-    .eq("is_active", true)
-    .order("created_at", { ascending: false })
-    .limit(needed);
-
-  for (const s of takenSlugs) {
-    fallbackQuery = fallbackQuery.neq("slug", s);
-  }
-
-  const { data: fallbackData, error: fallbackErr } = await fallbackQuery;
-  if (fallbackErr)
-    console.error("getRelatedProducts (fallback) error:", fallbackErr);
-
-  const fallback = (fallbackData ?? []).map((r) =>
-    mapProduct(r as unknown as ProductRow),
-  );
-  return [...same, ...fallback];
+export async function getRelatedProducts(categoryId: string, excludeSlug: string, limit=4) {
+  return (await getProducts()).filter(p=>p.slug!==excludeSlug).sort((a,b)=>Number(b.category_id===categoryId)-Number(a.category_id===categoryId)).slice(0,limit);
 }
-
-export async function getProductsByCategory(
-  categorySlug?: string,
-): Promise<Product[]> {
-  const { data, error } = await supabase
-    .from("products")
-    .select(PRODUCT_SELECT)
-    .eq("is_active", true)
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    console.error("getProductsByCategory error:", error);
-    return [];
-  }
-
-  const mapped = (data ?? []).map((row) =>
-    mapProduct(row as unknown as ProductRow),
-  );
-
-  if (!categorySlug || categorySlug === "all") return mapped;
-  return mapped.filter((p) => p.category?.slug === categorySlug);
-}
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-export function formatPrice(price: number): string {
-  return new Intl.NumberFormat("ru-RU", {
-    style: "currency",
-    currency: "RUB",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(price);
+export async function getProductsByCategory(slug?: string) {
+  const products=await getProducts();
+  return !slug || slug==='all' ? products : products.filter(p=>p.category?.slug===slug);
 }

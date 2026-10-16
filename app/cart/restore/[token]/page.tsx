@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { createServerClient } from "@/lib/supabase/server";
+import { createServerClient } from "@/lib/db";
 import { restoreCartEmail } from "@/lib/actions/email";
 export const dynamic = "force-dynamic";
 export const metadata = {

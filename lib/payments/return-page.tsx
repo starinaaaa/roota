@@ -1,8 +1,6 @@
 import { notFound } from "next/navigation";
-import PaymentPanel from "@/components/checkout/PaymentPanel";
-import { paymentExpired } from "./model";
-import { ownedPayment, orderNumberForPayment } from "./robokassa";
-import { ensureOrderLink } from "@/lib/order-access";
+import PaymentReturnBridge from "@/components/checkout/PaymentReturnBridge";
+import { uuid } from "@/lib/validation";
 export async function PaymentReturn({
   searchParams,
   failed,
@@ -10,26 +8,12 @@ export async function PaymentReturn({
   searchParams: Promise<{ Shp_payment?: string }>;
   failed: boolean;
 }) {
-  const payment = await ownedPayment((await searchParams).Shp_payment ?? "");
-  if (!payment) notFound();
-  const orderNumber = await orderNumberForPayment(payment);
+  const id = (await searchParams).Shp_payment;
+  if (!uuid.safeParse(id).success) notFound();
+  // Cross-site payment iframes cannot send the cart's SameSite=Lax cookie.
+  // Reveal no payment data and never confirm payment here. The top-level
+  // destination checks ownership and the provider-confirmed status.
   return (
-    <PaymentPanel
-      summary={{
-        number: orderNumber,
-        amount: payment.amount,
-        items: payment.items,
-      }}
-      id={payment.id}
-      mode={payment.mode}
-      initialStatus={payment.status}
-      initialExpired={paymentExpired(payment)}
-      requiresReview={payment.requires_review}
-      expiresAt={payment.expires_at}
-      orderUrl={
-        payment.order_id ? await ensureOrderLink(payment.order_id) : undefined
-      }
-      failed={failed}
-    />
+    <PaymentReturnBridge href={`/payment/${id}${failed ? "?failed=1" : ""}`} />
   );
 }

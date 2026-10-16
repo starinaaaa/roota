@@ -1,13 +1,14 @@
 "use server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
-import { createServerClient } from "@/lib/supabase/server";
+import { createServerClient } from "@/lib/db";
 import { uuid } from "@/lib/validation";
 import { sdkFor, type PaymentRow, amountInKopecks } from "@/lib/payments/model";
 import { refundItems, verifiedRefundState } from "@/lib/payments/refunds";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 function refresh(order: string) {
+  revalidateTag("catalog", { expire: 0 });
   revalidatePath(`/admin/orders/${order}`);
   revalidatePath("/admin/orders");
 }
@@ -27,6 +28,7 @@ export async function saveOrderReturn(form: FormData) {
 }
 export async function requestOrderRefund(orderId: string) {
   const admin = await requireAdmin();
+  if (process.env.APP_ENV !== "production") return { error: "Возвраты отключены в проверочном окружении." };
   if (!uuid.safeParse(orderId).success) return { error: "Заказ не найден" };
   if (!process.env.ROBOKASSA_PASSWORD3)
     return {

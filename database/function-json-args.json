@@ -1,0 +1,80 @@
+{
+  "apply_order_shipment_status": [
+    "p_history"
+  ],
+  "attach_order_refund": [],
+  "block_email_recipient": [],
+  "capture_checkout_email_consent": [],
+  "change_order": [],
+  "checkout_delivery_order": [
+    "p_form"
+  ],
+  "checkout_order": [
+    "p_form"
+  ],
+  "checkout_robokassa": [
+    "p_form"
+  ],
+  "claim_delivery_shipment": [
+    "p_payload"
+  ],
+  "claim_delivery_sync": [],
+  "claim_email_messages": [],
+  "claim_notification": [],
+  "claim_notification_event": [],
+  "claim_order_refund": [],
+  "claim_order_shipment_sync": [],
+  "clean_old_carts": [],
+  "configure_roota_shipment_sync": [],
+  "confirm_email_subscription": [],
+  "confirm_robokassa": [],
+  "decrease_stock_on_order": [],
+  "delivery_address_city": [],
+  "delivery_catalog_slice": [
+    "p_bounds"
+  ],
+  "enqueue_order_email": [],
+  "ensure_order_access": [],
+  "funnel_report": [],
+  "generate_order_number": [],
+  "guard_robokassa_order": [],
+  "mutate_cart": [],
+  "normalize_delivery_city": [],
+  "open_email_restock": [],
+  "prepare_email_queue": [],
+  "prune_unpublished_cart_items": [],
+  "publish_site": [
+    "p_payload"
+  ],
+  "record_checkout_news_consent": [],
+  "record_funnel_event": [],
+  "record_order_funnel": [],
+  "refresh_delivery_city_catalog": [],
+  "release_delivery_sync": [],
+  "release_expired_reservations": [],
+  "request_email_subscription": [
+    "p_items"
+  ],
+  "restore_email_cart": [],
+  "restore_stock_on_cancel": [],
+  "revoke_email_subscription": [],
+  "save_order_return": [],
+  "save_product": [
+    "p_data",
+    "p_images"
+  ],
+  "save_product_without_email": [
+    "p_data",
+    "p_images"
+  ],
+  "set_order_refund_state": [],
+  "set_payment_deadline": [],
+  "set_updated_at": [],
+  "submit_customer_review": [],
+  "subscribe_restock": [],
+  "sync_checkout_email_consent": [
+    "p_items"
+  ],
+  "sync_in_stock": [],
+  "sync_product_state": []
+}

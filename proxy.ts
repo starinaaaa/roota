@@ -1,60 +1,55 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
-
-export async function proxy(request: NextRequest) {
-  let response = NextResponse.next({ request });
-  const privatePath =
-    request.nextUrl.pathname.startsWith("/admin") ||
-    request.nextUrl.pathname.startsWith("/api/orders");
+export function proxy(request: NextRequest) {
   if (
-    privatePath &&
-    process.env.NEXT_PUBLIC_SUPABASE_URL &&
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    process.env.APP_ENV === "migration" &&
+    process.env.MIGRATION_MAINTENANCE === "true"
   ) {
-    const auth = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-      {
-        cookieOptions: {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "lax",
-        },
-        cookies: {
-          getAll: () => request.cookies.getAll(),
-          setAll(values) {
-            values.forEach(({ name, value }) =>
-              request.cookies.set(name, value),
-            );
-            response = NextResponse.next({ request });
-            values.forEach(({ name, value, options }) =>
-              response.cookies.set(name, value, options),
-            );
-          },
-        },
+    // The staging health probe needs HTTP 200 at /. No page, API, cookie or
+    // database work runs while the isolated database is being restored.
+    return new NextResponse("Проверочная версия временно недоступна.", {
+      status:
+        request.nextUrl.pathname === "/" && request.method === "GET"
+          ? 200
+          : 503,
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-store",
+        "Retry-After": "60",
+        "X-Robots-Tag": "noindex, nofollow",
       },
-    );
-    try {
-      await auth.auth.getUser();
-    } catch {
-      /* Every private handler fails closed independently. */
-    }
-    response.headers.set("Cache-Control", "private, no-store");
-    response.headers.set("X-Robots-Tag", "noindex, nofollow");
+    });
   }
-  if (
-    request.nextUrl.pathname.startsWith("/payment") ||
-    request.nextUrl.pathname.startsWith("/api/payments")
-  ) {
+  const response = NextResponse.next({ request });
+  const path = request.nextUrl.pathname;
+  const privatePath = [
+    "/admin",
+    "/api/orders",
+    "/api/auth",
+    "/payment",
+    "/api/payments",
+    "/order",
+    "/api/order",
+    "/cart",
+    "/checkout",
+    "/email",
+    "/review",
+  ].some((prefix) => path === prefix || path.startsWith(prefix + "/"));
+  if (privatePath) {
     response.headers.set("Cache-Control", "private, no-store");
     response.headers.set("X-Robots-Tag", "noindex, nofollow");
+    response.headers.set("Referrer-Policy", "no-referrer");
   }
   const publicCatalogue =
     request.method === "GET" &&
-    (request.nextUrl.pathname === "/api/delivery" ||
-      request.nextUrl.pathname.startsWith("/media/") ||
-      request.nextUrl.pathname.startsWith("/site-media/"));
-  if (!publicCatalogue && !request.cookies.get("cart_session"))
+    (path === "/api/delivery" ||
+      path.startsWith("/media/") ||
+      path.startsWith("/site-media/"));
+  const paymentReturn = path === "/payment/success" || path === "/payment/fail";
+  if (
+    !publicCatalogue &&
+    !paymentReturn &&
+    !request.cookies.get("cart_session")
+  )
     response.cookies.set("cart_session", crypto.randomUUID(), {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",

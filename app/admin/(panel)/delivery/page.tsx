@@ -1,5 +1,5 @@
 import { requireAdmin } from "@/lib/auth";
-import { createServerClient } from "@/lib/supabase/server";
+import { createServerClient } from "@/lib/db";
 import { ozonConfigured, shipmentMethodId } from "@/lib/delivery/ozon";
 import PackingEditor from "@/components/admin/PackingEditor";
 export default async function DeliveryPage() {

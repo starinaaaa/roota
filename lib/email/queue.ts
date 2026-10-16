@@ -1,7 +1,7 @@
 import "server-only";
 import { relationList } from "@/lib/relation-list";
 import { randomBytes } from "node:crypto";
-import { createServerClient } from "@/lib/supabase/server";
+import { createServerClient } from "@/lib/db";
 import { ensureOrderLink } from "@/lib/order-access";
 import { siteUrl } from "@/lib/seo";
 import { sendEmail } from "./server";

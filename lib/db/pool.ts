@@ -1,18 +1,14 @@
 import "server-only";
 import { Pool } from "pg";
 import { readFileSync } from "node:fs";
+import { databaseConnectionUrl } from "./connection";
 
 const state = globalThis as typeof globalThis & { rootaPool?: Pool };
 
 export function getPool() {
   if (state.rootaPool) return state.rootaPool;
-  const connectionString = process.env.DATABASE_URL;
-  if (!connectionString) throw new Error("DATABASE_NOT_CONFIGURED");
-  const url = new URL(connectionString);
+  const url = databaseConnectionUrl(process.env);
   const local = ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
-  // URL SSL flags can override node-postgres' ssl object. Never allow that.
-  for (const key of ["sslmode", "sslcert", "sslkey", "sslrootcert", "ssl"])
-    url.searchParams.delete(key);
   const max = Number(process.env.DATABASE_POOL_MAX ?? 4);
   if (!Number.isInteger(max) || max < 1 || max > 8)
     throw new Error("DATABASE_POOL_CONFIG");

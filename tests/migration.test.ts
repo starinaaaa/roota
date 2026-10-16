@@ -58,6 +58,7 @@ test('standalone schema, SQL adapter, claims, inventory, idempotency and role is
     await control.query(`create database ${database}`);
     db=new Pool({...config,database,max:4});
     await db.query(await readFile('database/schema.sql','utf8'));
+    await db.query(await readFile('database/studio-notifications.sql','utf8'));
     await db.query(await readFile('database/auth.sql','utf8'));
     await control.query(`create role ${role} login nosuperuser nocreatedb nocreaterole nobypassrls`);
     await db.query(`revoke create on schema public from public; grant usage on schema public to ${role}; grant select,insert,update,delete on all tables in schema public to ${role}; grant usage,select on all sequences in schema public to ${role}; grant execute on all functions in schema public to ${role};`);

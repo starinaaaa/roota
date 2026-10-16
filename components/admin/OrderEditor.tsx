@@ -62,7 +62,12 @@ type OrderData = {
     reason: string | null;
     created_at: string;
   }[];
-  notification: { state: string; attempts: number }[];
+  notification: {
+    event: string;
+    state: string;
+    attempts: number;
+    delivered_at: string | null;
+  }[];
 };
 export default function OrderEditor({ order }: { order: OrderData }) {
   const [form, setForm] = useState({
@@ -343,21 +348,43 @@ export default function OrderEditor({ order }: { order: OrderData }) {
       )}
       <section className="admin-card space-y-3">
         <h3 className="text-lg">Уведомление студии</h3>
-        <p>
-          {order.notification[0]?.state === "sent"
-            ? "Отправлено"
-            : order.notification[0]?.state === "failed"
-              ? "Ошибка отправки"
-              : "Не отправлено или канал не настроен"}
-        </p>
+        {(["created", "paid"] as const).map((event) => {
+          const notification = order.notification.find(
+            (n) => n.event === event,
+          );
+          return (
+            <p key={event}>
+              {event === "created" ? "Создание заказа" : "Оплата"}:{" "}
+              {notification?.delivered_at
+                ? "Доставлено на почту студии"
+                : notification?.state === "sent"
+                  ? "Принято почтовым сервисом"
+                  : notification?.state === "unknown"
+                    ? "Проверьте доставку в UniSender; автоматический повтор отключён"
+                    : notification?.state === "failed"
+                      ? "Ошибка отправки"
+                      : notification?.state === "sending"
+                        ? "Отправляется"
+                        : "Ожидает отправки или канал не настроен"}
+            </p>
+          );
+        })}
         <button
           className="admin-secondary"
-          disabled={pending}
+          disabled={
+            pending ||
+            order.notification.some(
+              (n) =>
+                n.event === "created" &&
+                (n.state === "unknown" || n.state === "sending"),
+            )
+          }
           onClick={() =>
             start(async () => {
               try {
                 const result = await retryNotification(order.id);
                 setMessage(result.error ?? result.message ?? "");
+                router.refresh();
               } catch {
                 setMessage("Не удалось проверить уведомление");
               }

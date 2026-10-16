@@ -30,6 +30,7 @@ try {
     await db.query('create schema roota_migration_tools; create extension pgcrypto with schema roota_migration_tools');
   }
   await db.query(schema.replace(/^BEGIN;\n/m,'').replace(/^COMMIT;\n/m,''));
+  await db.query(await readFile('database/studio-notifications.sql','utf8'));
   const triggers=(await db.query("select c.relname table_name,t.tgname name from pg_trigger t join pg_class c on c.oid=t.tgrelid where c.relnamespace='public'::regnamespace and not t.tgisinternal")).rows;
   for(const table of transferTables) await db.query(`alter table public."${table}" disable trigger user`);
   for(const entry of manifest.tables) {

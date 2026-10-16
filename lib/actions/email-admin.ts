@@ -8,6 +8,61 @@ import { renderEmail, templateKinds } from "@/lib/email/templates";
 import { sendUnisenderEmail } from "@/lib/email/unisender-transport";
 import { randomUUID } from "node:crypto";
 import { siteUrl } from "@/lib/seo";
+import { studioEmailMessage } from "@/lib/email/studio-notifications";
+
+export async function testStudioNotification() {
+  await requireAdmin();
+  const key = emailProviderKey("order_created", process.env);
+  if (!key) throw new Error("API-ключ почты не настроен");
+  const id = randomUUID(),
+    db = createServerClient();
+  const logged = await db
+    .from("email_messages")
+    .insert({
+      id,
+      event_key: `studio-test:${id}`,
+      kind: "order_created",
+      recipient: "hello@roota.moscow",
+      state: "sending",
+      attempts: 1,
+      claim: id,
+      claimed_at: new Date().toISOString(),
+      payload: { test: true, studio: true },
+    });
+  if (logged.error) throw new Error("Не удалось записать проверку в журнал");
+  const message = studioEmailMessage(
+    {
+      order_number: "ПРОВЕРКА",
+      total_amount: 100,
+      status: "new",
+      payment_status: "pending",
+    },
+    "created",
+    id,
+    { ...process.env, APP_ENV: "migration" },
+  );
+  const result = await sendUnisenderEmail(key, {
+    ...message,
+    metadata: { message_id: id },
+  });
+  const saved = await db
+    .from("email_messages")
+    .update({
+      state: result.state === "rejected" ? "failed" : result.state,
+      provider_job_id: result.state === "accepted" ? result.jobId : null,
+      last_error:
+        result.state === "unknown"
+          ? "Проверьте доставку перед повтором"
+          : result.state === "rejected"
+            ? "Почтовый сервис отклонил письмо"
+            : null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .eq("claim", id);
+  if (saved.error) throw new Error("Проверьте журнал UniSender перед повтором");
+  revalidatePath("/admin/messages");
+}
 export async function saveEmailSettings(form: FormData) {
   await requireAdmin();
   const values = z

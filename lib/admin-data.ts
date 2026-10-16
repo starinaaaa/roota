@@ -84,9 +84,8 @@ export async function getOrder(id: string) {
   const { data, error } = await createServerClient()
     .from("orders")
     .select(
-      "*,items:order_items(*),events:order_events(*),notification:notification_outbox(state,attempts),shipments:order_shipments(*)",
+      "*,items:order_items(*),events:order_events(*),notification:notification_outbox(event,state,attempts,delivered_at),shipments:order_shipments(*)",
     )
-    .eq("notification.event", "created")
     .eq("id", id)
     .maybeSingle();
   if (error) throw new Error("Не удалось загрузить заказ");

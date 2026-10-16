@@ -155,7 +155,9 @@
       "state",
       "attempts",
       "updated_at",
-      "event"
+      "event",
+      "provider_job_id",
+      "delivered_at"
     ],
     "products": [
       "id",

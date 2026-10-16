@@ -2,7 +2,7 @@ import { writeFile, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { pool, directory, hash, readJson } from './common';
 import { transferTables, emptyTables, sanitizeRow, detectTestContacts } from './policy';
-import registry from '../../database/registry.json';
+import sourceColumns from '../../database/source-columns.json';
 import primaryKeys from '../../database/primary-keys.json';
 import sourceFunctions from '../../database/source-functions.json';
 import selection from '../../database/migration-selection.json';
@@ -26,11 +26,11 @@ try {
   await db.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
   if(fromRestore && (await db.query('select archive_sha256 from migration_restore_proof.state')).rows[0]?.archive_sha256!==backup.archiveSha256) throw new Error('RESTORE_ARCHIVE_MISMATCH');
   const actual = (await db.query("select table_name,column_name from information_schema.columns where table_schema='public' order by table_name,ordinal_position")).rows;
-  for (const [table, columns] of Object.entries(registry.tables)) {
+  for (const [table, columns] of Object.entries(sourceColumns)) {
     if (JSON.stringify(actual.filter(r=>r.table_name===table).map(r=>r.column_name)) !== JSON.stringify(columns)) throw new Error('SCHEMA_DRIFT');
   }
   const liveTables = (await db.query("select tablename from pg_tables where schemaname='public'")).rows.map(r=>r.tablename).sort();
-  if (JSON.stringify(liveTables) !== JSON.stringify(Object.keys(registry.tables).sort())) throw new Error('UNCLASSIFIED_TABLE');
+  if (JSON.stringify(liveTables) !== JSON.stringify(Object.keys(sourceColumns).sort())) throw new Error('UNCLASSIFIED_TABLE');
   const dependencies = (await db.query("select conrelid::regclass::text as child,confrelid::regclass::text as parent from pg_constraint where contype='f' and connamespace='public'::regnamespace")).rows;
   for (const fk of dependencies) if ((transferTables as readonly string[]).includes(fk.child) && !(transferTables as readonly string[]).includes(fk.parent)) throw new Error('TRANSFER_DEPENDS_ON_EXCLUDED_TABLE');
   const liveFunctions=(await db.query("select proname,pg_get_functiondef(oid) definition from pg_proc where pronamespace='public'::regnamespace")).rows;

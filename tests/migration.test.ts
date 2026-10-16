@@ -8,6 +8,7 @@ import { Query } from '../lib/db/query';
 import { sanitizeRow, detectTestContacts, transferTables, emptyTables, safePath } from '../scripts/migration/policy';
 import { paymentInformation } from '../lib/payments/public-mode';
 import registry from '../database/registry.json';
+import sourceColumns from '../database/source-columns.json';
 
 test('every application SQL query method is supported by the PostgreSQL adapter',async()=>{
   const supported=new Set(Object.getOwnPropertyNames(Query.prototype));
@@ -58,6 +59,8 @@ test('standalone schema, SQL adapter, claims, inventory, idempotency and role is
     await control.query(`create database ${database}`);
     db=new Pool({...config,database,max:4});
     await db.query(await readFile('database/schema.sql','utf8'));
+    const originalColumns=(await db.query("select table_name,column_name from information_schema.columns where table_schema='public' order by table_name,ordinal_position")).rows;
+    for(const [table,columns] of Object.entries(sourceColumns)) assert.deepEqual(originalColumns.filter(r=>r.table_name===table).map(r=>r.column_name),columns,`source snapshot drift: ${table}`);
     await db.query(await readFile('database/studio-notifications.sql','utf8'));
     await db.query(await readFile('database/auth.sql','utf8'));
     await control.query(`create role ${role} login nosuperuser nocreatedb nocreaterole nobypassrls`);

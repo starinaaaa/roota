@@ -4,6 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { saveProduct, uploadImage } from "@/lib/actions/admin";
+import { createCategory } from "@/lib/actions/categories";
+import { categorySlug } from "@/lib/category-slug";
 import { publicationLabels, type ProductInput } from "@/lib/validation";
 import type { Category } from "@/types";
 export type GalleryImage = {
@@ -43,7 +45,7 @@ const empty: ProductInput = {
   seo_description: null,
 };
 export default function ProductEditor({
-  id,
+  id: initialId,
   product,
   categories,
 }: {
@@ -51,6 +53,20 @@ export default function ProductEditor({
   product: EditableProduct | null;
   categories: Category[];
 }) {
+  // Keep uploaded draft images attached to the same new product when adding a category.
+  const [id] = useState(initialId);
+  const [addedCategories, setAddedCategories] = useState<Category[]>([]);
+  const [showCategory, setShowCategory] = useState(false);
+  const [categoryName, setCategoryName] = useState("");
+  const [categoryAddress, setCategoryAddress] = useState("");
+  const [categoryMessage, setCategoryMessage] = useState("");
+  const [categoryPending, startCategory] = useTransition();
+  const categoryOptions = [
+    ...categories,
+    ...addedCategories.filter(
+      (c) => !categories.some((existing) => existing.id === c.id),
+    ),
+  ];
   const [data, setData] = useState<ProductInput>(
       product ? { ...empty, ...product } : empty,
     ),
@@ -61,6 +77,34 @@ export default function ProductEditor({
     dragIndex = useRef<number | null>(null);
   const set = <K extends keyof ProductInput>(key: K, value: ProductInput[K]) =>
     setData((v) => ({ ...v, [key]: value }));
+  function addCategory() {
+    startCategory(async () => {
+      setCategoryMessage("");
+      try {
+        const result = await createCategory({
+          name: categoryName,
+          slug: categoryAddress,
+        });
+        if (result.error) {
+          setCategoryMessage(result.error);
+          return;
+        }
+        if (!result.category) return;
+        setAddedCategories((previous) => [...previous, result.category]);
+        set("category_id", result.category.id);
+        setCategoryMessage(
+          `Категория «${result.category.name}» добавлена и выбрана.`,
+        );
+        setCategoryName("");
+        setCategoryAddress("");
+        setShowCategory(false);
+      } catch {
+        setCategoryMessage(
+          "Не удалось добавить категорию. Проверьте доступ и попробуйте ещё раз.",
+        );
+      }
+    });
+  }
   function move(from: number, to: number) {
     if (to < 0 || to >= images.length) return;
     setImages((prev) => {
@@ -108,6 +152,7 @@ export default function ProductEditor({
       className="space-y-6"
       onSubmit={(e) => {
         e.preventDefault();
+        if (categoryPending) return;
         start(async () => {
           setMessage("");
           try {
@@ -179,21 +224,97 @@ export default function ProductEditor({
             onChange={(e) => set("price", Number(e.target.value))}
           />
         </label>
-        <label>
-          Категория
-          <select
-            className="admin-input"
-            value={data.category_id ?? ""}
-            onChange={(e) => set("category_id", e.target.value || null)}
+        <div>
+          <label>
+            Категория
+            <select
+              className="admin-input"
+              value={data.category_id ?? ""}
+              onChange={(e) => set("category_id", e.target.value || null)}
+            >
+              <option value="">Выберите категорию</option>
+              {categoryOptions.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            type="button"
+            className="mt-2 text-sm underline underline-offset-4"
+            aria-expanded={showCategory}
+            aria-controls="new-category-fields"
+            onClick={() => {
+              setShowCategory((value) => !value);
+              setCategoryMessage("");
+            }}
+            disabled={categoryPending || pending}
           >
-            <option value="">Выберите категорию</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </label>
+            {showCategory
+              ? "Закрыть добавление категории"
+              : "+ Добавить категорию"}
+          </button>
+          {showCategory && (
+            <fieldset
+              id="new-category-fields"
+              className="mt-3 space-y-3 rounded border border-stone-200 p-3"
+              disabled={categoryPending || pending}
+              onKeyDown={(event) => {
+                if (
+                  event.key === "Enter" &&
+                  event.target instanceof HTMLInputElement
+                ) {
+                  event.preventDefault();
+                  addCategory();
+                }
+              }}
+            >
+              <legend className="px-1 text-sm">Новая категория</legend>
+              <label className="block">
+                Название категории
+                <input
+                  className="admin-input"
+                  value={categoryName}
+                  maxLength={100}
+                  placeholder="Например, Вазы"
+                  onChange={(event) => {
+                    const name = event.target.value;
+                    setCategoryName(name);
+                    if (categoryAddress === categorySlug(categoryName))
+                      setCategoryAddress(categorySlug(name));
+                  }}
+                />
+              </label>
+              <label className="block">
+                Адрес категории
+                <input
+                  className="admin-input"
+                  value={categoryAddress}
+                  maxLength={120}
+                  placeholder="Например, vazy"
+                  onChange={(event) => setCategoryAddress(event.target.value)}
+                />
+                <span className="text-sm text-stone-600">
+                  Заполняется автоматически. Можно изменить латинскими буквами.
+                </span>
+              </label>
+              <button
+                type="button"
+                className="admin-secondary"
+                onClick={addCategory}
+                disabled={categoryPending || pending}
+              >
+                {categoryPending ? "Добавляю…" : "Создать и выбрать категорию"}
+              </button>
+            </fieldset>
+          )}
+          {categoryMessage && (
+            <p role="status" className="mt-2 text-sm">
+              {categoryMessage}
+            </p>
+          )}
+        </div>
         {text("material", "Материал", 300)}
         {text("dimensions", "Размеры", 300)}
         {text("weight", "Вес", 100)}
@@ -481,7 +602,7 @@ export default function ProductEditor({
         </p>
       </section>
       <div className="flex flex-wrap gap-4 items-center">
-        <button className="admin-button" disabled={pending}>
+        <button className="admin-button" disabled={pending || categoryPending}>
           {pending ? "Сохраняю…" : "Сохранить изделие"}
         </button>
         <p role="status">{message}</p>

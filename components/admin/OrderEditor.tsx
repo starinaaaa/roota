@@ -67,6 +67,7 @@ type OrderData = {
     state: string;
     attempts: number;
     delivered_at: string | null;
+    provider_job_id: string | null;
   }[];
 };
 export default function OrderEditor({ order }: { order: OrderData }) {
@@ -358,9 +359,11 @@ export default function OrderEditor({ order }: { order: OrderData }) {
               {notification?.delivered_at
                 ? "Доставлено на почту студии"
                 : notification?.state === "sent"
-                  ? "Принято почтовым сервисом"
+                  ? notification.provider_job_id === "telegram"
+                    ? "Принято Telegram"
+                    : "Принято почтовым сервисом"
                   : notification?.state === "unknown"
-                    ? "Проверьте доставку в UniSender; автоматический повтор отключён"
+                    ? "Проверьте доставку уведомления; автоматический повтор отключён"
                     : notification?.state === "failed"
                       ? "Ошибка отправки"
                       : notification?.state === "sending"

@@ -204,6 +204,86 @@ test(
         ).rows[0].delivered_at.toISOString(),
         delivered.delivered_at.toISOString(),
       );
+      // Telegram uses the same durable claim. Relay failures may be partial
+      // delivery, so automatic retries must not send duplicate studio messages.
+      const telegramEnv = {
+        ...env,
+        STUDIO_NOTIFICATION_CHANNEL: "telegram",
+        TELEGRAM_BOT_TOKEN: "123:dummy",
+        TELEGRAM_CHAT_ID: "123",
+        TELEGRAM_RELAY_KEY: "dummy-relay-key",
+      };
+      let telegramCalls = 0;
+      const telegramRequest = (async (url, options) => {
+        telegramCalls++;
+        assert.equal(
+          String(url),
+          "https://tntzcgdakwmzmoygmlur.supabase.co/functions/v1/telegram-order-notification",
+        );
+        assert.equal(
+          new Headers(options?.headers).get("authorization"),
+          "Bearer dummy-relay-key",
+        );
+        const body = JSON.parse(String(options?.body));
+        assert.equal(body.chatId, "123");
+        assert.match(body.text, /Новый заказ/);
+        assert.doesNotMatch(body.text, /PRIVATE_/);
+        return Response.json({ ok: true });
+      }) as typeof fetch;
+      const telegramOrder = await addOrder();
+      const concurrent = await Promise.all([
+        sendStudioNotification(
+          db,
+          telegramOrder,
+          "created",
+          telegramEnv,
+          telegramRequest,
+        ),
+        sendStudioNotification(
+          db,
+          telegramOrder,
+          "created",
+          telegramEnv,
+          telegramRequest,
+        ),
+      ]);
+      assert.deepEqual(concurrent.sort(), ["busy", "sent"]);
+      assert.equal(telegramCalls, 1);
+      assert.equal(
+        (
+          await db.query(
+            "select provider_job_id from notification_outbox where order_id=$1",
+            [telegramOrder],
+          )
+        ).rows[0].provider_job_id,
+        "telegram",
+      );
+      const partialOrder = await addOrder();
+      const partial = (async () => {
+        telegramCalls++;
+        return Response.json({ ok: false, error_code: 403 });
+      }) as typeof fetch;
+      assert.equal(
+        await sendStudioNotification(
+          db,
+          partialOrder,
+          "created",
+          telegramEnv,
+          partial,
+        ),
+        "unknown",
+      );
+      assert.equal(
+        await sendStudioNotification(
+          db,
+          partialOrder,
+          "created",
+          telegramEnv,
+          telegramRequest,
+        ),
+        "unknown",
+      );
+      assert.equal(telegramCalls, 2);
     } finally {
       await db?.end();
       await control.query(`drop database if exists ${database}`);

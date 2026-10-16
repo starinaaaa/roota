@@ -4,7 +4,7 @@ import {
   sendStudioNotification,
   type StudioNotificationState,
 } from "./email/studio-notifications";
-// The owner selected studio email instead of a separate Telegram relay.
+// Both studio transports use the same persistent, atomically claimed outbox.
 export async function sendOrderNotification(
   orderId: string,
   event: "created" | "paid" = "created",

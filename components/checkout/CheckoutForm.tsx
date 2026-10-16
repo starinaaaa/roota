@@ -3,7 +3,7 @@
 import { bindPrepositions } from "@/lib/typography";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
+import Image from "@/components/ui/StoreImage";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { formatPrice } from "@/lib/format-price";

@@ -4,7 +4,7 @@ import { productBadge } from "@/lib/product-badge";
 import { bindPrepositions } from "@/lib/typography";
 import { useRef, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import Image from "@/components/ui/StoreImage";
 import { motion, useInView } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { formatPrice } from "@/lib/format-price";

@@ -1,7 +1,7 @@
 "use client";
 
 import { bindPrepositions } from "@/lib/typography";
-import Image from "next/image";
+import Image from "@/components/ui/StoreImage";
 import Link from "next/link";
 import { Minus, Plus, X } from "lucide-react";
 import { formatPrice } from "@/lib/format-price";

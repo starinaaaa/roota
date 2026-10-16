@@ -1,6 +1,6 @@
 import { relationList } from "@/lib/relation-list";
 import type { Metadata } from "next";
-import Image from "next/image";
+import Image from "@/components/ui/StoreImage";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { orderIdForToken, paymentForOrderToken } from "@/lib/order-access";

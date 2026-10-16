@@ -1,5 +1,5 @@
 import { bindPrepositions } from "@/lib/typography";
-import Image from "next/image";
+import Image from "@/components/ui/StoreImage";
 
 export default function AboutHero({ title }: { title: string }) {
   return (

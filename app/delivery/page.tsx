@@ -46,10 +46,12 @@ export default async function DeliveryPage() {
           >
             <CharacterArt
               character="skater"
+              loading="eager"
               className="absolute bottom-0 left-0 h-40 w-32 md:h-56 md:w-44 -rotate-6"
             />
             <CharacterArt
               character="resting"
+              loading="eager"
               className="absolute right-0 top-0 h-36 w-48 md:h-48 md:w-64 rotate-6"
             />
           </div>
@@ -162,7 +164,9 @@ export default async function DeliveryPage() {
             <a href={site.telegram} target="_blank" rel="noopener noreferrer">
               Написать в Telegram
             </a>
-            <Link href="/offer">Условия возврата</Link>
+            <Link href="/offer" prefetch={false}>
+              Условия возврата
+            </Link>
           </div>
         </div>
       </section>

@@ -238,6 +238,7 @@ export default function Header({ cartCount }: Props) {
                   >
                     <Link
                       href={href}
+                      prefetch={href === "/catalog" ? null : false}
                       onClick={() => setMobileMenuPath(null)}
                       className={[
                         "block py-[18px]",
@@ -300,6 +301,7 @@ function NavLink({
   return (
     <Link
       href={href}
+      prefetch={href === "/catalog" ? null : false}
       className={[
         "relative font-body text-ui tracking-[0.08em] uppercase whitespace-nowrap",
         "transition-colors duration-200",

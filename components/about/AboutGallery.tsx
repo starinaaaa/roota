@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
-import { useEffect, useState } from "react";
+import Image from "@/components/ui/StoreImage";
+import { useEffect, useRef, useState } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import { WheelGesturesPlugin } from "embla-carousel-wheel-gestures";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -15,6 +15,49 @@ export default function AboutGallery({ photos }: { photos: Photo[] }) {
   );
   const [active, setActive] = useState(0);
   const count = photos.length;
+  const section = useRef<HTMLElement>(null);
+  const [nearGallery, setNearGallery] = useState(false);
+  const [requested, setRequested] = useState<Set<number>>(() => new Set());
+
+  useEffect(() => {
+    const element = section.current;
+    if (!element) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setNearGallery(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "300px" },
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!carousel || !nearGallery || !count) return;
+    const requestVisible = () => {
+      const visible = carousel.slidesInView();
+      const needed = new Set(visible);
+      // Warm just the adjacent slides so looping and quick gestures stay smooth.
+      if (visible.length) {
+        needed.add((visible[0] + count - 1) % count);
+        needed.add((visible[visible.length - 1] + 1) % count);
+      }
+      setRequested((previous) => {
+        if ([...needed].every((index) => previous.has(index))) return previous;
+        return new Set([...previous, ...needed]);
+      });
+    };
+    requestVisible();
+    carousel.on("slidesInView", requestVisible).on("reInit", requestVisible);
+    return () => {
+      carousel
+        .off("slidesInView", requestVisible)
+        .off("reInit", requestVisible);
+    };
+  }, [carousel, nearGallery, count]);
 
   useEffect(() => {
     if (!carousel) return;
@@ -34,6 +77,7 @@ export default function AboutGallery({ photos }: { photos: Photo[] }) {
   if (!count) return null;
   return (
     <section
+      ref={section}
       aria-label="Фотографии мастерской Roota"
       className="border-t border-stone-200 bg-white py-8 md:py-12"
     >
@@ -60,13 +104,18 @@ export default function AboutGallery({ photos }: { photos: Photo[] }) {
               className="relative min-w-0 aspect-square shrink-0 basis-[78%] sm:basis-[calc((100%_-_8px)/2)] md:basis-[calc((100%_-_16px)/3)] lg:basis-[calc((100%_-_24px)/4)]"
             >
               <Image
-                src={photo.src}
+                src={
+                  requested.has(index)
+                    ? photo.src
+                    : "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+                }
+                unoptimized={!requested.has(index)}
                 alt={photo.alt}
                 fill
                 draggable={false}
-                sizes="(max-width: 640px) 78vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                sizes="(max-width: 639px) 78vw, (max-width: 767px) calc((100vw - 8px) / 2), (max-width: 1023px) calc((100vw - 16px) / 3), calc((100vw - 24px) / 4)"
                 className="object-cover"
-                loading={index < 4 ? "eager" : "lazy"}
+                loading="lazy"
               />
             </div>
           ))}

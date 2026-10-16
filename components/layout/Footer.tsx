@@ -77,6 +77,7 @@ export default async function Footer() {
                   <li key={href}>
                     <Link
                       href={href}
+                      prefetch={false}
                       className="font-body text-ui text-stone-800 hover:text-stone-900 transition-colors duration-200"
                     >
                       {bindPrepositions(label)}
@@ -132,24 +133,28 @@ export default async function Footer() {
             <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
               <Link
                 href="/offer"
+                prefetch={false}
                 className="font-body text-ui text-stone-800 hover:text-stone-600 transition-colors duration-200"
               >
                 Оферта
               </Link>
               <Link
                 href="/privacy"
+                prefetch={false}
                 className="font-body text-ui text-stone-800 hover:text-stone-600 transition-colors duration-200"
               >
                 Политика конфиденциальности
               </Link>
               <Link
                 href="/personal-data-policy"
+                prefetch={false}
                 className="font-body text-ui text-stone-800 hover:text-stone-600 transition-colors duration-200"
               >
                 Обработка персональных данных
               </Link>
               <Link
                 href="/terms"
+                prefetch={false}
                 className="font-body text-ui text-stone-800 hover:text-stone-600 transition-colors duration-200"
               >
                 Пользовательское соглашение

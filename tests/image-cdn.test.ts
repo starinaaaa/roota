@@ -4,6 +4,7 @@ import imageLoader, { fallbackImageLoader } from "../lib/image-loader";
 import { imageCdnPath, cdnImageUrl, imageCdnOrigin } from "../lib/image-cdn";
 import manifest from "../lib/cdn-image-manifest.json";
 import local from "../lib/local-image-manifest.json";
+import { staticImageCdnUrl } from "../lib/static-image-cdn";
 import { imageVariantVersion, imageWidths } from "../lib/image-sizes";
 
 test("only exact internal UUID routes produce CDN paths", () => {
@@ -53,7 +54,18 @@ test("unverified images retain the compatibility route; fallback bypasses CDN", 
   );
 });
 
-test("local manifest URLs are unchanged", () => {
-  for (const [src, path] of Object.entries(local))
-    assert.equal(imageLoader({ src, width: 750 }), `${path}-960.webp`);
+test("local fallback URLs stay unchanged and only verified static files use CDN", () => {
+  for (const [src, path] of Object.entries(local)) {
+    const file = `${path}-960.webp`;
+    assert.equal(fallbackImageLoader({ src, width: 750 }), file);
+    assert.equal(
+      imageLoader({ src, width: 750 }),
+      staticImageCdnUrl(file) ?? file,
+    );
+  }
+  assert.equal(
+    staticImageCdnUrl("/optimized/0000000000000000-960.webp"),
+    undefined,
+  );
+  assert.equal(staticImageCdnUrl("https://example.org/photo.webp"), undefined);
 });

@@ -2,6 +2,10 @@ import type { Pool } from "pg";
 import { emailProviderKey } from "./provider-config";
 import { sendUnisenderEmail, type EmailMessage } from "./unisender-transport";
 import { orderNotificationText } from "../telegram-transport";
+import {
+  sendStudioTelegram,
+  studioTelegramConfigured,
+} from "../studio-telegram";
 
 type Event = "created" | "paid";
 export type StudioNotificationState =
@@ -80,10 +84,12 @@ export async function sendStudioNotification(
   request: typeof fetch = fetch,
 ): Promise<StudioNotificationState> {
   const key = emailProviderKey("order_" + event, env);
+  const telegram = env.STUDIO_NOTIFICATION_CHANNEL === "telegram";
   if (
     env.NOTIFICATIONS_ENABLED !== "true" ||
-    env.STUDIO_NOTIFICATION_CHANNEL !== "email" ||
-    !key
+    (telegram
+      ? !studioTelegramConfigured(env)
+      : env.STUDIO_NOTIFICATION_CHANNEL !== "email" || !key)
   )
     return "disabled";
   const client = await db.connect();
@@ -122,11 +128,13 @@ export async function sendStudioNotification(
     ).rows[0];
     return row?.state === "unknown" ? "unknown" : "busy";
   }
-  const result = await sendUnisenderEmail(
-    key,
-    studioEmailMessage(order, event, order.id, env),
-    request,
-  );
+  const result = telegram
+    ? await sendStudioTelegram(order, event, env, request)
+    : await sendUnisenderEmail(
+        key!,
+        studioEmailMessage(order, event, order.id, env),
+        request,
+      );
   const state =
     result.state === "accepted"
       ? "sent"
@@ -148,7 +156,7 @@ export async function processStudioNotifications(
 ) {
   if (
     env.NOTIFICATIONS_ENABLED !== "true" ||
-    env.STUDIO_NOTIFICATION_CHANNEL !== "email"
+    !["email", "telegram"].includes(env.STUDIO_NOTIFICATION_CHANNEL ?? "")
   )
     return { disabled: true, processed: 0 };
   const rows = (

@@ -1,4 +1,5 @@
 "use client";
+import ActionStatus from "@/components/ui/ActionStatus";
 import {
   createOzonShipment,
   refreshOzonShipment,
@@ -258,9 +259,7 @@ export default function OrderEditor({ order }: { order: OrderData }) {
         <button disabled={pending} className="admin-button">
           {pending ? "Сохраняю…" : "Сохранить"}
         </button>
-        <p role="status" className="self-center">
-          {message}
-        </p>
+        <ActionStatus message={message} pending={pending} />
       </form>
       {order.delivery_details?.provider === "ozon" && (
         <section className="admin-card space-y-3">

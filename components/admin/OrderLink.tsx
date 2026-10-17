@@ -1,4 +1,5 @@
 "use client";
+import ActionStatus from "@/components/ui/ActionStatus";
 import { useState, useTransition } from "react";
 import { prepareOrderLink } from "@/lib/actions/order-access";
 export default function OrderLink({
@@ -41,7 +42,7 @@ export default function OrderLink({
           disabled={pending}
           onClick={() => prepare(false)}
         >
-          Получить ссылку
+          {pending ? "Готовлю…" : "Получить ссылку"}
         </button>
         <button
           type="button"
@@ -56,7 +57,7 @@ export default function OrderLink({
               prepare(true);
           }}
         >
-          Заменить ссылку
+          {pending ? "Готовлю…" : "Заменить ссылку"}
         </button>
       </div>
       {url && (
@@ -73,6 +74,7 @@ export default function OrderLink({
               type="button"
               className="underline"
               onClick={async () => {
+                setMessage("");
                 try {
                   await navigator.clipboard.writeText(url);
                   setMessage("Ссылка скопирована");
@@ -104,9 +106,10 @@ export default function OrderLink({
       )}
       <p className="text-sm text-stone-600">
         Автоматические письма о заказе настраиваются в разделе «Сообщения».
-        Кнопка письма открывает черновик для дополнительного сообщения покупателю.
+        Кнопка письма открывает черновик для дополнительного сообщения
+        покупателю.
       </p>
-      <p role="status">{message}</p>
+      <ActionStatus message={message} pending={pending} />
     </section>
   );
 }

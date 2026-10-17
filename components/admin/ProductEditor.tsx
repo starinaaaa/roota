@@ -1,4 +1,5 @@
 "use client";
+import ActionStatus from "@/components/ui/ActionStatus";
 import { useRef, useState, useTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -309,10 +310,8 @@ export default function ProductEditor({
               </button>
             </fieldset>
           )}
-          {categoryMessage && (
-            <p role="status" className="mt-2 text-sm">
-              {categoryMessage}
-            </p>
+          {(categoryMessage || categoryPending) && (
+            <ActionStatus message={categoryMessage} pending={categoryPending} />
           )}
         </div>
         {text("material", "Материал", 300)}
@@ -605,7 +604,7 @@ export default function ProductEditor({
         <button className="admin-button" disabled={pending || categoryPending}>
           {pending ? "Сохраняю…" : "Сохранить изделие"}
         </button>
-        <p role="status">{message}</p>
+        <ActionStatus message={message} pending={pending} />
       </div>
     </form>
   );

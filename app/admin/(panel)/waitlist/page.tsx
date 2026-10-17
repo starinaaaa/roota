@@ -1,3 +1,4 @@
+import SubmitButton from "@/components/ui/SubmitButton";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
 import { createServerClient } from "@/lib/db";
@@ -125,9 +126,9 @@ export default async function WaitlistPage({
                   )}
                   <form action={markWaitlistNotified}>
                     <input type="hidden" name="id" value={entry.id} />
-                    <button className="admin-secondary">
+                    <SubmitButton className="admin-secondary">
                       Уведомление отправлено
-                    </button>
+                    </SubmitButton>
                   </form>
                 </div>
               )}

@@ -17,13 +17,14 @@ export default function ProductClientWrapper({ product }: Props) {
     availableQty: number;
     tab?: "waitlist" | "preorder";
   } | null>(null);
-  const { addItem, items, updateQuantity, openDrawer } = useCart();
+  const { addItem, items, updateQuantity, openDrawer, isPending } = useCart();
 
   // Derive cart state from the shared context (seeded by layout's getCart)
   const cartItem = items.find((i) => i.product_id === product.id);
   const cartQty = cartItem?.quantity ?? 0;
 
   function handleIncrement() {
+    if (isPending) return;
     if (cartQty === 0) {
       // First add — open drawer so the user sees the item appear
       addItem(
@@ -43,6 +44,7 @@ export default function ProductClientWrapper({ product }: Props) {
   }
 
   function handleDecrement() {
+    if (isPending) return;
     // Goes to 0 → removeFromCart (handled inside updateQuantity)
     updateQuantity(product.id, cartQty - 1);
   }
@@ -52,6 +54,7 @@ export default function ProductClientWrapper({ product }: Props) {
       <ProductInfo
         product={product}
         cartQty={cartQty}
+        pending={isPending}
         onIncrement={handleIncrement}
         onDecrement={handleDecrement}
         onUnavailable={() => setStockModal({ availableQty: 0 })}

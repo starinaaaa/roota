@@ -15,7 +15,6 @@ const INFO_LINKS = [
   { href: "/about", label: "О студии" },
   { href: "/delivery", label: "Доставка и оплата" },
   { href: "/contacts", label: "Контакты" },
-  { href: "/reviews", label: "Отзывы" },
 ];
 
 export default async function Footer() {
@@ -108,10 +107,18 @@ export default async function Footer() {
                     href={site.instagram}
                     target="_blank"
                     rel="noopener noreferrer"
+                    aria-describedby="instagram-note"
                     className="font-body text-ui text-stone-800 hover:text-stone-900 transition-colors duration-200"
                   >
-                    Instagram
+                    Instagram*
                   </a>
+                  <p
+                    id="instagram-note"
+                    className="font-body text-caption text-stone-600 leading-relaxed mt-2 max-w-[280px]"
+                  >
+                    * Принадлежит Meta Platforms Inc., признанной экстремистской
+                    организацией, деятельность которой запрещена в РФ.
+                  </p>
                 </li>
                 <li>
                   <a

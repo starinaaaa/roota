@@ -411,6 +411,7 @@
     "enqueue_order_email",
     "ensure_order_access",
     "funnel_report",
+    "product_funnel_report",
     "generate_order_number",
     "guard_robokassa_order",
     "mutate_cart",

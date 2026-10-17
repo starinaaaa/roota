@@ -1,3 +1,4 @@
+import SubmitButton from "@/components/ui/SubmitButton";
 import { redirect } from "next/navigation";
 import { getAdmin } from "@/lib/auth";
 import { logout } from "@/lib/actions/auth";
@@ -15,7 +16,7 @@ export default async function PanelLayout({
         <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
           <h1 className="text-2xl">Студия · управление</h1>
           <form action={logout}>
-            <button className="admin-secondary">Выйти</button>
+            <SubmitButton className="admin-secondary">Выйти</SubmitButton>
           </form>
         </div>
         <AdminNavigation />

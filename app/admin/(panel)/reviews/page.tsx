@@ -1,3 +1,4 @@
+import SubmitButton from "@/components/ui/SubmitButton";
 import { relationList } from "@/lib/relation-list";
 import { requireAdmin } from "@/lib/auth";
 import { createServerClient } from "@/lib/db";
@@ -61,7 +62,7 @@ export default async function ReviewsAdmin() {
               </option>
               <option value="hidden">Скрыть</option>
             </select>
-            <button className="admin-button">Сохранить</button>
+            <SubmitButton className="admin-button">Сохранить</SubmitButton>
           </form>
         </article>
       ))}

@@ -1,4 +1,5 @@
 "use client";
+import ActionStatus from "@/components/ui/ActionStatus";
 import { useState, useTransition, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -290,7 +291,7 @@ export default function SiteEditor({
           disabled={pending}
           onClick={() => save(false)}
         >
-          Сохранить черновик
+          {pending ? "Сохраняю…" : "Сохранить черновик"}
         </button>
         <Link
           className="admin-secondary"
@@ -304,9 +305,9 @@ export default function SiteEditor({
           disabled={pending}
           onClick={() => save(true)}
         >
-          Опубликовать
+          {pending ? "Выполняю…" : "Опубликовать"}
         </button>
-        <p role="status">{message}</p>
+        <ActionStatus message={message} pending={pending} />
       </div>
     </div>
   );

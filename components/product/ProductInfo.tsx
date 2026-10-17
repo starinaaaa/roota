@@ -10,6 +10,7 @@ import type { Product } from "@/types";
 type Props = {
   product: Product;
   cartQty: number;
+  pending?: boolean;
   onIncrement: () => void;
   onDecrement: () => void;
   onUnavailable: () => void;
@@ -19,6 +20,7 @@ type Props = {
 export default function ProductInfo({
   product,
   cartQty,
+  pending = false,
   onIncrement,
   onDecrement,
   onUnavailable,
@@ -95,6 +97,7 @@ export default function ProductInfo({
                   <div className="flex items-center gap-6">
                     <button
                       onClick={onDecrement}
+                      disabled={pending}
                       className="font-body text-copy text-stone-600 hover:text-stone-900 transition-colors w-5 text-center leading-none"
                       aria-label="Уменьшить количество"
                     >
@@ -107,7 +110,7 @@ export default function ProductInfo({
 
                     <button
                       onClick={atStockLimit ? undefined : onIncrement}
-                      disabled={atStockLimit}
+                      disabled={pending || atStockLimit}
                       className={[
                         "font-body text-copy leading-none w-5 text-center transition-colors",
                         atStockLimit
@@ -129,9 +132,11 @@ export default function ProductInfo({
                   exit={{ opacity: 0, y: -4 }}
                   transition={{ duration: 0.2 }}
                   onClick={onIncrement}
+                  disabled={pending}
+                  aria-busy={pending}
                   className="w-full bg-stone-900 text-stone-50 font-body text-ui tracking-[0.08em] uppercase py-4 px-8 hover:bg-stone-700 transition-colors duration-300"
                 >
-                  Добавить в корзину
+                  {pending ? "Добавляю…" : "Добавить в корзину"}
                 </motion.button>
               )}
             </AnimatePresence>

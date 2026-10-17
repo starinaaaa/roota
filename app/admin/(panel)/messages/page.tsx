@@ -1,3 +1,4 @@
+import SubmitButton from "@/components/ui/SubmitButton";
 import { requireAdmin } from "@/lib/auth";
 import { createServerClient } from "@/lib/db";
 import {
@@ -38,7 +39,9 @@ export default async function MessagesPage() {
           только номер, сумма и статус; данные покупателя доступны в админке.
         </p>
         <form action={testStudioNotification}>
-          <button className="admin-secondary">Проверить письмо студии</button>
+          <SubmitButton className="admin-secondary">
+            Проверить письмо студии
+          </SubmitButton>
         </form>
         <p className="text-sm text-stone-600">
           Проверка отправляет одно помеченное тестовое письмо только в почту
@@ -111,7 +114,9 @@ export default async function MessagesPage() {
             defaultValue={s.review_delay_hours}
           />
         </label>
-        <button className="admin-button">Сохранить настройки</button>
+        <SubmitButton className="admin-button">
+          Сохранить настройки
+        </SubmitButton>
       </form>
       <h2 className="text-xl">Шаблоны и сценарии</h2>
       <p>
@@ -156,13 +161,15 @@ export default async function MessagesPage() {
               />
               Сценарий включён
             </label>
-            <button className="admin-button">Сохранить шаблон</button>
+            <SubmitButton className="admin-button">
+              Сохранить шаблон
+            </SubmitButton>
           </form>
           <form action={testEmailTemplate} className="mt-3">
             <input type="hidden" name="kind" value={t.kind} />
-            <button className="admin-secondary">
+            <SubmitButton className="admin-secondary">
               Отправить тест в hello@roota.moscow
-            </button>
+            </SubmitButton>
           </form>
           <iframe
             title={`Предпросмотр ${t.kind}`}
@@ -238,15 +245,17 @@ export default async function MessagesPage() {
                     m.attempts < 3 && (
                       <form action={retryRejectedEmail}>
                         <input type="hidden" name="id" value={m.id} />
-                        <button className="admin-secondary">
+                        <SubmitButton className="admin-secondary">
                           Повторить после исправления
-                        </button>
+                        </SubmitButton>
                       </form>
                     )}
                   {m.state === "pending" && (
                     <form action={cancelEmailMessage}>
                       <input type="hidden" name="id" value={m.id} />
-                      <button className="admin-secondary">Отменить</button>
+                      <SubmitButton className="admin-secondary">
+                        Отменить
+                      </SubmitButton>
                     </form>
                   )}
                 </td>

@@ -30,7 +30,12 @@ export default function AddToCartButton({ productId, productName }: Props) {
     if (isPending || added) return;
 
     startTransition(async () => {
-      const result = await addToCart(productId);
+      let result: { error?: string };
+      try {
+        result = await addToCart(productId);
+      } catch {
+        result = { error: "Нет соединения. Попробуйте ещё раз." };
+      }
       if (timerRef.current) clearTimeout(timerRef.current);
       if (result.error) {
         setStockError(result.error);
@@ -46,6 +51,8 @@ export default function AddToCartButton({ productId, productName }: Props) {
   return (
     <button
       onClick={handleClick}
+      disabled={isPending || added}
+      aria-busy={isPending}
       aria-label={`Добавить ${productName} в корзину`}
       className={[
         "border font-body text-ui tracking-[0.08em] uppercase px-3 py-1.5",
@@ -58,7 +65,10 @@ export default function AddToCartButton({ productId, productName }: Props) {
         isPending ? "opacity-60 cursor-wait" : "opacity-100",
       ].join(" ")}
     >
-      {bindPrepositions(stockError ?? (added ? "✓" : "В корзину"))}
+      {bindPrepositions(
+        stockError ??
+          (isPending ? "Добавляю…" : added ? "✓ Добавлено" : "В корзину"),
+      )}
     </button>
   );
 }

@@ -27,7 +27,7 @@ export default function CardActions({
 }: Props) {
   const [modal, setModal] = useState(false);
   const [modalTab, setModalTab] = useState<"waitlist" | "preorder">("waitlist");
-  const { items, addItem, updateQuantity } = useCart();
+  const { items, addItem, updateQuantity, isPending } = useCart();
 
   const cartItem = items.find((i) => i.product_id === productId);
   const cartQty = cartItem?.quantity ?? 0;
@@ -40,15 +40,15 @@ export default function CardActions({
 
   function handleAdd(e: React.MouseEvent) {
     stop(e);
-    addItem(productId, 1);
+    if (!isPending) addItem(productId, 1);
   }
   function handleDecrement(e: React.MouseEvent) {
     stop(e);
-    updateQuantity(productId, cartQty - 1);
+    if (!isPending) updateQuantity(productId, cartQty - 1);
   }
   function handleIncrement(e: React.MouseEvent) {
     stop(e);
-    if (!atLimit) updateQuantity(productId, cartQty + 1);
+    if (!isPending && !atLimit) updateQuantity(productId, cartQty + 1);
   }
   function handleModal(e: React.MouseEvent) {
     stop(e);
@@ -72,6 +72,7 @@ export default function CardActions({
             <div className="flex items-stretch min-w-0 min-h-[44px] border border-stone-200">
               <button
                 onClick={handleDecrement}
+                disabled={isPending}
                 className="px-3 py-2 font-body text-ui text-stone-600 hover:text-stone-900 hover:bg-stone-50 transition-colors duration-150"
                 aria-label="Уменьшить"
               >
@@ -82,7 +83,7 @@ export default function CardActions({
               </span>
               <button
                 onClick={handleIncrement}
-                disabled={atLimit}
+                disabled={isPending || atLimit}
                 className={[
                   "px-3 py-2 font-body text-ui transition-colors duration-150",
                   atLimit
@@ -97,9 +98,11 @@ export default function CardActions({
           ) : (
             <button
               onClick={handleAdd}
+              disabled={isPending}
+              aria-busy={isPending}
               className={`${btnBase} bg-stone-900 text-stone-50 hover:bg-stone-700`}
             >
-              В корзину
+              {isPending ? "Добавляю…" : "В корзину"}
             </button>
           )}
 

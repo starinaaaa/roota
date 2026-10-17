@@ -1,4 +1,5 @@
 "use client";
+import ActionStatus from "@/components/ui/ActionStatus";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -229,7 +230,11 @@ export default function ReturnEditor({
             </form>
           </details>
         )}
-      <p role="status">{pending ? "Проверяю…" : message}</p>
+      <ActionStatus
+        message={message}
+        pending={pending}
+        pendingLabel="Проверяю…"
+      />
     </section>
   );
 }

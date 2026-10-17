@@ -1,4 +1,5 @@
 "use client";
+import ActionStatus from "@/components/ui/ActionStatus";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -295,7 +296,7 @@ export default function PackingEditor({
           </button>
         </form>
       </section>
-      <p role="status">{message}</p>
+      <ActionStatus message={message} pending={pending} />
     </div>
   );
 }

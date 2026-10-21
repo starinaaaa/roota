@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { normalizeRussianPhone } from "@/lib/contacts";
 import type { DeliveryPoint, DeliveryQuote } from "@/lib/delivery/model";
+import { deliveryEstimateLabel } from "@/lib/delivery/model";
 import type { DeliveryCity } from "@/lib/delivery/geo";
 const PointsMap = dynamic(() => import("./PointsMap"), {
   ssr: false,
@@ -45,6 +46,7 @@ export default function DeliverySelector({
     [point, setPoint] = useState<DeliveryPoint | null>(
       initialSelection?.point ?? null,
     ),
+    [quote, setQuote] = useState<DeliveryQuote | null>(null),
     [query, setQuery] = useState(""),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
@@ -71,6 +73,7 @@ export default function DeliverySelector({
     setViewport(null);
     setCatalogLoading(false);
     setPoint(null);
+    setQuote(null);
     setPoints([]);
     setListLimit(100);
     setError("");
@@ -235,6 +238,7 @@ export default function DeliverySelector({
     setError("");
     if (action === "quote") {
       setPoint(selected!);
+      setQuote(null);
       onQuoteRef.current(null);
     }
     try {
@@ -253,6 +257,7 @@ export default function DeliverySelector({
       if (version !== revision.current) return;
       if (!response.ok)
         throw new Error(result.error || "Не удалось рассчитать доставку.");
+      setQuote(result.quote);
       onQuoteRef.current(result.quote);
       setOpen(false);
     } catch (e) {
@@ -414,7 +419,7 @@ export default function DeliverySelector({
                   setOpen(true);
                   setQuery("");
                 }}
-                className="font-body text-caption uppercase tracking-[0.12em] border border-stone-300 px-5 py-3 disabled:opacity-50"
+                className="font-body text-caption uppercase tracking-[0.12em] border border-stone-300 px-5 py-3 transition-colors hover:bg-stone-900 hover:text-stone-50 disabled:opacity-50 motion-reduce:transition-none"
               >
                 {bindPrepositions(
                   point ? "Изменить пункт" : "Выбрать пункт выдачи",
@@ -426,6 +431,19 @@ export default function DeliverySelector({
                   <p className="text-stone-600">
                     {bindPrepositions(point.address)}
                   </p>
+                </div>
+              )}
+              {quote && (
+                <div
+                  role="status"
+                  className="font-body text-caption text-stone-600 space-y-1"
+                >
+                  <p>
+                    {bindPrepositions(
+                      deliveryEstimateLabel(quote.estimatedDays),
+                    )}
+                  </p>
+                  <p>Срок подготовки к отправке не входит в срок доставки.</p>
                 </div>
               )}
             </>

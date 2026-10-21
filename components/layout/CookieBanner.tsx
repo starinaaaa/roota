@@ -10,14 +10,24 @@ export default function CookieBanner() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (!localStorage.getItem(STORAGE_KEY)) {
+    let dismissed = false;
+    try {
+      dismissed = Boolean(localStorage.getItem(STORAGE_KEY));
+    } catch {
+      /* Storage may be disabled. */
+    }
+    if (!dismissed) {
       const timer = setTimeout(() => setVisible(true), 0);
       return () => clearTimeout(timer);
     }
   }, []);
 
   function dismiss() {
-    localStorage.setItem(STORAGE_KEY, "1");
+    try {
+      localStorage.setItem(STORAGE_KEY, "1");
+    } catch {
+      /* Dismiss for this visit even without storage. */
+    }
     setVisible(false);
   }
 

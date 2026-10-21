@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { paymentExpired } from "@/lib/payments/model";
 import PaymentPanel from "@/components/checkout/PaymentPanel";
 import { ensureOrderLink } from "@/lib/order-access";
+import { paymentDeliveryIsSeparate } from "@/lib/payments/delivery-summary";
 import {
   ownedPayment,
   buildForm,
@@ -25,7 +26,10 @@ export default async function PaymentPage({
 }) {
   const payment = await ownedPayment((await params).id);
   if (!payment) notFound();
-  const orderNumber = await orderNumberForPayment(payment);
+  const [orderNumber, separateDelivery] = await Promise.all([
+    orderNumberForPayment(payment),
+    paymentDeliveryIsSeparate(payment),
+  ]);
   const base =
     process.env.PAYMENT_BASE_URL ||
     (process.env.VERCEL_BRANCH_URL
@@ -47,6 +51,7 @@ export default async function PaymentPage({
         number: orderNumber,
         amount: payment.amount,
         items: payment.items,
+        separateDelivery,
       }}
       id={payment.id}
       mode={payment.mode}

@@ -44,7 +44,8 @@ test('migration is allowlisted; customer data, hidden JSON keys, unsafe paths fa
   assert.deepEqual(sanitizeRow('email_settings',{id:1,enabled:true,test_recipients:['test@example.invalid']}),{id:1,enabled:false,test_recipients:[],marketing_enabled:false,test_mode:true});
   for(const file of ['/absolute','../escape','folder/../escape','a\\b']) assert.throws(()=>safePath('products',file));
   assert.throws(()=>safePath('new-unreviewed-bucket','a'));
-  assert.match(paymentInformation('live').text,/деньги списываются/i);
+  assert.match(paymentInformation('live').text,/Robokassa/);
+  assert.match(paymentInformation('live').text,/Электронный чек/);
   assert.match(paymentInformation('test').text,/не списываются/i);
 });
 

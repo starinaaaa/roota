@@ -28,6 +28,11 @@ test("draft restores only permitted contact and selection fields, never terms or
   const restored = readCheckoutDraft(JSON.stringify(draft), now)!;
   assert.equal(restored.firstName, "Анна");
   assert.equal(restored.delivery?.point?.id, 1438496);
+  assert.equal(
+    restored.emailConsent,
+    false,
+    "even a current saved draft cannot restore consent",
+  );
   assert.equal("acceptedTerms" in restored, false);
   assert.equal("quote" in restored, false);
   assert.equal("deliveryQuoteId" in restored, false);

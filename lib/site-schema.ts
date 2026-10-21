@@ -6,6 +6,10 @@ const social = z
   .max(300)
   .refine((v) => v.startsWith("https://"), "Используйте https-ссылку");
 const item = z.object({ title: text(100), text: text(1500) });
+const deliveryCostText =
+  "Стоимость доставки Ozon рассчитывается после выбора пункта выдачи и показывается до оплаты. Ориентировочный срок указан рядом с выбранным пунктом и в итогах заказа. Он отсчитывается с момента передачи посылки Ozon; время подготовки заказа добавляется отдельно. Если срок пока не рассчитан, уточните его у студии до оплаты.";
+const legacyDeliveryCostText =
+  "Стоимость доставки рассчитывается после выбора пункта выдачи и показывается в составе заказа до оплаты. Если Ozon возвращает ориентировочный срок, вы увидите его там же: он отсчитывается после передачи посылки перевозчику.";
 export const siteSchema = z.object({
   heroTitle: text(120),
   heroIntro: text(600),
@@ -22,7 +26,18 @@ export const siteSchema = z.object({
   email: z.string().email().max(254),
   telegram: social,
   instagram: social,
-  delivery: z.array(item).min(1).max(8),
+  delivery: z
+    .array(item)
+    .min(1)
+    .max(8)
+    .transform((items) =>
+      // Upgrade the old published copy and drafts, preserving later editor changes.
+      items.map((entry) =>
+        entry.text === legacyDeliveryCostText
+          ? { ...entry, text: deliveryCostText }
+          : entry,
+      ),
+    ),
   payment: z.array(item).min(1).max(8),
   featuredIds: z
     .array(z.string().uuid())
@@ -52,16 +67,16 @@ export const defaultSite: SiteContent = {
   instagram: "https://instagram.com/roota.ceramics",
   delivery: [
     {
-      title: "Курьером по Москве",
-      text: "Доставка в течение 1–2 дней. Стоимость — от 400 ₽. Бесплатно при заказе от 5 000 ₽.",
+      title: "Доставка в пункты Ozon",
+      text: "При оформлении заказа выберите город, затем удобный пункт Ozon на карте или в списке.",
     },
     {
-      title: "СДЭК / Почта России",
-      text: "Отправляем по всей России. Срок — 3–7 рабочих дней в зависимости от региона. Стоимость доставки уточняется после оформления заказа.",
+      title: "Стоимость и срок доставки",
+      text: deliveryCostText,
     },
     {
-      title: "Самовывоз",
-      text: "Забрать заказ можно из нашей мастерской в Москве. Адрес и время — по договорённости после оформления.",
+      title: "Подготовка к отправке",
+      text: "Готовые изделия отправляем за 1–3 рабочих дня после оплаты. Срок изготовления предзаказа указан в карточке изделия.",
     },
   ],
   payment: [

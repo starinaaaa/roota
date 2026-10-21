@@ -244,6 +244,9 @@ test("SQL payment checkout, callback rollback, idempotency, test isolation and R
         "utf8",
       ),
     );
+    await db.exec(
+      await readFile("database/migrations/20261021_yandex_courier.sql", "utf8"),
+    );
     const hidden = randomUUID(),
       otherSession = randomUUID(),
       otherCart = randomUUID();

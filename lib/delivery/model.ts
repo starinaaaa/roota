@@ -27,6 +27,19 @@ export type DeliveryQuote = {
   expiresAt: string;
   point: DeliveryPoint;
 };
+export function estimatedDeliveryDays(value: unknown): number | null {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0
+    ? value
+    : null;
+}
+
+export function deliveryEstimateLabel(days: number | null): string {
+  const estimate = estimatedDeliveryDays(days);
+  return estimate === null
+    ? "Срок доставки пока не рассчитан. Уточните его у студии до оплаты."
+    : `Ориентировочный срок доставки: ${estimate} дн. после передачи заказа Ozon.`;
+}
+
 export type DeliveryContext = {
   phone: string;
   items: {

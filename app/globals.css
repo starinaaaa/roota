@@ -40,7 +40,6 @@
 @layer base {
   :root {
     --font-cormorant: 'Cormorant Garamond', serif;
-    --font-jost: 'Jost', sans-serif;
   }
 
   html {

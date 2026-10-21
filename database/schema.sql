@@ -614,9 +614,13 @@ CREATE OR REPLACE FUNCTION public.capture_checkout_email_consent()
  SET search_path TO ''
 AS $function$
 begin
- if coalesce((new.request_payload#>>'{form,emailConsent}')::boolean,false) and new.customer_email is not null then
+ if coalesce((new.request_payload#>>'{form,emailConsent}')::boolean,false)
+    and coalesce((new.request_payload#>>'{form,newsletterDataConsent}')::boolean,false)
+    and coalesce((new.request_payload#>>'{form,subscribeToNews}')::boolean,false)
+    and new.request_payload#>>'{form,emailConsentVersion}'='checkout-email-2026-10-21'
+    and new.customer_email is not null then
   perform public.record_checkout_news_consent(lower(new.customer_email),new.cart_session,
-    replace(gen_random_uuid()::text,'-','')||replace(gen_random_uuid()::text,'-',''),'checkout-email-2026-10-14');
+    replace(gen_random_uuid()::text,'-','')||replace(gen_random_uuid()::text,'-',''),'checkout-email-2026-10-21');
  end if;
  return new;
 end $function$
@@ -666,7 +670,7 @@ AS $function$
 declare
  q public.delivery_quotes; previous public.orders; live_cart jsonb; result jsonb; form jsonb; payload jsonb;
 begin
- if p_session is null or p_key is null or p_quote is null or p_expected_total is null then raise exception 'INVALID_INPUT'; end if;
+ if p_session is null or p_key is null or p_expected_total is null or p_expected_total<=0 then raise exception 'INVALID_INPUT'; end if;
  payload:=jsonb_build_object('form',p_form,'expectedTotal',p_expected_total,'quoteId',p_quote);
  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(p_session,0));
  select * into previous from public.orders where cart_session=p_session and request_key=p_key;
@@ -674,6 +678,18 @@ begin
    if previous.request_payload is distinct from payload then raise exception 'KEY_REUSED'; end if;
    return jsonb_build_object('id',previous.id,'number',previous.order_number);
  end if;
+ if p_form->>'deliveryMethod'='yandex_courier' then
+   if p_quote is not null or coalesce(p_form->>'telegram','') !~ '^[a-zA-Z][a-zA-Z0-9_]{4,31}$'
+      or coalesce(length(trim(p_form->>'address')),0)<5 or length(p_form->>'address')>500
+      or p_expected_total<>trunc(p_expected_total) or p_expected_total>2147483647 then raise exception 'INVALID_INPUT'; end if;
+   form:=p_form || jsonb_build_object('deliveryType','moscow');
+   result:=public.checkout_order(p_session,p_key,form,p_expected_total::integer);
+   update public.orders set delivery_amount=0,insurance_amount=0,
+     delivery_details=jsonb_build_object('provider','yandex','method','courier','coordination','telegram','telegram',p_form->>'telegram','payment','separate'),
+     request_payload=payload where id=(result->>'id')::uuid;
+   return result;
+ end if;
+ if p_quote is null then raise exception 'INVALID_INPUT'; end if;
  select * into q from public.delivery_quotes where id=p_quote and cart_session=p_session for update;
  if not found or q.phone is distinct from p_form->>'phone' or q.expires_at<now() or q.checked_at<now()-interval '1 minute' then raise exception 'DELIVERY_EXPIRED'; end if;
  perform 1 from public.delivery_packing_rules where id=q.packing_rule_id and active and updated_at=q.packing_updated_at for share;
@@ -758,7 +774,11 @@ declare
  pay public.payments; test_order public.payment_test_orders; o public.orders; q public.delivery_quotes;
  payload jsonb; cart_snapshot jsonb; item_snapshot jsonb; r jsonb; test_id uuid; total numeric;
 begin
- if p_session is null or p_session !~ '^[0-9a-fA-F-]{36}$' or p_key is null or p_quote is null or p_expected_total is null or p_expected_total<=0 or p_mode is null or p_mode not in ('test','live') then raise exception 'INVALID_INPUT'; end if;
+ if p_session is null or p_session !~ '^[0-9a-fA-F-]{36}$' or p_key is null or p_expected_total is null or p_expected_total<=0 or p_mode is null or p_mode not in ('test','live') then raise exception 'INVALID_INPUT'; end if;
+ if p_form->>'deliveryMethod'='yandex_courier' then
+   if p_quote is not null or coalesce(p_form->>'telegram','') !~ '^[a-zA-Z][a-zA-Z0-9_]{4,31}$'
+      or coalesce(length(trim(p_form->>'address')),0)<5 or length(p_form->>'address')>500 then raise exception 'INVALID_INPUT'; end if;
+ elsif p_quote is null then raise exception 'INVALID_INPUT'; end if;
  payload:=jsonb_build_object('form',p_form,'expectedTotal',p_expected_total,'quoteId',p_quote);
  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(p_session,0));
  if p_mode='test' then
@@ -769,10 +789,12 @@ begin
      return to_jsonb(pay);
    end if;
    if coalesce(length(trim(p_form->>'name')),0) not between 1 and 100 or coalesce(p_form->>'phone','') !~ '^\+7[0-9]{10}$' or coalesce(p_form->>'email','') !~ '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$' then raise exception 'INVALID_INPUT'; end if;
+   if coalesce(p_form->>'deliveryMethod','ozon_point')<>'yandex_courier' then
    select * into q from public.delivery_quotes where id=p_quote and cart_session=p_session for share;
    if not found or q.phone is distinct from p_form->>'phone' or q.expires_at<now() or q.checked_at<now()-interval '1 minute' then raise exception 'DELIVERY_EXPIRED'; end if;
    perform 1 from public.delivery_packing_rules where id=q.packing_rule_id and active and updated_at=q.packing_updated_at for share;
    if not found then raise exception 'PACKING_CHANGED'; end if;
+   end if;
    perform 1 from public.cart_items where cart_id in(select id from public.carts where session_id=p_session) order by product_id for share;
    perform 1 from public.products where id in(select product_id from public.cart_items where cart_id in(select id from public.carts where session_id=p_session)) order by id for share;
    if exists(select 1 from public.cart_items ci join public.carts c on c.id=ci.cart_id join public.products p on p.id=ci.product_id where c.session_id=p_session and
@@ -783,11 +805,11 @@ begin
      jsonb_agg(jsonb_build_object('name',p.name,'quantity',ci.quantity,'sum',p.price*ci.quantity,'kind','goods') order by p.id),sum(p.price*ci.quantity)
      into cart_snapshot,item_snapshot,total from public.cart_items ci join public.carts c on c.id=ci.cart_id join public.products p on p.id=ci.product_id where c.session_id=p_session;
    if item_snapshot is null then raise exception 'EMPTY_CART'; end if;
-   if cart_snapshot is distinct from q.cart_snapshot or total is distinct from q.goods_amount::numeric then raise exception 'CART_CHANGED'; end if;
-   total:=total+q.delivery_amount+q.insurance_amount;
+   if coalesce(p_form->>'deliveryMethod','ozon_point')<>'yandex_courier' and (cart_snapshot is distinct from q.cart_snapshot or total is distinct from q.goods_amount::numeric) then raise exception 'CART_CHANGED'; end if;
+   total:=total+coalesce(q.delivery_amount,0)+coalesce(q.insurance_amount,0);
    if total<>p_expected_total then raise exception 'PRICE_CHANGED'; end if;
    insert into public.payment_test_orders(cart_session,request_key,request_payload,form,items,delivery,amount)
-     values(p_session,p_key,payload,p_form,item_snapshot,to_jsonb(q),total) returning id into test_id;
+     values(p_session,p_key,payload,p_form,item_snapshot,case when p_form->>'deliveryMethod'='yandex_courier' then jsonb_build_object('provider','yandex','method','courier','payment','separate','telegram',p_form->>'telegram') else to_jsonb(q) end,total) returning id into test_id;
  else
    r:=public.checkout_delivery_order(p_session,p_key,p_form,p_expected_total,p_quote);
    select * into o from public.orders where id=(r->>'id')::uuid for update;

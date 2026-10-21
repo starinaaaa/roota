@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { LEGAL_VERSION } from "./legal";
 
 export const CHECKOUT_DRAFT_TTL = 7 * 86400000;
 export const checkoutDeliveryDraft = z.object({
@@ -34,6 +33,10 @@ const draftSchema = z.object({
   comment: z.string().max(2000),
   emailConsent: z.boolean(),
   delivery: checkoutDeliveryDraft.nullable(),
+  deliveryMethod: z
+    .enum(["ozon_point", "yandex_courier"])
+    .default("ozon_point"),
+  address: z.string().max(500).default(""),
 });
 export function readCheckoutDraft(raw: string | null, now = Date.now()) {
   try {
@@ -46,8 +49,8 @@ export function readCheckoutDraft(raw: string | null, now = Date.now()) {
       return null;
     return {
       ...parsed.data,
-      emailConsent:
-        parsed.data.legalVersion === LEGAL_VERSION && parsed.data.emailConsent,
+      // A saved browser draft is not evidence of a new affirmative choice.
+      emailConsent: false,
     };
   } catch {
     return null;

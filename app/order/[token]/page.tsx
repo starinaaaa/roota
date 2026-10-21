@@ -77,6 +77,7 @@ export default async function CustomerOrderPage({
   const shipment = relationList(order.shipments)[0];
   const tracking = order.tracking_number || shipment?.posting_number;
   const point = order.delivery_details?.point;
+  const courier = order.delivery_details?.provider === "yandex";
   const contact = new URL(site.telegram);
   contact.searchParams.set(
     "text",
@@ -203,11 +204,22 @@ export default async function CustomerOrderPage({
             <h2 className="font-display text-section">Доставка</h2>
             <p>
               {point?.name ||
-                (order.delivery_type === "pickup" ? "Самовывоз" : "Доставка")}
+                (courier
+                  ? "Курьер Яндекс Доставки"
+                  : order.delivery_type === "pickup"
+                    ? "Самовывоз"
+                    : "Доставка")}
             </p>
             <p className="text-stone-600">
               {point?.address || order.delivery_address}
             </p>
+            {courier && (
+              <p className="text-stone-600">
+                Напишем в Telegram в течение суток и согласуем стоимость и
+                удобное время доставки до двери по Москве и Подмосковью. Курьера
+                вы оплачиваете отдельно в приложении.
+              </p>
+            )}
             {tracking && (
               <div className="space-y-2">
                 <p className="text-caption text-stone-500">Номер отправления</p>
@@ -257,10 +269,12 @@ export default async function CustomerOrderPage({
             <div className="flex justify-between gap-3">
               <span>Доставка</span>
               <span>
-                {formatPrice(
-                  Number(order.delivery_amount ?? 0) +
-                    Number(order.insurance_amount ?? 0),
-                )}
+                {courier
+                  ? "Оплачивается отдельно"
+                  : formatPrice(
+                      Number(order.delivery_amount ?? 0) +
+                        Number(order.insurance_amount ?? 0),
+                    )}
               </span>
             </div>
             <div className="flex justify-between gap-3 text-copy border-t border-stone-200 pt-4">

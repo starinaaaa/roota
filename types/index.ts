@@ -112,6 +112,7 @@ export type CheckoutFormData = {
   phone: string;
   email: string;
   deliveryType: DeliveryType;
+  deliveryMethod?: "ozon_point" | "yandex_courier";
   address: string;
   comment: string;
   legalVersion: string;

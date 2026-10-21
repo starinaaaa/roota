@@ -2,6 +2,7 @@ import "server-only";
 import { ozonCheckoutError } from "./checkout-errors";
 import { OzonTransport, activeShipmentMethod } from "./ozon-transport";
 import {
+  estimatedDeliveryDays,
   moneyToKopecks,
   type DeliveryAdapter,
   type DeliveryContext,
@@ -128,12 +129,7 @@ export const ozon: DeliveryAdapter = {
     return {
       deliveryCost: moneyToKopecks(delivery.amount) / 100,
       insuranceCost: moneyToKopecks(insurance.amount) / 100,
-      estimatedDays:
-        context.cutoffAt &&
-        Number.isInteger(r.posting.estimated_delivery_days) &&
-        Number(r.posting.estimated_delivery_days) >= 0
-          ? r.posting.estimated_delivery_days!
-          : null,
+      estimatedDays: estimatedDeliveryDays(r.posting.estimated_delivery_days),
     };
   },
 };

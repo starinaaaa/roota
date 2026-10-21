@@ -6,6 +6,8 @@ import { createServerClient } from "@/lib/db";
 import { formatPrice } from "@/lib/format-price";
 import { customerOrderState } from "@/lib/customer-order-model";
 import { seller } from "@/lib/seller";
+import { COURIER_DESCRIPTION, RETURN_INSTRUCTIONS } from "@/lib/shop-policies";
+import { legalArchives } from "@/lib/legal-documents";
 import PrintConfirmation from "./PrintConfirmation";
 import "./print.css";
 
@@ -28,7 +30,7 @@ export default async function ConfirmationPage({
   const { data: order, error } = await createServerClient()
     .from("orders")
     .select(
-      "order_number,created_at,customer_name,status,payment_status,delivery_stage,total_amount,delivery_amount,insurance_amount,delivery_type,delivery_address,delivery_details,tracking_number,items:order_items(id,product_name,quantity,price,purchase_mode,lead_time_days)",
+      "order_number,created_at,customer_name,status,payment_status,delivery_stage,total_amount,delivery_amount,insurance_amount,delivery_type,delivery_address,delivery_details,tracking_number,request_payload,items:order_items(id,product_name,quantity,price,purchase_mode,lead_time_days)",
     )
     .eq("id", orderId)
     .single();
@@ -49,6 +51,8 @@ export default async function ConfirmationPage({
       minute: "2-digit",
     }) + " МСК";
   const point = order.delivery_details?.point;
+  const courier = order.delivery_details?.provider === "yandex";
+  const legalVersion = order.request_payload?.form?.legalVersion;
   const delivery =
     Number(order.delivery_amount ?? 0) + Number(order.insurance_amount ?? 0);
   return (
@@ -122,7 +126,7 @@ export default async function ConfirmationPage({
                 Доставка
               </th>
               <td className="text-right whitespace-nowrap">
-                {formatPrice(delivery)}
+                {courier ? "Оплачивается отдельно" : formatPrice(delivery)}
               </td>
             </tr>
             <tr className="border-t border-stone-300 text-price">
@@ -144,16 +148,45 @@ export default async function ConfirmationPage({
           <h2 className="font-display text-price">Доставка</h2>
           <p>
             {point?.name ||
-              (order.delivery_type === "pickup" ? "Самовывоз" : "Доставка")}
+              (courier
+                ? "Курьер Яндекс Доставки"
+                : order.delivery_type === "pickup"
+                  ? "Самовывоз"
+                  : "Доставка")}
           </p>
           <p className="text-stone-600">
             {point?.address || order.delivery_address}
           </p>
+          {courier && <p className="text-stone-600">{COURIER_DESCRIPTION}</p>}
           <p>Получатель: {order.customer_name}</p>
           <p className="text-stone-600">
             Номер отправления:{" "}
-            {order.tracking_number || "Появится после оформления отправления"}
+            {order.tracking_number ||
+              (courier
+                ? "Детали отправки сообщим в Telegram"
+                : "Появится после оформления отправления")}
           </p>
+        </section>
+        <section className="mt-8 pt-6 border-t border-stone-200 space-y-3">
+          <h2 className="font-display text-price">Возврат и обращение</h2>
+          <p className="text-caption leading-relaxed">{RETURN_INSTRUCTIONS}</p>
+          <Link
+            href="/offer#returns"
+            className="inline-block underline underline-offset-4"
+          >
+            Полные условия возврата
+          </Link>
+          {typeof legalVersion === "string" &&
+            Object.hasOwn(legalArchives, legalVersion) && (
+              <p>
+                <Link
+                  href={`/documents/${legalVersion}/offer`}
+                  className="underline underline-offset-4"
+                >
+                  Оферта, принятая при заказе · {legalVersion}
+                </Link>
+              </p>
+            )}
         </section>
         <footer className="confirmation-seller mt-10 pt-6 border-t border-stone-200 text-caption text-stone-500 space-y-2">
           <p>Roota ceramics · Москва</p>

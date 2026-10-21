@@ -95,13 +95,13 @@ export default function AboutGallery({ photos }: { photos: Photo[] }) {
         }}
         className="overflow-hidden focus-visible:outline-2 focus-visible:outline-stone-700 focus-visible:outline-offset-4"
       >
-        <div className="flex gap-2 [touch-action:pan-y_pinch-zoom] select-none cursor-grab active:cursor-grabbing">
+        <div className="flex [touch-action:pan-y_pinch-zoom] select-none cursor-grab active:cursor-grabbing">
           {photos.map((photo, index) => (
             <div
               key={photo.src}
               role="group"
               aria-label={`Фото ${index + 1} из ${count}`}
-              className="relative min-w-0 aspect-square shrink-0 basis-[78%] sm:basis-[calc((100%_-_8px)/2)] md:basis-[calc((100%_-_16px)/3)] lg:basis-[calc((100%_-_24px)/4)]"
+              className="relative min-w-0 aspect-square shrink-0 mr-2 basis-[78%] sm:basis-[calc((100%_-_8px)/2)] md:basis-[calc((100%_-_16px)/3)] lg:basis-[calc((100%_-_24px)/4)]"
             >
               <Image
                 src={

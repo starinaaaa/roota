@@ -1,11 +1,16 @@
 import type { Metadata } from "next";
-import { Unbounded } from "next/font/google";
+import { Jost, Unbounded } from "next/font/google";
 import Header from "@/components/layout/Header";
 
 const unbounded = Unbounded({
   subsets: ["latin", "cyrillic"],
   weight: ["300", "400", "500"],
   variable: "--font-display",
+  display: "swap",
+});
+const jost = Jost({
+  subsets: ["latin", "cyrillic"],
+  variable: "--font-jost",
   display: "swap",
 });
 import Footer from "@/components/layout/Footer";
@@ -43,7 +48,7 @@ export default async function RootLayout({
   const cartCount = items.reduce((sum, i) => sum + i.quantity, 0);
 
   return (
-    <html lang="ru" className={unbounded.variable}>
+    <html lang="ru" className={`${unbounded.variable} ${jost.variable}`}>
       <body className="bg-stone-50 text-stone-900 antialiased">
         <CartUIProvider initialItems={items}>
           <Header cartCount={cartCount} />

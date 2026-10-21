@@ -9,8 +9,21 @@ import {
   packingFor,
   pointInCity,
   moneyToKopecks,
+  estimatedDeliveryDays,
+  deliveryEstimateLabel,
   type PackingRule,
 } from "../lib/delivery/model";
+
+test("carrier estimates preserve zero and valid days, and missing or invalid estimates are explicit", () => {
+  assert.equal(estimatedDeliveryDays(0), 0);
+  assert.equal(estimatedDeliveryDays(7), 7);
+  for (const value of [null, undefined, -1, 1.5, "7", NaN, Infinity]) {
+    assert.equal(estimatedDeliveryDays(value), null);
+  }
+  assert.match(deliveryEstimateLabel(3), /3 дн\. после передачи заказа Ozon/);
+  assert.match(deliveryEstimateLabel(0), /0 дн\./);
+  assert.match(deliveryEstimateLabel(null), /Уточните его у студии до оплаты/);
+});
 import {
   OzonTransport,
   OzonAuthError,
@@ -38,7 +51,7 @@ test("Russian contact input accepts supported forms and rejects foreign, long an
     assert.equal(normalizeRussianPhone(input), null, input);
   assert.equal(formatRussianPhone("9991234567"), "+7 (999) 123-45-67");
   const form = {
-    legalVersion: "2026-10-11",
+    legalVersion: "2026-10-21",
     acceptedTerms: true,
     newsletterDataConsent: false,
     name: "Анна Иванова",
@@ -245,7 +258,7 @@ test("delivery checkout adds exact charges, rejects tampering and stale quotes, 
     },
   ];
   const form = {
-    legalVersion: "2026-10-11",
+    legalVersion: "2026-10-21",
     acceptedTerms: true,
     newsletterDataConsent: false,
     name: "Анна Иванова",
@@ -310,7 +323,7 @@ test("delivery checkout adds exact charges, rejects tampering and stale quotes, 
       [result.id],
     )
   ).rows[0].form;
-  assert.equal(storedForm.legalVersion, "2026-10-11");
+  assert.equal(storedForm.legalVersion, "2026-10-21");
   assert.equal(storedForm.acceptedTerms, true);
   assert.equal(storedForm.subscribeToNews, false);
   assert.equal(storedForm.newsletterDataConsent, false);

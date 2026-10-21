@@ -40,16 +40,23 @@ export default function CategoryFilter({ activeSlug, categories }: Props) {
         return (
           <button
             key={slug}
+            type="button"
             aria-pressed={isActive}
             onClick={() => handleSelect(slug)}
             className={`
-              relative shrink-0 py-2 pr-7
+              group relative shrink-0 py-2 pr-7
               font-body text-ui tracking-[0.08em] uppercase
               transition-colors duration-200 whitespace-nowrap
-              ${isActive ? "text-stone-900" : "text-stone-800 hover:text-stone-700"}
+              ${isActive ? "text-stone-900" : "text-stone-800 hover:text-stone-900"}
             `}
           >
             {bindPrepositions(label)}
+            {!isActive && (
+              <span
+                aria-hidden="true"
+                className="absolute bottom-0 left-0 right-7 h-px origin-left scale-x-0 bg-stone-500 transition-transform duration-200 group-hover:scale-x-100 group-focus-visible:scale-x-100 motion-reduce:transition-none"
+              />
+            )}
             {isActive && (
               <motion.span
                 layoutId="filter-underline"
@@ -60,7 +67,7 @@ export default function CategoryFilter({ activeSlug, categories }: Props) {
           </button>
         );
       })}
-      <label className="flex items-center gap-2 py-2 font-body text-ui text-stone-800 cursor-pointer">
+      <label className="group flex items-center gap-2 py-2 font-body text-ui text-stone-800 cursor-pointer transition-colors duration-200 hover:text-stone-900 motion-reduce:transition-none">
         <input
           type="checkbox"
           checked={searchParams.get("stock") === "1"}
@@ -72,9 +79,11 @@ export default function CategoryFilter({ activeSlug, categories }: Props) {
               scroll: false,
             });
           }}
-          className="accent-stone-900"
+          className="accent-stone-900 cursor-pointer transition-shadow duration-200 group-hover:ring-2 group-hover:ring-stone-300 ring-offset-2 ring-offset-stone-50 motion-reduce:transition-none"
         />
-        В наличии
+        <span className="underline-offset-4 group-hover:underline group-focus-within:underline">
+          В наличии
+        </span>
       </label>
     </nav>
   );

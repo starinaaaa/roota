@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { getSiteContent } from "@/lib/site";
 import { paymentMode } from "@/lib/payments/robokassa";
 import { paymentInformation } from "@/lib/payments/public-mode";
+import { COURIER_DESCRIPTION, RETURN_INSTRUCTIONS } from "@/lib/shop-policies";
 
 export const dynamic = "force-dynamic";
 
@@ -16,10 +17,18 @@ export const metadata: Metadata = {
 };
 
 const CARE_ITEMS = [
-  "Проверьте допустимость посудомоечной машины в карточке изделия.",
-  "Допустимость микроволновой печи указана в карточке конкретного изделия.",
-  "Не рекомендуется резкий перепад температур: не ставьте горячую посуду в холодную воду.",
-  "Матовые глазури со временем приобретают патину — это нормально и красиво.",
+  {
+    title: "Бережное мытьё",
+    text: "Перед первым использованием вымойте посуду. Для ежедневного ухода подойдут тёплая вода, мягкая губка и обычное средство для посуды. Не используйте металлические губки и абразивные порошки: они могут поцарапать глазурь.",
+  },
+  {
+    title: "Без резких перепадов температуры",
+    text: "Дайте горячей посуде остыть перед мытьём. Не ставьте её в холодную воду и не нагревайте сразу после холодильника — резкая смена температуры может привести к трещинам.",
+  },
+  {
+    title: "Посудомойка и микроволновка",
+    text: "Можно ли мыть изделие в посудомоечной машине и разогревать в микроволновке, указано в его карточке. Ориентируйтесь на рекомендации для выбранного изделия.",
+  },
 ];
 
 export default async function DeliveryPage() {
@@ -28,10 +37,10 @@ export default async function DeliveryPage() {
   return (
     <div className="pt-16 md:pt-20">
       {/* ── Заголовок ── */}
-      <section className="py-20 md:py-28 px-6 md:px-12 lg:px-16">
+      <section className="py-12 md:py-28 px-6 md:px-12 lg:px-16">
         <div className="max-w-[1440px] mx-auto grid gap-8 md:grid-cols-[1.2fr_1fr] items-center">
           <div>
-            <p className="font-body text-caption text-stone-600 tracking-[0.08em] uppercase mb-8">
+            <p className="font-body text-caption text-stone-600 tracking-[0.08em] uppercase mb-5 md:mb-8">
               Информация
             </p>
             <h1 className="font-display text-page leading-[1.05] text-stone-900 max-w-2xl">
@@ -42,7 +51,7 @@ export default async function DeliveryPage() {
           </div>
           <div
             aria-hidden="true"
-            className="relative h-48 md:h-64 lg:h-72 w-full max-w-md justify-self-end"
+            className="relative hidden md:block md:h-64 lg:h-72 w-full max-w-md justify-self-end"
           >
             <CharacterArt
               character="skater"
@@ -63,11 +72,17 @@ export default async function DeliveryPage() {
           <h2 className="font-body text-ui tracking-[0.08em] uppercase mb-8">
             Как получить заказ
           </h2>
+          <p className="font-body text-copy leading-relaxed text-stone-800 mb-8 max-w-2xl">
+            Доставляем в пункты Ozon и курьером Яндекс Доставки по Москве и
+            Подмосковью. Курьерскую доставку согласуем с вами в Telegram; вы
+            оплачиваете её отдельно в приложении. Скоро добавим другие службы
+            доставки.
+          </p>
           <ol className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {[
               [
                 "Оформление",
-                "Добавьте изделия в корзину, укажите данные и выберите пункт Ozon. Стоимость доставки появится до оплаты.",
+                "Добавьте изделия в корзину и выберите способ доставки. Для Ozon укажите пункт выдачи, для курьера — адрес и Telegram.",
               ],
               [
                 "Оплата",
@@ -75,11 +90,11 @@ export default async function DeliveryPage() {
               ],
               [
                 "Отправка",
-                "Готовые изделия отправляем за 1–3 рабочих дня после оплаты. Срок изготовления предзаказа указан в карточке.",
+                "В Ozon передаём готовые изделия за 1–3 рабочих дня после оплаты. Время отправки курьером согласуем с вами. Срок изготовления предзаказа указан в карточке.",
               ],
               [
                 "Получение",
-                "Следите за уведомлениями Ozon и заберите посылку в выбранном пункте. Срок перевозки указан при расчёте, если его предоставил Ozon.",
+                "Ozon пришлёт уведомление, когда заказ поступит в пункт выдачи. Если выбрали курьера, свяжемся с вами в Telegram и согласуем удобное время доставки.",
               ],
             ].map(([title, text], index) => (
               <li key={title} className="space-y-3">
@@ -95,8 +110,8 @@ export default async function DeliveryPage() {
         </div>
       </section>
       {/* ── Доставка ── */}
-      <section className="border-t border-stone-200 py-20 md:py-28 px-6 md:px-12 lg:px-16">
-        <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-8">
+      <section className="border-t border-stone-200 py-12 md:py-28 px-6 md:px-12 lg:px-16">
+        <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8">
           <div className="md:col-span-4 lg:col-span-3">
             <h2 className="font-body text-ui text-stone-800 tracking-[0.08em] uppercase">
               Доставка
@@ -104,10 +119,16 @@ export default async function DeliveryPage() {
           </div>
           <div className="md:col-span-8 lg:col-span-9">
             <div className="divide-y divide-stone-200">
-              {site.delivery.map((item) => (
+              {[
+                ...site.delivery,
+                {
+                  title: "Курьер Яндекс Доставки",
+                  text: COURIER_DESCRIPTION,
+                },
+              ].map((item) => (
                 <div
                   key={item.title}
-                  className="py-8 first:pt-0 space-y-3 max-w-2xl"
+                  className="py-6 md:py-8 first:pt-0 last:pb-0 space-y-3 max-w-2xl"
                 >
                   <h3 className="font-display text-price text-stone-900">
                     {bindPrepositions(
@@ -125,87 +146,99 @@ export default async function DeliveryPage() {
       </section>
 
       {/* ── Оплата ── */}
-      <section className="border-t border-stone-200 py-20 md:py-28 px-6 md:px-12 lg:px-16">
-        <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-8">
+      <section className="border-t border-stone-200 py-12 md:py-28 px-6 md:px-12 lg:px-16">
+        <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8">
           <div className="md:col-span-4 lg:col-span-3">
             <h2 className="font-body text-ui text-stone-800 tracking-[0.08em] uppercase">
               Оплата
             </h2>
           </div>
           <div className="md:col-span-8 lg:col-span-9">
-            <div className="divide-y divide-stone-200">
-              {[payment].map((item) => (
-                <div
-                  key={item.title}
-                  className="py-8 first:pt-0 space-y-3 max-w-2xl"
-                >
-                  <h3 className="font-display text-price text-stone-900">
-                    {bindPrepositions(item.title)}
-                  </h3>
-                  <p className="font-body text-copy text-stone-800 leading-relaxed">
-                    {bindPrepositions(item.text)}
-                  </p>
-                </div>
-              ))}
+            <div className="space-y-3 max-w-2xl">
+              <h3 className="font-display text-price text-stone-900">
+                {bindPrepositions(payment.title)}
+              </h3>
+              <p className="font-body text-copy text-stone-800 leading-relaxed">
+                {bindPrepositions(payment.text)}
+              </p>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="border-t border-stone-200 px-6 md:px-12 lg:px-16 py-10 md:py-14">
+      <section
+        id="returns"
+        className="scroll-mt-28 border-t border-stone-200 px-6 md:px-12 lg:px-16 py-10 md:py-14"
+      >
         <div className="max-w-[1440px] mx-auto space-y-5">
           <h2 className="font-display text-price">Повреждение и возврат</h2>
           <p className="font-body text-copy leading-relaxed max-w-2xl">
-            Если изделие разбилось при доставке, напишите нам номер заказа. По
-            возможности приложите фотографии изделия и упаковки. Для возврата мы
-            согласуем адрес и способ обратной отправки.
+            Если изделие повредилось в дороге, напишите на {site.email} и
+            укажите номер заказа. По возможности приложите фотографии изделия и
+            упаковки — они помогут разобраться. Отсутствие видео распаковки само
+            по себе не является основанием для отказа в обращении.
+          </p>
+          <p className="font-body text-ui leading-relaxed max-w-2xl">
+            {bindPrepositions(RETURN_INSTRUCTIONS)}
           </p>
           <div className="flex flex-wrap gap-6 font-body text-ui underline underline-offset-4">
             <a href={site.telegram} target="_blank" rel="noopener noreferrer">
               Написать в Telegram
             </a>
-            <Link href="/offer" prefetch={false}>
+            <Link href="/offer#returns" prefetch={false}>
               Условия возврата
             </Link>
           </div>
         </div>
       </section>
       {/* ── Упаковка ── */}
-      <section className="border-t border-stone-200 py-20 md:py-28 px-6 md:px-12 lg:px-16 bg-stone-100">
-        <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-8">
-          <div className="md:col-span-4 lg:col-span-3">
+      <section className="border-t border-stone-200 py-10 md:py-28 px-6 md:px-12 lg:px-16 bg-stone-100">
+        <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-8">
+          <div className="flex items-center justify-between gap-6 md:block md:col-span-4 lg:col-span-3">
             <h2 className="font-body text-ui text-stone-800 tracking-[0.08em] uppercase">
               Упаковка
             </h2>
-            <CharacterArt character="walker" className="mt-8 h-40 w-24" />
+            <CharacterArt
+              character="walker"
+              className="h-20 w-12 shrink-0 md:mt-8 md:h-40 md:w-24"
+            />
           </div>
           <div className="md:col-span-8 lg:col-span-9 max-w-xl">
-            <p className="font-body text-copy text-stone-800 leading-loose">
-              Каждое изделие упаковывается вручную: крафтовая бумага,
-              наполнитель, фирменная коробка. Хрупкие предметы дополнительно
-              защищены пузырчатой плёнкой. Упаковка подходит для подарка —
-              попросите добавить открытку при оформлении заказа.
+            <p className="font-body text-copy text-stone-800 leading-relaxed">
+              {bindPrepositions(
+                "Каждое изделие бережно заворачиваем в сотовый крафт. Для отправки добавляем пузырчатую плёнку и наполнитель, затем укладываем в картонную коробку, чтобы защитить керамику в дороге.",
+              )}
             </p>
           </div>
         </div>
       </section>
 
       {/* ── Уход ── */}
-      <section className="border-t border-stone-200 py-20 md:py-28 px-6 md:px-12 lg:px-16">
-        <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-8">
-          <div className="md:col-span-4 lg:col-span-3">
+      <section className="border-t border-stone-200 py-10 md:py-28 px-6 md:px-12 lg:px-16">
+        <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-8">
+          <div className="flex items-center justify-between gap-6 md:block md:col-span-4 lg:col-span-3">
             <h2 className="font-body text-ui text-stone-800 tracking-[0.08em] uppercase">
               Уход
             </h2>
-            <CharacterArt character="watering" className="mt-8 h-40 w-44" />
+            <CharacterArt
+              character="watering"
+              className="h-20 w-[88px] shrink-0 md:mt-8 md:h-40 md:w-44"
+            />
           </div>
-          <div className="md:col-span-8 lg:col-span-9">
-            <ul className="space-y-6">
-              {CARE_ITEMS.map((item, i) => (
-                <li key={i} className="flex gap-4 items-start">
-                  <span className="mt-2 w-1 h-1 rounded-full bg-stone-400 shrink-0" />
-                  <p className="font-body text-copy text-stone-800 leading-relaxed">
-                    {bindPrepositions(item)}
+          <div className="md:col-span-8 lg:col-span-9 max-w-2xl">
+            <p className="font-body text-copy text-stone-800 leading-relaxed mb-6">
+              {bindPrepositions(
+                "Наши тарелки сделаны из высокотемпературной глины и покрыты прозрачной глазурью. Несколько простых правил помогут сохранить их надолго.",
+              )}
+            </p>
+            <ul className="divide-y divide-stone-200">
+              {CARE_ITEMS.map(({ title, text }) => (
+                <li key={title} className="py-5 first:pt-0 last:pb-0 space-y-2">
+                  <h3 className="font-body text-ui text-stone-900">
+                    {bindPrepositions(title)}
+                  </h3>
+                  <p className="font-body text-ui md:text-copy text-stone-800 leading-relaxed">
+                    {bindPrepositions(text)}
                   </p>
                 </li>
               ))}

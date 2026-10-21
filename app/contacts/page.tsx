@@ -36,8 +36,8 @@ export default async function ContactsPage() {
   return (
     <div className="pt-16 md:pt-20">
       {/* ── Заголовок ── */}
-      <section className="py-20 md:py-28 px-6 md:px-12 lg:px-16">
-        <div className="max-w-[1440px] mx-auto grid gap-8 md:grid-cols-[1.3fr_1fr] items-center">
+      <section className="py-12 md:py-28 px-6 md:px-12 lg:px-16">
+        <div className="max-w-[1440px] mx-auto grid grid-cols-[1fr_auto] gap-5 md:gap-8 md:grid-cols-[1.3fr_1fr] items-center">
           <div>
             <p className="font-body text-caption text-stone-600 tracking-[0.08em] uppercase mb-8">
               Контакты
@@ -48,13 +48,13 @@ export default async function ContactsPage() {
           </div>
           <CharacterArt
             character="flower"
-            className="h-44 w-44 md:h-64 md:w-64 justify-self-end md:mr-12 -rotate-3"
+            className="h-20 w-20 md:h-64 md:w-64 justify-self-end md:mr-12 -rotate-3"
           />
         </div>
       </section>
 
       {/* ── Контакты ── */}
-      <section className="border-t border-stone-200 py-20 md:py-28 px-6 md:px-12 lg:px-16">
+      <section className="border-t border-stone-200 py-12 md:py-28 px-6 md:px-12 lg:px-16">
         <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-8">
           <div className="md:col-span-4 lg:col-span-3">
             <p className="font-body text-caption text-stone-600 tracking-[0.08em] uppercase">
@@ -64,7 +64,7 @@ export default async function ContactsPage() {
           <div className="md:col-span-8 lg:col-span-9">
             <div className="mb-10 space-y-5">
               <p className="font-body text-copy text-stone-800">
-                Ответ — в течение рабочего дня.
+                Ответим в течение суток.
               </p>
               <a
                 href={site.telegram}
@@ -88,19 +88,29 @@ export default async function ContactsPage() {
                     href={href}
                     target={external ? "_blank" : undefined}
                     rel={external ? "noopener noreferrer" : undefined}
-                    className="sm:col-span-2 font-body text-ui text-stone-900 hover:text-stone-600 transition-colors duration-200"
+                    className="sm:col-span-2 font-body text-ui text-stone-900 hover:text-stone-600 transition-colors duration-200 [overflow-wrap:anywhere]"
                   >
                     {bindPrepositions(value)}
                   </a>
                 </div>
               ))}
             </div>
+            <p className="font-body text-ui text-stone-600 leading-relaxed mt-8">
+              По вопросам возврата или повреждения посылки напишите на{" "}
+              <a
+                href={`mailto:${site.email}`}
+                className="underline underline-offset-4 [overflow-wrap:anywhere]"
+              >
+                {site.email}
+              </a>{" "}
+              и укажите номер заказа. Сообщим адрес и порядок обратной отправки.
+            </p>
           </div>
         </div>
       </section>
 
       {/* ── Студия ── */}
-      <section className="border-t border-stone-200 py-20 md:py-28 px-6 md:px-12 lg:px-16 bg-stone-100">
+      <section className="border-t border-stone-200 py-12 md:py-28 px-6 md:px-12 lg:px-16 bg-stone-100">
         <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-8">
           <div className="md:col-span-4 lg:col-span-3">
             <p className="font-body text-caption text-stone-600 tracking-[0.08em] uppercase">

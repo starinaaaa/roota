@@ -17,6 +17,9 @@ import DeliverySelector from "./DeliverySelector";
 import { LEGAL_VERSION } from "@/lib/legal";
 import { checkoutSchema } from "@/lib/validation";
 import type { DeliveryQuote } from "@/lib/delivery/model";
+import { deliveryEstimateLabel } from "@/lib/delivery/model";
+import { COURIER_DESCRIPTION } from "@/lib/shop-policies";
+import PurchaseHelp from "@/components/shop/PurchaseHelp";
 
 import {
   readCheckoutDraft,
@@ -59,14 +62,15 @@ export default function CheckoutForm({
     phone: "+7",
     email: "",
     deliveryType: "russia",
+    deliveryMethod: "ozon_point",
     address: "",
     comment: "",
     legalVersion: LEGAL_VERSION,
-    acceptedTerms: true,
+    acceptedTerms: false,
     newsletterDataConsent: false,
     subscribeToNews: false,
     reviewConsent: false,
-    emailConsent: true,
+    emailConsent: false,
   });
 
   useEffect(() => {
@@ -82,6 +86,11 @@ export default function CheckoutForm({
           email: draft.email,
           telegram: draft.telegram,
           comment: draft.comment,
+          deliveryMethod: draft.deliveryMethod,
+          deliveryType:
+            draft.deliveryMethod === "yandex_courier" ? "moscow" : "russia",
+          address:
+            draft.deliveryMethod === "yandex_courier" ? draft.address : "",
           emailConsent: draft.emailConsent,
         }));
         setConsentEmail(draft.email);
@@ -107,8 +116,10 @@ export default function CheckoutForm({
           email: formData.email,
           telegram: formData.telegram,
           comment: formData.comment,
-          emailConsent: !!formData.emailConsent,
+          emailConsent: false,
           delivery: deliveryDraft,
+          deliveryMethod: formData.deliveryMethod,
+          address: formData.address,
         }),
       );
     } catch {
@@ -124,6 +135,21 @@ export default function CheckoutForm({
     (sum, i) => sum + i.product.price * i.quantity,
     0,
   );
+  const courier = formData.deliveryMethod === "yandex_courier";
+
+  function selectDelivery(method: "ozon_point" | "yandex_courier") {
+    setQuote(null);
+    setFormData((prev) => ({
+      ...prev,
+      deliveryMethod: method,
+      deliveryType: method === "yandex_courier" ? "moscow" : "russia",
+      deliveryQuoteId: undefined,
+      address: "",
+    }));
+    setFieldErrors({});
+    setError(null);
+    requestKey.current = null;
+  }
 
   function handleChange(
     e: React.ChangeEvent<
@@ -139,8 +165,13 @@ export default function CheckoutForm({
     if (name === "firstName" || name === "lastName")
       next.name = `${next.firstName.trim()} ${next.lastName.trim()}`.trim();
     if (name === "telegram") next.telegram = value.replace(/^@+/, "");
+    if (name === "email") {
+      next.emailConsent = false;
+      next.subscribeToNews = false;
+      next.newsletterDataConsent = false;
+      setConsentEmail("");
+    }
     setFormData(next);
-    if (name === "email") setConsentEmail("");
     if (fieldErrors[name]) {
       const parsed = checkoutSchema.safeParse(next);
       setFieldErrors((prev) => ({
@@ -195,16 +226,20 @@ export default function CheckoutForm({
     }, 1000);
     return () => clearTimeout(timer);
   }, [formData, cartKey]);
-  const finalTotal = quote
-    ? Math.round((totalPrice + quote.totalCost) * 100) / 100
-    : null;
+  const finalTotal = courier
+    ? totalPrice
+    : quote
+      ? Math.round((totalPrice + quote.totalCost) * 100) / 100
+      : null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (submitting.current) return;
     const validated = checkoutSchema.safeParse({
       ...formData,
-      address: quote?.point.address ?? "Пункт ещё не выбран",
+      address: courier
+        ? formData.address
+        : (quote?.point.address ?? "Пункт ещё не выбран"),
     });
     if (!validated.success) {
       const fields: Record<string, string> = {};
@@ -218,7 +253,7 @@ export default function CheckoutForm({
       return;
     }
     setFieldErrors({});
-    if (!quote || finalTotal === null) {
+    if ((!courier && !quote) || finalTotal === null) {
       setError("Выберите пункт выдачи и рассчитайте доставку.");
       return;
     }
@@ -228,7 +263,7 @@ export default function CheckoutForm({
     setPending(true);
     setError(null);
 
-    // createOrder reads cart from Supabase server-side — no items passed
+    // The server reads the cart and verifies the total; no items are trusted from the browser.
     let result;
     try {
       result = await createOrder(formData, requestKey.current, finalTotal);
@@ -249,7 +284,10 @@ export default function CheckoutForm({
           : `/order-success?id=${result.orderId}`,
       );
     } else {
-      if (/достав|упаков|Корзина|Цена изменилась/i.test(result.error))
+      if (
+        !courier &&
+        /достав|упаков|Корзина|Цена изменилась/i.test(result.error)
+      )
         receiveQuote(null);
       setError(result.error);
       setPending(false);
@@ -320,7 +358,9 @@ export default function CheckoutForm({
                   setFormData((prev) => ({ ...prev, phone: value }));
                   setFieldErrors((prev) => ({ ...prev, phone: "" }));
                   setError(null);
-                  receiveQuote(null);
+                  if (formData.deliveryMethod !== "yandex_courier") {
+                    receiveQuote(null);
+                  }
                 }}
                 onBlur={() => validateField("phone")}
                 error={fieldErrors.phone}
@@ -346,7 +386,7 @@ export default function CheckoutForm({
                 required
               />
               <Field
-                label="Telegram"
+                label={courier ? "Telegram *" : "Telegram"}
                 id="telegram"
                 name="telegram"
                 type="text"
@@ -357,19 +397,80 @@ export default function CheckoutForm({
                 placeholder="anna_ceramics"
                 prefix="@"
                 autoComplete="off"
+                required={courier}
               />
             </fieldset>
 
             <div className="divider" />
 
-            <DeliverySelector
-              phone={formData.phone}
-              cartKey={cartKey}
-              enabled={deliveryEnabled}
-              onQuote={receiveQuote}
-              initialSelection={initialDelivery.current}
-              onSelection={saveDeliveryDraft}
-            />
+            <fieldset className="space-y-3">
+              <legend className="font-body text-ui uppercase tracking-[0.08em] mb-4">
+                Способ доставки
+              </legend>
+              {(
+                [
+                  [
+                    "ozon_point",
+                    "В пункт выдачи Ozon",
+                    "Стоимость рассчитывается после выбора пункта.",
+                  ],
+                  [
+                    "yandex_courier",
+                    "Курьером Яндекс Доставки",
+                    "Москва и Подмосковье. Напишем в Telegram в течение суток. Курьер оплачивается покупателем в приложении, отдельно от изделий.",
+                  ],
+                ] as const
+              ).map(([value, title, description]) => (
+                <label
+                  key={value}
+                  className={`flex items-start gap-3 p-4 border cursor-pointer transition-colors hover:border-stone-500 ${formData.deliveryMethod === value ? "border-stone-900" : "border-stone-200"}`}
+                >
+                  <input
+                    type="radio"
+                    name="deliveryMethod"
+                    value={value}
+                    checked={formData.deliveryMethod === value}
+                    onChange={() => selectDelivery(value)}
+                    className="mt-1 accent-stone-900"
+                  />
+                  <span className="font-body text-ui">
+                    <span className="block">{title}</span>
+                    <span className="block mt-2 text-caption text-stone-600">
+                      {description}
+                    </span>
+                  </span>
+                </label>
+              ))}
+            </fieldset>
+            {courier ? (
+              <div className="space-y-3">
+                <Field
+                  label="Адрес курьерской доставки *"
+                  id="address"
+                  name="address"
+                  type="text"
+                  value={formData.address}
+                  onChange={handleChange}
+                  onBlur={() => validateField("address")}
+                  error={fieldErrors.address}
+                  placeholder="Город, улица, дом, квартира"
+                  autoComplete="street-address"
+                  required
+                />
+                <p className="font-body text-caption text-stone-600">
+                  {COURIER_DESCRIPTION}
+                </p>
+              </div>
+            ) : (
+              <DeliverySelector
+                phone={formData.phone}
+                cartKey={cartKey}
+                enabled={deliveryEnabled}
+                onQuote={receiveQuote}
+                initialSelection={initialDelivery.current}
+                onSelection={saveDeliveryDraft}
+              />
+            )}
 
             {/* Комментарий */}
             <div className="space-y-2">
@@ -465,19 +566,29 @@ export default function CheckoutForm({
                 </span>
                 <span className="font-body text-caption text-stone-600">
                   {bindPrepositions(
-                    quote ? formatPrice(quote.totalCost) : "нужен расчёт",
+                    courier
+                      ? "оплачивается отдельно"
+                      : quote
+                        ? formatPrice(quote.totalCost)
+                        : "нужен расчёт",
                   )}
                 </span>
               </div>
-              {quote?.estimatedDays != null && (
+              {quote && (
                 <p className="font-body text-caption text-stone-600">
-                  Ориентировочно {quote.estimatedDays} дн. после передачи Ozon
+                  {bindPrepositions(deliveryEstimateLabel(quote.estimatedDays))}
                 </p>
               )}
               <div className="divider pt-1" />
               <div className="flex justify-between items-baseline">
                 <span className="font-body text-caption tracking-[0.08em] uppercase text-stone-600">
-                  {bindPrepositions(quote ? "Итого" : "Сумма товаров")}
+                  {bindPrepositions(
+                    courier
+                      ? "К оплате за изделия"
+                      : quote
+                        ? "Итого"
+                        : "Сумма товаров",
+                  )}
                 </span>
                 <span className="font-display text-price text-stone-900">
                   {bindPrepositions(formatPrice(finalTotal ?? totalPrice))}
@@ -487,6 +598,9 @@ export default function CheckoutForm({
 
             {/* Submit button на десктопе */}
             <div className="pt-2">
+              <div className="mb-5">
+                <PurchaseHelp compact />
+              </div>
               <fieldset disabled={pending} className="space-y-4 mb-5">
                 <div className="font-body text-caption text-stone-600 leading-relaxed">
                   <div className="flex items-start gap-3">
@@ -557,12 +671,30 @@ export default function CheckoutForm({
                 </div>
                 <EmailConsent
                   email={consentEmail}
-                  checked={!!formData.emailConsent}
-                  onChange={(checked) => {
+                  dataConsent={formData.newsletterDataConsent}
+                  marketingConsent={formData.subscribeToNews}
+                  onChange={(dataConsent, marketingConsent) => {
                     setConsentEmail(formData.email);
-                    setFormData((prev) => ({ ...prev, emailConsent: checked }));
+                    setFieldErrors((prev) => ({
+                      ...prev,
+                      newsletterDataConsent: "",
+                    }));
+                    setFormData((prev) => ({
+                      ...prev,
+                      newsletterDataConsent: dataConsent,
+                      subscribeToNews: marketingConsent,
+                      emailConsent: dataConsent && marketingConsent,
+                    }));
                   }}
                 />
+                {fieldErrors.newsletterDataConsent && (
+                  <p
+                    role="alert"
+                    className="font-body text-caption text-red-700"
+                  >
+                    {fieldErrors.newsletterDataConsent}
+                  </p>
+                )}
               </fieldset>
               {error && (
                 <p

@@ -6,13 +6,19 @@ import { z } from "zod";
 import { createServerClient } from "@/lib/db";
 import { uuid } from "@/lib/validation";
 import { getCart } from "./cart";
+import { EMAIL_CONSENT_VERSION } from "@/lib/legal";
 export async function syncCheckoutEmailConsent(
   email: string,
-  consent: boolean,
+  choices: { dataConsent: boolean; marketingConsent: boolean },
 ) {
   const session = (await cookies()).get("cart_session")?.value;
-  if (typeof consent !== "boolean" || !uuid.safeParse(session).success)
+  const parsedChoices = z
+    .object({ dataConsent: z.boolean(), marketingConsent: z.boolean() })
+    .safeParse(choices);
+  if (!parsedChoices.success || !uuid.safeParse(session).success)
     return { error: "Обновите страницу и попробуйте снова." };
+  const consent =
+    parsedChoices.data.dataConsent && parsedChoices.data.marketingConsent;
   const parsed = z.string().trim().email().max(254).safeParse(email);
   if (consent && !parsed.success) return { error: "Укажите корректный email." };
   const items = consent ? (await getCart()).items : [];
@@ -24,7 +30,7 @@ export async function syncCheckoutEmailConsent(
       p_enabled: consent,
       p_cart_token: randomBytes(32).toString("hex"),
       p_news_token: randomBytes(32).toString("hex"),
-      p_version: "checkout-email-2026-10-14",
+      p_version: EMAIL_CONSENT_VERSION,
       p_items: items
         .filter((i) => i.purchase_mode !== "preorder")
         .map((i) => ({

@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { checkoutSchema } from "../lib/validation";
+import { EMAIL_CONSENT_VERSION } from "../lib/legal";
 const order = {
   name: "Тест Покупатель",
   phone: "+79990000000",
@@ -8,7 +9,7 @@ const order = {
   deliveryType: "russia",
   address: "Москва, пункт выдачи",
   comment: "",
-  legalVersion: "2026-10-11",
+  legalVersion: "2026-10-21",
   acceptedTerms: true,
 };
 test("checkout requires explicit acceptance but never requires advertising", () => {
@@ -82,17 +83,27 @@ test("checkout requires a full name and accepts only an optional Telegram userna
   }
 });
 
-test("one optional email choice supplies news, data and review consent without accepting purchase terms", () => {
-  const enabled = checkoutSchema.parse({ ...order, emailConsent: true });
+test("only two affirmative choices supply email consent; the aggregate flag cannot create consent", () => {
+  const enabled = checkoutSchema.parse({
+    ...order,
+    emailConsent: false,
+    subscribeToNews: true,
+    newsletterDataConsent: true,
+  });
   assert.equal(enabled.subscribeToNews, true);
   assert.equal(enabled.newsletterDataConsent, true);
   assert.equal(enabled.reviewConsent, true);
+  assert.equal(enabled.emailConsent, true);
+  assert.equal(enabled.emailConsentVersion, EMAIL_CONSENT_VERSION);
+  const forged = checkoutSchema.parse({ ...order, emailConsent: true });
+  assert.equal(forged.emailConsent, false);
+  assert.equal(forged.subscribeToNews, false);
   const disabled = checkoutSchema.parse({
     ...order,
     emailConsent: false,
     reviewConsent: true,
-    subscribeToNews: true,
-    newsletterDataConsent: true,
+    subscribeToNews: false,
+    newsletterDataConsent: false,
   });
   assert.equal(disabled.subscribeToNews, false);
   assert.equal(disabled.reviewConsent, false);

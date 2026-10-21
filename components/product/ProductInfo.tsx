@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatPrice } from "@/lib/format-price";
 import type { Product } from "@/types";
+import PurchaseHelp from "@/components/shop/PurchaseHelp";
 
 type Props = {
   product: Product;
@@ -193,6 +194,14 @@ export default function ProductInfo({
         )}
       </div>
 
+      <PurchaseHelp />
+      <Link
+        href="/reviews"
+        className="font-body text-caption text-stone-600 underline underline-offset-4 hover:text-stone-900"
+      >
+        Отзывы покупателей
+      </Link>
+
       {/* Разделитель */}
       <div className="divider" />
 
@@ -214,9 +223,10 @@ export default function ProductInfo({
         open={craftOpen}
         onToggle={() => setCraftOpen((v) => !v)}
       >
-        Каждое изделие создаётся вручную — след инструментов и пальцев мастера
-        остаётся в форме. Незначительные отличия в размере и оттенке — часть
-        характера авторской керамики, а не дефект.
+        Каждое изделие создаётся вручную. Небольшие различия формы, оттенка и
+        рисунка могут быть частью ручной работы, если они соответствуют описанию
+        и не мешают безопасному использованию. Трещины, сколы и другие
+        недостатки не относятся к допустимым особенностям.
       </Accordion>
     </div>
   );

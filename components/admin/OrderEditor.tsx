@@ -135,9 +135,11 @@ export default function OrderEditor({ order }: { order: OrderData }) {
             </a>
           )}
           <p>
-            {{ moscow: "Москва", russia: "По России", pickup: "Самовывоз" }[
-              order.delivery_type
-            ] ?? order.delivery_type}
+            {order.delivery_details?.provider === "yandex"
+              ? "Курьер Яндекс Доставки · согласовать в Telegram · доставка оплачивается отдельно"
+              : ({ moscow: "Москва", russia: "По России", pickup: "Самовывоз" }[
+                  order.delivery_type
+                ] ?? order.delivery_type)}
           </p>
           <p className="whitespace-pre-wrap break-words">
             {order.delivery_address}
@@ -167,10 +169,12 @@ export default function OrderEditor({ order }: { order: OrderData }) {
           {order.delivery_amount != null && (
             <p>
               Доставка:{" "}
-              {formatPrice(
-                Number(order.delivery_amount) +
-                  Number(order.insurance_amount ?? 0),
-              )}
+              {order.delivery_details?.provider === "yandex"
+                ? "Оплачивается отдельно"
+                : formatPrice(
+                    Number(order.delivery_amount) +
+                      Number(order.insurance_amount ?? 0),
+                  )}
             </p>
           )}
           <strong>Итого: {formatPrice(order.total_amount)}</strong>

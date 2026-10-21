@@ -1,4 +1,4 @@
-import { LEGAL_VERSION } from "./legal";
+import { EMAIL_CONSENT_VERSION, LEGAL_VERSION } from "./legal";
 import { normalizeRussianPhone } from "./contacts";
 import { z } from "zod";
 export const uuid = z.string().uuid();
@@ -43,6 +43,9 @@ export const checkoutSchema = z
         "Укажите корректный email",
       ),
     deliveryType: z.enum(["moscow", "russia", "pickup"]),
+    deliveryMethod: z
+      .enum(["ozon_point", "yandex_courier"])
+      .default("ozon_point"),
     address: z.string().trim().max(500),
     comment: z.string().trim().max(2000),
     legalVersion: z.literal(LEGAL_VERSION, {
@@ -76,24 +79,33 @@ export const checkoutSchema = z
       ? { ...v, name: `${v.firstName} ${v.lastName}` }
       : v,
   )
-  .transform((v) =>
-    v.emailConsent === undefined
-      ? v
-      : {
-          ...v,
-          subscribeToNews: v.emailConsent,
-          newsletterDataConsent: v.emailConsent,
-          reviewConsent: v.emailConsent,
-        },
-  )
   .refine((v) => !v.subscribeToNews || v.newsletterDataConsent, {
     message: "Для подписки подтвердите отдельное согласие на обработку email",
     path: ["newsletterDataConsent"],
   })
-  .refine((v) => v.deliveryType === "pickup" || v.address.length >= 5, {
-    message: "Укажите адрес доставки",
-    path: ["address"],
-  });
+  .transform((v) => ({
+    ...v,
+    // The legacy aggregate flag must never manufacture either affirmative choice.
+    emailConsent: v.subscribeToNews && v.newsletterDataConsent,
+    reviewConsent: v.subscribeToNews && v.newsletterDataConsent,
+    emailConsentVersion: EMAIL_CONSENT_VERSION,
+  }))
+  .refine(
+    (v) => v.deliveryMethod !== "yandex_courier" || v.telegram.length > 0,
+    {
+      message: "Укажите Telegram для согласования курьерской доставки",
+      path: ["telegram"],
+    },
+  )
+  .refine(
+    (v) =>
+      (v.deliveryMethod !== "yandex_courier" && v.deliveryType === "pickup") ||
+      v.address.length >= 5,
+    {
+      message: "Укажите адрес доставки",
+      path: ["address"],
+    },
+  );
 const optionalText = (max: number) =>
   z
     .string()

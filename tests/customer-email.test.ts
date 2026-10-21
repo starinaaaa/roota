@@ -5,6 +5,7 @@ import { readFile } from "node:fs/promises";
 import { randomUUID, createHash } from "node:crypto";
 import { relationList } from "../lib/relation-list";
 import { renderEmail } from "../lib/email/templates";
+import { EMAIL_CONSENT_VERSION } from "../lib/legal";
 import { parseSignedEmailWebhook, deliveryState } from "../lib/email/webhook";
 const migration = "supabase/migrations/20261013222235_customer_email_flows.sql";
 async function database() {
@@ -44,6 +45,12 @@ async function database() {
   await db.exec(
     await readFile(
       "supabase/migrations/20261014001738_checkout_email_consent.sql",
+      "utf8",
+    ),
+  );
+  await db.exec(
+    await readFile(
+      "database/migrations/20261021_checkout_consents.sql",
       "utf8",
     ),
   );
@@ -678,12 +685,51 @@ test("single checkout consent saves news and cart directly, suppresses confirmat
   }
 });
 
-test("committed real order records unified news consent even before autosave and does not subscribe unchecked buyers", async () => {
+test("committed order requires both explicit email choices and records their current edition before autosave", async () => {
   const db = await database();
   try {
     await db.query(
       "insert into orders(id,customer_email,cart_session,request_payload) values($1,'yes@example.com','yes-session',$2)",
-      [randomUUID(), { form: { emailConsent: true, reviewConsent: true } }],
+      [
+        randomUUID(),
+        {
+          form: {
+            emailConsent: true,
+            reviewConsent: true,
+            newsletterDataConsent: true,
+            subscribeToNews: true,
+            emailConsentVersion: EMAIL_CONSENT_VERSION,
+          },
+        },
+      ],
+    );
+    for (const form of [
+      { emailConsent: true },
+      {
+        emailConsent: true,
+        newsletterDataConsent: true,
+        subscribeToNews: false,
+        emailConsentVersion: EMAIL_CONSENT_VERSION,
+      },
+      {
+        emailConsent: true,
+        newsletterDataConsent: true,
+        subscribeToNews: true,
+        emailConsentVersion: "old",
+      },
+    ]) {
+      await db.query(
+        "insert into orders(id,customer_email,cart_session,request_payload) values($1,'unconfirmed@example.com',$2,$3)",
+        [randomUUID(), randomUUID(), { form }],
+      );
+    }
+    assert.equal(
+      (
+        await db.query(
+          "select * from email_subscriptions where email='unconfirmed@example.com'",
+        )
+      ).rows.length,
+      0,
     );
     await db.query(
       "insert into orders(id,customer_email,cart_session,request_payload) values($1,'no@example.com','no-session',$2)",
@@ -797,6 +843,12 @@ test("purchase email shows photos, unit prices and a printable confirmation with
     /Подтверждение покупки: https:\/\/roota.moscow\/order\/token\/confirmation/,
   );
   assert.match(result.html, /Передадим в доставку за 1–3 рабочих дня/);
+  for (const message of [result.html, result.plaintext]) {
+    assert.match(message, /14 дней после получения/);
+    assert.match(message, /номер заказа и что хотите вернуть/);
+    assert.match(message, /hello@roota\.moscow/);
+    assert.match(message, /не позднее 10 дней/);
+  }
   assert.doesNotMatch(result.html, /javascript:/);
 });
 

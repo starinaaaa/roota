@@ -4,7 +4,7 @@ import { getSiteContent } from "@/lib/site";
 import { seller } from "@/lib/seller";
 
 const SHOP_LINKS = [
-  { href: "/catalog", label: "Каталог" },
+  { href: "/catalog", label: "Все товары" },
   { href: "/catalog?category=plates", label: "Тарелки" },
   { href: "/catalog?category=glasses", label: "Стаканы" },
   { href: "/catalog?category=vases", label: "Вазы" },
@@ -112,13 +112,6 @@ export default async function Footer() {
                   >
                     Instagram*
                   </a>
-                  <p
-                    id="instagram-note"
-                    className="font-body text-caption text-stone-600 leading-relaxed mt-2 max-w-[280px]"
-                  >
-                    * Принадлежит Meta Platforms Inc., признанной экстремистской
-                    организацией, деятельность которой запрещена в РФ.
-                  </p>
                 </li>
                 <li>
                   <a
@@ -129,6 +122,13 @@ export default async function Footer() {
                   </a>
                 </li>
               </ul>
+              <p
+                id="instagram-note"
+                className="font-body text-caption text-stone-600 leading-relaxed mt-3 max-w-[280px]"
+              >
+                * Принадлежит Meta Platforms Inc., признанной экстремистской
+                организацией, деятельность которой запрещена в РФ.
+              </p>
             </div>
           </div>
 

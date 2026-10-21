@@ -1,3 +1,5 @@
+import { RETURN_INSTRUCTIONS } from "@/lib/shop-policies";
+
 export const templateKinds = [
   "order_created",
   "order_paid",
@@ -74,6 +76,8 @@ export function renderEmail(
         values.address,
         `Получатель: ${values.recipient}`,
         `Номер отправления: ${values.tracking}`,
+        "Возврат и обращение",
+        RETURN_INSTRUCTIONS,
       ].join("\n")
     : "";
   const text = (value: string | undefined) => escapeHtml(value ?? "");
@@ -122,6 +126,7 @@ export function renderEmail(
       <p style="margin:0 0 12px">${text(values.address)}<br>Получатель: ${text(values.recipient)}</p>
       <p style="margin:0;color:#78716c">Номер отправления<br><span style="color:#292724">${text(values.tracking)}</span></p>
     </div>
+    <p style="font-size:13px;line-height:1.7">${text(RETURN_INSTRUCTIONS)}</p>
   </div>`
     : "";
   const documentUrl =

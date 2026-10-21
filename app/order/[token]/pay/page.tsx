@@ -9,6 +9,7 @@ import {
 } from "@/lib/payments/robokassa";
 import { siteUrl } from "@/lib/seo";
 import PaymentPanel from "@/components/checkout/PaymentPanel";
+import { paymentDeliveryIsSeparate } from "@/lib/payments/delivery-summary";
 export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Оплата заказа",
@@ -23,7 +24,10 @@ export default async function OrderPaymentPage({
   const { token } = await params;
   const payment = await paymentForOrderToken(token);
   if (!payment) notFound();
-  const orderNumber = await orderNumberForPayment(payment);
+  const [orderNumber, separateDelivery] = await Promise.all([
+    orderNumberForPayment(payment),
+    paymentDeliveryIsSeparate(payment),
+  ]);
   const enabled =
     payment.status === "pending" &&
     !paymentExpired(payment) &&
@@ -44,6 +48,7 @@ export default async function OrderPaymentPage({
         number: orderNumber,
         amount: payment.amount,
         items: payment.items,
+        separateDelivery,
       }}
       id={payment.id}
       mode={payment.mode}

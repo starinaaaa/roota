@@ -74,20 +74,26 @@ export async function processEmailQueue() {
             minute: "2-digit",
           }) + " МСК";
         values.recipient = o.customer_name ?? "";
-        values.delivery =
-          o.delivery_details?.point?.name ||
-          (o.delivery_type === "pickup" ? "Самовывоз" : "Доставка");
+        const courier = o.delivery_details?.provider === "yandex";
+        values.delivery = courier
+          ? "Курьер Яндекс Доставки"
+          : o.delivery_details?.point?.name ||
+            (o.delivery_type === "pickup" ? "Самовывоз" : "Доставка");
         values.address =
           o.delivery_details?.point?.address ||
           o.delivery_address ||
           "Адрес уточняется";
-        values.shipping = money(
-          Number(o.delivery_amount ?? 0) + Number(o.insurance_amount ?? 0),
-        );
+        values.shipping = courier
+          ? "Оплачивается покупателем отдельно в приложении после согласования в Telegram"
+          : money(
+              Number(o.delivery_amount ?? 0) + Number(o.insurance_amount ?? 0),
+            );
         values.tracking =
           o.tracking_number ||
           relationList(o.order_shipments)[0]?.posting_number ||
-          "Появится после оформления отправления";
+          (courier
+            ? "Время и стоимость доставки согласуем с вами в Telegram"
+            : "Появится после оформления отправления");
         const productIds = o.order_items
           .map((i) => i.product_id)
           .filter(Boolean);
@@ -117,7 +123,9 @@ export async function processEmailQueue() {
           (i) => i.purchase_mode === "preorder",
         )
           ? `В заказе есть изделие на заказ.${leadDays ? ` Срок изготовления — до ${leadDays} дней.` : " Срок изготовления согласуем с вами."} О передаче в доставку сообщим отдельным письмом.`
-          : "Готовые изделия передаём в доставку в течение 1–3 рабочих дней после оплаты. О передаче в доставку сообщим отдельным письмом.";
+          : courier
+            ? "Доставка до двери по Москве и Подмосковью. Напишем в Telegram в течение суток, согласуем время и стоимость, затем передадим заказ курьеру."
+            : "Готовые изделия передаём в доставку в течение 1–3 рабочих дней после оплаты. О передаче в доставку сообщим отдельным письмом.";
         const paidAt = relationList(o.payments).find(
           (p: { status: string }) => p.status === "paid",
         )?.paid_at;

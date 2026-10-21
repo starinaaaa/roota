@@ -62,7 +62,8 @@ async function createOrderInternal(
     const mode = paymentMode();
     const fiscal = mode ? receiptProfile(mode) : null;
     const db = createServerClient();
-    if (!form.data.deliveryQuoteId)
+    const courier = form.data.deliveryMethod === "yandex_courier";
+    if (!courier && !form.data.deliveryQuoteId)
       return {
         success: false,
         error: "Выберите пункт и рассчитайте доставку.",
@@ -84,31 +85,33 @@ async function createOrderInternal(
       );
       if (cleanupError)
         throw new Error("Не удалось проверить корзину. Повторите отправку.");
-      const { data: stored, error: quoteError } = await db
-        .from("delivery_quotes")
-        .select("city,point,phone,expires_at")
-        .eq("id", form.data.deliveryQuoteId)
-        .eq("cart_session", session)
-        .maybeSingle();
-      if (
-        quoteError ||
-        !stored ||
-        stored.phone !== form.data.phone ||
-        Date.parse(stored.expires_at) < Date.now()
-      )
-        return {
-          success: false,
-          error: "Расчёт доставки устарел. Рассчитайте доставку ещё раз.",
-        };
-      const fresh = await quoteDelivery(
-        form.data.phone,
-        stored.city,
-        stored.point.id,
-        form.data.deliveryQuoteId,
-      );
-      // SQL verifies the current cart, packing rule, prices, and final total atomically.
-      if (!Number.isFinite(fresh.totalCost))
-        throw new Error("Не удалось проверить доставку.");
+      if (!courier) {
+        const { data: stored, error: quoteError } = await db
+          .from("delivery_quotes")
+          .select("city,point,phone,expires_at")
+          .eq("id", form.data.deliveryQuoteId)
+          .eq("cart_session", session)
+          .maybeSingle();
+        if (
+          quoteError ||
+          !stored ||
+          stored.phone !== form.data.phone ||
+          Date.parse(stored.expires_at) < Date.now()
+        )
+          return {
+            success: false,
+            error: "Расчёт доставки устарел. Рассчитайте доставку ещё раз.",
+          };
+        const fresh = await quoteDelivery(
+          form.data.phone,
+          stored.city,
+          stored.point.id,
+          form.data.deliveryQuoteId,
+        );
+        // SQL verifies the current cart, packing rule, prices, and final total atomically.
+        if (!Number.isFinite(fresh.totalCost))
+          throw new Error("Не удалось проверить доставку.");
+      }
     }
     const { data, error } = await db.rpc(
       mode ? "checkout_robokassa" : "checkout_delivery_order",
@@ -117,7 +120,7 @@ async function createOrderInternal(
         p_key: key.data,
         p_form: form.data,
         p_expected_total: expectedTotal,
-        p_quote: form.data.deliveryQuoteId,
+        p_quote: courier ? null : form.data.deliveryQuoteId,
         ...(mode ? { p_mode: mode } : {}),
       },
     );

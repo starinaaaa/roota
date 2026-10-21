@@ -23,6 +23,7 @@ type Props = {
     number: string;
     amount: string;
     items: { name: string; quantity: number; sum: number; kind: string }[];
+    separateDelivery?: boolean;
   };
   statusUrl?: string;
   returnPaymentUrl?: string;
@@ -160,7 +161,7 @@ export default function PaymentPanel({
           onError={() => setUnavailable(true)}
         />
       )}
-      <div className="max-w-6xl w-full mx-auto px-5 md:px-12 py-12 md:py-20 grid lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] gap-10 lg:gap-20 items-start">
+      <div className="max-w-6xl w-full mx-auto px-5 md:px-12 py-12 md:py-20 grid grid-cols-1 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] gap-10 lg:gap-20 items-start">
         <div className="min-w-0 space-y-6">
           {mode === "test" && (
             <p className="font-body text-caption text-stone-600">
@@ -235,7 +236,7 @@ export default function PaymentPanel({
                 id={paymentHostId}
                 ref={paymentHost}
                 aria-label="Защищённая форма оплаты Robokassa"
-                className={`-mx-5 min-w-[320px] sm:mx-0 sm:min-w-0 ${opened ? "h-[680px]" : "h-0"}`}
+                className={`-mx-5 min-w-0 max-w-[calc(100%+2.5rem)] overflow-x-auto sm:mx-0 sm:max-w-full ${opened ? "h-[680px]" : "h-0"}`}
               />
               {opened && (
                 <button
@@ -323,13 +324,13 @@ export default function PaymentPanel({
         </div>
         {summary && (
           <aside
-            className="bg-white border border-stone-200 p-6 md:p-8 font-body text-ui"
+            className="min-w-0 bg-white border border-stone-200 p-6 md:p-8 font-body text-ui [overflow-wrap:anywhere]"
             aria-label="Состав и сумма заказа"
           >
             <p className="text-caption uppercase tracking-widest text-stone-500 mb-2">
               Ваш заказ
             </p>
-            <h2 className="font-display text-price mb-6 [overflow-wrap:normal]">
+            <h2 className="font-display text-[clamp(0.875rem,4vw,1.5rem)] sm:text-price mb-6 [overflow-wrap:anywhere]">
               № {summary.number}
             </h2>
             <ul className="divide-y divide-stone-100">
@@ -350,25 +351,43 @@ export default function PaymentPanel({
                 ))}
             </ul>
             <div className="flex justify-between gap-4 border-t border-stone-200 py-5">
-              <span>Доставка</span>
-              <span className="shrink-0 whitespace-nowrap">
-                {money(
-                  summary.items
-                    .filter((item) => item.kind !== "goods")
-                    .reduce((sum, item) => sum + Number(item.sum), 0),
-                )}
+              <span className="shrink-0 text-caption">Доставка</span>
+              <span
+                className={
+                  summary.separateDelivery
+                    ? "text-right text-caption"
+                    : "shrink-0 whitespace-nowrap"
+                }
+              >
+                {summary.separateDelivery
+                  ? "Оплачивается отдельно в приложении"
+                  : money(
+                      summary.items
+                        .filter((item) => item.kind !== "goods")
+                        .reduce((sum, item) => sum + Number(item.sum), 0),
+                    )}
               </span>
             </div>
-            <div className="flex justify-between gap-4 border-t border-stone-200 pt-5 text-price">
-              <span>{paid ? "Оплачено" : "К оплате"}</span>
-              <span className="whitespace-nowrap">
+            <div className="flex flex-wrap justify-between gap-3 border-t border-stone-200 pt-5">
+              <span className="text-ui">
+                {summary.separateDelivery
+                  ? paid
+                    ? "За изделия оплачено"
+                    : "К оплате за изделия"
+                  : paid
+                    ? "Оплачено"
+                    : "К оплате"}
+              </span>
+              <span className="whitespace-nowrap text-price">
                 {money(Number(summary.amount))}
               </span>
             </div>
             <p className="text-caption text-stone-500 mt-5">
-              {paid
-                ? "Чек об оплате направляет Robokassa на email, указанный при оформлении."
-                : "Доставка уже включена в итоговую сумму."}
+              {summary.separateDelivery
+                ? "Курьер по Москве и Подмосковью оплачивается покупателем отдельно в приложении. Время и стоимость согласуем в Telegram в течение суток после заказа."
+                : paid
+                  ? "Чек об оплате направляет Robokassa на email, указанный при оформлении."
+                  : "Доставка уже включена в итоговую сумму."}
             </p>
           </aside>
         )}

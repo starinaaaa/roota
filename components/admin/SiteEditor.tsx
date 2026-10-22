@@ -10,13 +10,16 @@ export default function SiteEditor({
   initial,
   products,
   heroPreview,
+  brandPreviews,
 }: {
   initial: SiteContent;
   products: { id: string; name: string; publication_status: string }[];
   heroPreview: string;
+  brandPreviews: { browserIcon: string; shareImage: string };
 }) {
   const [data, setData] = useState(initial),
     [preview, setPreview] = useState(heroPreview),
+    [brandImages, setBrandImages] = useState(brandPreviews),
     [message, setMessage] = useState(""),
     [pending, start] = useTransition(),
     drag = useRef<number | null>(null);
@@ -117,6 +120,95 @@ export default function SiteEditor({
             }}
           />
         </label>
+      </section>
+      <section className="admin-card space-y-5">
+        <h3 className="text-lg">Иконка и превью ссылок</h3>
+        <p className="text-sm text-stone-600">
+          Загрузите изображения и нажмите «Опубликовать». Мессенджеры и браузеры
+          могут некоторое время показывать сохранённую старую картинку.
+        </p>
+        {(
+          [
+            [
+              "browserIcon",
+              "Иконка браузера",
+              "Квадратный логотип, желательно от 192 × 192 пикселей.",
+            ],
+            [
+              "shareImage",
+              "Картинка для ссылок в мессенджерах",
+              "Рекомендуем 1200 × 630 пикселей. Если не загружена, используем главное изображение сайта.",
+            ],
+          ] as const
+        ).map(([key, title, hint]) => (
+          <div key={key} className="space-y-3 border-t border-stone-200 pt-4">
+            <h4>{title}</h4>
+            <p className="text-sm text-stone-600">{hint}</p>
+            {brandImages[key] && (
+              <Image
+                src={brandImages[key]}
+                alt={title}
+                width={400}
+                height={210}
+                unoptimized
+                className="max-w-full h-40 object-contain"
+              />
+            )}
+            <label className="admin-secondary cursor-pointer inline-block">
+              Загрузить изображение
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="sr-only"
+                disabled={pending}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  e.target.value = "";
+                  if (!file) return;
+                  start(async () => {
+                    setMessage("");
+                    const form = new FormData();
+                    form.set("productId", "site");
+                    form.set("file", file);
+                    try {
+                      const result = await uploadImage(form);
+                      if (result.error) setMessage(result.error);
+                      else if (result.image) {
+                        setData((v) => ({
+                          ...v,
+                          [key]: result.image.public_url,
+                        }));
+                        setBrandImages((v) => ({
+                          ...v,
+                          [key]: result.image.preview_url,
+                        }));
+                      }
+                    } catch {
+                      setMessage("Не удалось загрузить изображение");
+                    }
+                  });
+                }}
+              />
+            </label>
+            {data[key] && (
+              <button
+                type="button"
+                className="admin-secondary ml-3"
+                disabled={pending}
+                onClick={() => {
+                  setData((v) => ({ ...v, [key]: "" }));
+                  setBrandImages((v) => ({ ...v, [key]: "" }));
+                }}
+              >
+                Убрать
+              </button>
+            )}
+          </div>
+        ))}
+        <p className="text-sm text-stone-600">
+          Аватар рядом с отправителем письма настраивается у почтового сервиса
+          отдельно от изображений сайта.
+        </p>
       </section>
       <section className="admin-card space-y-4">
         <h3 className="text-lg">Избранные изделия и порядок</h3>

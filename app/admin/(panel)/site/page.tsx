@@ -9,6 +9,14 @@ export default async function SitePage() {
       initial={draft}
       products={products}
       heroPreview={await getHeroPreview(draft.heroImage)}
+      brandPreviews={{
+        browserIcon: draft.browserIcon
+          ? await getHeroPreview(draft.browserIcon)
+          : "",
+        shareImage: draft.shareImage
+          ? await getHeroPreview(draft.shareImage)
+          : "",
+      }}
     />
   );
 }

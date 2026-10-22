@@ -19,25 +19,45 @@ import FunnelTracker from "@/components/analytics/FunnelTracker";
 import CookieBanner from "@/components/layout/CookieBanner";
 import { CartUIProvider } from "@/contexts/CartUIContext";
 import { getCart } from "@/lib/actions/cart";
+import { getSiteContent } from "@/lib/site";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL || "https://roota.moscow",
-  ),
-  title: {
-    default: "Студия авторской керамики",
-    template: "%s | Студия авторской керамики",
-  },
-  description:
-    "Авторская керамика ручной работы. Тарелки, стаканы, вазы и декор — каждое изделие создано с заботой о деталях.",
-  openGraph: {
-    type: "website",
-    locale: "ru_RU",
-    siteName: "Roota ceramics",
-    images: ["/images/hero-bg.jpg"],
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const site = await getSiteContent();
+  const share = site.shareImage || site.heroImage;
+  return {
+    metadataBase: new URL(
+      process.env.NEXT_PUBLIC_SITE_URL || "https://roota.moscow",
+    ),
+    title: {
+      default: "Студия авторской керамики",
+      template: "%s | Студия авторской керамики",
+    },
+    description:
+      "Авторская керамика ручной работы. Тарелки, стаканы, вазы и декор — каждое изделие создано с заботой о деталях.",
+    openGraph: {
+      type: "website",
+      locale: "ru_RU",
+      siteName: "Roota ceramics",
+      images: [
+        {
+          url: share.startsWith("/site-media/")
+            ? `${share}?format=jpeg`
+            : share,
+        },
+      ],
+    },
+    icons: {
+      icon: site.browserIcon
+        ? {
+            url: `${site.browserIcon}?format=png`,
+            type: "image/png",
+            sizes: "192x192",
+          }
+        : { url: "/brand/icon.svg", type: "image/svg+xml" },
+    },
+  };
+}
 
 export default async function RootLayout({
   children,

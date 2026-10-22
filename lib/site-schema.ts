@@ -11,6 +11,14 @@ const deliveryCostText =
 const legacyDeliveryCostText =
   "Стоимость доставки рассчитывается после выбора пункта выдачи и показывается в составе заказа до оплаты. Если Ozon возвращает ориентировочный срок, вы увидите его там же: он отсчитывается после передачи посылки перевозчику.";
 export const siteSchema = z.object({
+  browserIcon: z
+    .string()
+    .regex(/^(?:|\/site-media\/[a-f0-9-]{36})$/)
+    .default(""),
+  shareImage: z
+    .string()
+    .regex(/^(?:|\/site-media\/[a-f0-9-]{36})$/)
+    .default(""),
   heroTitle: text(120),
   heroIntro: text(600),
   heroImage: z
@@ -51,6 +59,8 @@ export const siteSchema = z.object({
 });
 export type SiteContent = z.infer<typeof siteSchema>;
 export const defaultSite: SiteContent = {
+  browserIcon: "",
+  shareImage: "",
   heroTitle: "Каждое изделие —\nотдельная история",
   heroIntro:
     "Ручная керамика для дома — спокойные формы, живые поверхности и вещи, которые хочется держать рядом каждый день.",

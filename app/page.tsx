@@ -8,6 +8,7 @@ import { siteUrl } from "@/lib/seo";
 
 export async function generateMetadata(): Promise<Metadata> {
   const site = await getSiteContent();
+  const share = site.shareImage || site.heroImage;
   return {
     alternates: { canonical: "/" },
     title: "Студия авторской керамики — Roota ceramics",
@@ -16,7 +17,11 @@ export async function generateMetadata(): Promise<Metadata> {
       title: site.heroTitle,
       description: site.heroIntro,
       url: siteUrl("/"),
-      images: [siteUrl(site.heroImage)],
+      images: [
+        siteUrl(
+          share.startsWith("/site-media/") ? `${share}?format=jpeg` : share,
+        ),
+      ],
     },
   };
 }

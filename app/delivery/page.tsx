@@ -18,7 +18,7 @@ export default async function DeliveryPage() {
 
   return (
     <div className="px-6 pt-16 md:px-12 md:pt-20 lg:px-16">
-      <div className="mx-auto max-w-[1080px] pb-12 pt-9 md:pb-16 md:pt-14">
+      <div className="w-full pb-12 pt-9 md:pb-16 md:pt-14">
         <h1 className="font-display text-page text-stone-900">
           Доставка и оплата
         </h1>
@@ -93,7 +93,7 @@ export default async function DeliveryPage() {
         <div className="divide-y divide-stone-200">
           <section
             aria-labelledby="dispatch-heading"
-            className="grid gap-3 py-7 md:grid-cols-[240px_1fr] md:gap-10 md:py-9"
+            className="grid gap-3 py-7 md:grid-cols-[minmax(0,1fr)_minmax(0,3fr)] md:gap-10 md:py-9"
           >
             <h2 id="dispatch-heading" className="font-display text-price">
               Когда отправим
@@ -107,7 +107,7 @@ export default async function DeliveryPage() {
 
           <section
             aria-labelledby="payment-heading"
-            className="grid gap-3 py-7 md:grid-cols-[240px_1fr] md:gap-10 md:py-9"
+            className="grid gap-3 py-7 md:grid-cols-[minmax(0,1fr)_minmax(0,3fr)] md:gap-10 md:py-9"
           >
             <h2 id="payment-heading" className="font-display text-price">
               Оплата
@@ -121,7 +121,7 @@ export default async function DeliveryPage() {
 
           <section
             aria-labelledby="packaging-heading"
-            className="grid gap-3 py-7 md:grid-cols-[240px_1fr] md:gap-10 md:py-9"
+            className="grid gap-3 py-7 md:grid-cols-[minmax(0,1fr)_minmax(0,3fr)] md:gap-10 md:py-9"
           >
             <h2 id="packaging-heading" className="font-display text-price">
               Бережная упаковка
@@ -149,7 +149,7 @@ export default async function DeliveryPage() {
           <section
             id="returns"
             aria-labelledby="returns-heading"
-            className="grid scroll-mt-28 gap-3 py-7 md:grid-cols-[240px_1fr] md:gap-10 md:py-9"
+            className="grid scroll-mt-28 gap-3 py-7 md:grid-cols-[minmax(0,1fr)_minmax(0,3fr)] md:gap-10 md:py-9"
           >
             <h2 id="returns-heading" className="font-display text-price">
               Возврат

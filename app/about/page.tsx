@@ -22,16 +22,15 @@ export default async function AboutPage() {
   ];
 
   return (
-    <div className="px-6 pt-16 md:px-12 md:pt-20 lg:px-16">
-      <div className="mx-auto max-w-[1080px] pb-12 pt-9 md:pb-16 md:pt-14">
-        <AboutHero title={site.studioTitle} />
-
-        <div className="mt-7 divide-y divide-stone-200 md:mt-9">
+    <div className="pt-16 md:pt-20">
+      <AboutHero title={site.studioTitle} />
+      <div className="w-full px-6 pb-12 md:px-12 md:pb-16 lg:px-16">
+        <div className="divide-y divide-stone-200">
           {sections.map(({ id, title, text }) => (
             <section
               key={id}
               aria-labelledby={`${id}-heading`}
-              className="grid gap-3 py-7 md:grid-cols-[minmax(0,240px)_minmax(0,1fr)] md:gap-10 md:py-9"
+              className="grid gap-3 py-7 md:grid-cols-[minmax(0,1fr)_minmax(0,3fr)] md:gap-10 md:py-9"
             >
               <h2 id={`${id}-heading`} className="font-display text-price">
                 {bindPrepositions(title)}

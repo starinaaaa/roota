@@ -35,7 +35,7 @@ export default async function ContactsPage() {
 
   return (
     <div className="px-6 pt-16 md:px-12 md:pt-20 lg:px-16">
-      <div className="mx-auto max-w-[1080px] pb-12 pt-9 md:pb-16 md:pt-14">
+      <div className="w-full pb-12 pt-9 md:pb-16 md:pt-14">
         <h1 className="font-display text-page text-stone-900">Контакты</h1>
         <p className="mt-5 font-body text-copy text-stone-600">
           Напишите нам — ответим в течение суток.
@@ -48,7 +48,7 @@ export default async function ContactsPage() {
                 href={href}
                 target={external ? "_blank" : undefined}
                 rel={external ? "noopener noreferrer" : undefined}
-                className="group grid grid-cols-[1fr_auto] items-center gap-x-5 gap-y-2 py-7 transition-colors hover:text-stone-600 md:grid-cols-[240px_1fr_auto] md:gap-x-10 md:py-9"
+                className="group grid grid-cols-[1fr_auto] items-center gap-x-5 gap-y-2 py-7 transition-colors hover:text-stone-600 md:grid-cols-[minmax(0,1fr)_minmax(0,3fr)_auto] md:gap-x-10 md:py-9"
               >
                 <span className="col-span-2 font-body text-ui text-stone-600 md:col-span-1">
                   {label}
@@ -66,7 +66,7 @@ export default async function ContactsPage() {
           ))}
         </ul>
 
-        <div className="mt-7 grid gap-3 md:mt-9 md:grid-cols-[240px_1fr] md:gap-10">
+        <div className="mt-7 grid gap-3 md:mt-9 md:grid-cols-[minmax(0,1fr)_minmax(0,3fr)] md:gap-10">
           <h2 className="font-display text-price">О заказе</h2>
           <div className="max-w-2xl font-body text-copy text-stone-800">
             <p>

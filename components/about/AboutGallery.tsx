@@ -116,7 +116,7 @@ export default function AboutGallery({ photos }: { photos: Photo[] }) {
                 alt={photo.alt}
                 fill
                 draggable={false}
-                sizes="(max-width: 639px) calc((100vw - 48px) * 0.78), (max-width: 767px) calc((100vw - 56px) / 2), (max-width: 1023px) calc((100vw - 112px) / 3), (max-width: 1207px) calc((100vw - 152px) / 4), 264px"
+                sizes="(max-width: 639px) calc((100vw - 48px) * 0.78), (max-width: 767px) calc((100vw - 56px) / 2), (max-width: 1023px) calc((100vw - 112px) / 3), calc((100vw - 152px) / 4)"
                 className="object-cover"
                 loading="lazy"
               />

@@ -3,26 +3,21 @@ import Image from "@/components/ui/StoreImage";
 
 export default function AboutHero({ title }: { title: string }) {
   return (
-    <section className="relative isolate flex min-h-[520px] items-center overflow-hidden bg-stone-800 px-6 py-24 md:min-h-[640px] md:px-12 lg:px-16">
-      <div className="absolute inset-0 -z-20">
+    <header>
+      <h1 className="font-display text-page text-stone-900">О студии</h1>
+      <p className="mt-5 max-w-2xl font-body text-copy text-stone-600">
+        {bindPrepositions(title)}
+      </p>
+      <div className="relative mt-7 aspect-[4/3] overflow-hidden bg-stone-100 sm:aspect-[16/7] md:mt-9">
         <Image
           src="/images/about/hero-plates.jpg"
           alt="Тарелки Roota с авторскими рисунками в тёплом солнечном свете"
           fill
           preload
-          sizes="100vw"
+          sizes="(max-width: 767px) calc(100vw - 48px), (max-width: 1023px) calc(100vw - 96px), (max-width: 1207px) calc(100vw - 128px), 1080px"
           className="object-cover object-[center_48%]"
         />
       </div>
-      <div className="absolute inset-0 -z-10 bg-gradient-to-r from-stone-950/55 via-stone-950/30 to-stone-950/10" />
-      <div className="mx-auto w-full max-w-[1440px]">
-        <p className="mb-8 font-body text-caption uppercase tracking-[0.08em] text-white">
-          О студии
-        </p>
-        <h1 className="max-w-[900px] font-display text-page leading-[1.08] text-white whitespace-pre-line break-words">
-          {bindPrepositions(title)}
-        </h1>
-      </div>
-    </section>
+    </header>
   );
 }

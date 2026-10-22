@@ -78,9 +78,12 @@ export default function AboutGallery({ photos }: { photos: Photo[] }) {
   return (
     <section
       ref={section}
-      aria-label="Фотографии мастерской Roota"
-      className="border-t border-stone-200 bg-white py-8 md:py-12"
+      aria-labelledby="gallery-heading"
+      className="border-t border-stone-200 py-7 md:py-9"
     >
+      <h2 id="gallery-heading" className="mb-5 font-display text-price">
+        В мастерской
+      </h2>
       <div
         ref={viewport}
         role="region"
@@ -113,7 +116,7 @@ export default function AboutGallery({ photos }: { photos: Photo[] }) {
                 alt={photo.alt}
                 fill
                 draggable={false}
-                sizes="(max-width: 639px) 78vw, (max-width: 767px) calc((100vw - 8px) / 2), (max-width: 1023px) calc((100vw - 16px) / 3), calc((100vw - 24px) / 4)"
+                sizes="(max-width: 639px) calc((100vw - 48px) * 0.78), (max-width: 767px) calc((100vw - 56px) / 2), (max-width: 1023px) calc((100vw - 112px) / 3), (max-width: 1207px) calc((100vw - 152px) / 4), 264px"
                 className="object-cover"
                 loading="lazy"
               />
@@ -122,7 +125,7 @@ export default function AboutGallery({ photos }: { photos: Photo[] }) {
         </div>
       </div>
       {count > 1 && (
-        <div className="mt-6 flex items-center justify-end gap-2 px-6 md:px-12 lg:px-16">
+        <div className="mt-5 flex items-center justify-end gap-2">
           <span
             className="mr-auto font-body text-caption text-stone-500"
             aria-live="polite"
@@ -133,7 +136,7 @@ export default function AboutGallery({ photos }: { photos: Photo[] }) {
             type="button"
             aria-label="Предыдущие фотографии"
             onClick={() => step(-1)}
-            className="flex h-11 w-11 items-center justify-center rounded-full border border-stone-300 text-stone-900 hover:bg-stone-100 focus-visible:outline-2"
+            className="flex h-11 w-11 items-center justify-center border border-stone-200 text-stone-900 transition-colors hover:bg-stone-100 focus-visible:outline-2"
           >
             <ChevronLeft size={20} strokeWidth={1.5} />
           </button>
@@ -141,7 +144,7 @@ export default function AboutGallery({ photos }: { photos: Photo[] }) {
             type="button"
             aria-label="Следующие фотографии"
             onClick={() => step(1)}
-            className="flex h-11 w-11 items-center justify-center rounded-full border border-stone-300 text-stone-900 hover:bg-stone-100 focus-visible:outline-2"
+            className="flex h-11 w-11 items-center justify-center border border-stone-200 text-stone-900 transition-colors hover:bg-stone-100 focus-visible:outline-2"
           >
             <ChevronRight size={20} strokeWidth={1.5} />
           </button>

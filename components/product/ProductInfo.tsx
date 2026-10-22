@@ -1,7 +1,7 @@
 "use client";
 
 import { bindPrepositions } from "@/lib/typography";
-import { useState } from "react";
+import { useId, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatPrice } from "@/lib/format-price";
@@ -195,12 +195,6 @@ export default function ProductInfo({
       </div>
 
       <PurchaseHelp />
-      <Link
-        href="/reviews"
-        className="font-body text-caption text-stone-600 underline underline-offset-4 hover:text-stone-900"
-      >
-        Отзывы покупателей
-      </Link>
 
       {/* Разделитель */}
       <div className="divider" />
@@ -293,38 +287,43 @@ function Accordion({
   onToggle: () => void;
   children: React.ReactNode;
 }) {
+  const panelId = useId();
+
   return (
     <div>
       <button
+        type="button"
+        id={`${panelId}-trigger`}
         onClick={onToggle}
         aria-expanded={open}
-        className="w-full flex items-center justify-between py-1 group"
+        aria-controls={panelId}
+        className="group flex w-full items-center justify-between py-1 active:scale-100"
       >
         <span className="font-body text-ui tracking-[0.08em] uppercase text-stone-600 group-hover:text-stone-900 transition-colors duration-200">
           {bindPrepositions(label)}
         </span>
-        <motion.span
-          animate={{ rotate: open ? 45 : 0 }}
-          transition={{ duration: 0.22 }}
-          className="font-body text-copy text-stone-800 leading-none"
+        <span
+          aria-hidden="true"
+          className={`font-body text-copy leading-none text-stone-800 transition-transform duration-300 motion-reduce:transition-none ${open ? "rotate-45" : "rotate-0"}`}
         >
           +
-        </motion.span>
+        </span>
       </button>
 
-      <AnimatePresence>
-        {open && (
-          <motion.p
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="overflow-hidden font-body text-copy text-stone-800 leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere] pt-3 pb-1"
-          >
+      <div
+        id={panelId}
+        role="region"
+        aria-labelledby={`${panelId}-trigger`}
+        aria-hidden={!open}
+        inert={!open}
+        className={`grid transition-[grid-template-rows,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <p className="whitespace-pre-wrap pb-1 pt-3 font-body text-copy leading-relaxed text-stone-800 [overflow-wrap:anywhere]">
             {children}
-          </motion.p>
-        )}
-      </AnimatePresence>
+          </p>
+        </div>
+      </div>
 
       <div className="divider mt-4" />
     </div>

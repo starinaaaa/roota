@@ -6,8 +6,8 @@ export default function AboutHero({ title }: { title: string }) {
     <header className="relative isolate flex min-h-[calc(100svh-4rem)] items-center overflow-hidden bg-stone-800 px-6 py-24 md:min-h-[calc(100svh-5rem)] md:px-12 lg:px-16">
       <div className="absolute inset-0 -z-20">
         <Image
-          src="/images/about/hero-plates.jpg"
-          alt="Тарелки Roota с авторскими рисунками в тёплом солнечном свете"
+          src="/images/about/hero-plates-2284.jpg"
+          alt="Тарелки Roota с авторскими чёрно-белыми рисунками"
           fill
           preload
           sizes="100vw"

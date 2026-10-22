@@ -14,6 +14,9 @@ import {
   type PackingRule,
 } from "./model";
 import { ozon, ozonConfigured, shipmentMethodId, pointInfo } from "./ozon";
+
+// Included in the single delivery price for new quotes only.
+const DELIVERY_PACKAGING_FEE = 250;
 export async function deliverySession() {
   const session = (await cookies()).get("cart_session")?.value;
   if (!uuid.safeParse(session).success)
@@ -118,11 +121,13 @@ export async function quoteDelivery(
   )
     throw new Error("Выберите доступный пункт в указанном городе.");
   const cost = await ozon.quote(pointId, context);
+  const deliveryCost =
+    Math.round((cost.deliveryCost + DELIVERY_PACKAGING_FEE) * 100) / 100;
   const point = publicPoint(info),
     id = existingId ?? crypto.randomUUID(),
     expiresAt = new Date(Date.now() + 10 * 60000).toISOString();
   const totalCost =
-    Math.round((cost.deliveryCost + cost.insuranceCost) * 100) / 100;
+    Math.round((deliveryCost + cost.insuranceCost) * 100) / 100;
   const row = {
     id,
     cart_session: session,
@@ -131,7 +136,11 @@ export async function quoteDelivery(
     point,
     packing_rule_id: context.packing.id,
     packing_updated_at: context.packing.updated_at,
-    packing: context.packing,
+    packing: {
+      ...context.packing,
+      // Frozen with the order; legacy orders have no fee and retain their price.
+      delivery_packaging_fee: DELIVERY_PACKAGING_FEE,
+    },
     cart_snapshot: context.items,
     shipment_method_id: context.shipmentMethodId,
     cutoff_at: context.cutoffAt ?? null,
@@ -139,7 +148,7 @@ export async function quoteDelivery(
       (sum, i) => sum + i.price * i.quantity,
       0,
     ),
-    delivery_amount: cost.deliveryCost,
+    delivery_amount: deliveryCost,
     insurance_amount: cost.insuranceCost,
     estimated_days: cost.estimatedDays,
     expires_at: expiresAt,
@@ -157,5 +166,5 @@ export async function quoteDelivery(
     : await db.from("delivery_quotes").insert(row).select("id").single();
   if (result.error)
     throw new Error("Не удалось сохранить расчёт доставки. Повторите попытку.");
-  return { id, ...cost, totalCost, expiresAt, point };
+  return { id, ...cost, deliveryCost, totalCost, expiresAt, point };
 }

@@ -8,6 +8,7 @@ async function main() {
     ...new Set([
       ...aboutGallery.map((photo) => photo.src),
       "/images/about/hero-plates.jpg",
+      "/images/about/hero-plates-2284.jpg",
       "/images/hero-bg.jpg",
     ]),
   ];

@@ -56,9 +56,15 @@ export async function createPaidShipment(orderId: string) {
     };
     await ozon.checkRecipient(context.phone);
     const cost = await ozon.quote(details.point.id, context);
+    // Compare the carrier tariff against the carrier share of the paid price.
+    // Old orders have no packaging fee; never apply today's fee retroactively.
+    const packagingFee = Number(details.packing?.delivery_packaging_fee ?? 0);
     if (
       Math.round((cost.deliveryCost + cost.insuranceCost) * 100) !==
-      Math.round((Number(o.delivery_amount) + Number(o.insurance_amount)) * 100)
+      Math.round(
+        (Number(o.delivery_amount) - packagingFee + Number(o.insurance_amount)) *
+          100,
+      )
     )
       throw new Error(
         "Расходы доставки изменились. Согласуйте разницу с покупателем перед созданием отправления.",

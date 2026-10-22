@@ -51,7 +51,7 @@ test("Russian contact input accepts supported forms and rejects foreign, long an
     assert.equal(normalizeRussianPhone(input), null, input);
   assert.equal(formatRussianPhone("9991234567"), "+7 (999) 123-45-67");
   const form = {
-    legalVersion: "2026-10-21",
+    legalVersion: "2026-10-22",
     acceptedTerms: true,
     newsletterDataConsent: false,
     name: "Анна Иванова",
@@ -258,7 +258,7 @@ test("delivery checkout adds exact charges, rejects tampering and stale quotes, 
     },
   ];
   const form = {
-    legalVersion: "2026-10-21",
+    legalVersion: "2026-10-22",
     acceptedTerms: true,
     newsletterDataConsent: false,
     name: "Анна Иванова",
@@ -323,7 +323,7 @@ test("delivery checkout adds exact charges, rejects tampering and stale quotes, 
       [result.id],
     )
   ).rows[0].form;
-  assert.equal(storedForm.legalVersion, "2026-10-21");
+  assert.equal(storedForm.legalVersion, "2026-10-22");
   assert.equal(storedForm.acceptedTerms, true);
   assert.equal(storedForm.subscribeToNews, false);
   assert.equal(storedForm.newsletterDataConsent, false);

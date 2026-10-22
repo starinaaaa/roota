@@ -1,4 +1,5 @@
-import current from "./legal-documents/2026-10-21.json";
+import current from "./legal-documents/2026-10-22.json";
+import previous from "./legal-documents/2026-10-21.json";
 
 export type LegalSection = {
   heading: string;
@@ -14,4 +15,4 @@ export const legalArchives: Record<
     updatedAt: string;
     documents: Record<string, LegalDocumentContent>;
   }
-> = { [current.version]: current };
+> = { [current.version]: current, [previous.version]: previous };

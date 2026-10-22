@@ -48,13 +48,12 @@ export default async function AboutPage() {
 
         <AboutGallery photos={aboutGallery} />
 
-        <div className="flex flex-col items-start gap-3 border-t border-stone-200 pt-7 md:flex-row md:items-center md:justify-between md:pt-9">
-          <h2 className="font-display text-price">Посмотреть коллекцию</h2>
+        <div className="border-t border-stone-200 pt-7 md:pt-9">
           <Link
             href="/catalog"
-            className="inline-flex min-h-11 items-center gap-3 font-body text-ui underline underline-offset-4 transition-colors hover:text-stone-600"
+            className="inline-flex min-h-12 items-center justify-center border border-stone-900 bg-stone-900 px-6 py-4 font-body text-ui text-stone-50 transition-colors hover:border-stone-700 hover:bg-stone-700"
           >
-            В каталог <span aria-hidden="true">↗</span>
+            Посмотреть коллекцию
           </Link>
         </div>
       </div>

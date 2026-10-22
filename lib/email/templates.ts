@@ -1,4 +1,4 @@
-import { RETURN_INSTRUCTIONS } from "@/lib/shop-policies";
+import { returnInstructionsForVersion } from "@/lib/shop-policies";
 
 export const templateKinds = [
   "order_created",
@@ -43,6 +43,7 @@ export function renderEmail(
   orderMessage = false,
   orderItems?: EmailOrderItem[],
 ) {
+  const returnInstructions = returnInstructionsForVersion(values.legal_version);
   const fill = (s: string) =>
     s.replace(/\{\{([a-z_]+)\}\}/g, (_, key) => values[key] ?? "");
   const subject = fill(template.subject)
@@ -77,7 +78,7 @@ export function renderEmail(
         `Получатель: ${values.recipient}`,
         `Номер отправления: ${values.tracking}`,
         "Возврат и обращение",
-        RETURN_INSTRUCTIONS,
+        returnInstructions,
       ].join("\n")
     : "";
   const text = (value: string | undefined) => escapeHtml(value ?? "");
@@ -126,7 +127,7 @@ export function renderEmail(
       <p style="margin:0 0 12px">${text(values.address)}<br>Получатель: ${text(values.recipient)}</p>
       <p style="margin:0;color:#78716c">Номер отправления<br><span style="color:#292724">${text(values.tracking)}</span></p>
     </div>
-    <p style="font-size:13px;line-height:1.7">${text(RETURN_INSTRUCTIONS)}</p>
+    <p style="font-size:13px;line-height:1.7">${text(returnInstructions)}</p>
   </div>`
     : "";
   const documentUrl =

@@ -56,12 +56,13 @@ export async function processEmailQueue() {
         const { data: o, error: oe } = await db
           .from("orders")
           .select(
-            "order_number,created_at,customer_name,total_amount,delivery_amount,insurance_amount,delivery_type,delivery_address,delivery_details,tracking_number,order_items(product_id,product_name,quantity,price,purchase_mode,lead_time_days),payments(expires_at,status,paid_at),order_shipments(posting_number)",
+            "order_number,created_at,customer_name,total_amount,delivery_amount,insurance_amount,delivery_type,delivery_address,delivery_details,tracking_number,request_payload,order_items(product_id,product_name,quantity,price,purchase_mode,lead_time_days),payments(expires_at,status,paid_at),order_shipments(posting_number)",
           )
           .eq("id", m.order_id)
           .single();
         if (oe || !o) throw new Error("ORDER");
         values.number = o.order_number;
+        values.legal_version = o.request_payload?.form?.legalVersion ?? "";
         values.total = new Intl.NumberFormat("ru-RU", {
           maximumFractionDigits: 2,
         }).format(Number(o.total_amount));

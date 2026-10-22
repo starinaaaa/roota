@@ -6,7 +6,10 @@ import { createServerClient } from "@/lib/db";
 import { formatPrice } from "@/lib/format-price";
 import { customerOrderState } from "@/lib/customer-order-model";
 import { seller } from "@/lib/seller";
-import { COURIER_DESCRIPTION, RETURN_INSTRUCTIONS } from "@/lib/shop-policies";
+import {
+  COURIER_DESCRIPTION,
+  returnInstructionsForVersion,
+} from "@/lib/shop-policies";
 import { legalArchives } from "@/lib/legal-documents";
 import PrintConfirmation from "./PrintConfirmation";
 import "./print.css";
@@ -169,9 +172,16 @@ export default async function ConfirmationPage({
         </section>
         <section className="mt-8 pt-6 border-t border-stone-200 space-y-3">
           <h2 className="font-display text-price">Возврат и обращение</h2>
-          <p className="text-caption leading-relaxed">{RETURN_INSTRUCTIONS}</p>
+          <p className="text-caption leading-relaxed">
+            {returnInstructionsForVersion(legalVersion)}
+          </p>
           <Link
-            href="/offer#returns"
+            href={
+              typeof legalVersion === "string" &&
+              Object.hasOwn(legalArchives, legalVersion)
+                ? `/documents/${legalVersion}/offer#returns`
+                : "/offer#returns"
+            }
             className="inline-block underline underline-offset-4"
           >
             Полные условия возврата

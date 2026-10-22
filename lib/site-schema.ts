@@ -24,7 +24,12 @@ export const siteSchema = z.object({
   materialsText: text(2500),
   studioQuote: text(600),
   email: z.string().email().max(254),
-  telegram: social,
+  telegram: social.transform((url) =>
+    // Upgrade published settings and drafts that still use the old contact.
+    /^https:\/\/t\.me\/rootaceramics\/?$/i.test(url)
+      ? "https://t.me/rav_no"
+      : url,
+  ),
   instagram: social,
   delivery: z
     .array(item)
@@ -63,7 +68,7 @@ export const defaultSite: SiteContent = {
   studioQuote:
     "«Нам важно, чтобы каждый предмет нёс в себе что-то тихое — ощущение, что он был сделан с намерением.»",
   email: "hello@roota.moscow",
-  telegram: "https://t.me/rootaceramics",
+  telegram: "https://t.me/rav_no",
   instagram: "https://instagram.com/roota.ceramics",
   delivery: [
     {

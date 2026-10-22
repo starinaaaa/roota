@@ -1,156 +1,101 @@
-import { bindPrepositions } from "@/lib/typography";
+import { ArrowUpRight } from "lucide-react";
 import CharacterArt from "@/components/illustrations/CharacterArt";
 import type { Metadata } from "next";
 import { getSiteContent } from "@/lib/site";
-import { seller } from "@/lib/seller";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/contacts" },
   title: "Контакты",
   description:
-    "Контакты студии Roota ceramics — email, Telegram, Instagram. Индивидуальные заказы и сотрудничество.",
+    "Свяжитесь с Roota ceramics в Telegram, по электронной почте или в Instagram. Ответим в течение суток.",
 };
 
 export default async function ContactsPage() {
   const site = await getSiteContent();
-  const CONTACTS = [
-    {
-      label: "Email",
-      value: site.email,
-      href: "mailto:" + site.email,
-      external: false,
-    },
+  const contacts = [
     {
       label: "Telegram",
-      value: site.telegram,
+      value: `@${new URL(site.telegram).pathname.replace(/^\//, "").replace(/\/$/, "")}`,
       href: site.telegram,
       external: true,
     },
     {
+      label: "Email",
+      value: site.email,
+      href: `mailto:${site.email}`,
+      external: false,
+    },
+    {
       label: "Instagram",
-      value: site.instagram,
+      value: `@${new URL(site.instagram).pathname.replace(/^\//, "").replace(/\/$/, "")}`,
       href: site.instagram,
       external: true,
     },
   ];
+
   return (
     <div className="pt-16 md:pt-20">
-      {/* ── Заголовок ── */}
-      <section className="py-12 md:py-28 px-6 md:px-12 lg:px-16">
-        <div className="max-w-[1440px] mx-auto grid grid-cols-[1fr_auto] gap-5 md:gap-8 md:grid-cols-[1.3fr_1fr] items-center">
-          <div>
-            <p className="font-body text-caption text-stone-600 tracking-[0.08em] uppercase mb-8">
+      <section
+        aria-labelledby="contacts-title"
+        className="px-6 py-12 md:px-12 md:py-20 lg:px-16"
+      >
+        <div className="mx-auto grid max-w-[1440px] gap-10 md:grid-cols-12 md:gap-8">
+          <div className="relative md:col-span-5">
+            <p className="mb-5 font-body text-caption uppercase tracking-[0.08em] text-stone-600 md:mb-6">
               Контакты
             </p>
-            <h1 className="font-display text-page leading-[1.05] text-stone-900 max-w-xl">
-              Напишите нам
+            <h1
+              id="contacts-title"
+              className="max-w-sm font-display text-page leading-[1.12] text-stone-900"
+            >
+              Напишите<br />нам
             </h1>
-          </div>
-          <CharacterArt
-            character="flower"
-            className="h-20 w-20 md:h-64 md:w-64 justify-self-end md:mr-12 -rotate-3"
-          />
-        </div>
-      </section>
-
-      {/* ── Контакты ── */}
-      <section className="border-t border-stone-200 py-12 md:py-28 px-6 md:px-12 lg:px-16">
-        <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-8">
-          <div className="md:col-span-4 lg:col-span-3">
-            <p className="font-body text-caption text-stone-600 tracking-[0.08em] uppercase">
-              Связь
+            <p className="mt-5 font-body text-copy text-stone-600">
+              Ответим в течение суток.
             </p>
+            <CharacterArt
+              character="flower"
+              className="absolute right-0 top-20 h-16 w-16 -rotate-3 md:static md:mt-8 md:h-36 md:w-36"
+            />
           </div>
-          <div className="md:col-span-8 lg:col-span-9">
-            <div className="mb-10 space-y-5">
-              <p className="font-body text-copy text-stone-800">
-                Ответим в течение суток.
-              </p>
-              <a
-                href={site.telegram}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block font-body text-ui bg-stone-900 text-white px-6 py-4 hover:bg-stone-700"
-              >
-                Написать в Telegram
-              </a>
-            </div>
-            <div className="divide-y divide-stone-200">
-              {CONTACTS.map(({ label, value, href, external }) => (
-                <div
-                  key={label}
-                  className="py-8 first:pt-0 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-8 items-center"
-                >
-                  <p className="font-body text-caption text-stone-600 tracking-[0.08em] uppercase">
-                    {bindPrepositions(label)}
-                  </p>
+
+          <div className="min-w-0 md:col-span-6 md:col-start-7 md:pt-1">
+            <ul className="border-t border-stone-300">
+              {contacts.map(({ label, value, href, external }) => (
+                <li key={label} className="border-b border-stone-300">
                   <a
                     href={href}
                     target={external ? "_blank" : undefined}
                     rel={external ? "noopener noreferrer" : undefined}
-                    className="sm:col-span-2 font-body text-ui text-stone-900 hover:text-stone-600 transition-colors duration-200 [overflow-wrap:anywhere]"
+                    className="group flex min-h-28 items-center justify-between gap-5 py-6 transition-colors duration-200 hover:text-stone-500 md:min-h-32 md:py-7"
                   >
-                    {bindPrepositions(value)}
+                    <span className="min-w-0">
+                      <span className="mb-2 block font-body text-caption uppercase tracking-[0.08em] text-stone-600">
+                        {label}
+                      </span>
+                      <span className="block font-body text-price leading-snug [overflow-wrap:anywhere]">
+                        {value}
+                      </span>
+                    </span>
+                    <ArrowUpRight
+                      aria-hidden="true"
+                      strokeWidth={1}
+                      className="h-6 w-6 shrink-0 motion-safe:transition-transform motion-safe:group-hover:-translate-y-0.5 motion-safe:group-hover:translate-x-0.5"
+                    />
                   </a>
-                </div>
+                </li>
               ))}
-            </div>
-            <p className="font-body text-ui text-stone-600 leading-relaxed mt-8">
+            </ul>
+            <p className="mt-6 max-w-xl font-body text-ui leading-relaxed text-stone-600 md:mt-8">
               По вопросам возврата или повреждения посылки напишите на{" "}
               <a
                 href={`mailto:${site.email}`}
-                className="underline underline-offset-4 [overflow-wrap:anywhere]"
+                className="underline underline-offset-4 transition-colors hover:text-stone-900 [overflow-wrap:anywhere]"
               >
                 {site.email}
               </a>{" "}
-              и укажите номер заказа. Сообщим адрес и порядок обратной отправки.
+              и укажите номер заказа. Сообщим порядок действий.
             </p>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Студия ── */}
-      <section className="border-t border-stone-200 py-12 md:py-28 px-6 md:px-12 lg:px-16 bg-stone-100">
-        <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-8">
-          <div className="md:col-span-4 lg:col-span-3">
-            <p className="font-body text-caption text-stone-600 tracking-[0.08em] uppercase">
-              Студия
-            </p>
-          </div>
-          <div className="md:col-span-8 lg:col-span-9 max-w-xl">
-            <p className="font-body text-copy text-stone-900 mb-3">Москва</p>
-            <p className="font-body text-copy text-stone-900 mb-3">
-              Самозанятая {bindPrepositions(seller.name)}. ИНН{" "}
-              {bindPrepositions(seller.inn)}.
-            </p>
-            <p className="font-body text-copy text-stone-800 leading-loose">
-              Мы работаем по предварительной записи. Посещение мастерской
-              возможно — напишите нам, чтобы договориться о времени.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Индивидуальные заказы ── */}
-      <section className="border-t border-stone-200 py-20 md:py-28 px-6 md:px-12 lg:px-16">
-        <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-8">
-          <div className="md:col-span-4 lg:col-span-3">
-            <p className="font-body text-caption text-stone-600 tracking-[0.08em] uppercase">
-              Сотрудничество
-            </p>
-          </div>
-          <div className="md:col-span-8 lg:col-span-9 max-w-xl space-y-8">
-            <p className="font-body text-copy text-stone-800 leading-loose">
-              Мы открыты для индивидуальных заказов и коллабораций. Сервиз
-              для ресторана, подарочный набор, корпоративный заказ — расскажите
-              о своей идее, и мы обсудим детали.
-            </p>
-            <a
-              href={"mailto:" + site.email}
-              className="inline-block font-body text-caption tracking-[0.08em] uppercase bg-stone-900 text-stone-50 px-8 py-4 hover:bg-stone-700 transition-colors duration-300"
-            >
-              Написать письмо
-            </a>
           </div>
         </div>
       </section>

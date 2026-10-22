@@ -18,7 +18,8 @@ export const getSiteContent = cache(
       const parsed = siteSchema.safeParse(data?.payload);
       return parsed.success ? parsed.data : defaultSite;
     },
-    ["public-site-content"],
+    // Refresh cached payloads when applying the Telegram contact migration.
+    ["public-site-content-v2"],
     { tags: ["site"], revalidate: 60 },
   ),
 );

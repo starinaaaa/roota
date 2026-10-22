@@ -53,7 +53,7 @@ export default async function ContactsPage() {
                 <span className="col-span-2 font-body text-ui text-stone-600 md:col-span-1">
                   {label}
                 </span>
-                <span className="min-w-0 font-display text-price [overflow-wrap:anywhere]">
+                <span className="min-w-0 font-display text-price max-[360px]:text-[18px] [overflow-wrap:anywhere]">
                   {value}
                 </span>
                 <ArrowUpRight

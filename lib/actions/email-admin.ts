@@ -9,6 +9,8 @@ import { sendUnisenderEmail } from "@/lib/email/unisender-transport";
 import { randomUUID } from "node:crypto";
 import { siteUrl } from "@/lib/seo";
 import { studioEmailMessage } from "@/lib/email/studio-notifications";
+import { LEGAL_VERSION } from "@/lib/legal";
+import { ozonTrackingHint } from "@/lib/delivery/tracking";
 
 export async function testStudioNotification() {
   await requireAdmin();
@@ -141,6 +143,7 @@ export async function testEmailTemplate(form: FormData) {
       t,
       {
         number: "GL-ТЕСТ",
+        legal_version: LEGAL_VERSION,
         total: "3500",
         items: "Тарелочка × 1 — 3500 ₽",
         product: "Тарелочка",
@@ -151,6 +154,7 @@ export async function testEmailTemplate(form: FormData) {
         delivery: "Пункт выдачи Ozon",
         address: "Адрес выбранного пункта",
         tracking: "Появится после оформления отправления",
+        tracking_hint: ozonTrackingHint(false),
         fulfillment:
           "Готовые изделия передаём в доставку в течение 1–3 рабочих дней после оплаты.",
         reservation: "Тестовый резерв",

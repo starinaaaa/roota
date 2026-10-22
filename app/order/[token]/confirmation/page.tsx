@@ -11,6 +11,8 @@ import {
   returnInstructionsForVersion,
 } from "@/lib/shop-policies";
 import { legalArchives } from "@/lib/legal-documents";
+import { relationList } from "@/lib/relation-list";
+import { ozonTrackingHint } from "@/lib/delivery/tracking";
 import PrintConfirmation from "./PrintConfirmation";
 import "./print.css";
 
@@ -33,12 +35,13 @@ export default async function ConfirmationPage({
   const { data: order, error } = await createServerClient()
     .from("orders")
     .select(
-      "order_number,created_at,customer_name,status,payment_status,delivery_stage,total_amount,delivery_amount,insurance_amount,delivery_type,delivery_address,delivery_details,tracking_number,request_payload,items:order_items(id,product_name,quantity,price,purchase_mode,lead_time_days)",
+      "order_number,created_at,customer_name,status,payment_status,delivery_stage,total_amount,delivery_amount,insurance_amount,delivery_type,delivery_address,delivery_details,tracking_number,request_payload,shipments:order_shipments(state,posting_number),items:order_items(id,product_name,quantity,price,purchase_mode,lead_time_days)",
     )
     .eq("id", orderId)
     .single();
   if (error || !order)
     throw new Error("Не удалось загрузить подтверждение покупки");
+  const shipment = relationList(order.shipments)[0];
   const state = customerOrderState({
     ...order,
     hasPreorder: order.items.some((i) => i.purchase_mode === "preorder"),
@@ -165,10 +168,18 @@ export default async function ConfirmationPage({
           <p className="text-stone-600">
             Номер отправления:{" "}
             {order.tracking_number ||
+              shipment?.posting_number ||
               (courier
                 ? "Детали отправки сообщим в Telegram"
                 : "Появится после оформления отправления")}
           </p>
+          {order.delivery_details?.provider === "ozon" && (
+            <p className="text-caption text-stone-600">
+              {ozonTrackingHint(
+                shipment?.state === "created" && !!shipment.posting_number,
+              )}
+            </p>
+          )}
         </section>
         <section className="mt-8 pt-6 border-t border-stone-200 space-y-3">
           <h2 className="font-display text-price">Возврат и обращение</h2>

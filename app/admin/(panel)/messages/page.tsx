@@ -10,6 +10,8 @@ import {
   testStudioNotification,
 } from "@/lib/actions/email-admin";
 import { renderEmail } from "@/lib/email/templates";
+import { LEGAL_VERSION } from "@/lib/legal";
+import { ozonTrackingHint } from "@/lib/delivery/tracking";
 export const dynamic = "force-dynamic";
 export default async function MessagesPage() {
   await requireAdmin();
@@ -126,6 +128,12 @@ export default async function MessagesPage() {
         }
         . Ссылка и отписка добавляются автоматически.
       </p>
+      <p className="text-sm text-stone-600">
+        Здесь редактируются тема и основной текст письма. Оформление, состав
+        заказа и блок возврата задаются в коде. Предпросмотр показывает условия
+        новых заказов — 7 дней на возврат; для прежних заказов сохраняются
+        условия на момент покупки.
+      </p>
       {templates.data.map((t) => (
         <details key={t.kind} className="admin-card">
           <summary>
@@ -179,6 +187,7 @@ export default async function MessagesPage() {
               renderEmail(
                 t,
                 {
+                  legal_version: LEGAL_VERSION,
                   number: "GL-ТЕСТ",
                   total: "3500",
                   items: "Тарелочка × 1",
@@ -191,6 +200,7 @@ export default async function MessagesPage() {
                   delivery: "Пункт выдачи Ozon",
                   address: "Адрес выбранного пункта",
                   tracking: "Появится после оформления отправления",
+                  tracking_hint: ozonTrackingHint(false),
                   fulfillment:
                     "Готовые изделия передаём в доставку в течение 1–3 рабочих дней после оплаты.",
                   purpose: "уведомление",

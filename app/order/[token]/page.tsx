@@ -12,6 +12,7 @@ import { getSiteContent } from "@/lib/site";
 import { paymentExpired } from "@/lib/payments/model";
 import { paymentMode } from "@/lib/payments/robokassa";
 import OrderPageControls from "@/components/order/OrderPageControls";
+import { ozonTrackingHint } from "@/lib/delivery/tracking";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -42,7 +43,7 @@ export default async function CustomerOrderPage({
     createServerClient()
       .from("orders")
       .select(
-        "order_number,created_at,status,payment_status,total_amount,delivery_amount,insurance_amount,delivery_type,delivery_address,delivery_details,tracking_number,delivery_stage,items:order_items(id,product_id,product_name,quantity,price,purchase_mode,lead_time_days),shipments:order_shipments(posting_number,carrier_status,synced_at)",
+        "order_number,created_at,status,payment_status,total_amount,delivery_amount,insurance_amount,delivery_type,delivery_address,delivery_details,tracking_number,delivery_stage,items:order_items(id,product_id,product_name,quantity,price,purchase_mode,lead_time_days),shipments:order_shipments(state,posting_number,carrier_status,synced_at)",
       )
       .eq("id", orderId)
       .single(),
@@ -224,20 +225,17 @@ export default async function CustomerOrderPage({
               <div className="space-y-2">
                 <p className="text-caption text-stone-500">Номер отправления</p>
                 <p className="break-all">{tracking}</p>
-                {order.delivery_details?.provider === "ozon" && (
-                  <a
-                    href="https://www.ozon.ru/my/orderlist"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-block underline underline-offset-4"
-                  >
-                    Открыть заказы в Ozon ↗
-                  </a>
-                )}
                 <p className="text-caption text-stone-500">
                   Актуальный статус доставки отображается на этой странице.
                 </p>
               </div>
+            )}
+            {order.delivery_details?.provider === "ozon" && (
+              <p className="text-caption text-stone-600">
+                {ozonTrackingHint(
+                  shipment?.state === "created" && !!shipment.posting_number,
+                )}
+              </p>
             )}
             {shipment?.synced_at && (
               <p className="text-caption text-stone-500">

@@ -6,6 +6,7 @@ import { ensureOrderLink } from "@/lib/order-access";
 import { siteUrl } from "@/lib/seo";
 import { sendEmail } from "./server";
 import { renderEmail, marketingKinds, type EmailOrderItem } from "./templates";
+import { ozonTrackingHint } from "@/lib/delivery/tracking";
 export async function processEmailQueue() {
   if (
     process.env.CUSTOMER_EMAILS_ENABLED !== "true" ||
@@ -56,7 +57,7 @@ export async function processEmailQueue() {
         const { data: o, error: oe } = await db
           .from("orders")
           .select(
-            "order_number,created_at,customer_name,total_amount,delivery_amount,insurance_amount,delivery_type,delivery_address,delivery_details,tracking_number,request_payload,order_items(product_id,product_name,quantity,price,purchase_mode,lead_time_days),payments(expires_at,status,paid_at),order_shipments(posting_number)",
+            "order_number,created_at,customer_name,total_amount,delivery_amount,insurance_amount,delivery_type,delivery_address,delivery_details,tracking_number,request_payload,order_items(product_id,product_name,quantity,price,purchase_mode,lead_time_days),payments(expires_at,status,paid_at),order_shipments(state,posting_number)",
           )
           .eq("id", m.order_id)
           .single();
@@ -89,9 +90,16 @@ export async function processEmailQueue() {
           : money(
               Number(o.delivery_amount ?? 0) + Number(o.insurance_amount ?? 0),
             );
+        const shipment = relationList(o.order_shipments)[0];
+        values.tracking_hint =
+          o.delivery_details?.provider === "ozon"
+            ? ozonTrackingHint(
+                shipment?.state === "created" && !!shipment.posting_number,
+              )
+            : "";
         values.tracking =
           o.tracking_number ||
-          relationList(o.order_shipments)[0]?.posting_number ||
+          shipment?.posting_number ||
           (courier
             ? "Время и стоимость доставки согласуем с вами в Telegram"
             : "Появится после оформления отправления");

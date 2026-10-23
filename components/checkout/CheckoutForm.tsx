@@ -1,5 +1,6 @@
 "use client";
 
+import { trackCheckoutProgress } from "@/lib/analytics/checkout-client";
 import { bindPrepositions } from "@/lib/typography";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -74,9 +75,11 @@ export default function CheckoutForm({
   });
 
   useEffect(() => {
+    let restoredMethod: "ozon_point" | "yandex_courier" = "ozon_point";
     try {
       const draft = readCheckoutDraft(localStorage.getItem(storageKey));
       if (draft) {
+        restoredMethod = draft.deliveryMethod;
         setFormData((prev) => ({
           ...prev,
           firstName: draft.firstName,
@@ -100,6 +103,7 @@ export default function CheckoutForm({
     } catch {
       /* Private browsing or disabled storage must not prevent checkout. */
     }
+    trackCheckoutProgress({ stage: "checkout_opened", method: restoredMethod });
     setDraftReady(true);
   }, [storageKey]);
   useEffect(() => {
@@ -138,6 +142,7 @@ export default function CheckoutForm({
   const courier = formData.deliveryMethod === "yandex_courier";
 
   function selectDelivery(method: "ozon_point" | "yandex_courier") {
+    trackCheckoutProgress({ stage: "delivery_started", method });
     setQuote(null);
     setFormData((prev) => ({
       ...prev,
@@ -192,7 +197,14 @@ export default function CheckoutForm({
       deliveryQuoteId: next?.id,
       address: next?.point.address ?? "",
     }));
-    if (next) setError(null);
+    if (next) {
+      trackCheckoutProgress({
+        stage: "delivery_quote_seen",
+        method: "ozon_point",
+        quote: next.id,
+      });
+      setError(null);
+    }
   }
   function validateField(name: string) {
     const parsed = checkoutSchema.safeParse(formData);
@@ -242,6 +254,10 @@ export default function CheckoutForm({
         : (quote?.point.address ?? "Пункт ещё не выбран"),
     });
     if (!validated.success) {
+      trackCheckoutProgress({
+        stage: "validation_error",
+        method: formData.deliveryMethod!,
+      });
       const fields: Record<string, string> = {};
       for (const issue of validated.error.issues) {
         const name = String(issue.path[0]);
@@ -254,6 +270,10 @@ export default function CheckoutForm({
     }
     setFieldErrors({});
     if ((!courier && !quote) || finalTotal === null) {
+      trackCheckoutProgress({
+        stage: "delivery_started",
+        method: "ozon_point",
+      });
       setError("Выберите пункт выдачи и рассчитайте доставку.");
       return;
     }
@@ -289,6 +309,10 @@ export default function CheckoutForm({
         /достав|упаков|Корзина|Цена изменилась/i.test(result.error)
       )
         receiveQuote(null);
+      trackCheckoutProgress({
+        stage: "order_error",
+        method: formData.deliveryMethod!,
+      });
       setError(result.error);
       setPending(false);
       submitting.current = false;

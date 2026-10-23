@@ -1,4 +1,5 @@
 "use client";
+import { trackCheckoutProgress } from "@/lib/analytics/checkout-client";
 import { bindPrepositions } from "@/lib/typography";
 import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
@@ -158,6 +159,7 @@ export default function DeliverySelector({
     };
   }, [city, selectedCity]);
   function selectCity(value: DeliveryCity) {
+    trackCheckoutProgress({ stage: "delivery_started", method: "ozon_point" });
     reset();
     setCity(value.name);
     setSelectedCity(value);
@@ -237,6 +239,11 @@ export default function DeliverySelector({
     setBusy(true);
     setError("");
     if (action === "quote") {
+      trackCheckoutProgress({
+        stage: "point_selected",
+        method: "ozon_point",
+        point: selected!.id,
+      });
       setPoint(selected!);
       setQuote(null);
       onQuoteRef.current(null);
@@ -261,10 +268,16 @@ export default function DeliverySelector({
       onQuoteRef.current(result.quote);
       setOpen(false);
     } catch (e) {
-      if (version === revision.current && !abort.signal.aborted)
+      if (version === revision.current && !abort.signal.aborted) {
+        trackCheckoutProgress({
+          stage: "delivery_error",
+          method: "ozon_point",
+          point: selected?.id,
+        });
         setError(
           e instanceof Error ? e.message : "Не удалось рассчитать доставку.",
         );
+      }
     } finally {
       if (version === revision.current) setBusy(false);
     }
@@ -272,6 +285,11 @@ export default function DeliverySelector({
   const validPhone = Boolean(normalizeRussianPhone(phone));
   const visible = points;
   function choose(p: DeliveryPoint) {
+    trackCheckoutProgress({
+      stage: "point_selected",
+      method: "ozon_point",
+      point: p.id,
+    });
     if (!validPhone) {
       setPoint(p);
       setOpen(false);

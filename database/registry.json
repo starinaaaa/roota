@@ -440,6 +440,8 @@
     "subscribe_restock",
     "sync_checkout_email_consent",
     "sync_in_stock",
-    "sync_product_state"
+    "sync_product_state",
+    "analytics_product_report",
+    "analytics_funnel_report"
   ]
 }

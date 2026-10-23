@@ -4,8 +4,7 @@ import { readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { PGlite } from "@electric-sql/pglite";
 
-const migration =
-  "database/migrations/20261017_product_conversion.sql";
+const migration = "database/migrations/20261017_product_conversion.sql";
 type Report = {
   totals: {
     views: number;
@@ -67,7 +66,7 @@ async function fixture() {
     for (const [product, quantity] of items)
       await db.query("insert into order_items values($1,$2,$3)", [
         order,
-        product,
+        product ? [product] : null,
         quantity,
       ]);
     await db.query(
@@ -88,10 +87,10 @@ async function fixture() {
   };
   const report = async (product: string | null, days = 30) =>
     (
-      await db.query<{ r: Report }>("select product_funnel_report($1,$2) r", [
-        days,
-        product,
-      ])
+      await db.query<{ r: Report }>(
+        "select analytics_product_report($1,$2) r",
+        [days, product ? [product] : null],
+      )
     ).rows[0].r;
   return {
     db,
@@ -100,7 +99,15 @@ async function fixture() {
     event,
     sale,
     report,
-    migrate: async () => db.exec(await readFile(migration, "utf8")),
+    migrate: async () => {
+      await db.exec(await readFile(migration, "utf8"));
+      await db.exec(
+        await readFile(
+          "database/migrations/20261023_analytics_filters.sql",
+          "utf8",
+        ),
+      );
+    },
   };
 }
 
@@ -221,8 +228,136 @@ test("periods, sandbox payments, old orders and SQL permissions do not inflate c
       await assert.rejects(f.report(null), /permission denied/);
       await f.db.exec("reset role");
     }
-    await f.db.exec("grant select on funnel_events,funnel_sessions to roota_app; set role roota_app");
+    await f.db.exec(
+      "grant select on funnel_events,funnel_sessions to roota_app; set role roota_app",
+    );
     assert.equal((await f.report(f.plate)).totals.payments, 1);
+  } finally {
+    await f.db.close();
+  }
+});
+
+test("multiple products deduplicate browsers and orders, and excluded browsers disappear from every report", async () => {
+  const f = await fixture();
+  try {
+    await f.migrate();
+    const buyer = randomUUID(),
+      third = randomUUID(),
+      other = randomUUID();
+    await f.db.query("insert into products values($1,'third')", [third]);
+    for (const slug of ["plate", "cup"])
+      await f.event(buyer, "page_view", `/product/${slug}`, "1 day");
+    for (const id of [f.plate, f.cup])
+      await f.event(buyer, "add_to_cart", id, "1 day");
+    await f.event(buyer, "checkout_started", "/checkout", "1 day");
+    await f.event(buyer, "checkout_error", "order_submission");
+    await f.sale(buyer, [
+      [f.plate, 2],
+      [f.cup, 3],
+      [third, 7],
+    ]);
+    await f.event(other, "page_view", "/product/third");
+    await f.event(other, "add_to_cart", third);
+    const report = async () =>
+      (
+        await f.db.query<{ r: Report }>(
+          "select analytics_product_report(30,$1) r",
+          [[f.plate, f.cup]],
+        )
+      ).rows[0].r;
+    assert.deepEqual((await report()).totals, {
+      views: 1,
+      carts: 1,
+      payments: 1,
+      paid_orders: 1,
+      units: 5,
+    });
+    assert.equal((await report()).sources[0].carts, 1);
+    assert.equal((await f.report(null)).totals.views, 2);
+    await f.db.query(
+      "insert into analytics_excluded_sessions values(md5($1))",
+      [buyer],
+    );
+    assert.deepEqual((await report()).totals, {
+      views: 0,
+      carts: 0,
+      payments: 0,
+      paid_orders: 0,
+      units: 0,
+    });
+    assert.deepEqual((await report()).sources, []);
+    const general = (
+      await f.db.query<{
+        r: { totals: { views: number; payments: number }; errors: unknown[] };
+      }>("select analytics_funnel_report(30) r")
+    ).rows[0].r;
+    assert.equal(general.totals.views, 1);
+    assert.equal(general.totals.payments, 0);
+    assert.deepEqual(general.errors, []);
+    // A later payment trigger still cannot bring an excluded browser back.
+    await f.sale(buyer, [[f.plate, 9]]);
+    assert.equal((await report()).totals.paid_orders, 0);
+    for (const role of ["anon", "authenticated"]) {
+      await f.db.exec(`set role ${role}`);
+      await assert.rejects(
+        f.db.query("select analytics_funnel_report()"),
+        /permission denied/,
+      );
+      await f.db.exec("reset role");
+    }
+  } finally {
+    await f.db.close();
+  }
+});
+
+test("custom dates include both Moscow calendar days with exclusive next-midnight boundary", async () => {
+  const f = await fixture();
+  try {
+    await f.migrate();
+    const times = [
+      "2026-10-21T20:59:59Z",
+      "2026-10-21T21:00:00Z",
+      "2026-10-23T20:59:59Z",
+      "2026-10-23T21:00:00Z",
+    ];
+    for (const time of times) {
+      const browser = randomUUID();
+      await f.event(browser, "page_view", "/product/plate");
+      await f.event(browser, "add_to_cart", f.plate);
+      await f.event(browser, "checkout_error", "order_submission");
+      await f.sale(browser, [[f.plate, 2]]);
+      await f.db.query(
+        "update funnel_events set created_at=$2 where session_id=md5($1)",
+        [browser, time],
+      );
+    }
+    const report = (
+      await f.db.query<{ r: Report }>(
+        "select analytics_product_report(30,$1,'2026-10-22','2026-10-23') r",
+        [[f.plate]],
+      )
+    ).rows[0].r;
+    assert.deepEqual(report.totals, {
+      views: 2,
+      carts: 2,
+      payments: 2,
+      paid_orders: 2,
+      units: 4,
+    });
+    const general = (
+      await f.db.query<{
+        r: { totals: { views: number }; errors: { total: number }[] };
+      }>("select analytics_funnel_report(30,'2026-10-22','2026-10-23') r")
+    ).rows[0].r;
+    assert.equal(general.totals.views, 2);
+    assert.equal(general.errors[0].total, 2);
+    const singleDay = (
+      await f.db.query<{ r: Report }>(
+        "select analytics_product_report(30,$1,'2026-10-22','2026-10-22') r",
+        [[f.plate]],
+      )
+    ).rows[0].r;
+    assert.equal(singleDay.totals.views, 1);
   } finally {
     await f.db.close();
   }

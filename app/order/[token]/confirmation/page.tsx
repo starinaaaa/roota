@@ -1,3 +1,4 @@
+import { shipmentPostings } from "@/lib/delivery/parcel-status";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -35,7 +36,7 @@ export default async function ConfirmationPage({
   const { data: order, error } = await createServerClient()
     .from("orders")
     .select(
-      "order_number,created_at,customer_name,status,payment_status,delivery_stage,total_amount,delivery_amount,insurance_amount,delivery_type,delivery_address,delivery_details,tracking_number,request_payload,shipments:order_shipments(state,posting_number),items:order_items(id,product_name,quantity,price,purchase_mode,lead_time_days)",
+      "order_number,created_at,customer_name,status,payment_status,delivery_stage,total_amount,delivery_amount,insurance_amount,delivery_type,delivery_address,delivery_details,tracking_number,request_payload,shipments:order_shipments(state,posting_number,status_history),items:order_items(id,product_name,quantity,price,purchase_mode,lead_time_days)",
     )
     .eq("id", orderId)
     .single();
@@ -166,9 +167,11 @@ export default async function ConfirmationPage({
           {courier && <p className="text-stone-600">{COURIER_DESCRIPTION}</p>}
           <p>Получатель: {order.customer_name}</p>
           <p className="text-stone-600">
-            Номер отправления:{" "}
-            {order.tracking_number ||
-              shipment?.posting_number ||
+            Номера отправлений:{" "}
+            {shipmentPostings(shipment ?? {})
+              .map((p) => p.posting_number)
+              .join(", ") ||
+              order.tracking_number ||
               (courier
                 ? "Детали отправки сообщим в Telegram"
                 : "Появится после оформления отправления")}

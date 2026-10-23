@@ -203,6 +203,11 @@ export class OzonTransport {
       console.warn("Ozon API rejected", path, response.status, reason);
       throw new OzonApiError(path, response.status, reason);
     }
+    // Mutation acknowledgements can have an empty body; confirm their result via posting/info.
+    if (path === "/v1/posting/cancel" || path === "/v1/posting/approve") {
+      const body = await response.text();
+      return (body.trim() ? JSON.parse(body) : {}) as T;
+    }
     return response.json() as Promise<T>;
   }
 }

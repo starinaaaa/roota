@@ -1,6 +1,11 @@
 import "server-only";
 import { createServerClient } from "@/lib/db";
 import { ozonTransport } from "./ozon";
+import {
+  shipmentPostings,
+  aggregatePostingStatus,
+  type CarrierPosting,
+} from "./parcel-status";
 import { postingInfoSchema, postingHistorySchema } from "./posting-status";
 
 export async function syncOrderShipments() {
@@ -13,29 +18,48 @@ export async function syncOrderShipments() {
     order_id: string;
     posting_number: string;
     sync_claim: string;
+    status_history?: { postings?: CarrierPosting[] };
   }[];
   if (!rows.length) return { checked: 0, updated: 0, failed: 0 };
   const result = { checked: rows.length, updated: 0, failed: 0 };
   try {
     const transport = ozonTransport();
     // 1–100 posting numbers per request are supported by Ozon; claim batches of 20.
-    const info = postingInfoSchema.parse(
-      await transport.call("/v1/posting/info", {
-        posting_numbers: rows.map((row) => row.posting_number),
-      }),
-    );
-    const byNumber = new Map(info.postings.map((p) => [p.posting_number, p]));
+    const numbers = [
+      ...new Set(
+        rows.flatMap((row) =>
+          shipmentPostings(row).map((p) => p.posting_number),
+        ),
+      ),
+    ];
+    const byNumber = new Map<
+      string,
+      ReturnType<typeof postingInfoSchema.parse>["postings"][number]
+    >();
+    for (let offset = 0; offset < numbers.length; offset += 100) {
+      const info = postingInfoSchema.parse(
+        await transport.call("/v1/posting/info", {
+          posting_numbers: numbers.slice(offset, offset + 100),
+        }),
+      );
+      for (const posting of info.postings)
+        byNumber.set(posting.posting_number, posting);
+    }
     const syncOne = async (row: (typeof rows)[number]) => {
       try {
-        const posting = byNumber.get(row.posting_number);
-        if (!posting) throw new Error("POSTING_NOT_FOUND");
+        const expected = shipmentPostings(row);
+        const postings = expected.map((p) => byNumber.get(p.posting_number));
+        if (postings.some((p) => !p)) throw new Error("POSTING_NOT_FOUND");
+        const status = aggregatePostingStatus(
+          postings as NonNullable<(typeof postings)[number]>[],
+        );
         const { data: previous } = await db
           .from("order_shipments")
           .select("carrier_status,status_history")
           .eq("order_id", row.order_id)
           .single();
         let history = previous?.status_history;
-        if (previous?.carrier_status !== posting.status || !history?.history) {
+        if (previous?.carrier_status !== status || !history?.history) {
           // History enriches the page but its outage must not block the current trusted status.
           try {
             history = postingHistorySchema.parse(
@@ -52,9 +76,19 @@ export async function syncOrderShipments() {
           {
             p_order: row.order_id,
             p_posting: row.posting_number,
-            p_status: posting.status,
-            p_changed: posting.status_changed_at,
-            p_history: history ?? {},
+            p_status: status,
+            p_changed: postings
+              .map((p) => p!.status_changed_at)
+              .sort()
+              .at(-1),
+            p_history: {
+              ...previous?.status_history,
+              ...(history ?? {}),
+              postings: expected.map((p) => ({
+                ...p,
+                ...byNumber.get(p.posting_number),
+              })),
+            },
             p_claim: row.sync_claim,
           },
         );

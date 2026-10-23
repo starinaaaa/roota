@@ -7,7 +7,7 @@ import { phone, uuid } from "@/lib/validation";
 import {
   cartSnapshot,
   pointInCity,
-  packingFor,
+  packingForParcels,
   type DeliveryContext,
   type DeliveryPoint,
   type DeliveryQuote,
@@ -48,7 +48,19 @@ export async function deliveryContext(
       purchase_mode: i.purchase_mode ?? "stock",
     })),
   );
-  const packing = packingFor(items, rules as PackingRule[]);
+  const { data: plateCategory, error: categoryError } =
+    await createServerClient()
+      .from("categories")
+      .select("id")
+      .eq("slug", "plates")
+      .single();
+  if (categoryError || !plateCategory)
+    throw new Error("Не удалось проверить категорию упаковки.");
+  const packing = packingForParcels(
+    items,
+    rules as PackingRule[],
+    plateCategory.id,
+  );
   const days = Number(process.env.OZON_HANDLING_DAYS);
   const productionDays = Math.max(
     0,
@@ -90,7 +102,7 @@ export async function quoteDelivery(
   if (existingId) {
     const { data: old, error } = await createServerClient()
       .from("delivery_quotes")
-      .select("cart_snapshot,packing_rule_id,packing_updated_at")
+      .select("cart_snapshot,packing_rule_id,packing_updated_at,packing")
       .eq("id", existingId)
       .eq("cart_session", session)
       .single();
@@ -104,6 +116,22 @@ export async function quoteDelivery(
         "Корзина изменилась. Обновите страницу и пересчитайте доставку.",
       );
     if (
+      JSON.stringify(
+        old.packing.parcels?.map(
+          (p: { packing: PackingRule; items: DeliveryContext["items"] }) => [
+            p.packing.id,
+            Date.parse(p.packing.updated_at),
+            cartSnapshot(p.items),
+          ],
+        ),
+      ) !==
+        JSON.stringify(
+          context.packing.parcels?.map((p) => [
+            p.packing.id,
+            Date.parse(p.packing.updated_at),
+            cartSnapshot(p.items),
+          ]),
+        ) ||
       old.packing_rule_id !== context.packing.id ||
       Date.parse(old.packing_updated_at) !==
         Date.parse(context.packing.updated_at)
@@ -126,8 +154,7 @@ export async function quoteDelivery(
   const point = publicPoint(info),
     id = existingId ?? crypto.randomUUID(),
     expiresAt = new Date(Date.now() + 10 * 60000).toISOString();
-  const totalCost =
-    Math.round((deliveryCost + cost.insuranceCost) * 100) / 100;
+  const totalCost = Math.round((deliveryCost + cost.insuranceCost) * 100) / 100;
   const row = {
     id,
     cart_session: session,

@@ -289,6 +289,38 @@ test("delivery checkout adds exact charges, rejects tampering and stale quotes, 
       "select checkout_delivery_order($1,$2,$3,$4,$5) result",
       [sessionId, key, form, total, quote],
     );
+  await db.exec(
+    await readFile(
+      "database/migrations/20261023_parcel_packing_validation.sql",
+      "utf8",
+    ),
+  );
+  // A changed remainder rule invalidates the quote even when its primary rule is unchanged.
+  const remainder = (
+    await db.query<PackingRule>(
+      "select * from delivery_packing_rules where id<>$1 limit 1",
+      [rule.id],
+    )
+  ).rows[0];
+  await db.query("update delivery_quotes set packing=$1 where id=$2", [
+    {
+      ...rule,
+      parcels: [
+        { items: snapshot, packing: rule },
+        { items: snapshot, packing: remainder },
+      ],
+    },
+    quote,
+  ]);
+  await db.query(
+    "update delivery_packing_rules set weight_g=weight_g+1 where id=$1",
+    [remainder.id],
+  );
+  await assert.rejects(call(), /PACKING_CHANGED/);
+  await db.query("update delivery_quotes set packing=$1 where id=$2", [
+    rule,
+    quote,
+  ]);
   await assert.rejects(call(100), /PRICE_CHANGED/);
   await assert.rejects(call(505.03, randomUUID()), /DELIVERY_EXPIRED/);
   await db.exec(
@@ -363,6 +395,38 @@ test("delivery checkout adds exact charges, rejects tampering and stale quotes, 
   ).rows[0].result;
   assert.equal(retry.idempotency_key, claim.idempotency_key);
   assert.deepEqual(retry.request_payload, { frozen: 1 });
+  await db.exec(
+    await readFile(
+      "database/migrations/20261023_plate_parcel_weights.sql",
+      "utf8",
+    ),
+  );
+  const updatedRules = (
+    await db.query<{
+      weight_g: number;
+      length_mm: number;
+      width_mm: number;
+      height_mm: number;
+    }>(
+      "select weight_g,length_mm,width_mm,height_mm from delivery_packing_rules where active order by weight_g",
+    )
+  ).rows;
+  assert.deepEqual(
+    updatedRules.map((r) => r.weight_g),
+    [600, 1000],
+  );
+  assert.ok(
+    updatedRules.every(
+      (r) => r.length_mm === 250 && r.width_mm === 250 && r.height_mm === 60,
+    ),
+  );
+  const frozenPacking = (
+    await db.query<{ weight: number }>(
+      "select (delivery_details#>>'{packing,weight_g}')::int as weight from orders where id=$1",
+      [result.id],
+    )
+  ).rows[0].weight;
+  assert.equal(frozenPacking, rule.weight_g);
   await db.exec("set role anon");
   await assert.rejects(
     db.query("select * from delivery_quotes"),

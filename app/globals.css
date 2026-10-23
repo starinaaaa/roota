@@ -191,7 +191,7 @@
   }
 }
 
-/* A common interaction language across the shop and administration. */
+/* Shared control feedback; link decoration belongs to each component. */
 @layer base {
   a[href],
   label:has(input[type="file"]) {
@@ -213,31 +213,14 @@
       scale 150ms ease,
       box-shadow 180ms ease;
   }
-  :is(a[href], button, label:has(input[type="file"])):focus-visible {
-    text-decoration-line: underline;
-  }
-  a:has(img):focus-visible,
-  a.brand-link:focus-visible,
-  a.site-nav-link:focus-visible {
-    text-decoration-line: none;
-  }
   input:is([type="checkbox"], [type="radio"]):not(:disabled) {
     cursor: pointer;
   }
   @media (hover: hover) and (pointer: fine) {
-    a[href]:not(:has(img)):not(.brand-link):not(.site-nav-link):not(
-        .action-row
-      ):not(.hero-action-link):hover {
-      text-decoration-line: underline;
-    }
     button:not(:disabled):not([aria-disabled="true"]):hover,
     [role="button"]:not([aria-disabled="true"]):hover,
     label:has(input[type="file"]):hover {
       filter: brightness(0.9);
-      text-decoration-line: underline;
-    }
-    button[data-custom-underline]:hover {
-      text-decoration-line: none;
     }
     input:is([type="checkbox"], [type="radio"]):not(:disabled):hover {
       outline: 2px solid #d6d3d1;
@@ -245,18 +228,6 @@
     }
     .action-row:hover {
       background-color: #f1f0ee;
-    }
-    .product-card-link:is(:hover, :focus-visible) h3 {
-      text-decoration: underline;
-      text-underline-offset: 0.2em;
-      text-decoration-thickness: 1px;
-    }
-    @media (prefers-reduced-motion: no-preference) {
-      button:not(:disabled):not([aria-disabled="true"]):hover,
-      [role="button"]:not([aria-disabled="true"]):hover,
-      label:has(input[type="file"]):hover {
-        translate: 0 -1px;
-      }
     }
     button:not(:disabled):active,
     [role="button"]:not([aria-disabled="true"]):active {

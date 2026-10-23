@@ -30,7 +30,7 @@ test("published legal edition and email consent version resolve to a preserved c
   // Once released, change the version and add a snapshot instead of editing the accepted text.
   assert.equal(
     createHash("sha256").update(bytes).digest("hex"),
-    "675f9a7bd49335735d2a7b366c49e8c0708eaa4ad30afacf6fcf59f329f0200a",
+    "92765d8a84a3bb1ff42783daf91eb08ba6373eee4a67eb49d37780ae5879f915",
   );
 });
 

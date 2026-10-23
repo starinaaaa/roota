@@ -9,7 +9,7 @@ const order = {
   deliveryType: "russia",
   address: "Москва, пункт выдачи",
   comment: "",
-  legalVersion: "2026-10-23-2",
+  legalVersion: "2026-10-23-3",
   acceptedTerms: true,
 };
 test("checkout requires explicit acceptance but never requires advertising", () => {

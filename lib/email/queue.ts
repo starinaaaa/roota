@@ -169,7 +169,9 @@ export async function processEmailQueue() {
                   resource: m.order_id,
                   token: randomBytes(32).toString("hex"),
                   confirmed_at: new Date().toISOString(),
-                  consent_version: "order-review-2026-10-14",
+                  consent_version:
+                    o.request_payload?.form?.emailConsentVersion ??
+                    "order-review-2026-10-14",
                 },
                 {
                   onConflict: "email,purpose,resource",

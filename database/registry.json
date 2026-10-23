@@ -442,6 +442,7 @@
     "sync_in_stock",
     "sync_product_state",
     "analytics_product_report",
-    "analytics_funnel_report"
+    "analytics_funnel_report",
+    "sync_checkout_notifications"
   ]
 }

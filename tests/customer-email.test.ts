@@ -10,7 +10,7 @@ import { parseSignedEmailWebhook, deliveryState } from "../lib/email/webhook";
 const migration = "supabase/migrations/20261013222235_customer_email_flows.sql";
 async function database() {
   const db = new PGlite();
-  await db.exec(`create role anon;create role authenticated;create role service_role bypassrls;
+  await db.exec(`create role anon;create role authenticated;create role service_role bypassrls;create role roota_app;
  create table products(id uuid primary key,name text,slug text,stock_qty integer,publication_status text);
  create table orders(id uuid primary key,customer_email text,status text default 'new',payment_status text default 'pending',delivery_stage text,cart_session text,reservation_state text default 'active',request_payload jsonb default '{}');
  create table order_access(order_id uuid references orders,token text);
@@ -51,6 +51,12 @@ async function database() {
   await db.exec(
     await readFile(
       "database/migrations/20261021_checkout_consents.sql",
+      "utf8",
+    ),
+  );
+  await db.exec(
+    await readFile(
+      "database/migrations/20261023_split_checkout_notifications.sql",
       "utf8",
     ),
   );
@@ -685,7 +691,7 @@ test("single checkout consent saves news and cart directly, suppresses confirmat
   }
 });
 
-test("committed order requires both explicit email choices and records their current edition before autosave", async () => {
+test("committed order keeps advertising separate and records its current edition before autosave", async () => {
   const db = await database();
   try {
     await db.query(
@@ -694,6 +700,7 @@ test("committed order requires both explicit email choices and records their cur
         randomUUID(),
         {
           form: {
+            acceptedTerms: true,
             emailConsent: true,
             reviewConsent: true,
             newsletterDataConsent: true,
@@ -892,6 +899,187 @@ test("marketing unsubscribe cancels subscription mail while order mail remains e
         )
       ).rows[0].state,
       "cancelled",
+    );
+  } finally {
+    await db.close();
+  }
+});
+
+test("required checkout notices save the basket without advertisements and disabling advertisements keeps the reminder", async () => {
+  const db = await database();
+  try {
+    const session = randomUUID(),
+      product = randomUUID();
+    await db.query(
+      "insert into products values($1,'Невидимка','invisible',10,'published')",
+      [product],
+    );
+    const items = JSON.stringify([
+      { product_id: product, quantity: 1, name: "Невидимка" },
+    ]);
+    const sync = (service: boolean, marketing: boolean) =>
+      db.query(
+        "select sync_checkout_notifications($1,'separate@example.test',$2,$3,$4,$5,$6,$7)",
+        [
+          session,
+          service,
+          marketing,
+          randomUUID().replaceAll("-", "") + randomUUID().replaceAll("-", ""),
+          randomUUID().replaceAll("-", "") + randomUUID().replaceAll("-", ""),
+          EMAIL_CONSENT_VERSION,
+          items,
+        ],
+      );
+    await sync(true, false);
+    assert.equal(
+      (
+        await db.query("select 1 from checkout_drafts where session_id=$1", [
+          session,
+        ])
+      ).rows.length,
+      1,
+    );
+    assert.equal(
+      (
+        await db.query(
+          "select 1 from email_subscriptions where purpose='news' and resource=$1 and revoked_at is null",
+          [session],
+        )
+      ).rows.length,
+      0,
+    );
+    await sync(true, true);
+    assert.equal(
+      (
+        await db.query(
+          "select 1 from email_subscriptions where purpose='news' and resource=$1 and revoked_at is null",
+          [session],
+        )
+      ).rows.length,
+      1,
+    );
+    await sync(true, false);
+    assert.equal(
+      (
+        await db.query(
+          "select 1 from email_subscriptions where purpose='cart' and resource=$1 and revoked_at is null",
+          [session],
+        )
+      ).rows.length,
+      1,
+    );
+    assert.equal(
+      (
+        await db.query(
+          "select 1 from email_subscriptions where purpose='news' and resource=$1 and revoked_at is null",
+          [session],
+        )
+      ).rows.length,
+      0,
+    );
+    await db.exec(
+      "update email_settings set marketing_enabled=true; update checkout_drafts set last_activity_at=now()-interval '3 hours'",
+    );
+    await db.query("select prepare_email_queue()");
+    assert.equal(
+      (
+        await db.query(
+          "select 1 from email_messages where kind='cart_reminder' and state='pending'",
+        )
+      ).rows.length,
+      1,
+    );
+    await sync(false, false);
+    assert.equal(
+      (
+        await db.query(
+          "select 1 from email_subscriptions where resource=$1 and revoked_at is null",
+          [session],
+        )
+      ).rows.length,
+      0,
+    );
+    assert.equal(
+      (
+        await db.query(
+          "select 1 from email_messages where kind='cart_reminder' and state='pending'",
+        )
+      ).rows.length,
+      0,
+    );
+    await assert.rejects(
+      db.query(
+        "select sync_checkout_notifications($1,'bad',true,false,$2,$3,$4,'[]')",
+        [session, "x".repeat(64), "y".repeat(64), EMAIL_CONSENT_VERSION],
+      ),
+      /INVALID_INPUT/,
+    );
+    await db.exec("set role anon");
+    await assert.rejects(
+      db.query(
+        "select sync_checkout_notifications('x','',false,false,'','','','[]')",
+      ),
+      /permission denied/,
+    );
+  } finally {
+    await db.close();
+  }
+});
+
+test("order confirmations, payment updates and review invitations do not require advertisements", async () => {
+  const db = await database();
+  try {
+    const id = randomUUID();
+    await db.query(
+      "insert into orders(id,customer_email,cart_session,request_payload) values($1,'service@example.test',$2,$3)",
+      [
+        id,
+        randomUUID(),
+        {
+          form: {
+            acceptedTerms: true,
+            emailConsent: true,
+            reviewConsent: true,
+            subscribeToNews: false,
+            newsletterDataConsent: false,
+            emailConsentVersion: EMAIL_CONSENT_VERSION,
+          },
+        },
+      ],
+    );
+    await db.query("update orders set payment_status='paid' where id=$1", [id]);
+    await db.query("update orders set delivery_stage='delivered' where id=$1", [
+      id,
+    ]);
+    const kinds = (
+      await db.query<{ kind: string }>(
+        "select kind from email_messages where order_id=$1 order by kind",
+        [id],
+      )
+    ).rows.map((r) => r.kind);
+    assert.deepEqual(kinds, [
+      "order_created",
+      "order_delivered",
+      "order_paid",
+      "review_invite",
+    ]);
+    assert.equal(
+      (
+        await db.query(
+          "select 1 from email_subscriptions where purpose='news' and email='service@example.test'",
+        )
+      ).rows.length,
+      0,
+    );
+    await db.query("select prepare_email_queue()");
+    assert.equal(
+      (
+        await db.query(
+          "select 1 from email_messages where order_id=$1 and kind='review_invite' and state='pending'",
+          [id],
+        )
+      ).rows.length,
+      1,
     );
   } finally {
     await db.close();

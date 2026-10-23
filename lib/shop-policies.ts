@@ -13,7 +13,7 @@ export function returnInstructionsForVersion(version: unknown) {
   // existing orders, including older orders without a recorded edition.
   const sevenDays =
     typeof version === "string" &&
-    /^\d{4}-\d{2}-\d{2}$/.test(version) &&
+    /^\d{4}-\d{2}-\d{2}(?:-\d+)?$/.test(version) &&
     version >= "2026-10-22";
   return `${sevenDays ? RETURN_SUMMARY : LEGACY_RETURN_SUMMARY} ${RETURN_DETAILS}`;
 }

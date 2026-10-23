@@ -38,10 +38,6 @@ export default function EmailConsent({
   const linkClass = "underline underline-offset-4 hover:text-stone-900";
   return (
     <div className="font-body text-caption leading-relaxed text-stone-600 space-y-3">
-      <p>
-        Реклама — по желанию. Отказ от неё не отключает сообщения по оформлению
-        и заказу.
-      </p>
       <div className="flex items-start gap-3">
         <input
           id="subscribeToNews"
@@ -63,18 +59,18 @@ export default function EmailConsent({
             rel="noopener noreferrer"
             className={linkClass}
           >
-            рекламные письма о новых коллекциях, скидках и распродажах
+            рекламную рассылку
           </Link>{" "}
-          и даю отдельное{" "}
+          и даю{" "}
           <Link
             href="/newsletter-data-consent"
             target="_blank"
             rel="noopener noreferrer"
             className={linkClass}
           >
-            согласие на обработку email для этой подписки
+            согласие на обработку email
           </Link>
-          . Необязательно.
+          .
         </label>
       </div>
       {error && (

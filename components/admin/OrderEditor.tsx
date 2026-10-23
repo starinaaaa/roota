@@ -1,4 +1,9 @@
 "use client";
+import {
+  shipmentPostings,
+  type CarrierPosting,
+} from "@/lib/delivery/parcel-status";
+import type { PackingRule } from "@/lib/delivery/model";
 import ActionStatus from "@/components/ui/ActionStatus";
 import {
   createOzonShipment,
@@ -32,15 +37,11 @@ type OrderData = {
   delivery_details?: {
     provider: string;
     point: { name: string; address: string };
-    packing: {
-      weight_g: number;
-      length_mm: number;
-      width_mm: number;
-      height_mm: number;
-    };
+    packing: PackingRule;
   } | null;
   shipments?: {
     state: string;
+    status_history?: { postings?: CarrierPosting[] };
     posting_number: string | null;
     carrier_status: string | null;
     last_error: string | null;
@@ -272,18 +273,27 @@ export default function OrderEditor({ order }: { order: OrderData }) {
             {order.delivery_details.point.name} ·{" "}
             {order.delivery_details.point.address}
           </p>
-          <p>
-            Посылка: {order.delivery_details.packing.weight_g} г ·{" "}
-            {order.delivery_details.packing.length_mm / 10} ×{" "}
-            {order.delivery_details.packing.width_mm / 10} ×{" "}
-            {order.delivery_details.packing.height_mm / 10} см
-          </p>
+          {(
+            order.delivery_details.packing.parcels ?? [
+              { packing: order.delivery_details.packing },
+            ]
+          ).map((parcel, index) => (
+            <p key={index}>
+              Посылка {index + 1}: {parcel.packing.weight_g} г ·{" "}
+              {parcel.packing.length_mm / 10} × {parcel.packing.width_mm / 10} ×{" "}
+              {parcel.packing.height_mm / 10} см
+            </p>
+          ))}
           <p>
             Статус Ozon:{" "}
             {order.shipments?.[0]?.carrier_status ?? "Ещё не создано"}
           </p>
-          {order.shipments?.[0]?.posting_number && (
-            <p>Отправление: {order.shipments[0].posting_number}</p>
+          {shipmentPostings(order.shipments?.[0] ?? {}).map(
+            (posting, index) => (
+              <p key={posting.posting_number}>
+                Отправление {index + 1}: {posting.posting_number}
+              </p>
+            ),
           )}
           <p className="text-sm text-stone-500">
             Статусы активных отправлений проверяются автоматически каждые 15

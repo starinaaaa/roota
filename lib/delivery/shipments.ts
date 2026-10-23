@@ -1,13 +1,24 @@
 import "server-only";
 import { createServerClient } from "@/lib/db";
-import { ozon, ozonTransport, postingFor } from "./ozon";
+import { ozon, ozonTransport, postingsFor } from "./ozon";
 import { postingInfoSchema, postingHistorySchema } from "./posting-status";
-import type { DeliveryContext, PackingRule } from "./model";
+import {
+  parcelContexts,
+  shipmentDescription,
+  type DeliveryContext,
+  type PackingRule,
+} from "./model";
+import { shipmentPostings, aggregatePostingStatus } from "./parcel-status";
 // Call this after a trusted payment callback and order confirmation, or from the checked admin action.
 // A browser payment-success redirect must never call this function or mark an order paid.
 export async function createPaidShipment(orderId: string) {
-  if (process.env.APP_ENV !== "production" || process.env.OZON_SHIPMENTS_ENABLED !== "true")
-    throw new Error("Создание реальных отправлений отключено для этого окружения.");
+  if (
+    process.env.APP_ENV !== "production" ||
+    process.env.OZON_SHIPMENTS_ENABLED !== "true"
+  )
+    throw new Error(
+      "Создание реальных отправлений отключено для этого окружения.",
+    );
   const db = createServerClient();
   const { data: o, error } = await db
     .from("orders")
@@ -28,6 +39,13 @@ export async function createPaidShipment(orderId: string) {
     .eq("order_id", orderId)
     .single();
   if (shipmentError) throw new Error("Не удалось проверить отправление.");
+  if (
+    existing.status_history?.replacement &&
+    existing.status_history.replacement.phase !== "done"
+  )
+    throw new Error(
+      "Выполняется замена отправлений. Завершите её перед повторным созданием.",
+    );
   if (existing.state === "created") return "Отправление уже создано.";
   if (
     existing.state === "creating" &&
@@ -62,29 +80,35 @@ export async function createPaidShipment(orderId: string) {
     if (
       Math.round((cost.deliveryCost + cost.insuranceCost) * 100) !==
       Math.round(
-        (Number(o.delivery_amount) - packagingFee + Number(o.insurance_amount)) *
+        (Number(o.delivery_amount) -
+          packagingFee +
+          Number(o.insurance_amount)) *
           100,
       )
     )
       throw new Error(
         "Расходы доставки изменились. Согласуйте разницу с покупателем перед созданием отправления.",
       );
-    const posting = {
-      ...postingFor(context),
-      posting_external_id: orderId + "-1",
-      description: o.items
-        .map(
-          (i: { product_name: string; quantity: number }) =>
-            `${i.product_name} × ${i.quantity}`,
-        )
-        .join("; ")
-        .slice(0, 500),
-    };
+    const parcels = parcelContexts(context);
+    const postings = postingsFor(context).map((posting, index) => ({
+      ...posting,
+      posting_external_id: `${o.order_number}-${index + 1}`,
+      description: shipmentDescription(
+        parcels[index].items.map((item) => ({
+          product_name:
+            o.items.find(
+              (i: { product_id: string }) => i.product_id === item.product_id,
+            )?.product_name ?? "Тарелка",
+          quantity: item.quantity,
+        })),
+        Boolean(context.packing.parcels),
+      ),
+    }));
     payload = {
-      order_external_id: orderId,
+      order_external_id: o.order_number,
       recipient: { phone_number: o.customer_phone, full_name: o.customer_name },
       delivery: { delivery_point: { delivery_point_id: details.point.id } },
-      postings: [posting],
+      postings,
     };
   }
   const { data: claim, error: claimError } = await db.rpc(
@@ -100,7 +124,20 @@ export async function createPaidShipment(orderId: string) {
       postings: { posting_number: string; request_id: number }[];
     }>("/v1/order/create", claim.request_payload, claim.idempotency_key);
     const posting = response.postings?.find((p) => p.request_id === 1);
-    if (!response.order_number || !posting?.posting_number)
+    const expected = claim.request_payload.postings as { request_id: number }[];
+    if (
+      !response.order_number ||
+      !posting?.posting_number ||
+      response.postings.length !== expected.length ||
+      new Set(response.postings.map((p) => p.posting_number)).size !==
+        expected.length ||
+      !expected.every(
+        (p) =>
+          response.postings.filter(
+            (r) => r.request_id === p.request_id && r.posting_number,
+          ).length === 1,
+      )
+    )
       throw new Error(
         "Не удалось подтвердить создание отправления. Повторите с тем же заказом.",
       );
@@ -111,6 +148,7 @@ export async function createPaidShipment(orderId: string) {
         order_number: response.order_number,
         posting_number: posting.posting_number,
         carrier_status: "created",
+        status_history: { postings: response.postings },
         last_error: null,
         updated_at: new Date().toISOString(),
       })
@@ -139,21 +177,29 @@ export async function refreshShipmentStatus(orderId: string) {
   const db = createServerClient();
   const { data: s, error } = await db
     .from("order_shipments")
-    .select("posting_number")
+    .select("posting_number,status_history")
     .eq("order_id", orderId)
     .single();
   if (error || !s?.posting_number)
     throw new Error("Отправление ещё не создано.");
+  if (
+    s.status_history?.replacement &&
+    s.status_history.replacement.phase !== "done"
+  )
+    throw new Error(
+      "Выполняется замена отправлений. Статус будет доступен после завершения.",
+    );
   const transport = ozonTransport();
   const result = postingInfoSchema.parse(
     await transport.call("/v1/posting/info", {
-      posting_numbers: [s.posting_number],
+      posting_numbers: shipmentPostings(s).map((p) => p.posting_number),
     }),
   );
-  const posting = result.postings.find(
-    (p) => p.posting_number === s.posting_number,
+  const expected = shipmentPostings(s);
+  const postings = expected.map((p) =>
+    result.postings.find((r) => r.posting_number === p.posting_number),
   );
-  if (!posting)
+  if (postings.some((p) => !p))
     throw new Error(
       "Ozon не нашёл отправление. Проверьте его номер и аккаунт Ozon.",
     );
@@ -170,9 +216,19 @@ export async function refreshShipmentStatus(orderId: string) {
   const { error: saveError } = await db.rpc("apply_order_shipment_status", {
     p_order: orderId,
     p_posting: s.posting_number,
-    p_status: posting.status,
-    p_changed: posting.status_changed_at,
-    p_history: history,
+    p_status: aggregatePostingStatus(postings as typeof result.postings),
+    p_changed: postings
+      .map((p) => p!.status_changed_at)
+      .sort()
+      .at(-1),
+    p_history: {
+      ...s.status_history,
+      ...history,
+      postings: expected.map((p) => ({
+        ...p,
+        ...postings.find((r) => r!.posting_number === p.posting_number),
+      })),
+    },
   });
   if (saveError) throw new Error("Статус не сохранён.");
 }

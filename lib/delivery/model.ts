@@ -10,6 +10,7 @@ export type PackingRule = Dimensions & {
   composition: { category_id: string; quantity: number }[];
   active: boolean;
   updated_at: string;
+  parcels?: { items: DeliveryContext["items"]; packing: PackingRule }[];
 };
 export type DeliveryPoint = {
   id: number;
@@ -89,6 +90,64 @@ export function packingFor(
     );
   return matches[0];
 }
+// Only plates use the two-per-box policy. Other compositions still require an exact rule.
+export function packingForParcels(
+  items: DeliveryContext["items"],
+  rules: PackingRule[],
+  plateCategoryId: string,
+): PackingRule {
+  if (!items.length || items.some((i) => i.category_id !== plateCategoryId))
+    return packingFor(items, rules);
+  const parcels: NonNullable<PackingRule["parcels"]> = [];
+  let current: DeliveryContext["items"] = [];
+  let count = 0;
+  for (const item of items) {
+    if (!Number.isSafeInteger(item.quantity) || item.quantity < 1)
+      throw new Error("Некорректное количество изделий.");
+    let remaining = item.quantity;
+    while (remaining) {
+      const quantity = Math.min(2 - count, remaining);
+      current.push({ ...item, quantity });
+      count += quantity;
+      remaining -= quantity;
+      if (count === 2) {
+        parcels.push({ items: current, packing: packingFor(current, rules) });
+        current = [];
+        count = 0;
+      }
+    }
+  }
+  if (current.length)
+    parcels.push({ items: current, packing: packingFor(current, rules) });
+  if (parcels.length > 100)
+    throw new Error("В одном заказе можно отправить не более 100 посылок.");
+  return { ...parcels[0].packing, parcels };
+}
+
+export function parcelContexts(context: DeliveryContext): DeliveryContext[] {
+  return (
+    context.packing.parcels?.map((parcel) => ({ ...context, ...parcel })) ?? [
+      context,
+    ]
+  );
+}
+
+export function shipmentDescription(
+  items: { product_name: string; quantity: number }[],
+  plates = true,
+) {
+  return items
+    .map((i) => {
+      const name =
+        !plates || /^тарелка(?:\s|$)/i.test(i.product_name)
+          ? i.product_name
+          : `Тарелка «${i.product_name}»`;
+      return `${name} × ${i.quantity}`;
+    })
+    .join("; ")
+    .slice(0, 500);
+}
+
 export function moneyToKopecks(value: unknown): number {
   if (typeof value !== "string" || !/^\d{1,8}(?:\.\d{1,2})?$/.test(value))
     throw new Error(

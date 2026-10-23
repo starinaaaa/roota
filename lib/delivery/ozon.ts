@@ -1,12 +1,5 @@
 import "server-only";
-import { ozonCheckoutError } from "./checkout-errors";
 import { OzonTransport, activeShipmentMethod } from "./ozon-transport";
-import {
-  estimatedDeliveryDays,
-  moneyToKopecks,
-  type DeliveryAdapter,
-  type DeliveryContext,
-} from "./model";
 export function ozonConfigured() {
   return Boolean(process.env.OZON_CLIENT_ID && process.env.OZON_CLIENT_SECRET);
 }
@@ -27,112 +20,11 @@ export async function shipmentMethodId(): Promise<number> {
   console.info("Ozon Delivery: active shipment method", id);
   return id;
 }
-export function postingFor(context: DeliveryContext) {
-  const p = context.packing;
-  return {
-    request_id: 1,
-    shipment_method_id: context.shipmentMethodId,
-    ...(context.cutoffAt ? { cutoff_at: context.cutoffAt } : {}),
-    declared_value: {
-      amount: context.items
-        .reduce((sum, i) => sum + i.price * i.quantity, 0)
-        .toFixed(2),
-      currency_code: "RUB",
-    },
-    dimensions: {
-      weight_g: p.weight_g,
-      length_mm: p.length_mm,
-      width_mm: p.width_mm,
-      height_mm: p.height_mm,
-    },
-  };
-}
-type Result = {
-  request_id: number;
-  delivery_point_id?: number;
-  error?: unknown;
-  posting?: {
-    estimated_delivery_cost?: { amount: string; currency_code: string };
-    estimated_insurance_cost?: { amount: string; currency_code: string };
-    estimated_delivery_days?: number | null;
-  };
-};
-export const ozon: DeliveryAdapter = {
-  id: "ozon",
-  methods: ["point"],
-  async checkRecipient(phone) {
-    const data = await ozonTransport().call<{ can_be_delivered: boolean }>(
-      "/v1/delivery/check-client",
-      { phone_number: phone },
-    );
-    if (data.can_be_delivered !== true)
-      throw new Error(
-        "Ozon не может доставить заказ по этому номеру. Укажите телефон вашего аккаунта Ozon.",
-      );
-  },
-  async checkPoints(ids, context) {
-    if (!ids.length) return [];
-    const data = await ozonTransport().call<{ results: Result[] }>(
-      "/v1/delivery-point/check-availability",
-      {
-        delivery_point_ids: ids,
-        shipment_method_id: context.shipmentMethodId,
-        postings: [postingFor(context)],
-      },
-    );
-    if (!Array.isArray(data.results))
-      throw new Error("Не удалось проверить пункты выдачи.");
-    return data.results
-      .filter(
-        (r) =>
-          r.request_id === 1 && !r.error && ids.includes(r.delivery_point_id!),
-      )
-      .map((r) => r.delivery_point_id!);
-  },
-  async quote(pointId, context) {
-    const data = await ozonTransport().call<{ results: Result[] }>(
-      "/v1/order/checkout",
-      {
-        recipient: { phone_number: context.phone },
-        postings: [postingFor(context)],
-        delivery: { delivery_point: { delivery_point_id: pointId } },
-      },
-    );
-    const r = data.results?.find((r) => r.request_id === 1);
-    if (!r || r.error || !r.posting) {
-      const rawCode =
-        r?.error && typeof r.error === "object" && "code" in r.error
-          ? r.error.code
-          : "unknown";
-      const code =
-        typeof rawCode === "string" && /^[a-zA-Z0-9_]{1,80}$/.test(rawCode)
-          ? rawCode
-          : "unknown";
-      const goodsAmount = context.items.reduce(
-        (sum, item) => sum + item.price * item.quantity,
-        0,
-      );
-      console.warn("Ozon checkout rejected", {
-        code,
-        goodsAmount,
-        pointId,
-        shipmentMethodId: context.shipmentMethodId,
-      });
-      throw new Error(ozonCheckoutError(code, goodsAmount));
-    }
-    const delivery = r.posting.estimated_delivery_cost,
-      insurance = r.posting.estimated_insurance_cost;
-    if (delivery?.currency_code !== "RUB" || insurance?.currency_code !== "RUB")
-      throw new Error(
-        "Не удалось получить стоимость доставки. Повторите расчёт.",
-      );
-    return {
-      deliveryCost: moneyToKopecks(delivery.amount) / 100,
-      insuranceCost: moneyToKopecks(insurance.amount) / 100,
-      estimatedDays: estimatedDeliveryDays(r.posting.estimated_delivery_days),
-    };
-  },
-};
+export { postingFor, postingsFor } from "./postings";
+import { createOzonAdapter } from "./ozon-adapter";
+export const ozon = createOzonAdapter({
+  call: (path, body, key) => ozonTransport().call(path, body, key),
+});
 export type OzonPointInfo = {
   delivery_point_id: number;
   name: string;

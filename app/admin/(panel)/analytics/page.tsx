@@ -1,5 +1,8 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import { uuid } from "@/lib/validation";
+import { cookies } from "next/headers";
+import { parseAnalyticsFilters } from "@/lib/analytics/filters";
+import { exclusionCookie } from "@/lib/analytics/exclusion";
 import AnalyticsFilters from "@/components/admin/AnalyticsFilters";
 import ProductConversion, {
   type ProductReport,
@@ -18,29 +21,42 @@ type Source = Counts & { source: string; medium: string; campaign: string };
 export default async function AnalyticsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ days?: string; product?: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   await requireAdmin();
-  const { days: input, product = "" } = await searchParams;
-  if (product && !uuid.safeParse(product).success) notFound();
-  const days = [7, 30, 90].includes(Number(input)) ? Number(input) : 30;
+  let filters;
+  try {
+    filters = parseAnalyticsFilters(await searchParams);
+  } catch {
+    notFound();
+  }
+  const { days, products: selectedIds, start, end } = filters;
+  const hasProducts = selectedIds.length > 0;
+  const periodArgs = {
+    p_days: days,
+    p_start: start || null,
+    p_end: end || null,
+  };
+  const excluded = (await cookies()).get(exclusionCookie)?.value === "1";
   const db = createServerClient();
   const [general, productData, products] = await Promise.all([
-    product
+    hasProducts
       ? Promise.resolve({ data: null, error: null })
-      : db.rpc("funnel_report", { p_days: days }),
-    db.rpc("product_funnel_report", {
-      p_days: days,
-      p_product: product || null,
+      : db.rpc("analytics_funnel_report", periodArgs),
+    db.rpc("analytics_product_report", {
+      ...periodArgs,
+      p_products: selectedIds.length ? selectedIds : null,
     }),
     db.from("products").select("id,name").order("name"),
   ]);
   if (productData.error || !productData.data || products.error)
     throw new Error("Не удалось загрузить статистику товаров");
-  const selected = (products.data ?? []).find((p) => p.id === product);
-  if (product && !selected) notFound();
+  const selected = (products.data ?? []).filter((p) =>
+    selectedIds.includes(p.id),
+  );
+  if (selected.length !== selectedIds.length) notFound();
   const { data, error } = general;
-  if (error || (!product && !data))
+  if (error || (!hasProducts && !data))
     throw new Error("Не удалось загрузить воронку");
   const report = (data ?? {
     totals: { views: 0, carts: 0, checkouts: 0, orders: 0, payments: 0 },
@@ -63,17 +79,26 @@ export default async function AnalyticsPage({
   return (
     <div className="space-y-6">
       <h2 className="text-2xl">Воронка продаж и источники</h2>
+      <Link
+        href="/admin/carts"
+        className="inline-block underline underline-offset-4"
+      >
+        Посмотреть незавершённые корзины и шаги оформления →
+      </Link>
       <AnalyticsFilters
-        key={`${days}-${product}`}
+        key={JSON.stringify(filters)}
         days={days}
-        product={product}
+        selected={selectedIds}
+        startDate={start}
+        endDate={end}
+        excluded={excluded}
         products={products.data ?? []}
       />
       <ProductConversion
         report={productData.data as ProductReport}
-        name={selected?.name ?? "Все товары"}
+        name={selected.map((p) => p.name).join(", ") || "Все товары"}
       />
-      {!product && (
+      {!hasProducts && (
         <>
           <h3 className="text-xl">Общая воронка сайта</h3>
           <p className="text-sm text-stone-600">

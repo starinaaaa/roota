@@ -57,7 +57,7 @@ export default async function Footer() {
                   <li key={href}>
                     <Link
                       href={href}
-                      className="font-body text-ui text-stone-800 hover:text-stone-900 transition-colors duration-200"
+                      className="font-body text-ui text-stone-800 hover:text-stone-900 hover:underline transition-colors duration-200"
                     >
                       {bindPrepositions(label)}
                     </Link>
@@ -77,7 +77,7 @@ export default async function Footer() {
                     <Link
                       href={href}
                       prefetch={false}
-                      className="font-body text-ui text-stone-800 hover:text-stone-900 transition-colors duration-200"
+                      className="font-body text-ui text-stone-800 hover:text-stone-900 hover:underline transition-colors duration-200"
                     >
                       {bindPrepositions(label)}
                     </Link>
@@ -97,7 +97,7 @@ export default async function Footer() {
                     href={site.telegram}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-body text-ui text-stone-800 hover:text-stone-900 transition-colors duration-200"
+                    className="font-body text-ui text-stone-800 hover:text-stone-900 hover:underline transition-colors duration-200"
                   >
                     Telegram
                   </a>
@@ -108,7 +108,7 @@ export default async function Footer() {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-describedby="instagram-note"
-                    className="font-body text-ui text-stone-800 hover:text-stone-900 transition-colors duration-200"
+                    className="font-body text-ui text-stone-800 hover:text-stone-900 hover:underline transition-colors duration-200"
                   >
                     Instagram*
                   </a>
@@ -116,7 +116,7 @@ export default async function Footer() {
                 <li>
                   <a
                     href={"mailto:" + site.email}
-                    className="font-body text-ui text-stone-800 hover:text-stone-900 transition-colors duration-200"
+                    className="font-body text-ui text-stone-800 hover:text-stone-900 hover:underline transition-colors duration-200"
                   >
                     {bindPrepositions(site.email)}
                   </a>
@@ -141,14 +141,14 @@ export default async function Footer() {
               <Link
                 href="/offer"
                 prefetch={false}
-                className="font-body text-ui text-stone-800 hover:text-stone-600 transition-colors duration-200"
+                className="font-body text-ui text-stone-800 hover:text-stone-600 hover:underline transition-colors duration-200"
               >
                 Условия покупки
               </Link>
               <Link
                 href="/privacy"
                 prefetch={false}
-                className="font-body text-ui text-stone-800 hover:text-stone-600 transition-colors duration-200"
+                className="font-body text-ui text-stone-800 hover:text-stone-600 hover:underline transition-colors duration-200"
               >
                 Конфиденциальность и обработка данных
               </Link>

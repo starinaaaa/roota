@@ -45,7 +45,7 @@ export default function ProductCard({ product, index = 0 }: Props) {
               fill
               sizes="(max-width: 639px) calc(100vw - 48px), (max-width: 767px) calc(50vw - 36px), (max-width: 1023px) calc(50vw - 60px), (max-width: 1279px) calc(50vw - 80px), (max-width: 1567px) calc(33vw - 64px), 459px"
               loading={index < 3 ? "eager" : "lazy"}
-              className="object-cover transition-transform duration-500 ease-out motion-safe:group-hover:scale-[1.04] motion-safe:group-focus-visible:scale-[1.04] motion-reduce:transition-none"
+              className="object-cover transition-transform duration-500 ease-out motion-safe:group-hover:scale-[1.02] motion-safe:group-focus-visible:scale-[1.02] motion-reduce:transition-none"
               onError={() => setImageFailed(true)}
             />
           ) : (
@@ -67,17 +67,6 @@ export default function ProductCard({ product, index = 0 }: Props) {
               </span>
             </div>
           )}
-
-          {/* Тёмный hover-оверлей */}
-          <div className="absolute inset-0 bg-stone-900/0 group-hover:bg-stone-900/6 transition-colors duration-500" />
-
-          {/* Подсказка «Смотреть» */}
-          <div className="pointer-events-none absolute bottom-0 left-0 right-0 flex items-center justify-between bg-stone-50/95 px-5 py-3 backdrop-blur-sm transition-transform duration-250 ease-out lg:translate-y-full lg:group-hover:translate-y-0 lg:group-focus-visible:translate-y-0 motion-reduce:transition-none">
-            <span className="font-body text-caption tracking-[0.08em] uppercase text-stone-900">
-              Смотреть изделие
-            </span>
-            <span aria-hidden="true">↗</span>
-          </div>
         </div>
 
         {/* Информация */}

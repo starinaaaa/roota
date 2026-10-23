@@ -73,7 +73,7 @@ export default function BrandStatement({
               href="/about"
               className="group inline-flex items-center gap-2 font-body text-ui tracking-[0.08em] uppercase text-stone-900"
             >
-              <span className="border-b border-stone-900/30 pb-0.5 group-hover:border-stone-900/80 transition-colors duration-300">
+              <span className="border-b border-stone-900/30 pb-0.5 group-hover:border-stone-900/80 group-focus-visible:border-stone-900/80 transition-colors duration-300">
                 Узнать больше
               </span>
             </Link>

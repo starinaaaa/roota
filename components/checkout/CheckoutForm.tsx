@@ -678,7 +678,9 @@ export default function CheckoutForm({
                       >
                         обработкой данных
                       </Link>
-                      .
+                      . Получаю на email сообщения об оформлении, оплате и
+                      статусах заказа, одно напоминание о незавершённом
+                      оформлении и приглашение оставить отзыв после получения.
                     </label>
                   </div>
                   {fieldErrors.acceptedTerms && (
@@ -693,9 +695,9 @@ export default function CheckoutForm({
                 </div>
                 <EmailConsent
                   email={consentEmail}
-                  dataConsent={formData.newsletterDataConsent}
+                  serviceConsent={formData.acceptedTerms}
                   marketingConsent={formData.subscribeToNews}
-                  onChange={(dataConsent, marketingConsent) => {
+                  onChange={(marketingConsent) => {
                     setConsentEmail(formData.email);
                     setFieldErrors((prev) => ({
                       ...prev,
@@ -703,9 +705,9 @@ export default function CheckoutForm({
                     }));
                     setFormData((prev) => ({
                       ...prev,
-                      newsletterDataConsent: dataConsent,
+                      newsletterDataConsent: marketingConsent,
                       subscribeToNews: marketingConsent,
-                      emailConsent: dataConsent && marketingConsent,
+                      emailConsent: prev.acceptedTerms,
                     }));
                   }}
                 />

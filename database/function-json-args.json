@@ -76,5 +76,8 @@
     "p_items"
   ],
   "sync_in_stock": [],
-  "sync_product_state": []
+  "sync_product_state": [],
+  "sync_checkout_notifications": [
+    "p_items"
+  ]
 }

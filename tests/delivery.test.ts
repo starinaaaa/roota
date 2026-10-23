@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import { PGlite } from "@electric-sql/pglite";
 import { normalizeRussianPhone, formatRussianPhone } from "../lib/contacts";
 import { checkoutSchema } from "../lib/validation";
+import { LEGAL_VERSION } from "../lib/legal";
 import {
   packingFor,
   pointInCity,
@@ -51,7 +52,7 @@ test("Russian contact input accepts supported forms and rejects foreign, long an
     assert.equal(normalizeRussianPhone(input), null, input);
   assert.equal(formatRussianPhone("9991234567"), "+7 (999) 123-45-67");
   const form = {
-    legalVersion: "2026-10-22",
+    legalVersion: LEGAL_VERSION,
     acceptedTerms: true,
     newsletterDataConsent: false,
     name: "Анна Иванова",

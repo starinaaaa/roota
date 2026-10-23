@@ -9,7 +9,7 @@ const order = {
   deliveryType: "russia",
   address: "Москва, пункт выдачи",
   comment: "",
-  legalVersion: "2026-10-22",
+  legalVersion: "2026-10-23",
   acceptedTerms: true,
 };
 test("checkout requires explicit acceptance but never requires advertising", () => {
@@ -25,7 +25,7 @@ test("checkout requires explicit acceptance but never requires advertising", () 
   assert.equal(parsed.subscribeToNews, false);
   assert.equal(parsed.newsletterDataConsent, false);
 });
-test("advertising and data processing have separate affirmative choices", () => {
+test("advertising requires its matching data-processing permission", () => {
   assert.equal(
     checkoutSchema.safeParse({ ...order, subscribeToNews: true }).success,
     false,
@@ -83,7 +83,7 @@ test("checkout requires a full name and accepts only an optional Telegram userna
   }
 });
 
-test("only two affirmative choices supply email consent; the aggregate flag cannot create consent", () => {
+test("order notices and reviews remain enabled without advertisements; aggregate flags cannot create advertisements", () => {
   const enabled = checkoutSchema.parse({
     ...order,
     emailConsent: false,
@@ -96,7 +96,7 @@ test("only two affirmative choices supply email consent; the aggregate flag cann
   assert.equal(enabled.emailConsent, true);
   assert.equal(enabled.emailConsentVersion, EMAIL_CONSENT_VERSION);
   const forged = checkoutSchema.parse({ ...order, emailConsent: true });
-  assert.equal(forged.emailConsent, false);
+  assert.equal(forged.emailConsent, true);
   assert.equal(forged.subscribeToNews, false);
   const disabled = checkoutSchema.parse({
     ...order,
@@ -106,7 +106,7 @@ test("only two affirmative choices supply email consent; the aggregate flag cann
     newsletterDataConsent: false,
   });
   assert.equal(disabled.subscribeToNews, false);
-  assert.equal(disabled.reviewConsent, false);
+  assert.equal(disabled.reviewConsent, true);
   assert.equal(
     checkoutSchema.safeParse({
       ...order,

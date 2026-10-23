@@ -85,9 +85,9 @@ export const checkoutSchema = z
   })
   .transform((v) => ({
     ...v,
-    // The legacy aggregate flag must never manufacture either affirmative choice.
-    emailConsent: v.subscribeToNews && v.newsletterDataConsent,
-    reviewConsent: v.subscribeToNews && v.newsletterDataConsent,
+    // Order-related notices follow the required checkout choice; advertising stays separate.
+    emailConsent: v.acceptedTerms,
+    reviewConsent: v.acceptedTerms,
     emailConsentVersion: EMAIL_CONSENT_VERSION,
   }))
   .refine(

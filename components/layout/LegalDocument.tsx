@@ -6,8 +6,8 @@ import type { LegalSection } from "@/lib/legal-documents";
 // Keep legacy URLs linkable in preserved editions, but omit their merged entries from navigation.
 const documentLinks = [
   ["/personal-data-policy", "Политика обработки данных"],
-  ["/newsletter-data-consent", "согласие на обработку email"],
-  ["/newsletter-consent", "согласие на получение писем"],
+  ["/newsletter-data-consent", "Согласие на обработку email"],
+  ["/newsletter-consent", "Согласие на получение писем"],
   ["/privacy", "Конфиденциальность и обработка данных"],
   ["/offer", "Условия покупки и использования сайта"],
   ["/terms", "Пользовательское соглашение"],
@@ -66,25 +66,36 @@ export default function LegalDocument({
         <div className="max-w-[1440px] mx-auto grid md:grid-cols-12 gap-10">
           <nav
             aria-label="Документы студии"
-            className="md:col-span-4 lg:col-span-3 flex flex-col items-start gap-4 font-body text-ui text-stone-800"
+            className="md:col-span-4 lg:col-span-3 font-body text-ui text-stone-800"
           >
-            {documentLinks
-              .filter(
-                ([href]) =>
-                  href !== "/terms" && href !== "/personal-data-policy",
-              )
-              .map(([href, label]) => (
+            <ul
+              role="list"
+              className="list-disc space-y-4 pl-5 marker:text-stone-500"
+            >
+              {documentLinks
+                .filter(
+                  ([href]) =>
+                    href !== "/terms" && href !== "/personal-data-policy",
+                )
+                .map(([href, label]) => (
+                  <li key={href}>
+                    <Link
+                      href={href}
+                      className="hover:underline underline-offset-4"
+                    >
+                      {label}
+                    </Link>
+                  </li>
+                ))}
+              <li>
                 <Link
-                  key={href}
-                  href={href}
-                  className="hover:underline underline-offset-4"
+                  href="/documents"
+                  className="underline underline-offset-4"
                 >
-                  {label}
+                  Редакции документов
                 </Link>
-              ))}
-            <Link href="/documents" className="underline underline-offset-4">
-              Редакции документов
-            </Link>
+              </li>
+            </ul>
           </nav>
           <div className="min-w-0 md:col-span-8 lg:col-span-9 max-w-2xl space-y-12">
             {archived && (

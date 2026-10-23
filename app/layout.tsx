@@ -1,3 +1,4 @@
+import { browserIconUrl } from "@/lib/browser-icon";
 import type { Metadata } from "next";
 import { Jost, Unbounded } from "next/font/google";
 import Header from "@/components/layout/Header";
@@ -49,11 +50,11 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     icons: {
       icon: site.browserIcon
-        ? {
-            url: `${site.browserIcon}?format=png`,
+        ? ([16, 32] as const).map((size) => ({
+            url: browserIconUrl(site.browserIcon, size),
             type: "image/png",
-            sizes: "192x192",
-          }
+            sizes: `${size}x${size}`,
+          }))
         : { url: "/brand/icon.svg", type: "image/svg+xml" },
     },
   };

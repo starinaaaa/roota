@@ -61,10 +61,14 @@ export default function Hero({
             <div>
               <Link
                 href="/catalog"
-                className="inline-flex items-center gap-3 border-b border-white/50 pb-1 font-body text-ui uppercase tracking-[0.08em] text-white hover:border-white transition-colors"
+                className="hero-action-link group inline-flex items-center gap-3 border-b border-white/50 pb-1 font-body text-ui uppercase tracking-[0.08em] text-white hover:border-white transition-colors"
               >
                 Смотреть коллекцию
-                <ArrowRight size={18} strokeWidth={1.5} />
+                <ArrowRight
+                  size={18}
+                  strokeWidth={1.5}
+                  className="motion-safe:transition-transform motion-safe:group-hover:translate-x-1 motion-safe:group-focus-visible:translate-x-1"
+                />
               </Link>
             </div>
           </div>

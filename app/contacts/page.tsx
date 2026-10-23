@@ -48,7 +48,7 @@ export default async function ContactsPage() {
                 href={href}
                 target={external ? "_blank" : undefined}
                 rel={external ? "noopener noreferrer" : undefined}
-                className="group grid grid-cols-[1fr_auto] items-center gap-x-5 gap-y-2 py-7 transition-colors hover:text-stone-600 md:grid-cols-[minmax(0,1fr)_minmax(0,3fr)_auto] md:gap-x-10 md:py-9"
+                className="action-row group grid grid-cols-[1fr_auto] items-center gap-x-5 gap-y-2 py-7 transition-colors hover:text-stone-600 md:grid-cols-[minmax(0,1fr)_minmax(0,3fr)_auto] md:gap-x-10 md:py-9"
               >
                 <span className="col-span-2 font-body text-ui text-stone-600 md:col-span-1">
                   {label}
@@ -70,8 +70,8 @@ export default async function ContactsPage() {
           <h2 className="font-display text-price">О заказе</h2>
           <div className="max-w-2xl font-body text-copy text-stone-800">
             <p>
-              Для возврата или при повреждении посылки напишите на почту и укажите
-              номер заказа.
+              Для возврата или при повреждении посылки напишите на почту и
+              укажите номер заказа.
             </p>
             <Link
               href="/delivery"

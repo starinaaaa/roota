@@ -129,6 +129,17 @@ export default function AnalyticsFilters({
                   {p.name}
                 </label>
               ))}
+              <button
+                type="button"
+                className="admin-secondary w-full"
+                onClick={(event) =>
+                  event.currentTarget
+                    .closest("details")
+                    ?.removeAttribute("open")
+                }
+              >
+                Готово
+              </button>
             </div>
           </details>
         </fieldset>

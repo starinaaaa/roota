@@ -85,7 +85,7 @@ export default function Header({ cartCount }: Props) {
               </Link>
 
               {/* ── COL 2: Десктопная навигация ──────── */}
-              <nav className="hidden lg:flex items-center justify-center gap-3 lg:gap-5">
+              <nav className="site-nav hidden lg:flex items-center justify-center gap-3 lg:gap-5">
                 {NAV_LINKS.map(({ href, label }, i) => (
                   <React.Fragment key={href}>
                     {i > 0 && (

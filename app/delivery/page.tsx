@@ -2,6 +2,7 @@ import { bindPrepositions } from "@/lib/typography";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { getSiteContent } from "@/lib/site";
+import PageActionLink from "@/components/layout/PageActionLink";
 import { RETURN_SUMMARY } from "@/lib/shop-policies";
 
 export const dynamic = "force-dynamic";
@@ -184,17 +185,12 @@ export default async function DeliveryPage() {
           </section>
         </div>
 
-        <div className="flex flex-col items-start gap-3 border-t border-stone-200 pt-7 font-body text-ui md:flex-row md:items-center md:justify-between md:pt-9">
-          <p className="text-stone-600">Остались вопросы о заказе?</p>
-          <a
-            href={site.telegram}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex min-h-11 items-center gap-3 underline underline-offset-4 transition-colors hover:text-stone-600"
-          >
-            Написать в Telegram <span aria-hidden="true">↗</span>
-          </a>
-        </div>
+        <PageActionLink
+          label="Остались вопросы о заказе?"
+          value="Написать в Telegram"
+          href={site.telegram}
+          external
+        />
       </div>
     </div>
   );

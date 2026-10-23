@@ -1,7 +1,7 @@
 import { bindPrepositions } from "@/lib/typography";
 import type { Metadata } from "next";
 import { getSiteContent } from "@/lib/site";
-import Link from "next/link";
+import PageActionLink from "@/components/layout/PageActionLink";
 import AboutHero from "@/components/about/AboutHero";
 import AboutGallery from "@/components/about/AboutGallery";
 import { aboutGallery } from "@/lib/about-gallery";
@@ -48,14 +48,11 @@ export default async function AboutPage() {
 
         <AboutGallery photos={aboutGallery} />
 
-        <div className="border-t border-stone-200 pt-7 md:pt-9">
-          <Link
-            href="/catalog"
-            className="inline-flex min-h-12 items-center justify-center border border-stone-900 bg-stone-900 px-6 py-4 font-body text-ui text-stone-50 transition-colors hover:border-stone-700 hover:bg-stone-700"
-          >
-            Посмотреть коллекцию
-          </Link>
-        </div>
+        <PageActionLink
+          label="Коллекция"
+          value="Посмотреть коллекцию"
+          href="/catalog"
+        />
       </div>
     </div>
   );

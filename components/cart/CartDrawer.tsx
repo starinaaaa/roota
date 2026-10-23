@@ -10,7 +10,6 @@ import { useCartUI } from "@/contexts/CartUIContext";
 import { useCart } from "@/hooks/useCart";
 import { formatPrice } from "@/lib/format-price";
 import CartLineItem from "./CartLineItem";
-import PurchaseHelp from "@/components/shop/PurchaseHelp";
 
 export default function CartDrawer() {
   const { isOpen, close: closeDrawer } = useCartUI();
@@ -182,14 +181,11 @@ export default function CartDrawer() {
                 {/* Итого — mb-6→mb-9, text ×1.5 */}
                 <div className="flex items-baseline justify-between mb-4">
                   <span className="font-body text-ui tracking-[0.08em] uppercase text-stone-600">
-                    Изделия
+                    Сумма товаров
                   </span>
                   <span className="font-body text-price tracking-[0.04em] text-stone-900 tabular-nums">
                     {bindPrepositions(formatPrice(totalPrice))}
                   </span>
-                </div>
-                <div className="mb-5">
-                  <PurchaseHelp compact onNavigate={closeDrawer} />
                 </div>
 
                 {/* Кнопка оформления — text ×1.5: 1.6rem→2.4rem, arrow ×1.5: 20→30 */}

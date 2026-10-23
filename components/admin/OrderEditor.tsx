@@ -1,12 +1,14 @@
 "use client";
 import {
   shipmentPostings,
+  carrierStatusLabel,
   type CarrierPosting,
 } from "@/lib/delivery/parcel-status";
 import type { PackingRule } from "@/lib/delivery/model";
 import ActionStatus from "@/components/ui/ActionStatus";
 import {
   createOzonShipment,
+  recreateOzonShipment,
   refreshOzonShipment,
 } from "@/lib/actions/delivery-admin";
 import { useState, useTransition } from "react";
@@ -286,7 +288,7 @@ export default function OrderEditor({ order }: { order: OrderData }) {
           ))}
           <p>
             Статус Ozon:{" "}
-            {order.shipments?.[0]?.carrier_status ?? "Ещё не создано"}
+            {carrierStatusLabel(order.shipments?.[0]?.carrier_status)}
           </p>
           {shipmentPostings(order.shipments?.[0] ?? {}).map(
             (posting, index) => (
@@ -316,6 +318,28 @@ export default function OrderEditor({ order }: { order: OrderData }) {
             после упаковки.
           </p>
           <div className="flex flex-wrap gap-3">
+            {order.shipments?.[0]?.carrier_status === "canceled" &&
+              order.payment_status === "paid" &&
+              ["new", "confirmed", "in_production"].includes(order.status) && (
+                <button
+                  type="button"
+                  className="admin-secondary"
+                  disabled={pending}
+                  onClick={() =>
+                    start(async () => {
+                      try {
+                        const result = await recreateOzonShipment(order.id);
+                        setMessage(result.error ?? result.message ?? "");
+                        router.refresh();
+                      } catch {
+                        setMessage("Не удалось пересоздать отправления.");
+                      }
+                    })
+                  }
+                >
+                  Пересоздать отменённые отправления
+                </button>
+              )}
             <button
               type="button"
               className="admin-secondary"

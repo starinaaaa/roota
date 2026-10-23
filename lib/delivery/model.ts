@@ -132,21 +132,7 @@ export function parcelContexts(context: DeliveryContext): DeliveryContext[] {
   );
 }
 
-export function shipmentDescription(
-  items: { product_name: string; quantity: number }[],
-  plates = true,
-) {
-  return items
-    .map((i) => {
-      const name =
-        !plates || /^тарелка(?:\s|$)/i.test(i.product_name)
-          ? i.product_name
-          : `Тарелка «${i.product_name}»`;
-      return `${name} × ${i.quantity}`;
-    })
-    .join("; ")
-    .slice(0, 500);
-}
+export { shipmentDescription } from "./shipment-description";
 
 export function moneyToKopecks(value: unknown): number {
   if (typeof value !== "string" || !/^\d{1,8}(?:\.\d{1,2})?$/.test(value))

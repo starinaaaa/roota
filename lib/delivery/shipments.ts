@@ -1,13 +1,9 @@
 import "server-only";
 import { createServerClient } from "@/lib/db";
-import { ozon, ozonTransport, postingsFor } from "./ozon";
+import { ozon, ozonTransport } from "./ozon";
 import { postingInfoSchema, postingHistorySchema } from "./posting-status";
-import {
-  parcelContexts,
-  shipmentDescription,
-  type DeliveryContext,
-  type PackingRule,
-} from "./model";
+import { type DeliveryContext, type PackingRule } from "./model";
+import { shipmentPayload } from "./shipment-payload";
 import { shipmentPostings, aggregatePostingStatus } from "./parcel-status";
 // Call this after a trusted payment callback and order confirmation, or from the checked admin action.
 // A browser payment-success redirect must never call this function or mark an order paid.
@@ -57,13 +53,35 @@ export async function createPaidShipment(orderId: string) {
   // Freeze the body before the first attempt; a timeout is retried with the same key AND body.
   let payload = existing.request_payload;
   if (!payload) {
+    const [productsResult, categoriesResult] = await Promise.all([
+      db
+        .from("products")
+        .select("id,category_id")
+        .in(
+          "id",
+          o.items.map((i: { product_id: string }) => i.product_id),
+        ),
+      db.from("categories").select("id,name,slug"),
+    ]);
+    if (productsResult.error || categoriesResult.error)
+      throw new Error("Не удалось проверить категории изделий.");
     const items = o.items.map(
       (i: {
         product_id: string;
         quantity: number;
         price: number;
         purchase_mode: string;
-      }) => ({ ...i, category_id: "" }),
+        product_name: string;
+      }) => {
+        const categoryId = productsResult.data?.find(
+          (p) => p.id === i.product_id,
+        )?.category_id;
+        return {
+          ...i,
+          category_id: categoryId ?? "",
+          category: categoriesResult.data?.find((c) => c.id === categoryId),
+        };
+      },
     );
     const context: DeliveryContext = {
       phone: o.customer_phone,
@@ -89,27 +107,7 @@ export async function createPaidShipment(orderId: string) {
       throw new Error(
         "Расходы доставки изменились. Согласуйте разницу с покупателем перед созданием отправления.",
       );
-    const parcels = parcelContexts(context);
-    const postings = postingsFor(context).map((posting, index) => ({
-      ...posting,
-      posting_external_id: `${o.order_number}-${index + 1}`,
-      description: shipmentDescription(
-        parcels[index].items.map((item) => ({
-          product_name:
-            o.items.find(
-              (i: { product_id: string }) => i.product_id === item.product_id,
-            )?.product_name ?? "Тарелка",
-          quantity: item.quantity,
-        })),
-        Boolean(context.packing.parcels),
-      ),
-    }));
-    payload = {
-      order_external_id: o.order_number,
-      recipient: { phone_number: o.customer_phone, full_name: o.customer_name },
-      delivery: { delivery_point: { delivery_point_id: details.point.id } },
-      postings,
-    };
+    payload = shipmentPayload(o, details.point.id, context, items);
   }
   const { data: claim, error: claimError } = await db.rpc(
     "claim_delivery_shipment",

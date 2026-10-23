@@ -3,12 +3,13 @@ import { bindPrepositions } from "@/lib/typography";
 import { LEGAL_DATE_LABEL, LEGAL_VERSION } from "@/lib/legal";
 import type { LegalSection } from "@/lib/legal-documents";
 
+// Keep legacy URLs linkable in preserved editions, but omit their merged entries from navigation.
 const documentLinks = [
   ["/personal-data-policy", "Политика обработки данных"],
   ["/newsletter-data-consent", "согласие на обработку email"],
   ["/newsletter-consent", "согласие на получение писем"],
-  ["/privacy", "Политика конфиденциальности"],
-  ["/offer", "Публичная оферта"],
+  ["/privacy", "Конфиденциальность и обработка данных"],
+  ["/offer", "Условия покупки и использования сайта"],
   ["/terms", "Пользовательское соглашение"],
   ["/cookies", "Файлы cookie"],
 ] as const;
@@ -67,15 +68,20 @@ export default function LegalDocument({
             aria-label="Документы студии"
             className="md:col-span-4 lg:col-span-3 flex flex-col items-start gap-4 font-body text-ui text-stone-800"
           >
-            {documentLinks.map(([href, label]) => (
-              <Link
-                key={href}
-                href={href}
-                className="hover:underline underline-offset-4"
-              >
-                {label}
-              </Link>
-            ))}
+            {documentLinks
+              .filter(
+                ([href]) =>
+                  href !== "/terms" && href !== "/personal-data-policy",
+              )
+              .map(([href, label]) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className="hover:underline underline-offset-4"
+                >
+                  {label}
+                </Link>
+              ))}
             <Link href="/documents" className="underline underline-offset-4">
               Редакции документов
             </Link>

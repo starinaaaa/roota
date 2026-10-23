@@ -20,7 +20,6 @@ import { checkoutSchema } from "@/lib/validation";
 import type { DeliveryQuote } from "@/lib/delivery/model";
 import { deliveryEstimateLabel } from "@/lib/delivery/model";
 import { COURIER_DESCRIPTION } from "@/lib/shop-policies";
-import PurchaseHelp from "@/components/shop/PurchaseHelp";
 
 import {
   readCheckoutDraft,
@@ -620,9 +619,6 @@ export default function CheckoutForm({
 
             {/* Submit button на десктопе */}
             <div className="pt-2">
-              <div className="mb-5">
-                <PurchaseHelp compact />
-              </div>
               <fieldset disabled={pending} className="space-y-4 mb-5">
                 <div className="font-body text-caption text-stone-600 leading-relaxed">
                   <div className="flex items-start gap-3">
@@ -631,6 +627,7 @@ export default function CheckoutForm({
                       form="checkout-form"
                       type="checkbox"
                       name="acceptedTerms"
+                      required
                       checked={formData.acceptedTerms}
                       onChange={handleChange}
                       aria-describedby={
@@ -650,15 +647,6 @@ export default function CheckoutForm({
                         className="underline underline-offset-2"
                       >
                         условия покупки
-                      </Link>{" "}
-                      и{" "}
-                      <Link
-                        href="/terms"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="underline underline-offset-2"
-                      >
-                        соглашение
                       </Link>
                       ; ознакомлен с{" "}
                       <Link
@@ -667,20 +655,9 @@ export default function CheckoutForm({
                         rel="noopener noreferrer"
                         className="underline underline-offset-2"
                       >
-                        политикой конфиденциальности
-                      </Link>{" "}
-                      и{" "}
-                      <Link
-                        href="/personal-data-policy"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="underline underline-offset-2"
-                      >
-                        обработкой данных
+                        политикой конфиденциальности и обработки данных
                       </Link>
-                      . Получаю на email сообщения об оформлении, оплате и
-                      статусах заказа, одно напоминание о незавершённом
-                      оформлении и приглашение оставить отзыв после получения.
+                      . <span aria-hidden="true">*</span>
                     </label>
                   </div>
                   {fieldErrors.acceptedTerms && (

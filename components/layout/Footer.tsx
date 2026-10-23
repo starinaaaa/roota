@@ -143,28 +143,14 @@ export default async function Footer() {
                 prefetch={false}
                 className="font-body text-ui text-stone-800 hover:text-stone-600 transition-colors duration-200"
               >
-                Оферта
+                Условия покупки
               </Link>
               <Link
                 href="/privacy"
                 prefetch={false}
                 className="font-body text-ui text-stone-800 hover:text-stone-600 transition-colors duration-200"
               >
-                Политика конфиденциальности
-              </Link>
-              <Link
-                href="/personal-data-policy"
-                prefetch={false}
-                className="font-body text-ui text-stone-800 hover:text-stone-600 transition-colors duration-200"
-              >
-                Обработка персональных данных
-              </Link>
-              <Link
-                href="/terms"
-                prefetch={false}
-                className="font-body text-ui text-stone-800 hover:text-stone-600 transition-colors duration-200"
-              >
-                Пользовательское соглашение
+                Конфиденциальность и обработка данных
               </Link>
             </div>
           </div>

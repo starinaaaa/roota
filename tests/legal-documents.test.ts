@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
+import { returnInstructionsForVersion } from "../lib/shop-policies";
 import { currentLegalDocuments, legalArchives } from "../lib/legal-documents";
 import {
   EMAIL_CONSENT_VERSION,
@@ -20,9 +21,7 @@ test("published legal edition and email consent version resolve to a preserved c
     Object.keys(legalArchives[LEGAL_VERSION].documents).sort(),
     [
       "offer",
-      "terms",
       "privacy",
-      "personal-data-policy",
       "newsletter-consent",
       "newsletter-data-consent",
     ].sort(),
@@ -31,6 +30,31 @@ test("published legal edition and email consent version resolve to a preserved c
   // Once released, change the version and add a snapshot instead of editing the accepted text.
   assert.equal(
     createHash("sha256").update(bytes).digest("hex"),
+    "675f9a7bd49335735d2a7b366c49e8c0708eaa4ad30afacf6fcf59f329f0200a",
+  );
+});
+
+test("merged documents retain the accepted edition and current return terms", async () => {
+  assert.equal(
+    legalArchives["2026-10-23"].documents.terms.title,
+    "Пользовательское соглашение",
+  );
+  assert.equal(
+    createHash("sha256")
+      .update(await readFile("lib/legal-documents/2026-10-23.json"))
+      .digest("hex"),
     "9a41d40c3a09b3245b6409a010411dd402742c3d1393239f36dc026ca97eb18a",
   );
+  assert.ok(
+    currentLegalDocuments.documents.offer.sections.some(
+      (section) => section.id === "order-messages",
+    ),
+  );
+  assert.ok(
+    currentLegalDocuments.documents.privacy.sections.some(
+      (section) => section.id === "data-policy",
+    ),
+  );
+  assert.match(returnInstructionsForVersion(LEGAL_VERSION), /7 дней/);
+  assert.match(returnInstructionsForVersion("2026-10-21"), /14 дней/);
 });

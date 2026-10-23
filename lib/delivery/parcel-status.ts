@@ -1,7 +1,11 @@
 import type { z } from "zod";
 import type { postingInfoSchema } from "./posting-status";
 
-export type CarrierPosting = { posting_number: string; request_id: number };
+export type CarrierPosting = {
+  posting_number: string;
+  request_id: number;
+  status?: string;
+};
 export function shipmentPostings(shipment: {
   posting_number?: string | null;
   status_history?: { postings?: CarrierPosting[] } | null;
@@ -42,4 +46,22 @@ export function aggregatePostingStatus(
   return statuses.reduce((slowest, status) =>
     rank[status] < rank[slowest] ? status : slowest,
   );
+}
+
+export function carrierStatusLabel(status?: string | null) {
+  const labels: Record<string, string> = {
+    created: "Создано",
+    forming: "Собирается",
+    ready_for_shipping: "Готово к отправке",
+    in_container: "В грузоместе",
+    acceptance_in_progress: "Принимается Ozon",
+    on_way: "В пути",
+    in_courier_service: "У курьера",
+    in_delivery_point: "В пункте выдачи",
+    delivered: "Получено",
+    canceled: "Отменено",
+    forming_failed: "Ошибка сборки",
+    not_accepted_to_delivery: "Не принято в доставку",
+  };
+  return status ? (labels[status] ?? "Уточняем статус") : "Ещё не создано";
 }

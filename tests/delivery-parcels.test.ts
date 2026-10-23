@@ -131,16 +131,26 @@ test("legacy orders keep one frozen parcel and shipment descriptions name plates
   assert.equal(postingsFor(context).length, 1);
   assert.equal(postingsFor(context)[0].declared_value.amount, "24000.00");
   assert.equal(
-    shipmentDescription([{ product_name: "Невидимка", quantity: 2 }]),
-    "Тарелка «Невидимка» × 2",
+    shipmentDescription([
+      { product_name: "Невидимка", quantity: 2, category: { slug: "plates" } },
+    ]),
+    "Тарелка керамическая «Невидимка» × 2",
   );
   assert.equal(
-    shipmentDescription([{ product_name: "Тарелка Невидимка", quantity: 1 }]),
-    "Тарелка Невидимка × 1",
+    shipmentDescription([
+      {
+        product_name: "Тарелка Невидимка",
+        quantity: 1,
+        category: { slug: "plates" },
+      },
+    ]),
+    "Тарелка керамическая «Невидимка» × 1",
   );
   assert.equal(
-    shipmentDescription([{ product_name: "Стакан", quantity: 1 }], false),
-    "Стакан × 1",
+    shipmentDescription([
+      { product_name: "Стакан", quantity: 1, category: { slug: "stakany" } },
+    ]),
+    "Стакан керамический × 1",
   );
   assert.deepEqual(shipmentPostings({ posting_number: "old" }), [
     { posting_number: "old", request_id: 1 },

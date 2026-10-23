@@ -4,6 +4,8 @@ import { syncCatalog } from "@/lib/delivery/catalog-sync";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { uuid } from "@/lib/validation";
+import { getPool } from "@/lib/db/pool";
+import { recreatePaidShipment } from "@/lib/delivery/recreate-shipment";
 import { createServerClient } from "@/lib/db";
 import { ozonTransport, shipmentMethodId } from "@/lib/delivery/ozon";
 import {
@@ -106,5 +108,48 @@ export async function refreshOzonShipment(id: unknown) {
     return { message: "Статус доставки обновлён." };
   } catch {
     return { error: "Не удалось обновить статус доставки." };
+  }
+}
+
+export async function recreateOzonShipment(id: unknown) {
+  await requireAdmin();
+  if (
+    process.env.APP_ENV !== "production" ||
+    process.env.OZON_SHIPMENTS_ENABLED !== "true"
+  )
+    return {
+      error: "Создание реальных отправлений отключено для этого окружения.",
+    };
+  const parsed = uuid.safeParse(id);
+  if (!parsed.success) return { error: "Неверный заказ." };
+  try {
+    const { data: shipment, error } = await createServerClient()
+      .from("order_shipments")
+      .select("posting_number")
+      .eq("order_id", parsed.data)
+      .single();
+    if (error || !shipment?.posting_number)
+      return { error: "Отправление не найдено." };
+    const result = await recreatePaidShipment({
+      db: getPool(),
+      transport: ozonTransport(),
+      orderId: parsed.data,
+      expectedPosting: shipment.posting_number,
+      apply: true,
+    });
+    revalidatePath("/admin/orders/" + parsed.data);
+    return {
+      message: result.alreadyReplaced
+        ? "Отправления уже заменены."
+        : "Созданы новые отправления по действующим правилам. Сумма для покупателя сохранена.",
+    };
+  } catch (e) {
+    return {
+      error:
+        e instanceof Error &&
+        !/fetch|JSON|network|SQL|constraint/i.test(e.message)
+          ? e.message
+          : "Не удалось пересоздать отправления. Повторите с тем же заказом.",
+    };
   }
 }

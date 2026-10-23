@@ -324,12 +324,12 @@ export default function CheckoutForm({
     );
 
   return (
-    <div className="max-w-[1440px] mx-auto px-6 md:px-12 lg:px-16 py-12 md:py-16">
-      <h1 className="font-display text-page text-stone-900 mb-12">
+    <div className="w-full px-6 pb-12 pt-9 md:px-12 md:pb-16 md:pt-14 lg:px-16">
+      <h1 className="font-display text-page text-stone-900 mb-9 md:mb-12">
         Оформление заказа
       </h1>
 
-      <div className="lg:grid lg:grid-cols-[1fr_360px] lg:gap-16 xl:gap-24">
+      <div className="lg:grid lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:items-start lg:gap-12 xl:gap-16">
         {/* ── Форма ──────────────────────────────────────────── */}
         <form
           id="checkout-form"
@@ -340,7 +340,7 @@ export default function CheckoutForm({
           <fieldset disabled={pending} className="space-y-8">
             {/* Контактные данные */}
             <fieldset className="space-y-5">
-              <legend className="font-body text-ui tracking-[0.08em] uppercase text-stone-600 mb-6">
+              <legend className="font-display text-price text-stone-900 mb-6">
                 Контактные данные
               </legend>
 
@@ -425,7 +425,7 @@ export default function CheckoutForm({
             <div className="divider" />
 
             <fieldset className="space-y-3">
-              <legend className="font-body text-ui uppercase tracking-[0.08em] mb-4">
+              <legend className="font-display text-price text-stone-900 mb-5">
                 Способ доставки
               </legend>
               {(
@@ -497,7 +497,7 @@ export default function CheckoutForm({
             <div className="space-y-2">
               <label
                 htmlFor="comment"
-                className="font-body text-ui tracking-[0.08em] uppercase text-stone-600 block"
+                className="font-display text-price text-stone-900 block"
               >
                 Комментарий
               </label>
@@ -522,9 +522,15 @@ export default function CheckoutForm({
         </form>
 
         {/* ── Summary ────────────────────────────────────────── */}
-        <div className="mt-12 lg:mt-0">
-          <div className="lg:sticky lg:top-28 space-y-6">
-            <h2 className="font-body text-caption tracking-[0.08em] uppercase text-stone-600">
+        <aside
+          aria-labelledby="checkout-summary-heading"
+          className="min-w-0 mt-12 lg:mt-0"
+        >
+          <div className="space-y-7 md:space-y-8">
+            <h2
+              id="checkout-summary-heading"
+              className="font-display text-price text-stone-900"
+            >
               Ваш заказ
             </h2>
 
@@ -533,27 +539,24 @@ export default function CheckoutForm({
               {initialItems.map((item) => (
                 <div
                   key={item.product.id}
-                  className="flex gap-4 py-4 border-b border-stone-100 last:border-b-0"
+                  className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 py-5 border-b border-stone-200 first:pt-0 last:border-b-0 md:gap-x-5"
                 >
-                  <div
-                    className="relative w-14 bg-stone-100 shrink-0 overflow-hidden"
-                    style={{ height: "72px" }}
-                  >
+                  <div className="relative h-24 w-20 bg-stone-100 shrink-0 overflow-hidden md:h-[120px] md:w-24">
                     {item.product.images[0] && (
                       <Image
                         src={item.product.images[0]}
                         alt={item.product.name}
                         fill
                         className="object-cover"
-                        sizes="56px"
+                        sizes="(min-width: 768px) 96px, 80px"
                       />
                     )}
                   </div>
                   <div className="flex flex-col justify-center flex-1 min-w-0">
-                    <p className="font-body text-caption text-stone-700 truncate">
+                    <p className="font-body text-copy text-stone-900 break-words">
                       {bindPrepositions(item.product.name)}
                     </p>
-                    <p className="font-body text-caption text-stone-600 mt-0.5">
+                    <p className="font-body text-copy text-stone-600 mt-1">
                       × {item.quantity}
                     </p>
                     {item.purchase_mode === "preorder" && (
@@ -564,7 +567,7 @@ export default function CheckoutForm({
                       </p>
                     )}
                   </div>
-                  <p className="font-body text-ui text-stone-800 shrink-0 self-center">
+                  <p className="font-body text-copy text-stone-900 tabular-nums whitespace-nowrap">
                     {bindPrepositions(
                       formatPrice(item.product.price * item.quantity),
                     )}
@@ -574,18 +577,20 @@ export default function CheckoutForm({
             </div>
 
             {/* Итого */}
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="font-body text-ui text-stone-600">Товары</span>
-                <span className="font-body text-ui text-stone-700">
+            <div className="space-y-4">
+              <div className="flex justify-between gap-6">
+                <span className="font-body text-copy text-stone-600">
+                  Товары
+                </span>
+                <span className="font-body text-copy text-stone-900 tabular-nums whitespace-nowrap">
                   {bindPrepositions(formatPrice(totalPrice))}
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span className="font-body text-ui text-stone-600">
+              <div className="flex justify-between gap-6">
+                <span className="font-body text-copy text-stone-600">
                   Доставка
                 </span>
-                <span className="font-body text-caption text-stone-600">
+                <span className="font-body text-ui text-stone-600 text-right tabular-nums">
                   {bindPrepositions(
                     courier
                       ? "оплачивается отдельно"
@@ -596,13 +601,12 @@ export default function CheckoutForm({
                 </span>
               </div>
               {quote && (
-                <p className="font-body text-caption text-stone-600">
+                <p className="font-body text-ui text-stone-600">
                   {bindPrepositions(deliveryEstimateLabel(quote.estimatedDays))}
                 </p>
               )}
-              <div className="divider pt-1" />
-              <div className="flex justify-between items-baseline">
-                <span className="font-body text-caption tracking-[0.08em] uppercase text-stone-600">
+              <div className="flex justify-between items-baseline gap-5 border-t border-stone-200 pt-6 md:pt-7">
+                <span className="font-body text-ui tracking-[0.08em] uppercase text-stone-600">
                   {bindPrepositions(
                     courier
                       ? "К оплате за изделия"
@@ -611,7 +615,7 @@ export default function CheckoutForm({
                         : "Сумма товаров",
                   )}
                 </span>
-                <span className="font-display text-price text-stone-900">
+                <span className="font-display text-[2rem] leading-none md:text-section text-stone-900 tabular-nums whitespace-nowrap">
                   {bindPrepositions(formatPrice(finalTotal ?? totalPrice))}
                 </span>
               </div>
@@ -741,7 +745,7 @@ export default function CheckoutForm({
               ← Вернуться в каталог
             </Link>
           </div>
-        </div>
+        </aside>
       </div>
     </div>
   );

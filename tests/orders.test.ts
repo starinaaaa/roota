@@ -30,7 +30,7 @@ test("migration, checkout rollback, idempotency, stock and cancellation", async 
     sessionB = randomUUID(),
     actor = randomUUID();
   const form = {
-    legalVersion: "2026-10-23-2",
+    legalVersion: "2026-10-23-3",
     acceptedTerms: true,
     newsletterDataConsent: false,
     name: "Тест Покупатель",

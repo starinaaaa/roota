@@ -19,7 +19,7 @@ export default function PageActionLink({
       target={external ? "_blank" : undefined}
       rel={external ? "noopener noreferrer" : undefined}
       prefetch={external ? false : undefined}
-      className="group grid grid-cols-[1fr_auto] items-center gap-x-5 gap-y-2 border-y border-stone-200 py-7 text-stone-900 transition-colors hover:text-stone-600 md:grid-cols-[minmax(0,1fr)_minmax(0,3fr)_auto] md:gap-x-10 md:py-9"
+      className="action-row group grid grid-cols-[1fr_auto] items-center gap-x-5 gap-y-2 border-y border-stone-200 py-7 text-stone-900 transition-colors hover:text-stone-600 md:grid-cols-[minmax(0,1fr)_minmax(0,3fr)_auto] md:gap-x-10 md:py-9"
     >
       <span className="col-span-2 font-body text-ui text-stone-600 md:col-span-1">
         {bindPrepositions(label)}

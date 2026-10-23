@@ -75,7 +75,7 @@ export default function Header({ cartCount }: Props) {
               <Link
                 href="/"
                 className={[
-                  "font-display text-price",
+                  "brand-link font-display text-price",
                   "tracking-[0.22em] uppercase",
                   "transition-opacity duration-300 hover:opacity-55",
                   isTransparent ? "text-stone-50" : "text-stone-900",
@@ -119,8 +119,11 @@ export default function Header({ cartCount }: Props) {
                     cartCount > 0 ? `Корзина, ${cartCount} товара` : "Корзина"
                   }
                   className={[
-                    "relative p-2 -mr-2",
-                    "transition-opacity duration-200 hover:opacity-55",
+                    "relative rounded-full p-2 -mr-2",
+                    isTransparent
+                      ? "hover:bg-white/15"
+                      : "hover:bg-stone-200/70",
+                    "transition-[background-color,color] duration-200",
                     isTransparent ? "text-stone-50" : "text-stone-800",
                   ].join(" ")}
                 >
@@ -153,8 +156,11 @@ export default function Header({ cartCount }: Props) {
                   onClick={() => setMobileMenuPath(pathname)}
                   aria-label="Открыть меню"
                   className={[
-                    "lg:hidden p-2 -mr-2",
-                    "transition-opacity duration-200 hover:opacity-55",
+                    "lg:hidden rounded-full p-2 -mr-2",
+                    isTransparent
+                      ? "hover:bg-white/15"
+                      : "hover:bg-stone-200/70",
+                    "transition-[background-color,color] duration-200",
                     isTransparent ? "text-stone-50" : "text-stone-800",
                   ].join(" ")}
                 >
@@ -302,8 +308,9 @@ function NavLink({
     <Link
       href={href}
       prefetch={href === "/catalog" ? null : false}
+      aria-current={active ? "page" : undefined}
       className={[
-        "relative font-body text-ui tracking-[0.08em] uppercase whitespace-nowrap",
+        "site-nav-link relative font-body text-ui tracking-[0.08em] uppercase whitespace-nowrap",
         "transition-colors duration-200",
         active
           ? transparent
@@ -315,14 +322,6 @@ function NavLink({
       ].join(" ")}
     >
       {children}
-
-      {active && (
-        <motion.span
-          layoutId="nav-underline"
-          className={`absolute -bottom-1 left-0 right-0 h-px ${transparent ? "bg-stone-50" : "bg-stone-900"}`}
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        />
-      )}
     </Link>
   );
 }

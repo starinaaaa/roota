@@ -4,6 +4,12 @@ import { createServerClient } from "@/lib/db";
 import { uuid } from "@/lib/validation";
 import { cachedSiteImage } from "@/lib/site-image-cache";
 import sharp from "sharp";
+import {
+  browserIconSizes,
+  browserIconVersion,
+  renderBrowserIcon,
+  type BrowserIconSize,
+} from "@/lib/browser-icon";
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ image: string }> },
@@ -17,7 +23,21 @@ export async function GET(
     )
   )
     return new Response(null, { status: 404 });
-  const format = new URL(request.url).searchParams.get("format");
+  const search = new URL(request.url).searchParams;
+  const format = search.get("format");
+  const requestedIconSize = search.get("iconSize");
+  const iconSize = Number(requestedIconSize ?? 192) as BrowserIconSize;
+  if (
+    (requestedIconSize !== null || search.has("iconVersion")) &&
+    (format !== "png" ||
+      site.browserIcon !== `/site-media/${image}` ||
+      !browserIconSizes.some(
+        (size) => String(size) === (requestedIconSize ?? "192"),
+      ) ||
+      (search.has("iconVersion") &&
+        search.get("iconVersion") !== String(browserIconVersion)))
+  )
+    return new Response(null, { status: 400 });
   if (format && !["png", "jpeg"].includes(format))
     return new Response(null, { status: 400 });
   if (
@@ -64,20 +84,30 @@ export async function GET(
   if (format) {
     try {
       const source = data;
-      data = await cachedSiteImage(`${path}:format:${format}`, async () => {
-        const processor = sharp(Buffer.from(await source.arrayBuffer()));
-        const buffer =
-          format === "png"
-            ? await processor
-                .resize(192, 192, { fit: "contain", background: "#ffffff" })
-                .png()
-                .toBuffer()
-            : await processor
-                .resize(1200, 630, { fit: "cover" })
-                .jpeg({ quality: 85 })
-                .toBuffer();
-        return new Blob([new Uint8Array(buffer)], { type: `image/${format}` });
-      });
+      data = await cachedSiteImage(
+        `${path}:format:${format}:icon-v${browserIconVersion}:${iconSize}`,
+        async () => {
+          const processor = sharp(Buffer.from(await source.arrayBuffer()));
+          const buffer =
+            format === "png"
+              ? site.browserIcon === `/site-media/${image}`
+                ? await renderBrowserIcon(
+                    Buffer.from(await source.arrayBuffer()),
+                    iconSize,
+                  )
+                : await processor
+                    .resize(192, 192, { fit: "contain", background: "#ffffff" })
+                    .png()
+                    .toBuffer()
+              : await processor
+                  .resize(1200, 630, { fit: "cover" })
+                  .jpeg({ quality: 85 })
+                  .toBuffer();
+          return new Blob([new Uint8Array(buffer)], {
+            type: `image/${format}`,
+          });
+        },
+      );
     } catch {
       return new Response(null, {
         status: 503,

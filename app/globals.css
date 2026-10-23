@@ -19,27 +19,45 @@
 
 /* На телефонах используем те же значения из шкалы. */
 @utility text-copy {
-  @media (width < 48rem) { font-size: var(--text-ui); }
+  @media (width < 48rem) {
+    font-size: var(--text-ui);
+  }
 }
 @utility text-section {
-  @media (width < 48rem) { font-size: var(--text-price); }
+  @media (width < 48rem) {
+    font-size: var(--text-price);
+  }
 }
 @utility text-page {
-  @media (width < 48rem) { font-size: var(--text-section); }
+  @media (width < 48rem) {
+    font-size: var(--text-section);
+  }
 }
 
 @layer components {
-  .admin-input { @apply block w-full min-w-0 max-w-full mt-2 border border-stone-300 bg-white rounded-md px-3 py-3 text-base text-stone-900; }
-  .admin-button { @apply inline-flex items-center justify-center rounded-md px-5 py-3 bg-stone-900 text-white text-sm disabled:opacity-50 disabled:cursor-not-allowed; }
-  .admin-secondary { @apply inline-flex items-center justify-center rounded-md border border-stone-300 bg-white px-4 py-3 text-sm text-stone-800 text-center; }
-  .admin-card { @apply min-w-0 border border-stone-200 rounded-lg bg-white p-5 md:p-7; }
-  .admin-panel { overflow-wrap: anywhere; }
-  .admin-panel :where(label, .grid > *, .admin-card > *) { min-width: 0; }
+  .admin-input {
+    @apply block w-full min-w-0 max-w-full mt-2 border border-stone-300 bg-white rounded-md px-3 py-3 text-base text-stone-900;
+  }
+  .admin-button {
+    @apply inline-flex items-center justify-center rounded-md px-5 py-3 bg-stone-900 text-white text-sm disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .admin-secondary {
+    @apply inline-flex items-center justify-center rounded-md border border-stone-300 bg-white px-4 py-3 text-sm text-stone-800 text-center;
+  }
+  .admin-card {
+    @apply min-w-0 border border-stone-200 rounded-lg bg-white p-5 md:p-7;
+  }
+  .admin-panel {
+    overflow-wrap: anywhere;
+  }
+  .admin-panel :where(label, .grid > *, .admin-card > *) {
+    min-width: 0;
+  }
 }
 
 @layer base {
   :root {
-    --font-cormorant: 'Cormorant Garamond', serif;
+    --font-cormorant: "Cormorant Garamond", serif;
   }
 
   html {
@@ -56,15 +74,20 @@
     color: #1c1917;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: var(--font-display);
     font-weight: 400;
     overflow-wrap: anywhere;
   }
 
   *:focus-visible {
-    outline: 1px solid #a8a29e;
-    outline-offset: 2px;
+    outline: 2px solid currentColor;
+    outline-offset: 4px;
   }
 }
 
@@ -78,7 +101,9 @@
   }
 
   .img-fade {
-    transition: opacity 0.6s ease, transform 0.6s ease;
+    transition:
+      opacity 0.6s ease,
+      transform 0.6s ease;
   }
 
   .divider {
@@ -103,7 +128,6 @@
   background: #a8a29e;
 }
 
-
 /* Keep actions within each card, including two-column mobile grids. */
 .product-card-actions {
   display: grid;
@@ -113,23 +137,38 @@
 
 /* Immediate press feedback, independent of any existing motion transforms. */
 @layer base {
-  button:not(:disabled), [role="button"]:not([aria-disabled="true"]) { cursor: pointer; }
-  button:disabled { cursor: not-allowed; opacity: 0.55; }
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
   button:not(:disabled):active,
-  a.admin-button:active, a.admin-secondary:active,
+  a.admin-button:active,
+  a.admin-secondary:active,
   .product-card-actions a:active {
     scale: 0.97;
     filter: brightness(0.88);
   }
   @media (prefers-reduced-motion: no-preference) {
-    button, a.admin-button, a.admin-secondary, .product-card-actions a {
-      transition-property: color, background-color, border-color, opacity, scale, filter;
+    button,
+    a.admin-button,
+    a.admin-secondary,
+    .product-card-actions a {
+      transition-property:
+        color, background-color, border-color, opacity, scale, filter;
       transition-duration: 150ms;
     }
   }
   @media (prefers-reduced-motion: reduce) {
-    button:active, a.admin-button:active, a.admin-secondary:active,
-    .product-card-actions a:active { scale: none; }
+    button:active,
+    a.admin-button:active,
+    a.admin-secondary:active,
+    .product-card-actions a:active {
+      scale: none;
+    }
   }
 }
 .action-spinner {
@@ -141,7 +180,176 @@
   border-radius: 50%;
   animation: action-spin 0.8s linear infinite;
 }
-@keyframes action-spin { to { transform: rotate(360deg); } }
+@keyframes action-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 @media (prefers-reduced-motion: reduce) {
-  .action-spinner { animation: none; }
+  .action-spinner {
+    animation: none;
+  }
+}
+
+/* A common interaction language across the shop and administration. */
+@layer base {
+  a[href],
+  label:has(input[type="file"]) {
+    cursor: pointer;
+  }
+  :is(a[href], button, [role="button"], label:has(input[type="file"])) {
+    -webkit-tap-highlight-color: rgb(120 113 108 / 18%);
+    text-underline-offset: 0.24em;
+    text-decoration-thickness: 1px;
+    text-decoration-skip-ink: auto;
+  }
+  :is(button, [role="button"], label:has(input[type="file"])) {
+    transition:
+      color 180ms ease,
+      background-color 180ms ease,
+      border-color 180ms ease,
+      filter 180ms ease,
+      translate 180ms ease,
+      scale 150ms ease,
+      box-shadow 180ms ease;
+  }
+  :is(a[href], button, label:has(input[type="file"])):focus-visible {
+    text-decoration-line: underline;
+  }
+  a:has(img):focus-visible,
+  a.brand-link:focus-visible,
+  a.site-nav-link:focus-visible {
+    text-decoration-line: none;
+  }
+  input:is([type="checkbox"], [type="radio"]):not(:disabled) {
+    cursor: pointer;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    a[href]:not(:has(img)):not(.brand-link):not(.site-nav-link):not(
+        .action-row
+      ):not(.hero-action-link):hover {
+      text-decoration-line: underline;
+    }
+    button:not(:disabled):not([aria-disabled="true"]):hover,
+    [role="button"]:not([aria-disabled="true"]):hover,
+    label:has(input[type="file"]):hover {
+      filter: brightness(0.9);
+      text-decoration-line: underline;
+    }
+    button[data-custom-underline]:hover {
+      text-decoration-line: none;
+    }
+    input:is([type="checkbox"], [type="radio"]):not(:disabled):hover {
+      outline: 2px solid #d6d3d1;
+      outline-offset: 2px;
+    }
+    .action-row:hover {
+      background-color: #f1f0ee;
+    }
+    .product-card-link:is(:hover, :focus-visible) h3 {
+      text-decoration: underline;
+      text-underline-offset: 0.2em;
+      text-decoration-thickness: 1px;
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      button:not(:disabled):not([aria-disabled="true"]):hover,
+      [role="button"]:not([aria-disabled="true"]):hover,
+      label:has(input[type="file"]):hover {
+        translate: 0 -1px;
+      }
+    }
+    button:not(:disabled):active,
+    [role="button"]:not([aria-disabled="true"]):active {
+      translate: 0 0;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    :is(a, button, [role="button"], label:has(input[type="file"])) {
+      transition-duration: 0s;
+    }
+  }
+}
+@layer components {
+  .site-nav-link::after {
+    content: "";
+    position: absolute;
+    height: 1px;
+    bottom: -0.25rem;
+    left: 0;
+    right: 0;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 200ms ease;
+  }
+  .site-nav-link:is(:hover, :focus-visible, [aria-current="page"])::after {
+    transform: scaleX(1);
+  }
+  .action-row {
+    transition:
+      background-color 180ms ease,
+      color 180ms ease;
+  }
+  .action-row:is(:hover, :focus-visible) > span:nth-child(2) {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+  .product-card-actions a {
+    transition:
+      color 180ms ease,
+      background-color 180ms ease,
+      border-color 180ms ease,
+      translate 180ms ease;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .product-card-actions a:hover {
+      background-color: #e7e5e4;
+      border-color: #1c1917;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .site-nav-link::after,
+    .action-row,
+    .product-card-actions a {
+      transition: none;
+    }
+  }
+}
+
+/* Keep feedback transitions even on controls that already use transition-colors. */
+@layer utilities {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  label:has(input[type="file"]:not(:disabled)) {
+    transition-property:
+      color, background-color, border-color, opacity, filter, translate, scale,
+      box-shadow;
+    transition-duration: 180ms;
+    transition-timing-function: ease;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    button:not(:disabled),
+    [role="button"]:not([aria-disabled="true"]),
+    label:has(input[type="file"]:not(:disabled)) {
+      transition: none;
+      translate: none;
+      scale: none;
+    }
+  }
+}
+@layer components {
+  .brand-link {
+    transition: opacity 180ms ease;
+  }
+  .brand-link:is(:hover, :focus-visible) {
+    opacity: 0.65;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .brand-link {
+      transition: none;
+    }
+  }
 }

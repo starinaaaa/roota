@@ -31,7 +31,7 @@ export default async function Footer() {
             <div className="col-span-2 md:col-span-1">
               <Link
                 href="/"
-                className="font-display text-price tracking-[0.08em] uppercase text-stone-900 block mb-4"
+                className="brand-link font-display text-price tracking-[0.08em] uppercase text-stone-900 block mb-4"
               >
                 Roota
               </Link>

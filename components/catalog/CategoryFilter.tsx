@@ -39,6 +39,7 @@ export default function CategoryFilter({ activeSlug, categories }: Props) {
 
         return (
           <button
+            data-custom-underline
             key={slug}
             type="button"
             aria-pressed={isActive}

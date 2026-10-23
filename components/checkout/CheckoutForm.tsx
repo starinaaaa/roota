@@ -67,9 +67,9 @@ export default function CheckoutForm({
     address: "",
     comment: "",
     legalVersion: LEGAL_VERSION,
-    acceptedTerms: false,
-    newsletterDataConsent: false,
-    subscribeToNews: false,
+    acceptedTerms: true,
+    newsletterDataConsent: true,
+    subscribeToNews: true,
     reviewConsent: false,
     emailConsent: false,
   });
@@ -172,8 +172,6 @@ export default function CheckoutForm({
     if (name === "telegram") next.telegram = value.replace(/^@+/, "");
     if (name === "email") {
       next.emailConsent = false;
-      next.subscribeToNews = false;
-      next.newsletterDataConsent = false;
       setConsentEmail("");
     }
     setFormData(next);

@@ -171,7 +171,7 @@ export default async function CustomerOrderPage({
                 key={item.id}
                 className="grid grid-cols-[auto_minmax(0,1fr)] sm:grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 py-5 border-b border-stone-200 first-of-type:pt-0 last:border-b-0 md:gap-x-5"
               >
-                <div className="relative row-span-2 sm:row-span-1 aspect-square w-20 md:w-24 shrink-0 overflow-hidden bg-stone-100">
+                <div className="relative row-span-2 sm:row-span-1 aspect-square w-20 md:w-24 shrink-0 overflow-hidden store-media bg-stone-100">
                   {image ? (
                     <Image
                       src={image}

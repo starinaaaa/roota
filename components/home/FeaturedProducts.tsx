@@ -1,4 +1,5 @@
 "use client";
+import { productTitle } from "@/lib/product-title";
 
 import { productBadge } from "@/lib/product-badge";
 import { bindPrepositions } from "@/lib/typography";
@@ -14,6 +15,7 @@ import type { Product } from "@/types";
 interface FeaturedProductsProps {
   products: Pick<
     Product,
+    | "category"
     | "id"
     | "name"
     | "slug"
@@ -110,6 +112,7 @@ function ProductCardFeatured({
 }: {
   product: Pick<
     Product,
+    | "category"
     | "id"
     | "name"
     | "slug"
@@ -185,7 +188,7 @@ function ProductCardFeatured({
         {/* Инфо */}
         <div className="space-y-1.5">
           <p className="font-display text-price text-stone-800 group-hover:text-stone-600 transition-colors duration-300">
-            {bindPrepositions(product.name)}
+            {bindPrepositions(productTitle(product.name, product.category))}
           </p>
           <p className="font-body text-copy text-stone-900">
             {bindPrepositions(formatPrice(product.price))}

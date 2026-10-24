@@ -118,7 +118,7 @@ export default function CartDrawer() {
             className="
               fixed top-0 right-0 bottom-0 z-[60]
               w-full sm:w-[660px]
-              bg-stone-50 flex flex-col
+              bg-white flex flex-col
             "
           >
             {/* ── Header — padding ×1.5: px-7→px-6 sm:px-[42px], py-5→py-[30px] ── */}

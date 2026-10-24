@@ -9,7 +9,7 @@ import { orderIdForToken, paymentForOrderToken } from "@/lib/order-access";
 import { createServerClient } from "@/lib/db";
 import { customerOrderState, orderSteps } from "@/lib/customer-order-model";
 import { formatPrice } from "@/lib/format-price";
-import { getProducts } from "@/lib/products";
+import { orderProductDetails } from "@/lib/order-product-details";
 import { getSiteContent } from "@/lib/site";
 import { paymentExpired } from "@/lib/payments/model";
 import { paymentMode } from "@/lib/payments/robokassa";
@@ -41,7 +41,7 @@ export default async function CustomerOrderPage({
   if (!orderId) notFound();
   // Also expires the reservation before rendering the order's current state.
   const payment = await paymentForOrderToken(token);
-  const [orderResult, site, products] = await Promise.all([
+  const [orderResult, site] = await Promise.all([
     createServerClient()
       .from("orders")
       .select(
@@ -50,7 +50,6 @@ export default async function CustomerOrderPage({
       .eq("id", orderId)
       .single(),
     getSiteContent(),
-    getProducts(),
   ]);
   const order = orderResult.data;
   if (orderResult.error || !order)
@@ -91,8 +90,8 @@ export default async function CustomerOrderPage({
     "text",
     `Здравствуйте! Вопрос по заказу ${order.order_number}.`,
   );
-  const imageByProduct = new Map(
-    products.map((p) => [p.id, p.primary_image_url]),
+  const details = await orderProductDetails(
+    items.map((item) => item.product_id),
   );
   return (
     <div className="w-full px-6 pb-20 pt-25 md:px-12 md:pt-34 lg:px-16">
@@ -164,7 +163,7 @@ export default async function CustomerOrderPage({
           </h2>
           {items.map((item) => {
             const image = item.product_id
-              ? imageByProduct.get(item.product_id)
+              ? details.get(item.product_id)?.image
               : null;
             return (
               <article
@@ -175,7 +174,11 @@ export default async function CustomerOrderPage({
                   {image ? (
                     <Image
                       src={image}
-                      alt={item.product_name}
+                      alt={
+                        details
+                          .get(item.product_id ?? "")
+                          ?.title(item.product_name) ?? item.product_name
+                      }
                       fill
                       sizes="(min-width: 768px) 96px, 80px"
                       className="object-contain"
@@ -188,7 +191,9 @@ export default async function CustomerOrderPage({
                 </div>
                 <div className="min-w-0 font-body text-ui space-y-1">
                   <h3 className="font-body font-normal text-copy text-stone-900 break-words">
-                    {item.product_name}
+                    {details
+                      .get(item.product_id ?? "")
+                      ?.title(item.product_name) ?? item.product_name}
                   </h3>
                   <p className="text-stone-600">
                     {item.quantity} шт. × {formatPrice(item.price)}

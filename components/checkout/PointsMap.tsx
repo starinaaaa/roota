@@ -131,7 +131,7 @@ export default function PointsMap({
         </div>
       )}
       {current && (
-        <div className="absolute bottom-4 left-4 right-4 z-10 bg-stone-50 border border-stone-200 shadow-lg p-4 space-y-2">
+        <div className="absolute bottom-4 left-4 right-4 z-10 bg-white border border-stone-200 shadow-lg p-4 space-y-2">
           <div className="flex justify-between gap-3">
             <p className="text-ui font-medium">
               {bindPrepositions(current.name)}

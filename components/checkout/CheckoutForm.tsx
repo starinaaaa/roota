@@ -1,4 +1,5 @@
 "use client";
+import { productTitle } from "@/lib/product-title";
 
 import { trackCheckoutProgress } from "@/lib/analytics/checkout-client";
 import { bindPrepositions } from "@/lib/typography";
@@ -483,7 +484,7 @@ export default function CheckoutForm({
               ).map(([value, title, description]) => (
                 <label
                   key={value}
-                  className={`flex items-start gap-3 p-4 border cursor-pointer transition-colors hover:border-stone-500 ${formData.deliveryMethod === value ? "border-stone-900" : "border-stone-200"}`}
+                  className={`flex items-start gap-3 p-4 store-control border cursor-pointer transition-colors hover:border-stone-500 ${formData.deliveryMethod === value ? "border-stone-900" : "border-stone-200"}`}
                 >
                   <input
                     type="radio"
@@ -548,7 +549,7 @@ export default function CheckoutForm({
                 placeholder="Пожелания к заказу"
                 rows={3}
                 className="
-                  w-full border border-stone-200 bg-transparent
+                  store-control w-full border border-stone-200 bg-transparent
                   font-body text-ui text-stone-800
                   px-4 py-3 resize-none
                   placeholder:text-stone-600
@@ -593,7 +594,9 @@ export default function CheckoutForm({
                   </div>
                   <div className="flex flex-col justify-center flex-1 min-w-0">
                     <p className="font-body text-copy text-stone-900 break-words">
-                      {bindPrepositions(item.product.name)}
+                      {bindPrepositions(
+                        productTitle(item.product.name, item.product.category),
+                      )}
                     </p>
                     <p className="font-body text-copy text-stone-600 mt-1">
                       × {item.quantity}
@@ -829,7 +832,7 @@ function Field({
       <div
         className={
           prefix
-            ? "flex items-baseline border border-stone-200 px-4 focus-within:border-stone-500 transition-colors duration-200"
+            ? "store-control flex items-baseline border border-stone-200 px-4 focus-within:border-stone-500 transition-colors duration-200"
             : undefined
         }
       >
@@ -857,7 +860,7 @@ function Field({
             prefix
               ? "w-full min-w-0 border-0 bg-transparent font-body text-ui text-stone-800 pl-0 py-3 placeholder:text-stone-600 focus:outline-none"
               : `
-          w-full border border-stone-200 bg-transparent
+          store-control w-full border border-stone-200 bg-transparent
           font-body text-ui text-stone-800
           px-4 py-3
           placeholder:text-stone-600

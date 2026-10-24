@@ -1,4 +1,5 @@
 "use client";
+import { productTitle } from "@/lib/product-title";
 
 import { bindPrepositions } from "@/lib/typography";
 import { useId, useState } from "react";
@@ -43,7 +44,7 @@ export default function ProductInfo({
           </p>
         )}
         <h1 className="font-display text-section leading-tight text-stone-900 [overflow-wrap:anywhere]">
-          {bindPrepositions(product.name)}
+          {bindPrepositions(productTitle(product.name, product.category))}
         </h1>
         <p className="font-body text-copy text-stone-900">
           {bindPrepositions(formatPrice(product.price))}
@@ -150,7 +151,7 @@ export default function ProductInfo({
 
             <Link
               href="/contacts"
-              className="text-center
+              className="store-control text-center
               w-full border border-stone-300 text-stone-700
               font-body text-ui tracking-[0.08em] uppercase
               py-4 px-8

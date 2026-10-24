@@ -1,3 +1,5 @@
+import { cdnImageUrl } from "@/lib/image-cdn";
+import { orderProductDetails } from "@/lib/order-product-details";
 import {
   customerParcels,
   deliveryEmailUpdate,
@@ -148,27 +150,20 @@ export async function processEmailQueue() {
         );
         values.delivery_subject = deliveryUpdate.subject;
         values.delivery_update = deliveryUpdate.message;
-        const productIds = o.order_items
-          .map((i) => i.product_id)
-          .filter(Boolean);
-        const images = productIds.length
-          ? (
-              await db
-                .from("product_images")
-                .select("product_id,public_url")
-                .in("product_id", productIds)
-                .eq("is_primary", true)
-            ).data
-          : [];
-        const imageByProduct = new Map(
-          (images ?? []).map((i) => [i.product_id, i.public_url]),
+        const details = await orderProductDetails(
+          o.order_items.map((item) => item.product_id),
         );
-        orderItems = o.order_items.map((i) => ({
-          name: i.product_name,
-          quantity: i.quantity,
-          price: Number(i.price),
-          imageUrl: imageByProduct.get(i.product_id),
-        }));
+        orderItems = o.order_items.map((i) => {
+          const detail = details.get(i.product_id ?? "");
+          return {
+            name: detail?.title(i.product_name) ?? i.product_name,
+            quantity: i.quantity,
+            price: Number(i.price),
+            imageUrl: detail?.image
+              ? (cdnImageUrl(detail.image, 160) ?? siteUrl(detail.image))
+              : undefined,
+          };
+        });
         const leadDays = Math.max(
           0,
           ...o.order_items.map((i) => i.lead_time_days ?? 0),
@@ -186,10 +181,9 @@ export async function processEmailQueue() {
         values.payment = paidAt
           ? `Оплачено ${new Date(paidAt).toLocaleString("ru-RU", { timeZone: "Europe/Moscow" })} МСК`
           : "Актуальный статус оплаты — на странице заказа";
-        values.items = (o.order_items ?? [])
+        values.items = orderItems
           .map(
-            (i: { product_name: string; quantity: number; price: number }) =>
-              `${i.product_name} × ${i.quantity} — ${money(i.price * i.quantity)}`,
+            (i) => `${i.name} × ${i.quantity} — ${money(i.price * i.quantity)}`,
           )
           .join("\n");
         const deadline = relationList(o.payments).find(

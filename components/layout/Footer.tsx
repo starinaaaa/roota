@@ -22,7 +22,7 @@ export default async function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="bg-stone-50 border-t border-stone-200">
+    <footer className="bg-stone-100 border-t border-stone-200">
       <div className="px-6 md:px-12 lg:px-16 py-16 md:py-20">
         <div className="max-w-[1440px] mx-auto">
           {/* Верхняя часть */}

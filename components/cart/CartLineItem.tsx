@@ -1,4 +1,5 @@
 "use client";
+import { productTitle } from "@/lib/product-title";
 
 import { bindPrepositions } from "@/lib/typography";
 import Image from "@/components/ui/StoreImage";
@@ -56,7 +57,7 @@ export default function CartLineItem({
               href={`/product/${product.slug}`}
               className="font-body text-copy tracking-[0.08em] uppercase text-stone-700 leading-snug hover:text-stone-600 transition-colors duration-200 line-clamp-2"
             >
-              {bindPrepositions(product.name)}
+              {bindPrepositions(productTitle(product.name, product.category))}
             </Link>
             <span className="font-body text-price tracking-[0.06em] text-stone-900 shrink-0 tabular-nums">
               {bindPrepositions(formatPrice(product.price * quantity))}
@@ -142,7 +143,7 @@ export default function CartLineItem({
               href={`/product/${product.slug}`}
               className="font-body text-ui text-stone-800 hover:text-stone-600 transition-colors duration-200"
             >
-              {bindPrepositions(product.name)}
+              {bindPrepositions(productTitle(product.name, product.category))}
             </Link>
             <p className="font-display text-copy text-stone-900 mt-1">
               {bindPrepositions(formatPrice(product.price))}

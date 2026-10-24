@@ -1,4 +1,5 @@
 "use client";
+import { productTitle } from "@/lib/product-title";
 
 import { productBadge } from "@/lib/product-badge";
 import { bindPrepositions } from "@/lib/typography";
@@ -75,7 +76,7 @@ export default function ProductCard({ product, index = 0 }: Props) {
             {bindPrepositions(product.category?.name ?? "")}
           </p>
           <h3 className="font-display font-light text-price text-stone-800 group-hover:text-stone-900 transition-colors duration-200">
-            {bindPrepositions(product.name)}
+            {bindPrepositions(productTitle(product.name, product.category))}
           </h3>
           <p className="font-body text-copy text-stone-900">
             {bindPrepositions(formatPrice(product.price))}

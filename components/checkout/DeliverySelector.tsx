@@ -360,7 +360,7 @@ export default function DeliverySelector({
             }
           }}
           placeholder="Начните вводить название города"
-          className="w-full border border-stone-200 bg-transparent font-body text-ui px-4 py-3"
+          className="store-control w-full border border-stone-200 bg-transparent font-body text-ui px-4 py-3"
         />
         <p
           id="delivery-city-status"
@@ -407,7 +407,7 @@ export default function DeliverySelector({
       ) : selectedCity ? (
         <>
           <label
-            className={`flex items-center gap-4 border px-4 py-4 cursor-pointer ${method ? "border-stone-900" : "border-stone-200"}`}
+            className={`store-control flex items-center gap-4 border px-4 py-4 cursor-pointer ${method ? "border-stone-900" : "border-stone-200"}`}
           >
             <input
               type="radio"
@@ -518,7 +518,7 @@ export default function DeliverySelector({
               setListLimit(100);
             }}
             placeholder="Улица или название пункта"
-            className="w-full border border-stone-200 bg-transparent px-4 py-3 text-ui"
+            className="store-control w-full border border-stone-200 bg-transparent px-4 py-3 text-ui"
           />
           <div className="grid md:grid-cols-[minmax(0,1fr)_300px] gap-4">
             {open && selectedCity && (

@@ -3,7 +3,7 @@ import Image from "@/components/ui/StoreImage";
 
 export default function AboutHero({ title }: { title: string }) {
   return (
-    <header className="relative isolate flex min-h-[calc(100svh-4rem)] items-center overflow-hidden store-media bg-stone-800 px-6 py-24 md:min-h-[calc(100svh-5rem)] md:px-12 lg:px-16">
+    <header className="relative isolate flex min-h-[calc(100svh-4rem)] items-center overflow-hidden bg-stone-800 px-6 py-24 md:min-h-[calc(100svh-5rem)] md:px-12 lg:px-16">
       <div className="absolute inset-0 -z-20">
         <Image
           src="/images/about/hero-plates-2284.jpg"

@@ -57,7 +57,9 @@ test("database RLS isolates participants and permits only owner read access", as
   const a = "10000000-0000-4000-8000-000000000001",
     b = "10000000-0000-4000-8000-000000000002";
   try {
-    await db.exec("CREATE ROLE roota_app NOLOGIN NOSUPERUSER NOBYPASSRLS");
+    await db.exec(
+      "CREATE ROLE roota_app NOLOGIN NOSUPERUSER NOBYPASSRLS; CREATE ROLE wheel_migrator NOLOGIN NOSUPERUSER NOBYPASSRLS; GRANT USAGE,CREATE ON SCHEMA public TO wheel_migrator; SET ROLE wheel_migrator",
+    );
     await db.exec(
       await readFile(
         new URL(
@@ -68,7 +70,16 @@ test("database RLS isolates participants and permits only owner read access", as
       ),
     );
     await db.exec(
-      `SET ROLE roota_app; SELECT set_config('wheel.user_id','${a}',false),set_config('wheel.is_owner','false',false); INSERT INTO wheel_profile(user_id,name) VALUES('${a}','Человек А'); INSERT INTO wheel_task(user_id,title) VALUES('${a}','Секрет А');`,
+      await readFile(
+        new URL(
+          "../database/migrations/20261024_wheel_schema_owner.sql",
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+    );
+    await db.exec(
+      `RESET ROLE; SET ROLE roota_app; SELECT set_config('wheel.user_id','${a}',false),set_config('wheel.is_owner','false',false); INSERT INTO wheel_profile(user_id,name) VALUES('${a}','Человек А'); INSERT INTO wheel_task(user_id,title) VALUES('${a}','Секрет А');`,
     );
     await db.exec(
       `SELECT set_config('wheel.user_id','${b}',false); INSERT INTO wheel_profile(user_id,name) VALUES('${b}','Человек Б'); INSERT INTO wheel_task(user_id,title) VALUES('${b}','Секрет Б');`,
@@ -117,6 +128,12 @@ test("database RLS isolates participants and permits only owner read access", as
     await assert.rejects(
       db.exec("DELETE FROM wheel_task"),
       /permission denied/,
+    );
+    await db.exec("RESET ROLE; SET ROLE wheel_migrator");
+    assert.equal(
+      (await db.query("SELECT * FROM wheel_task")).rows.length,
+      2,
+      "trusted schema owner can back up all wheel data under FORCE RLS",
     );
   } finally {
     await db.close();

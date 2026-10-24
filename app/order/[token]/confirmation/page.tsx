@@ -84,7 +84,7 @@ export default async function ConfirmationPage({
         </Link>
         <PrintConfirmation />
       </div>
-      <article className="order-confirmation bg-white border border-stone-200 p-6 sm:p-10 md:p-14 font-body text-ui text-stone-800">
+      <article className="order-confirmation bg-stone-50 border border-stone-200 p-6 sm:p-10 md:p-14 font-body text-ui text-stone-800">
         <div className="border-b border-stone-200 pb-8 mb-8">
           <p className="font-display text-price tracking-[0.2em] mb-8">ROOTA</p>
           <p className="text-caption uppercase tracking-widest text-stone-500 mb-3">

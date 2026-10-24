@@ -95,8 +95,8 @@ export default async function CustomerOrderPage({
     products.map((p) => [p.id, p.primary_image_url]),
   );
   return (
-    <div className="pt-28 md:pt-36 pb-20 px-6 md:px-12 max-w-6xl mx-auto">
-      <div className="max-w-3xl space-y-5">
+    <div className="w-full px-6 pb-20 pt-25 md:px-12 md:pt-34 lg:px-16">
+      <div className="max-w-4xl space-y-5">
         <p className="font-body text-copy uppercase tracking-wide text-stone-600">
           Заказ № {order.order_number}
         </p>
@@ -154,9 +154,12 @@ export default async function CustomerOrderPage({
           ))}
         </ol>
       )}
-      <div className="grid lg:grid-cols-[1.3fr_1fr] gap-10 mt-10">
-        <section aria-labelledby="order-items" className="space-y-5">
-          <h2 id="order-items" className="font-display text-section">
+      <div className="grid lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] items-start gap-12 xl:gap-16 mt-10 md:mt-14">
+        <section aria-labelledby="order-items" className="min-w-0">
+          <h2
+            id="order-items"
+            className="font-display text-price text-stone-900 mb-7 md:mb-8"
+          >
             Ваши изделия
           </h2>
           {items.map((item) => {
@@ -166,16 +169,16 @@ export default async function CustomerOrderPage({
             return (
               <article
                 key={item.id}
-                className="flex gap-4 border-b border-stone-200 pb-5"
+                className="grid grid-cols-[auto_minmax(0,1fr)] sm:grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 py-5 border-b border-stone-200 first-of-type:pt-0 last:border-b-0 md:gap-x-5"
               >
-                <div className="relative w-24 h-28 sm:w-28 sm:h-32 shrink-0 bg-stone-100">
+                <div className="relative row-span-2 sm:row-span-1 aspect-square w-20 md:w-24 shrink-0 overflow-hidden bg-stone-100">
                   {image ? (
                     <Image
                       src={image}
                       alt={item.product_name}
                       fill
-                      sizes="112px"
-                      className="object-cover"
+                      sizes="(min-width: 768px) 96px, 80px"
+                      className="object-contain"
                     />
                   ) : (
                     <span className="flex h-full items-center justify-center text-stone-400 font-display text-ui">
@@ -183,12 +186,13 @@ export default async function CustomerOrderPage({
                     </span>
                   )}
                 </div>
-                <div className="flex-1 font-body text-ui space-y-2">
-                  <h3 className="text-stone-900">{item.product_name}</h3>
+                <div className="min-w-0 font-body text-ui space-y-1">
+                  <h3 className="font-body font-normal text-copy text-stone-900 break-words">
+                    {item.product_name}
+                  </h3>
                   <p className="text-stone-600">
                     {item.quantity} шт. × {formatPrice(item.price)}
                   </p>
-                  <p>{formatPrice(item.price * item.quantity)}</p>
                   {item.purchase_mode === "preorder" && (
                     <p className="text-stone-600">
                       Предзаказ
@@ -198,6 +202,9 @@ export default async function CustomerOrderPage({
                     </p>
                   )}
                 </div>
+                <p className="col-start-2 sm:col-start-auto font-body text-copy text-stone-900 tabular-nums whitespace-nowrap sm:text-right">
+                  {formatPrice(item.price * item.quantity)}
+                </p>
               </article>
             );
           })}
@@ -207,9 +214,9 @@ export default async function CustomerOrderPage({
             </p>
           )}
         </section>
-        <aside className="bg-stone-100 p-6 md:p-8 space-y-7 self-start font-body text-ui">
-          <section className="space-y-3">
-            <h2 className="font-display text-section">Доставка</h2>
+        <aside className="min-w-0 space-y-7 md:space-y-8 self-start font-body text-ui">
+          <section className="space-y-5">
+            <h2 className="font-display text-price text-stone-900">Доставка</h2>
             <p>
               {point?.name ||
                 (courier
@@ -229,7 +236,7 @@ export default async function CustomerOrderPage({
               </p>
             )}
             {parcels.length > 0 ? (
-              <ParcelList parcels={parcels} />
+              <ParcelList parcels={parcels} variant="checkout" />
             ) : tracking ? (
               <p className="break-all">Номер отправления: {tracking}</p>
             ) : null}
@@ -254,10 +261,10 @@ export default async function CustomerOrderPage({
               </p>
             )}
           </section>
-          <section className="space-y-3 border-t border-stone-200 pt-6">
-            <div className="flex justify-between gap-3">
+          <section className="space-y-4 border-t border-stone-200 pt-6 md:pt-7">
+            <div className="flex justify-between gap-6 text-copy text-stone-600">
               <span>Изделия</span>
-              <span>
+              <span className="text-stone-900 tabular-nums whitespace-nowrap">
                 {formatPrice(
                   items.length
                     ? items.reduce((sum, i) => sum + i.quantity * i.price, 0)
@@ -267,9 +274,9 @@ export default async function CustomerOrderPage({
                 )}
               </span>
             </div>
-            <div className="flex justify-between gap-3">
+            <div className="flex justify-between gap-6 text-copy text-stone-600">
               <span>Доставка</span>
-              <span>
+              <span className="text-right tabular-nums">
                 {courier
                   ? "Оплачивается отдельно"
                   : formatPrice(
@@ -278,16 +285,20 @@ export default async function CustomerOrderPage({
                     )}
               </span>
             </div>
-            <div className="flex justify-between gap-3 text-copy border-t border-stone-200 pt-4">
-              <span>Итого</span>
-              <span>{formatPrice(order.total_amount)}</span>
+            <div className="flex justify-between items-baseline gap-5 border-t border-stone-200 pt-6 md:pt-7">
+              <span className="text-ui tracking-[0.08em] uppercase text-stone-600">
+                Итого
+              </span>
+              <span className="font-display text-[2rem] leading-none md:text-section text-stone-900 tabular-nums whitespace-nowrap">
+                {formatPrice(order.total_amount)}
+              </span>
             </div>
           </section>
           <a
             href={contact.toString()}
             target="_blank"
             rel="noopener noreferrer"
-            className="block text-center border border-stone-400 px-4 py-3"
+            className="block w-full text-center border border-stone-900 px-6 py-4 text-ui uppercase tracking-wider transition-colors hover:bg-stone-900 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4"
           >
             Написать по заказу ↗
           </a>

@@ -2,7 +2,13 @@ import {
   parcelProgress,
   type CustomerParcel,
 } from "@/lib/delivery/customer-parcels";
-export default function ParcelList({ parcels }: { parcels: CustomerParcel[] }) {
+export default function ParcelList({
+  parcels,
+  variant = "default",
+}: {
+  parcels: CustomerParcel[];
+  variant?: "default" | "checkout";
+}) {
   return (
     <div className="space-y-3">
       {parcels.length > 1 && (
@@ -11,9 +17,19 @@ export default function ParcelList({ parcels }: { parcels: CustomerParcel[] }) {
       {parcels.map((parcel) => (
         <section
           key={parcel.index}
-          className="border border-stone-300/70 p-4 space-y-2"
+          className={
+            variant === "checkout"
+              ? "border border-stone-200 p-4 md:p-5 space-y-3"
+              : "border border-stone-300/70 p-4 space-y-2"
+          }
         >
-          <h3 className="font-medium">
+          <h3
+            className={
+              variant === "checkout"
+                ? "font-body text-copy font-normal text-stone-900"
+                : "font-medium"
+            }
+          >
             Посылка {parcel.index} из {parcel.total}
           </h3>
           <p>{parcel.description}</p>

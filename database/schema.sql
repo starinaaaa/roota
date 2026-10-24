@@ -7,6 +7,7 @@ CREATE TYPE public.delivery_type AS ENUM ('moscow','russia','pickup');
 CREATE TYPE public.order_status AS ENUM ('new','confirmed','in_production','shipped','delivered','cancelled');
 CREATE TYPE public.payment_status AS ENUM ('pending','paid','failed','refunded');
 CREATE SEQUENCE public.robokassa_inv_id AS bigint START WITH 1000000000000 INCREMENT BY 1 MAXVALUE 9007199254740991;
+
 CREATE OR REPLACE FUNCTION public.generate_order_number()
  RETURNS text
  LANGUAGE plpgsql
@@ -538,6 +539,19 @@ ALTER TABLE public.email_restock_events ADD CONSTRAINT "email_restock_events_pro
 ALTER TABLE public.order_returns ADD CONSTRAINT "order_returns_order_id_fkey" FOREIGN KEY (order_id) REFERENCES orders(id);
 ALTER TABLE public.funnel_events ADD CONSTRAINT "funnel_events_session_id_fkey" FOREIGN KEY (session_id) REFERENCES funnel_sessions(id) ON DELETE CASCADE;
 ALTER TABLE public.funnel_events ADD CONSTRAINT "funnel_events_order_id_fkey" FOREIGN KEY (order_id) REFERENCES orders(id);
+
+-- Contact snapshots of unfinished checkout; never grant notification consent.
+create table public.checkout_contact_drafts (
+ cart_id uuid primary key references public.carts(id) on delete cascade,
+ data jsonb not null check(jsonb_typeof(data)='object'),
+ captured_at timestamptz not null,
+ updated_at timestamptz not null default now(),
+ expires_at timestamptz not null default now()+interval '7 days'
+);
+create index checkout_contact_drafts_expiry on public.checkout_contact_drafts(expires_at);
+
+
+
 CREATE OR REPLACE FUNCTION public.apply_order_shipment_status(p_order uuid, p_posting text, p_status text, p_changed timestamp with time zone, p_history jsonb, p_claim uuid DEFAULT NULL::uuid)
  RETURNS boolean
  LANGUAGE plpgsql
@@ -985,16 +999,14 @@ AS $function$
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.clean_old_carts()
- RETURNS void
- LANGUAGE plpgsql
-AS $function$
-BEGIN
-  DELETE FROM public.carts
-  WHERE updated_at < now() - interval '30 days';
-END;
-$function$
-;
+create or replace function public.clean_old_carts() returns void language plpgsql set search_path='' as $$
+begin
+ delete from public.checkout_contact_drafts d where d.expires_at<=now() or exists(
+  select 1 from public.carts c join public.orders o on o.cart_session=c.session_id
+  where c.id=d.cart_id and o.created_at>=d.updated_at
+ );
+ delete from public.carts where updated_at<now()-interval '30 days';
+end $$;
 
 CREATE OR REPLACE FUNCTION public.confirm_email_subscription(p_token text)
  RETURNS boolean

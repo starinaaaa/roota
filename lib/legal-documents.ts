@@ -1,4 +1,5 @@
-import current from "./legal-documents/2026-10-23-3.json";
+import current from "./legal-documents/2026-10-24.json";
+import previous23v3 from "./legal-documents/2026-10-23-3.json";
 import previous23v2 from "./legal-documents/2026-10-23-2.json";
 import previous23 from "./legal-documents/2026-10-23.json";
 import previous22 from "./legal-documents/2026-10-22.json";
@@ -20,6 +21,7 @@ export const legalArchives: Record<
   }
 > = {
   [current.version]: current,
+  [previous23v3.version]: previous23v3,
   [previous23v2.version]: previous23v2,
   [previous23.version]: previous23,
   [previous.version]: previous,

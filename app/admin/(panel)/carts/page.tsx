@@ -1,3 +1,4 @@
+import type { CheckoutContactData } from "@/lib/checkout-contact";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
@@ -19,6 +20,7 @@ type Cart = {
   point_id: string | null;
   delivery_cost: string | null;
   email: string | null;
+  checkout_contact: CheckoutContactData | null;
   reminder_state: string | null;
   order_id: string | null;
   order_number: string | null;
@@ -168,7 +170,61 @@ export default async function CartsPage({
                   className="border-t border-stone-200 align-top"
                 >
                   <td className="p-3">
-                    {cart.email ?? `Анонимный · ${cart.browser_id.slice(0, 8)}`}
+                    <p>
+                      {[
+                        cart.checkout_contact?.firstName,
+                        cart.checkout_contact?.lastName,
+                      ]
+                        .filter(Boolean)
+                        .join(" ")
+                        .trim() ||
+                        cart.email ||
+                        `Анонимный · ${cart.browser_id.slice(0, 8)}`}
+                    </p>
+                    {cart.checkout_contact && (
+                      <div className="text-sm text-stone-600 space-y-1 mt-2 [overflow-wrap:anywhere]">
+                        {cart.checkout_contact.phone &&
+                          cart.checkout_contact.phone !== "+7" && (
+                            <p>Телефон: {cart.checkout_contact.phone}</p>
+                          )}
+                        {cart.checkout_contact.email && (
+                          <p>Email: {cart.checkout_contact.email}</p>
+                        )}
+                        {cart.checkout_contact.telegram && (
+                          <p>Telegram: {cart.checkout_contact.telegram}</p>
+                        )}
+                        {(cart.checkout_contact.address ||
+                          cart.checkout_contact.comment ||
+                          cart.checkout_contact.delivery?.city) && (
+                          <details>
+                            <summary className="cursor-pointer underline">
+                              Данные оформления
+                            </summary>
+                            {cart.checkout_contact.delivery?.city && (
+                              <p>
+                                Город:{" "}
+                                {cart.checkout_contact.delivery.city.name}
+                              </p>
+                            )}
+                            {cart.checkout_contact.delivery?.point && (
+                              <p>
+                                ПВЗ: {cart.checkout_contact.delivery.point.name}{" "}
+                                · {cart.checkout_contact.delivery.point.address}
+                              </p>
+                            )}
+                            {cart.checkout_contact.address && (
+                              <p>Адрес: {cart.checkout_contact.address}</p>
+                            )}
+                            {cart.checkout_contact.comment && (
+                              <p className="whitespace-pre-wrap">
+                                Комментарий: {cart.checkout_contact.comment}
+                              </p>
+                            )}
+                          </details>
+                        )}
+                        <p>Введено в черновике; контакты не проверены.</p>
+                      </div>
+                    )}
                     {cart.order_id && (
                       <Link
                         className="block mt-2 underline"
@@ -228,7 +284,9 @@ export default async function CartsPage({
                         cart.reminder_state)
                       : cart.email
                         ? "Пока не запланировано"
-                        : "Нет согласия / email"}
+                        : cart.checkout_contact?.email
+                          ? "Email сохранён, нет действующего согласия на напоминание"
+                          : "Email не сохранён"}
                   </td>
                 </tr>
               ))}

@@ -13,7 +13,7 @@ function Notice({ message, pending }: { message: string; pending: boolean }) {
   return (
     <aside
       aria-label="Результат действия"
-      className="fixed top-24 right-4 left-4 sm:left-auto sm:w-96 z-[110] border border-stone-300 rounded-lg bg-white text-stone-900 p-4 shadow-lg flex items-start gap-3"
+      className="fixed top-24 right-4 left-4 sm:left-auto sm:w-96 z-[110] border border-stone-300 rounded-lg bg-stone-50 text-stone-900 p-4 shadow-lg flex items-start gap-3"
     >
       {pending && (
         <span className="action-spinner mt-1 shrink-0" aria-hidden="true" />

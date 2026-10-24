@@ -1,9 +1,10 @@
 "use client";
 import {
-  shipmentPostings,
   carrierStatusLabel,
   type CarrierPosting,
 } from "@/lib/delivery/parcel-status";
+import { customerParcels } from "@/lib/delivery/customer-parcels";
+import ParcelList from "@/components/order/ParcelList";
 import type { PackingRule } from "@/lib/delivery/model";
 import ActionStatus from "@/components/ui/ActionStatus";
 import {
@@ -43,6 +44,9 @@ type OrderData = {
   } | null;
   shipments?: {
     state: string;
+    request_payload?: {
+      postings?: { request_id: number; description?: string }[];
+    };
     status_history?: { postings?: CarrierPosting[] };
     posting_number: string | null;
     carrier_status: string | null;
@@ -52,6 +56,7 @@ type OrderData = {
 
   items: {
     id: string;
+    product_id?: string;
     product_name: string;
     quantity: number;
     price: number;
@@ -290,13 +295,13 @@ export default function OrderEditor({ order }: { order: OrderData }) {
             Статус Ozon:{" "}
             {carrierStatusLabel(order.shipments?.[0]?.carrier_status)}
           </p>
-          {shipmentPostings(order.shipments?.[0] ?? {}).map(
-            (posting, index) => (
-              <p key={posting.posting_number}>
-                Отправление {index + 1}: {posting.posting_number}
-              </p>
-            ),
-          )}
+          <ParcelList
+            parcels={customerParcels(
+              order.delivery_details.packing,
+              order.items,
+              order.shipments?.[0],
+            )}
+          />
           <p className="text-sm text-stone-500">
             Статусы активных отправлений проверяются автоматически каждые 15
             минут.

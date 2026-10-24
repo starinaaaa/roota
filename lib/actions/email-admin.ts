@@ -1,4 +1,5 @@
 "use server";
+import { deliveryEmailUpdate } from "@/lib/delivery/customer-parcels";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
 import { createServerClient } from "@/lib/db";
@@ -18,19 +19,17 @@ export async function testStudioNotification() {
   if (!key) throw new Error("API-ключ почты не настроен");
   const id = randomUUID(),
     db = createServerClient();
-  const logged = await db
-    .from("email_messages")
-    .insert({
-      id,
-      event_key: `studio-test:${id}`,
-      kind: "order_created",
-      recipient: "hello@roota.moscow",
-      state: "sending",
-      attempts: 1,
-      claim: id,
-      claimed_at: new Date().toISOString(),
-      payload: { test: true, studio: true },
-    });
+  const logged = await db.from("email_messages").insert({
+    id,
+    event_key: `studio-test:${id}`,
+    kind: "order_created",
+    recipient: "hello@roota.moscow",
+    state: "sending",
+    attempts: 1,
+    claim: id,
+    claimed_at: new Date().toISOString(),
+    payload: { test: true, studio: true },
+  });
   if (logged.error) throw new Error("Не удалось записать проверку в журнал");
   const message = studioEmailMessage(
     {
@@ -154,6 +153,8 @@ export async function testEmailTemplate(form: FormData) {
         delivery: "Пункт выдачи Ozon",
         address: "Адрес выбранного пункта",
         tracking: "Появится после оформления отправления",
+        delivery_subject: deliveryEmailUpdate(kind, "ПРИМЕР", []).subject,
+        delivery_update: deliveryEmailUpdate(kind, "ПРИМЕР", []).message,
         tracking_hint: ozonTrackingHint(false),
         fulfillment:
           "Готовые изделия передаём в доставку в течение 1–3 рабочих дней после оплаты.",

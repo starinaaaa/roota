@@ -1,4 +1,5 @@
-import { shipmentPostings } from "@/lib/delivery/parcel-status";
+import { customerParcels } from "@/lib/delivery/customer-parcels";
+import ParcelList from "@/components/order/ParcelList";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -36,15 +37,24 @@ export default async function ConfirmationPage({
   const { data: order, error } = await createServerClient()
     .from("orders")
     .select(
-      "order_number,created_at,customer_name,status,payment_status,delivery_stage,total_amount,delivery_amount,insurance_amount,delivery_type,delivery_address,delivery_details,tracking_number,request_payload,shipments:order_shipments(state,posting_number,status_history),items:order_items(id,product_name,quantity,price,purchase_mode,lead_time_days)",
+      "order_number,created_at,customer_name,status,payment_status,delivery_stage,total_amount,delivery_amount,insurance_amount,delivery_type,delivery_address,delivery_details,tracking_number,request_payload,shipments:order_shipments(state,posting_number,status_history,carrier_status,request_payload),items:order_items(id,product_id,product_name,quantity,price,purchase_mode,lead_time_days)",
     )
     .eq("id", orderId)
     .single();
   if (error || !order)
     throw new Error("Не удалось загрузить подтверждение покупки");
   const shipment = relationList(order.shipments)[0];
+  const parcels =
+    order.delivery_details?.provider === "ozon"
+      ? customerParcels(
+          order.delivery_details.packing,
+          relationList(order.items),
+          shipment,
+        )
+      : [];
   const state = customerOrderState({
     ...order,
+    parcelStatuses: parcels.map((parcel) => parcel.status),
     hasPreorder: order.items.some((i) => i.purchase_mode === "preorder"),
     leadTimeDays: Math.max(0, ...order.items.map((i) => i.lead_time_days ?? 0)),
   });
@@ -166,16 +176,17 @@ export default async function ConfirmationPage({
           </p>
           {courier && <p className="text-stone-600">{COURIER_DESCRIPTION}</p>}
           <p>Получатель: {order.customer_name}</p>
-          <p className="text-stone-600">
-            Номера отправлений:{" "}
-            {shipmentPostings(shipment ?? {})
-              .map((p) => p.posting_number)
-              .join(", ") ||
-              order.tracking_number ||
-              (courier
-                ? "Детали отправки сообщим в Telegram"
-                : "Появится после оформления отправления")}
-          </p>
+          {order.delivery_details?.provider === "ozon" ? (
+            <ParcelList parcels={parcels} />
+          ) : (
+            <p className="text-stone-600">
+              Номер отправления:{" "}
+              {order.tracking_number ||
+                (courier
+                  ? "Детали отправки сообщим в Telegram"
+                  : "Появится после оформления отправления")}
+            </p>
+          )}
           {order.delivery_details?.provider === "ozon" && (
             <p className="text-caption text-stone-600">
               {ozonTrackingHint(

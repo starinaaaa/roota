@@ -1,4 +1,5 @@
-import { shipmentPostings } from "@/lib/delivery/parcel-status";
+import { customerParcels } from "@/lib/delivery/customer-parcels";
+import ParcelList from "@/components/order/ParcelList";
 import { relationList } from "@/lib/relation-list";
 import type { Metadata } from "next";
 import Image from "@/components/ui/StoreImage";
@@ -44,7 +45,7 @@ export default async function CustomerOrderPage({
     createServerClient()
       .from("orders")
       .select(
-        "order_number,created_at,status,payment_status,total_amount,delivery_amount,insurance_amount,delivery_type,delivery_address,delivery_details,tracking_number,delivery_stage,items:order_items(id,product_id,product_name,quantity,price,purchase_mode,lead_time_days),shipments:order_shipments(state,posting_number,status_history,carrier_status,synced_at)",
+        "order_number,created_at,status,payment_status,total_amount,delivery_amount,insurance_amount,delivery_type,delivery_address,delivery_details,tracking_number,delivery_stage,items:order_items(id,product_id,product_name,quantity,price,purchase_mode,lead_time_days),shipments:order_shipments(state,posting_number,status_history,request_payload,carrier_status,synced_at)",
       )
       .eq("id", orderId)
       .single(),
@@ -63,11 +64,6 @@ export default async function CustomerOrderPage({
       .filter((i) => i.purchase_mode === "preorder")
       .map((i) => i.lead_time_days ?? 0),
   );
-  const state = customerOrderState({
-    ...order,
-    leadTimeDays,
-    hasPreorder: items.some((i) => i.purchase_mode === "preorder"),
-  });
   const expired = payment ? paymentExpired(payment) : false;
   const canPay =
     payment &&
@@ -77,10 +73,17 @@ export default async function CustomerOrderPage({
     order.payment_status === "pending" &&
     paymentMode() === "live";
   const shipment = relationList(order.shipments)[0];
-  const tracking =
-    shipmentPostings(shipment ?? {})
-      .map((p) => p.posting_number)
-      .join(", ") || order.tracking_number;
+  const parcels =
+    order.delivery_details?.provider === "ozon"
+      ? customerParcels(order.delivery_details?.packing, items, shipment)
+      : [];
+  const state = customerOrderState({
+    ...order,
+    parcelStatuses: parcels.map((parcel) => parcel.status),
+    leadTimeDays,
+    hasPreorder: items.some((i) => i.purchase_mode === "preorder"),
+  });
+  const tracking = order.tracking_number;
   const point = order.delivery_details?.point;
   const courier = order.delivery_details?.provider === "yandex";
   const contact = new URL(site.telegram);
@@ -225,17 +228,11 @@ export default async function CustomerOrderPage({
                 вы оплачиваете отдельно в приложении.
               </p>
             )}
-            {tracking && (
-              <div className="space-y-2">
-                <p className="text-caption text-stone-500">
-                  Номера отправлений
-                </p>
-                <p className="break-all">{tracking}</p>
-                <p className="text-caption text-stone-500">
-                  Актуальный статус доставки отображается на этой странице.
-                </p>
-              </div>
-            )}
+            {parcels.length > 0 ? (
+              <ParcelList parcels={parcels} />
+            ) : tracking ? (
+              <p className="break-all">Номер отправления: {tracking}</p>
+            ) : null}
             {order.delivery_details?.provider === "ozon" && (
               <p className="text-caption text-stone-600">
                 {ozonTrackingHint(

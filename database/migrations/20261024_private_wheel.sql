@@ -1,0 +1,28 @@
+-- Additive, isolated wheel tables. Run as schema owner, never as roota_app.
+BEGIN;
+CREATE TABLE public.wheel_user (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), name text NOT NULL, email text NOT NULL UNIQUE, "emailVerified" boolean NOT NULL, image text, "createdAt" timestamptz NOT NULL DEFAULT now(), "updatedAt" timestamptz NOT NULL DEFAULT now());
+CREATE TABLE public.wheel_session (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), "expiresAt" timestamptz NOT NULL, token text NOT NULL UNIQUE, "createdAt" timestamptz NOT NULL DEFAULT now(), "updatedAt" timestamptz NOT NULL, "ipAddress" text, "userAgent" text, "userId" uuid NOT NULL REFERENCES public.wheel_user(id) ON DELETE CASCADE);
+CREATE INDEX wheel_session_user_idx ON public.wheel_session("userId");
+CREATE TABLE public.wheel_account (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), "accountId" text NOT NULL, "providerId" text NOT NULL, "userId" uuid NOT NULL REFERENCES public.wheel_user(id) ON DELETE CASCADE, "accessToken" text, "refreshToken" text, "idToken" text, "accessTokenExpiresAt" timestamptz, "refreshTokenExpiresAt" timestamptz, scope text, password text, "createdAt" timestamptz NOT NULL DEFAULT now(), "updatedAt" timestamptz NOT NULL);
+CREATE INDEX wheel_account_user_idx ON public.wheel_account("userId");
+CREATE TABLE public.wheel_verification (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), identifier text NOT NULL, value text NOT NULL, "expiresAt" timestamptz NOT NULL, "createdAt" timestamptz NOT NULL DEFAULT now(), "updatedAt" timestamptz NOT NULL DEFAULT now());
+CREATE TABLE public.wheel_rate_limit (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), key text NOT NULL UNIQUE, count integer NOT NULL, "lastRequest" bigint NOT NULL);
+CREATE TABLE public.wheel_login_limit (key text PRIMARY KEY, count integer NOT NULL, reset_at timestamptz NOT NULL);
+CREATE TABLE public.wheel_invite (token_hash text PRIMARY KEY, created_by uuid NOT NULL, expires_at timestamptz NOT NULL DEFAULT now() + interval '7 days', used_at timestamptz);
+CREATE TABLE public.wheel_profile (user_id uuid PRIMARY KEY, name text NOT NULL CHECK (length(name) BETWEEN 1 AND 120), skipped uuid[] NOT NULL DEFAULT '{}', selected_id uuid, created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE public.wheel_task (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL REFERENCES public.wheel_profile(user_id), title text NOT NULL CHECK (length(title) BETWEEN 1 AND 240), status text NOT NULL DEFAULT 'active' CHECK (status IN ('active','done','deferred')), started_at timestamptz, completed_at timestamptz, deleted_at timestamptz, created_at timestamptz NOT NULL DEFAULT now());
+CREATE INDEX wheel_task_user_idx ON public.wheel_task(user_id, created_at);
+ALTER TABLE public.wheel_task ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.wheel_task FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.wheel_profile ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.wheel_profile FORCE ROW LEVEL SECURITY;
+CREATE POLICY wheel_profile_read ON public.wheel_profile FOR SELECT TO roota_app USING (user_id::text = current_setting('wheel.user_id',true) OR current_setting('wheel.is_owner',true) = 'true');
+CREATE POLICY wheel_profile_insert ON public.wheel_profile FOR INSERT TO roota_app WITH CHECK (user_id::text = current_setting('wheel.user_id',true));
+CREATE POLICY wheel_profile_update ON public.wheel_profile FOR UPDATE TO roota_app USING (user_id::text = current_setting('wheel.user_id',true)) WITH CHECK (user_id::text = current_setting('wheel.user_id',true));
+CREATE POLICY wheel_task_read ON public.wheel_task FOR SELECT TO roota_app USING (user_id::text = current_setting('wheel.user_id',true) OR current_setting('wheel.is_owner',true) = 'true');
+CREATE POLICY wheel_task_insert ON public.wheel_task FOR INSERT TO roota_app WITH CHECK (user_id::text = current_setting('wheel.user_id',true));
+CREATE POLICY wheel_task_update ON public.wheel_task FOR UPDATE TO roota_app USING (user_id::text = current_setting('wheel.user_id',true)) WITH CHECK (user_id::text = current_setting('wheel.user_id',true));
+REVOKE ALL ON public.wheel_user,public.wheel_session,public.wheel_account,public.wheel_verification,public.wheel_rate_limit,public.wheel_login_limit,public.wheel_invite,public.wheel_profile,public.wheel_task FROM PUBLIC;
+GRANT SELECT,INSERT,UPDATE,DELETE ON public.wheel_user,public.wheel_session,public.wheel_account,public.wheel_verification,public.wheel_rate_limit,public.wheel_login_limit,public.wheel_invite TO roota_app;
+GRANT SELECT,INSERT,UPDATE ON public.wheel_profile,public.wheel_task TO roota_app;
+COMMIT;

@@ -1,5 +1,6 @@
 import { browserIconUrl } from "@/lib/browser-icon";
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { Jost, Unbounded } from "next/font/google";
 import Header from "@/components/layout/Header";
 
@@ -24,6 +25,13 @@ import { getSiteContent } from "@/lib/site";
 import "./globals.css";
 
 export async function generateMetadata(): Promise<Metadata> {
+  if ((await headers()).get("x-roota-surface") === "wheel")
+    return {
+      title: { absolute: "Рулетка дел" },
+      description: "Одна задача. Один маленький шаг.",
+      robots: { index: false, follow: false, noarchive: true },
+      icons: { icon: "/wheel/icon.svg" },
+    };
   const site = await getSiteContent();
   const share = site.shareImage || site.heroImage;
   return {
@@ -65,6 +73,12 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  if ((await headers()).get("x-roota-surface") === "wheel")
+    return (
+      <html lang="ru">
+        <body>{children}</body>
+      </html>
+    );
   const { items } = await getCart();
   const cartCount = items.reduce((sum, i) => sum + i.quantity, 0);
 

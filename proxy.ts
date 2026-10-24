@@ -19,8 +19,19 @@ export function proxy(request: NextRequest) {
       },
     });
   }
-  const response = NextResponse.next({ request });
   const path = request.nextUrl.pathname;
+  const wheel = path === "/wheel" || path.startsWith("/wheel/");
+  const requestHeaders = new Headers(request.headers);
+  // Always overwrite this internal signal; a public request cannot spoof it.
+  requestHeaders.set("x-roota-surface", wheel ? "wheel" : "store");
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  if (wheel) {
+    response.headers.set("Cache-Control", "private, no-store");
+    response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
+    response.headers.set("Referrer-Policy", "no-referrer");
+    response.headers.set("X-Content-Type-Options", "nosniff");
+    return response;
+  }
   const privatePath = [
     "/admin",
     "/api/orders",

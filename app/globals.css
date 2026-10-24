@@ -4,8 +4,7 @@
    1rem = 16px. Шрифты и их начертания задаются отдельно. */
 @theme {
   --radius-store-media: 1rem;
-  --radius-store-control: 0.75rem;
-  --color-stone-50: #f5f2ea; /* Тёплый бумажный фон страниц и навигации. */
+  --radius-store-control: 0.25rem;
   --text-caption: 0.875rem; /* 14px: категории, статусы, пояснения */
   --text-caption--line-height: 1.5;
   --text-ui: 1rem; /* 16px: меню, кнопки, формы, характеристики */

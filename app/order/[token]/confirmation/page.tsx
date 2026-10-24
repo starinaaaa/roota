@@ -1,3 +1,5 @@
+import Image from "@/components/ui/StoreImage";
+import { orderProductDetails } from "@/lib/order-product-details";
 import { customerParcels } from "@/lib/delivery/customer-parcels";
 import ParcelList from "@/components/order/ParcelList";
 import type { Metadata } from "next";
@@ -43,6 +45,9 @@ export default async function ConfirmationPage({
     .single();
   if (error || !order)
     throw new Error("Не удалось загрузить подтверждение покупки");
+  const details = await orderProductDetails(
+    order.items.map((item) => item.product_id),
+  );
   const shipment = relationList(order.shipments)[0];
   const parcels =
     order.delivery_details?.provider === "ozon"
@@ -84,7 +89,7 @@ export default async function ConfirmationPage({
         </Link>
         <PrintConfirmation />
       </div>
-      <article className="order-confirmation bg-stone-50 border border-stone-200 p-6 sm:p-10 md:p-14 font-body text-ui text-stone-800">
+      <article className="order-confirmation bg-white border border-stone-200 p-6 sm:p-10 md:p-14 font-body text-ui text-stone-800">
         <div className="border-b border-stone-200 pb-8 mb-8">
           <p className="font-display text-price tracking-[0.2em] mb-8">ROOTA</p>
           <p className="text-caption uppercase tracking-widest text-stone-500 mb-3">
@@ -118,18 +123,35 @@ export default async function ConfirmationPage({
                 className="confirmation-item border-t border-stone-100"
               >
                 <td className="py-5 pr-4">
-                  {item.product_name}
-                  <p className="text-caption text-stone-500 mt-1">
-                    {item.quantity} шт. × {formatPrice(item.price)}
-                  </p>
-                  {item.purchase_mode === "preorder" && (
-                    <p className="text-caption text-stone-500">
-                      Предзаказ
-                      {item.lead_time_days
-                        ? ` · изготовление до ${item.lead_time_days} дней`
-                        : ""}
-                    </p>
-                  )}
+                  <div className="flex items-start gap-4">
+                    {details.get(item.product_id ?? "")?.image && (
+                      <div className="relative h-16 w-16 sm:h-20 sm:w-20 shrink-0 overflow-hidden store-media bg-stone-100">
+                        <Image
+                          src={details.get(item.product_id ?? "")!.image!}
+                          alt={item.product_name}
+                          fill
+                          sizes="80px"
+                          className="object-cover"
+                        />
+                      </div>
+                    )}
+                    <div>
+                      {details
+                        .get(item.product_id ?? "")
+                        ?.title(item.product_name) ?? item.product_name}
+                      <p className="text-caption text-stone-500 mt-1">
+                        {item.quantity} шт. × {formatPrice(item.price)}
+                      </p>
+                      {item.purchase_mode === "preorder" && (
+                        <p className="text-caption text-stone-500">
+                          Предзаказ
+                          {item.lead_time_days
+                            ? ` · изготовление до ${item.lead_time_days} дней`
+                            : ""}
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 </td>
                 <td className="py-5 text-right align-top whitespace-nowrap">
                   {formatPrice(item.price * item.quantity)}

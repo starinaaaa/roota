@@ -21,7 +21,7 @@ export default function Hero({
   const source =
     attempt === 1 ? `${image}?w=960&v=${imageVariantVersion}` : image;
   return (
-    <section className="relative w-full min-h-svh overflow-hidden store-media bg-stone-900">
+    <section className="relative w-full min-h-svh overflow-hidden bg-stone-900">
       {/* Background image — bg-stone-900 above acts as dark fallback */}
       <div className="absolute inset-0">
         <Image

@@ -324,7 +324,7 @@ export default function PaymentPanel({
         </div>
         {summary && (
           <aside
-            className="min-w-0 bg-stone-50 border border-stone-200 p-6 md:p-8 font-body text-ui [overflow-wrap:anywhere]"
+            className="min-w-0 bg-white border border-stone-200 p-6 md:p-8 font-body text-ui [overflow-wrap:anywhere]"
             aria-label="Состав и сумма заказа"
           >
             <p className="text-caption uppercase tracking-widest text-stone-500 mb-2">

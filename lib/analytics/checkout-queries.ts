@@ -34,22 +34,24 @@ with baskets as (
   group by c.id, c.session_id, c.updated_at
 ), progress as (
   select b.*, md5(b.session_id) as browser_id,
-    greatest(b.basket_at, cp.updated_at, e.opened_at) as last_activity,
+    greatest(b.basket_at, cp.updated_at, e.opened_at, cd.updated_at) as last_activity,
     case when cp.updated_at>=b.basket_at then cp.stage
       when e.opened_at>=b.basket_at then 'checkout_opened' else 'cart' end as stage,
-    case when cp.updated_at>=b.basket_at then cp.delivery_method end as delivery_method,
+    case when cp.updated_at>=b.basket_at then cp.delivery_method else cd.data->>'deliveryMethod' end as delivery_method,
     case when cp.updated_at>=b.basket_at then cp.point_id end as point_id,
     case when cp.updated_at>=b.basket_at then cp.delivery_cost end as delivery_cost
   from baskets b
   left join public.analytics_checkout_progress cp on cp.session_id=md5(b.session_id)
+  left join public.checkout_contact_drafts cd on cd.cart_id=b.id and cd.expires_at>now()
   left join lateral (select max(created_at) as opened_at from public.funnel_events
     where session_id=md5(b.session_id) and kind='checkout_started') e on true
 )
 select p.browser_id,p.items,p.goods_total,p.last_activity,p.stage,p.delivery_method,p.point_id,p.delivery_cost,
   p.last_activity<now()-interval '30 minutes' as inactive,
-  contact.email, reminder.state as reminder_state,
+  contact.email, captured.data as checkout_contact, reminder.state as reminder_state,
   unpaid.id as order_id, unpaid.order_number
 from progress p
+left join public.checkout_contact_drafts captured on captured.cart_id=p.id and captured.expires_at>now()
 left join lateral (
   select s.id,s.email from public.checkout_drafts d
   join public.email_subscriptions s on s.id=d.subscription_id

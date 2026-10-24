@@ -14,6 +14,7 @@ async function fixture() {
   await db.exec(`
     create role roota_app; create role anon;
     create table carts(id uuid primary key default gen_random_uuid(),session_id text unique,updated_at timestamptz default now()-interval '1 hour');
+    create table checkout_contact_drafts(cart_id uuid primary key,data jsonb,updated_at timestamptz default now(),expires_at timestamptz default now()+interval '7 days');
     create table products(id uuid primary key default gen_random_uuid(),name text,price numeric);
     create table cart_items(cart_id uuid,product_id uuid,quantity integer,purchase_mode text default 'stock');
     create table orders(id uuid primary key default gen_random_uuid(),order_number text default 'TEST',cart_session text,payment_status text,created_at timestamptz default now());
@@ -66,6 +67,7 @@ async function fixture() {
       email: string | null;
       reminder_state: string | null;
       order_id: string | null;
+      checkout_contact: { firstName?: string; phone?: string } | null;
       goods_total: string;
       items: unknown[];
     }>(unfinishedCartsSql, [30, start, end, inactive, 0]);
@@ -226,4 +228,33 @@ test("progress accepts only bounded stage metadata and rejects typed personal da
     { stage: "raw_error", method: "ozon_point" },
   ])
     assert.equal(checkoutProgressInput.safeParse(input).success, false);
+});
+
+test("saved partial contacts are visible without enrolling reminders and disappear after expiry", async () => {
+  const f = await fixture();
+  try {
+    const c = await f.cart();
+    await f.db.query(
+      "insert into checkout_contact_drafts(cart_id,data) values($1,$2)",
+      [
+        c.id,
+        JSON.stringify({
+          firstName: "Анна",
+          phone: "+7 99",
+          deliveryMethod: "ozon_point",
+        }),
+      ],
+    );
+    const row = (await f.list()).rows[0];
+    assert.equal(row.checkout_contact?.firstName, "Анна");
+    assert.equal(row.checkout_contact?.phone, "+7 99");
+    assert.equal(row.email, null);
+    assert.equal((await f.list(true)).rows.length, 0);
+    await f.db.exec(
+      "update checkout_contact_drafts set expires_at=now()-interval '1 second'",
+    );
+    assert.equal((await f.list()).rows[0].checkout_contact, null);
+  } finally {
+    await f.db.close();
+  }
 });

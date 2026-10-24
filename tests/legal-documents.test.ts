@@ -26,11 +26,17 @@ test("published legal edition and email consent version resolve to a preserved c
       "newsletter-data-consent",
     ].sort(),
   );
+  assert.equal(
+    createHash("sha256")
+      .update(await readFile("lib/legal-documents/2026-10-23-3.json"))
+      .digest("hex"),
+    "92765d8a84a3bb1ff42783daf91eb08ba6373eee4a67eb49d37780ae5879f915",
+  );
   const bytes = await readFile(`lib/legal-documents/${LEGAL_VERSION}.json`);
   // Once released, change the version and add a snapshot instead of editing the accepted text.
   assert.equal(
     createHash("sha256").update(bytes).digest("hex"),
-    "92765d8a84a3bb1ff42783daf91eb08ba6373eee4a67eb49d37780ae5879f915",
+    "3e805d437bd9f7469ce9b0ec8364196543cd356e5d1583702677e7662c4845ac",
   );
 });
 

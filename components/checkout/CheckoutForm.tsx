@@ -2,7 +2,7 @@
 
 import { trackCheckoutProgress } from "@/lib/analytics/checkout-client";
 import { bindPrepositions } from "@/lib/typography";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "@/components/ui/StoreImage";
 import Link from "next/link";
@@ -12,6 +12,7 @@ import { createOrder } from "@/lib/actions/orders";
 import type { CartItem, CheckoutFormData } from "@/types";
 
 import { touchCheckoutEmail } from "@/lib/actions/email";
+import { useCheckoutContactDraft } from "./useCheckoutContactDraft";
 import EmailConsent from "./EmailConsent";
 import PhoneField from "./PhoneField";
 import DeliverySelector from "./DeliverySelector";
@@ -132,6 +133,35 @@ export default function CheckoutForm({
   const saveDeliveryDraft = useCallback(
     (value: CheckoutDeliveryDraft) => setDeliveryDraft(value),
     [],
+  );
+
+  const contactData = useMemo(
+    () => ({
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      phone: formData.phone,
+      email: formData.email ?? "",
+      telegram: formData.telegram ?? "",
+      address: formData.address ?? "",
+      comment: formData.comment ?? "",
+      deliveryMethod: formData.deliveryMethod ?? "ozon_point",
+      delivery: deliveryDraft,
+    }),
+    [
+      formData.firstName,
+      formData.lastName,
+      formData.phone,
+      formData.email,
+      formData.telegram,
+      formData.address,
+      formData.comment,
+      formData.deliveryMethod,
+      deliveryDraft,
+    ],
+  );
+  const contactDraft = useCheckoutContactDraft(
+    contactData,
+    draftReady && !pending,
   );
 
   const totalPrice = initialItems.reduce(
@@ -334,6 +364,7 @@ export default function CheckoutForm({
         <form
           id="checkout-form"
           onSubmit={handleSubmit}
+          onBlurCapture={contactDraft.flush}
           className="space-y-8"
           noValidate
         >
@@ -343,6 +374,19 @@ export default function CheckoutForm({
               <legend className="font-display text-price text-stone-900 mb-6">
                 Контактные данные
               </legend>
+              <p className="font-body text-caption text-stone-500">
+                Введённые данные незавершённого оформления сохраняются на
+                сервере на 7 дней. Сохранение контактов не включает подписку на
+                рассылку.
+              </p>
+              {contactDraft.error && (
+                <p
+                  role="status"
+                  className="font-body text-caption text-stone-600"
+                >
+                  {contactDraft.error}
+                </p>
+              )}
 
               <div className="grid gap-5 sm:grid-cols-2">
                 <Field

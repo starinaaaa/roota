@@ -576,8 +576,31 @@ begin
   tracking_number=case when coalesce(tracking_number,'')='' then p_posting else tracking_number end,
   reservation_state=case when target::text in ('shipped','delivered') and reservation_state='active' then 'fulfilled' else reservation_state end
  where id=p_order;
+
+ -- PARCEL_EMAIL_MILESTONES: the saved snapshot and notification are committed together.
+ if o.payment_status='paid' and o.status::text not in ('cancelled','delivered') and o.customer_email is not null
+  and exists(select 1 from public.email_settings where id=1 and enabled)
+  and jsonb_array_length(coalesce(p_history->'postings','[]'::jsonb))>1 then
+  insert into public.email_messages(event_key,kind,recipient,order_id,payload)
+  select p_order||':parcel:'||(p->>'posting_number')||':'||milestone.kind,
+   milestone.kind,lower(o.customer_email),p_order,
+   jsonb_build_object('posting_number',p->>'posting_number','parcel_index',(p->>'request_id')::int,'parcel_count',jsonb_array_length(p_history->'postings'))
+  from jsonb_array_elements(p_history->'postings') p
+  left join lateral (
+   select coalesce(prev->>'status',s.carrier_status) as status
+   from jsonb_array_elements(coalesce(s.status_history->'postings','[]'::jsonb)) prev
+   where prev->>'posting_number'=p->>'posting_number' limit 1
+  ) previous on true
+  cross join lateral (select case
+   when p->>'status' in ('on_way','in_courier_service') and previous.status in ('created','forming','ready_for_shipping','in_container','acceptance_in_progress') then 'order_shipped'
+   when p->>'status'='in_delivery_point' and previous.status in ('created','forming','ready_for_shipping','in_container','acceptance_in_progress','on_way','in_courier_service') then 'order_pickup'
+   else null end kind) milestone
+  where milestone.kind is not null
+  on conflict(event_key) do nothing;
+ end if;
  return true;
 end $function$
+
 ;
 
 CREATE OR REPLACE FUNCTION public.attach_order_refund(p_order uuid, p_request uuid, p_actor uuid, p_note text)
@@ -886,7 +909,15 @@ begin
   end if;
   if m.order_id is not null then
    select * into o from public.orders where id=m.order_id;
-   if o.status::text='cancelled' or o.payment_status::text='refunded' or o.delivery_stage in ('problem','cancelled') then reason:='Заказ отменён или проблема доставки'; end if;
+   if o.status::text='cancelled' or o.payment_status::text='refunded' or (o.delivery_stage in ('problem','cancelled') and not(m.payload ? 'posting_number')) then reason:='Заказ отменён или проблема доставки'; end if;
+
+   -- PARCEL_EMAIL_MILESTONES: do not send stale events after receipt, cancellation or recreation.
+   if m.payload ? 'posting_number' and not exists(
+    select 1 from public.order_shipments current_shipment cross join lateral jsonb_array_elements(coalesce(current_shipment.status_history->'postings','[]'::jsonb)) p
+    where current_shipment.order_id=o.id and current_shipment.state='created' and p->>'posting_number'=m.payload->>'posting_number'
+      and ((m.kind='order_pickup' and p->>'status'='in_delivery_point') or
+           (m.kind='order_shipped' and p->>'status' in ('on_way','in_courier_service')))
+   ) then reason:='Посылка заменена или её статус уже изменился'; end if;
    if m.kind='review_invite' and (o.delivery_stage is distinct from 'delivered' or o.payment_status<>'paid' or exists(select 1 from public.customer_reviews where order_id=o.id)) then reason:='Отзыв уже получен или заказ не получен'; end if;
   end if;
   if m.kind='restock' and not exists(select 1 from public.products p join public.email_restock_events e on e.product_id=p.id where e.id::text=m.payload->>'event' and e.active and p.publication_status='published' and p.stock_qty>0) then reason:='Изделие недоступно'; end if;
@@ -903,6 +934,7 @@ begin
   end if;
  end loop;
 end $function$
+
 ;
 
 CREATE OR REPLACE FUNCTION public.claim_notification(p_order uuid)
@@ -1070,7 +1102,7 @@ begin
  if new.customer_email is null or not settings.enabled then return new; end if;
  if tg_op='INSERT' then k:='order_created';
  elsif new.status::text='cancelled' or new.payment_status::text='refunded' or new.delivery_stage in ('problem','cancelled') then
-  update public.email_messages set state='cancelled',last_error='Заказ отменён, возвращён или доставка требует проверки' where order_id=new.id and state='pending';
+  update public.email_messages set state='cancelled',last_error='Заказ отменён, возвращён или доставка требует проверки' where order_id=new.id and state='pending' and (new.status::text='cancelled' or new.payment_status::text='refunded' or not(payload ? 'posting_number'));
   return new;
  else
   if new.payment_status='paid' and old.payment_status is distinct from new.payment_status then
@@ -1079,7 +1111,13 @@ begin
   if new.payment_status='paid' and new.delivery_stage is distinct from old.delivery_stage then
    k:=case new.delivery_stage when 'in_transit' then 'order_shipped' when 'ready_for_pickup' then 'order_pickup' when 'delivered' then 'order_delivered' else k end;
   end if;
+
  end if;
+ -- PARCEL_EMAIL_MILESTONES: shipping/pickup belong to individual parcels; receipt remains one event for the whole order.
+ if k in ('order_shipped','order_pickup') and new.delivery_details->>'provider'='ozon' and exists(
+  select 1 from public.order_shipments s where s.order_id=new.id
+   and jsonb_array_length(coalesce(s.status_history->'postings','[]'::jsonb))>1
+ ) then k:=null; end if;
  if k is not null and new.status::text<>'cancelled' then
   insert into public.email_messages(event_key,kind,recipient,order_id) values(new.id||':'||k,k,lower(new.customer_email),new.id) on conflict do nothing;
  end if;
@@ -1090,6 +1128,7 @@ begin
  update public.email_messages m set state='cancelled',last_error='Оформлен заказ' from public.email_subscriptions s where m.subscription_id=s.id and s.purpose='cart' and s.resource=new.cart_session and m.kind in ('cart_reminder','cart_link') and m.state='pending';
  return new;
 end $function$
+
 ;
 
 CREATE OR REPLACE FUNCTION public.ensure_order_access(p_order uuid, p_token text, p_rotate boolean DEFAULT false)

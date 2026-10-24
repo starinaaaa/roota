@@ -23,6 +23,7 @@ export function customerOrderState(order: {
   delivery_stage?: string | null;
   leadTimeDays?: number;
   hasPreorder?: boolean;
+  parcelStatuses?: (string | null)[];
 }) {
   if (order.status === "cancelled")
     return {
@@ -71,6 +72,33 @@ export function customerOrderState(order: {
       detail:
         "Спасибо, что выбираете Roota ceramics. Надеемся, изделие будет радовать вас долго.",
     };
+  if (
+    order.payment_status === "paid" &&
+    (order.parcelStatuses?.length ?? 0) > 1
+  ) {
+    const statuses = order.parcelStatuses!;
+    const received = statuses.filter((status) => status === "delivered").length;
+    const ready = statuses.filter(
+      (status) => status === "in_delivery_point",
+    ).length;
+    if (ready || received)
+      return {
+        title: ready
+          ? `Можно забрать ${ready} из ${statuses.length} посылок`
+          : `Получено ${received} из ${statuses.length} посылок`,
+        step: ready ? 4 : 3,
+        detail: `Получено: ${received} из ${statuses.length}. Посылки могут приехать в разные дни. Статус каждой — ниже.`,
+      };
+    const moving = statuses.filter((status) =>
+      ["on_way", "in_courier_service"].includes(status ?? ""),
+    ).length;
+    if (moving && moving < statuses.length)
+      return {
+        title: "Часть заказа в пути",
+        step: 3,
+        detail: `В пути: ${moving} из ${statuses.length} посылок. Статус и состав каждой — ниже.`,
+      };
+  }
   if (order.delivery_stage === "ready_for_pickup")
     return {
       title: "Можно забирать",

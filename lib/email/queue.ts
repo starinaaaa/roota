@@ -1,3 +1,8 @@
+import {
+  customerParcels,
+  deliveryEmailUpdate,
+  type CustomerParcel,
+} from "@/lib/delivery/customer-parcels";
 import "server-only";
 import { relationList } from "@/lib/relation-list";
 import { randomBytes } from "node:crypto";
@@ -44,6 +49,7 @@ export async function processEmailQueue() {
         product: m.payload?.product ?? "",
       };
       let orderItems: EmailOrderItem[] | undefined;
+      let parcels: CustomerParcel[] | undefined;
       let subscription = m.subscription_id
         ? (
             await db
@@ -57,7 +63,7 @@ export async function processEmailQueue() {
         const { data: o, error: oe } = await db
           .from("orders")
           .select(
-            "order_number,created_at,customer_name,total_amount,delivery_amount,insurance_amount,delivery_type,delivery_address,delivery_details,tracking_number,request_payload,order_items(product_id,product_name,quantity,price,purchase_mode,lead_time_days),payments(expires_at,status,paid_at),order_shipments(state,posting_number)",
+            "order_number,created_at,customer_name,total_amount,delivery_amount,insurance_amount,delivery_type,delivery_address,delivery_details,tracking_number,request_payload,order_items(product_id,product_name,quantity,price,purchase_mode,lead_time_days),payments(expires_at,status,paid_at),order_shipments(state,posting_number,carrier_status,status_history,request_payload)",
           )
           .eq("id", m.order_id)
           .single();
@@ -97,12 +103,51 @@ export async function processEmailQueue() {
                 shipment?.state === "created" && !!shipment.posting_number,
               )
             : "";
+        parcels =
+          o.delivery_details?.provider === "ozon"
+            ? customerParcels(
+                o.delivery_details.packing,
+                o.order_items,
+                shipment,
+              )
+            : undefined;
         values.tracking =
+          parcels
+            ?.map((p) => p.number)
+            .filter(Boolean)
+            .join(", ") ||
           o.tracking_number ||
-          shipment?.posting_number ||
           (courier
             ? "Время и стоимость доставки согласуем с вами в Telegram"
             : "Появится после оформления отправления");
+        if (
+          m.payload?.posting_number &&
+          !parcels?.some(
+            (p) =>
+              p.number === m.payload.posting_number &&
+              (m.kind === "order_pickup"
+                ? p.status === "in_delivery_point"
+                : ["on_way", "in_courier_service"].includes(p.status ?? "")),
+          )
+        ) {
+          await db
+            .from("email_messages")
+            .update({
+              state: "cancelled",
+              last_error: "Посылка заменена или её статус уже изменился",
+            })
+            .eq("id", m.id)
+            .eq("claim", m.claim);
+          continue;
+        }
+        const deliveryUpdate = deliveryEmailUpdate(
+          m.kind,
+          o.order_number,
+          parcels ?? [],
+          m.payload?.posting_number,
+        );
+        values.delivery_subject = deliveryUpdate.subject;
+        values.delivery_update = deliveryUpdate.message;
         const productIds = o.order_items
           .map((i) => i.product_id)
           .filter(Boolean);
@@ -239,6 +284,7 @@ export async function processEmailQueue() {
           unsubscribe,
           m.kind.startsWith("order_"),
           orderItems,
+          parcels,
         ),
         metadata: { message_id: m.id },
       };

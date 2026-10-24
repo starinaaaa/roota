@@ -1,3 +1,4 @@
+import { deliveryEmailUpdate } from "@/lib/delivery/customer-parcels";
 import SubmitButton from "@/components/ui/SubmitButton";
 import { requireAdmin } from "@/lib/auth";
 import { createServerClient } from "@/lib/db";
@@ -124,7 +125,7 @@ export default async function MessagesPage() {
       <p>
         Переменные:{" "}
         {
-          "{{number}}, {{items}}, {{total}}, {{reservation}}, {{product}}, {{purpose}}"
+          "{{number}}, {{items}}, {{total}}, {{reservation}}, {{product}}, {{purpose}}, {{delivery_subject}}, {{delivery_update}}"
         }
         . Ссылка и отписка добавляются автоматически.
       </p>
@@ -200,6 +201,10 @@ export default async function MessagesPage() {
                   delivery: "Пункт выдачи Ozon",
                   address: "Адрес выбранного пункта",
                   tracking: "Появится после оформления отправления",
+                  delivery_subject: deliveryEmailUpdate(t.kind, "GL-ТЕСТ", [])
+                    .subject,
+                  delivery_update: deliveryEmailUpdate(t.kind, "GL-ТЕСТ", [])
+                    .message,
                   tracking_hint: ozonTrackingHint(false),
                   fulfillment:
                     "Готовые изделия передаём в доставку в течение 1–3 рабочих дней после оплаты.",

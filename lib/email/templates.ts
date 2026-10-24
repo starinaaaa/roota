@@ -1,3 +1,7 @@
+import {
+  parcelProgress,
+  type CustomerParcel,
+} from "@/lib/delivery/customer-parcels";
 import { returnInstructionsForVersion } from "@/lib/shop-policies";
 
 export const templateKinds = [
@@ -42,6 +46,7 @@ export function renderEmail(
   unsubscribe?: string,
   orderMessage = false,
   orderItems?: EmailOrderItem[],
+  parcels?: CustomerParcel[],
 ) {
   const returnInstructions = returnInstructionsForVersion(values.legal_version);
   const fill = (s: string) =>
@@ -76,7 +81,15 @@ export function renderEmail(
         values.delivery,
         values.address,
         `Получатель: ${values.recipient}`,
-        `Номер отправления: ${values.tracking}`,
+        ...(parcels?.length
+          ? [
+              parcelProgress(parcels),
+              ...parcels.map(
+                (p) =>
+                  `Посылка ${p.index} из ${p.total}\n${p.description}\n${p.statusLabel}\nНомер отправления: ${p.number ?? "Появится после оформления отправления"}`,
+              ),
+            ].filter(Boolean)
+          : [`Номер отправления: ${values.tracking}`]),
         ...(values.tracking_hint ? [values.tracking_hint] : []),
         "Возврат и обращение",
         returnInstructions,
@@ -113,6 +126,9 @@ export function renderEmail(
           return `<tr><td colspan="2" style="padding:14px 0;border-bottom:1px solid #e7e5e4">${text(name)}</td><td align="right" style="padding:14px 0 14px 16px;border-bottom:1px solid #e7e5e4;white-space:nowrap">${text(amount)}</td></tr>`;
         })
         .join("");
+  const parcelHtml = parcels?.length
+    ? `${parcels.length > 1 ? `<p style="margin:0 0 16px">${text(parcelProgress(parcels))}</p>` : ""}${parcels.map((p) => `<div style="border-top:1px solid #d6d3d1;padding-top:14px;margin-top:14px"><p style="margin:0 0 6px;font-weight:bold">Посылка ${p.index} из ${p.total}</p><p style="margin:0 0 6px">${text(p.description)}</p><p style="margin:0 0 6px">${text(p.statusLabel)}</p><p style="margin:0;color:#78716c">Номер отправления: ${text(p.number ?? "Появится после оформления отправления")}</p>${p.status === "in_delivery_point" ? `<p style="margin:8px 0 0">Эту посылку уже можно забрать. Проверьте срок хранения в Ozon.</p>` : ""}</div>`).join("")}`
+    : `<p style="margin:0;color:#78716c">Номер отправления<br><span style="color:#292724">${text(values.tracking)}</span></p>`;
   const detailHtml = details
     ? `<div style="margin:28px 0;border-top:1px solid #e7e5e4;padding-top:24px">
     <p style="font-size:12px;letter-spacing:1px;color:#78716c;text-transform:uppercase;margin:0 0 8px">Ваш заказ № ${text(values.number)}</p>
@@ -126,7 +142,7 @@ export function renderEmail(
     <div style="background:#f8f6f1;padding:20px;font-size:14px;line-height:1.7">
       <p style="margin:0 0 8px;font-size:16px">${text(values.delivery)}</p>
       <p style="margin:0 0 12px">${text(values.address)}<br>Получатель: ${text(values.recipient)}</p>
-      <p style="margin:0;color:#78716c">Номер отправления<br><span style="color:#292724">${text(values.tracking)}</span></p>
+      ${parcelHtml}
       ${values.tracking_hint ? `<p style="margin:12px 0 0;font-size:13px;color:#57534e">${text(values.tracking_hint)}</p>` : ""}
     </div>
     <p style="font-size:13px;line-height:1.7">${text(returnInstructions)}</p>

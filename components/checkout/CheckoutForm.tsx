@@ -374,11 +374,6 @@ export default function CheckoutForm({
               <legend className="font-display text-price text-stone-900 mb-6">
                 Контактные данные
               </legend>
-              <p className="font-body text-caption text-stone-500">
-                Введённые данные незавершённого оформления сохраняются на
-                сервере на 7 дней. Сохранение контактов не включает подписку на
-                рассылку.
-              </p>
               {contactDraft.error && (
                 <p
                   role="status"

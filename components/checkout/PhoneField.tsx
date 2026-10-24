@@ -131,7 +131,7 @@ export default function PhoneField({
           }
           commit(national.slice(0, from) + national.slice(to), from);
         }}
-        className="w-full border border-stone-200 bg-transparent font-body text-ui text-stone-800 px-4 py-3 focus:outline-none focus:border-stone-500"
+        className="store-control w-full border border-stone-200 bg-transparent font-body text-ui text-stone-800 px-4 py-3 focus:outline-none focus:border-stone-500"
       />
       {error ? (
         <p id="phone-error" role="alert" className="text-caption text-red-700">

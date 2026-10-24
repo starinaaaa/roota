@@ -84,7 +84,7 @@ export default async function RootLayout({
 
   return (
     <html lang="ru" className={`${unbounded.variable} ${jost.variable}`}>
-      <body className="bg-stone-50 text-stone-900 antialiased">
+      <body className="storefront bg-stone-50 text-stone-900 antialiased">
         <CartUIProvider initialItems={items}>
           <Header cartCount={cartCount} />
           <main>{children}</main>

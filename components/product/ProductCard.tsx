@@ -37,7 +37,7 @@ export default function ProductCard({ product, index = 0 }: Props) {
         className="product-card-link group flex flex-col flex-1"
       >
         {/* Изображение */}
-        <div className="relative mb-5 aspect-square overflow-hidden rounded-lg bg-stone-100">
+        <div className="relative mb-5 aspect-square overflow-hidden store-media bg-stone-100">
           {hasImage ? (
             <Image
               src={imgSrc!}

@@ -145,7 +145,7 @@ function ProductCardFeatured({
         className="group flex flex-col flex-1"
       >
         {/* Изображение */}
-        <div className="relative aspect-square overflow-hidden rounded-lg bg-stone-100 mb-4">
+        <div className="relative aspect-square overflow-hidden store-media bg-stone-100 mb-4">
           {hasImage ? (
             <Image
               src={imgSrc!}

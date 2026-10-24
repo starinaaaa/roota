@@ -52,7 +52,7 @@ export default function RelatedProducts({ products }: Props) {
                 href={`/product/${p.slug}`}
                 className="group flex flex-col flex-1"
               >
-                <div className="relative aspect-square overflow-hidden rounded-lg bg-stone-100 mb-4">
+                <div className="relative aspect-square overflow-hidden store-media bg-stone-100 mb-4">
                   {p.images[0] && (
                     <Image
                       src={p.images[0]}

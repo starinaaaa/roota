@@ -193,7 +193,7 @@ export default function CartDrawer() {
                   onClick={handleCheckout}
                   className="
                     w-full flex items-center justify-between
-                    border-t border-stone-900 pt-7
+                    border border-stone-900 px-5 py-5
                     group
                   "
                 >

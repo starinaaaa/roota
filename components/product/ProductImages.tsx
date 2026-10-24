@@ -52,7 +52,7 @@ export default function ProductImages({ images: sourceImages, name }: Props) {
 
   if (images.length === 0) {
     return (
-      <div className="aspect-square rounded-lg bg-stone-100 flex items-center justify-center">
+      <div className="aspect-square store-media bg-stone-100 flex items-center justify-center">
         <span className="font-body text-caption tracking-widest uppercase text-stone-600">
           Фото скоро
         </span>
@@ -72,7 +72,7 @@ export default function ProductImages({ images: sourceImages, name }: Props) {
     <>
       <div className="flex flex-col gap-3">
         {/* ── Main image ── */}
-        <div className="relative aspect-square overflow-hidden rounded-lg bg-stone-100 select-none">
+        <div className="relative aspect-square overflow-hidden store-media bg-stone-100 select-none">
           <Image
             key={images[active]}
             src={images[active]}
@@ -85,7 +85,7 @@ export default function ProductImages({ images: sourceImages, name }: Props) {
                 previous.includes(current) ? previous : [...previous, current],
               )
             }
-            className="object-contain"
+            className="object-contain store-media"
             {...(active === 0
               ? { preload: true }
               : { loading: "eager" as const, fetchPriority: "high" as const })}
@@ -172,7 +172,7 @@ export default function ProductImages({ images: sourceImages, name }: Props) {
                 onClick={() => setActive(i)}
                 aria-label={`Фото ${i + 1}`}
                 className={[
-                  "relative w-24 h-24 shrink-0 overflow-hidden rounded-md bg-stone-100",
+                  "relative w-24 h-24 shrink-0 overflow-hidden store-media bg-stone-100",
                   "cursor-pointer transition-all duration-200",
                   i === active
                     ? "ring-2 ring-stone-800 opacity-100"
@@ -184,7 +184,7 @@ export default function ProductImages({ images: sourceImages, name }: Props) {
                   onError={() => unavailable(src)}
                   alt={`${name} — миниатюра ${i + 1}`}
                   fill
-                  className="object-contain"
+                  className="object-contain store-media"
                   sizes="96px"
                   loading="lazy"
                 />
@@ -222,7 +222,7 @@ export default function ProductImages({ images: sourceImages, name }: Props) {
               alt={`${name} — фото ${active + 1}`}
               fill
               sizes="(max-width: 1555px) 90vw, 1400px"
-              className="object-contain"
+              className="object-contain store-media"
             />
           </div>
 

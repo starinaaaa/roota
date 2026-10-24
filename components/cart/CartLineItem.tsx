@@ -35,7 +35,7 @@ export default function CartLineItem({
       <div className="flex gap-4 sm:gap-8 py-6 sm:py-9 border-b border-stone-100 last:border-b-0">
         {/* Фото — 72px→108px (×1.5) */}
         <Link href={`/product/${product.slug}`} className="shrink-0">
-          <div className="relative w-20 h-20 sm:w-[108px] sm:h-[108px] bg-stone-100 overflow-hidden">
+          <div className="relative w-20 h-20 sm:w-[108px] sm:h-[108px] bg-stone-100 overflow-hidden store-media">
             {imgSrc && (
               <Image
                 src={imgSrc}
@@ -121,7 +121,7 @@ export default function CartLineItem({
     <div className="flex gap-5 md:gap-7 py-7 border-b border-stone-100 last:border-b-0">
       {/* Фото */}
       <Link href={`/product/${product.slug}`} className="shrink-0">
-        <div className="relative w-24 h-32 md:w-28 md:h-36 bg-stone-100 overflow-hidden">
+        <div className="relative w-24 h-32 md:w-28 md:h-36 bg-stone-100 overflow-hidden store-media">
           {imgSrc && (
             <Image
               src={imgSrc}

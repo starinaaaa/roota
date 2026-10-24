@@ -580,7 +580,7 @@ export default function CheckoutForm({
                   key={item.product.id}
                   className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 py-5 border-b border-stone-200 first:pt-0 last:border-b-0 md:gap-x-5"
                 >
-                  <div className="relative aspect-square w-20 bg-stone-100 shrink-0 overflow-hidden md:w-24">
+                  <div className="relative aspect-square w-20 bg-stone-100 shrink-0 overflow-hidden store-media md:w-24">
                     {item.product.images[0] && (
                       <Image
                         src={item.product.images[0]}

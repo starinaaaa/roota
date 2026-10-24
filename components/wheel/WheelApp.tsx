@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import {
   ArrowDown,
   ArrowRight,
@@ -74,6 +74,7 @@ function Wheel({
   rotation: number;
   spinning: boolean;
 }) {
+  const labelClipId = useId();
   const slices = tasks.length
     ? tasks
     : [
@@ -104,6 +105,11 @@ function Wheel({
               : "Колесо ждёт ваши задачи"
           }
         >
+          <defs>
+            <clipPath id={labelClipId}>
+              <rect x="162" y="90" width="156" height="20" />
+            </clipPath>
+          </defs>
           {slices.map((t, i) => {
             const a = (i * Math.PI * 2) / count - Math.PI / 2,
               b = ((i + 1) * Math.PI * 2) / count - Math.PI / 2;
@@ -125,19 +131,25 @@ function Wheel({
                   />
                 )}
                 {count <= 20 && (
-                  <text
-                    transform={`rotate(${angle} 240 240)`}
-                    x="240"
-                    y={count > 12 ? 72 : 65}
-                    textAnchor="middle"
-                    fill="#292735"
-                    fontSize={count > 12 ? 12 : 15}
-                    fontWeight="650"
-                  >
-                    {t.title.length > (count > 12 ? 12 : 19)
-                      ? t.title.slice(0, count > 12 ? 11 : 18) + "…"
-                      : t.title}
-                  </text>
+                  <g transform={`rotate(${angle} 240 240)`}>
+                    <text
+                      transform={`rotate(${angle <= 180 ? -90 : 90} 240 100)`}
+                      x="240"
+                      y="100"
+                      dominantBaseline="middle"
+                      textAnchor="middle"
+                      clipPath={`url(#${labelClipId})`}
+                      fill="#292735"
+                      fontSize={count > 12 ? 12 : 15}
+                      fontWeight="650"
+                      aria-label={t.title}
+                    >
+                      <title>{t.title}</title>
+                      {t.title.length > 20
+                        ? t.title.slice(0, 19) + "…"
+                        : t.title}
+                    </text>
+                  </g>
                 )}
               </g>
             );

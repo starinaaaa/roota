@@ -39,6 +39,9 @@ try {
     await db.query(
       await readFile("database/migrations/20261025_garden.sql", "utf8"),
     );
+  await db.query(
+    await readFile("database/migrations/20261025_garden_names.sql", "utf8"),
+  );
   await db.query("BEGIN");
   await db.query(
     "select pg_advisory_xact_lock(hashtextextended('roota-setup-garden',0))",

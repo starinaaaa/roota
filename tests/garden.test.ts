@@ -8,6 +8,7 @@ import {
   gardenCount,
   gardenConfigurationSchema,
   gardenPrice,
+  gardenName,
   gardenSizes,
 } from "../lib/garden";
 import {
@@ -18,6 +19,7 @@ import {
 } from "../lib/delivery/model";
 
 test("garden presets, substitutions and loose pieces have consistent prices", () => {
+  assert.deepEqual(gardenSizes.map(s => s.name), ["Комнатный садик", "Палисадник", "Садовый дворик", "Оранжерея"]);
   assert.deepEqual(
     gardenSizes.map((size) => gardenPrice(defaultGarden(size.size)).total),
     [2000, 2470, 3510, 6630],
@@ -123,6 +125,7 @@ test("database preserves independent gardens, prevents tampering and freezes com
     await db.exec(
       await readFile("database/migrations/20261025_garden.sql", "utf8"),
     );
+    await db.exec(await readFile("database/migrations/20261025_garden_names.sql", "utf8"));
     await db.exec(
       "insert into email_templates(kind,subject,body) values('order_created','Заказ','Заказ сохранён')",
     );
@@ -140,6 +143,10 @@ test("database preserves independent gardens, prevents tampering and freezes com
       values($1,$2,'sad','Сад','Конструктор',2000,0,'published',true,21,'garden'),($3,$2,'plate','Тарелка','Керамика',1200,3,'published',false,null,null)`,
       [garden, category, plate],
     );
+    for (const preset of gardenSizes) {
+      const named = await db.query<{ name: string }>("select garden_item_name(p,$2::jsonb) name from products p where id=$1", [garden, JSON.stringify(defaultGarden(preset.size))]);
+      assert.ok(named.rows[0].name.startsWith(`Сад — ${gardenName(defaultGarden(preset.size))} (`));
+    }
     const a = randomUUID(),
       b = randomUUID(),
       copy = randomUUID();

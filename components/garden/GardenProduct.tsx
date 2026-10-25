@@ -26,7 +26,7 @@ export default function GardenProduct({
           Сад
         </h1>
         <p className="max-w-xl text-copy leading-relaxed text-stone-700">
-          Постройте свой домашний сад. Найдите равновесие, перестройте башенки и
+          Постройте свой домашний сад. Найдите равновесие, соберите башенки и
           попробуйте ещё раз.
         </p>
       </div>

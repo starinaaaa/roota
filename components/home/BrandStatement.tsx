@@ -18,7 +18,7 @@ export default function BrandStatement({
   return (
     <section
       ref={ref}
-      className="py-28 md:py-36 lg:py-44 px-6 md:px-12 lg:px-16"
+      className="px-6 pt-8 md:px-12 md:pt-10 lg:px-16"
     >
       <div className="max-w-[1440px] mx-auto">
         {/* Маленький лейбл */}
@@ -26,12 +26,12 @@ export default function BrandStatement({
           initial={false}
           animate={inView ? { opacity: 1 } : {}}
           transition={{ duration: 0.6, delay: 0.1 }}
-          className="font-body text-caption text-stone-600 tracking-[0.08em] uppercase mb-8"
+          className="font-body text-caption text-stone-600 tracking-[0.08em] uppercase mb-6"
         >
           О студии
         </motion.p>
 
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-6 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-6 items-start">
           {/* Большой текст слева */}
           <div className="md:col-span-8 lg:col-span-7">
             {/* Цитата */}
@@ -65,7 +65,7 @@ export default function BrandStatement({
             transition={{ duration: 0.3 }}
             className="md:col-span-4 lg:col-span-5"
           >
-            <p className="font-body text-copy text-stone-800 leading-loose mb-8 max-w-md">
+            <p className="font-body text-copy text-stone-800 leading-relaxed mb-6 max-w-md">
               {bindPrepositions(summary)}
             </p>
 
@@ -81,12 +81,9 @@ export default function BrandStatement({
         </div>
 
         {/* Горизонтальная линия */}
-        <motion.div
-          initial={{ scaleX: 0 }}
-          animate={inView ? { scaleX: 1 } : {}}
-          transition={{ duration: 1, delay: 0.6, ease: "easeInOut" }}
-          style={{ originX: 0 }}
-          className="mt-16 md:mt-20 h-px bg-stone-200"
+        <div
+          aria-hidden="true"
+          className="mt-8 md:mt-10 h-px bg-stone-200"
         />
       </div>
     </section>

@@ -5,10 +5,10 @@ import type { Product } from "@/types";
 export default function GardenFeature({ product }: { product: Product }) {
   return (
     <section
-      className="px-6 py-14 md:px-12 md:py-24 lg:px-16"
+      className="px-6 pt-12 md:px-12 md:pt-20 lg:px-16"
       aria-labelledby="garden-feature-title"
     >
-      <div className="mx-auto grid max-w-[1440px] items-center gap-8 md:grid-cols-2 md:gap-14">
+      <div className="mx-auto grid max-w-[1440px] items-center gap-8 border-b border-stone-200 pb-8 md:grid-cols-2 md:gap-14 md:pb-10">
         <Link
           href={`/product/${product.slug}`}
           className="relative block aspect-square overflow-hidden rounded-lg bg-[#f1f3eb]"

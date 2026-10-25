@@ -35,10 +35,10 @@ export default function FeaturedProducts({ products }: FeaturedProductsProps) {
   const inView = useInView(sectionRef, { once: true, margin: "160px" });
 
   return (
-    <section ref={sectionRef} className="pb-28 md:pb-36 px-6 md:px-12 lg:px-16">
+    <section ref={sectionRef} className="px-6 pb-16 pt-8 md:px-12 md:pb-20 md:pt-10 lg:px-16">
       <div className="max-w-[1440px] mx-auto">
         {/* Шапка секции */}
-        <div className="flex items-end justify-between mb-10 md:mb-14">
+        <div className="flex items-end justify-between mb-6 md:mb-8">
           <motion.h2
             initial={false}
             animate={inView ? { opacity: 1, y: 0 } : {}}
@@ -69,7 +69,7 @@ export default function FeaturedProducts({ products }: FeaturedProductsProps) {
         </div>
 
         {/* Сетка товаров */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {products.map((product, i) => (
             <ProductCardFeatured
               key={product.id}
@@ -156,7 +156,7 @@ function ProductCardFeatured({
               src={imgSrc!}
               alt={product.name}
               fill
-              sizes="(max-width: 768px) 50vw, 25vw"
+              sizes="(min-width: 1568px) 342px, (min-width: 1024px) calc((100vw - 200px) / 4), (min-width: 768px) calc((100vw - 120px) / 2), (min-width: 640px) calc((100vw - 72px) / 2), calc(100vw - 48px)"
               className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
               onError={() => setImageFailed(true)}
             />
@@ -189,10 +189,10 @@ function ProductCardFeatured({
 
         {/* Инфо */}
         <div className="space-y-1.5">
-          <p className="font-display text-price [overflow-wrap:anywhere] text-stone-800 group-hover:text-stone-600 transition-colors duration-300">
+          <p className="font-display text-copy [overflow-wrap:anywhere] text-stone-800 group-hover:text-stone-600 transition-colors duration-300">
             {bindPrepositions(productTitle(product.name, product.category))}
           </p>
-          <p className="font-body text-copy text-stone-900">
+          <p className="font-body text-ui text-stone-900">
             {product.configurator === "garden" ? "Поштучно от 250 ₽ · Свой набор" : bindPrepositions(formatPrice(product.price))}
           </p>
         </div>

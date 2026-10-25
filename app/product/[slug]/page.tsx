@@ -9,6 +9,8 @@ import { getCart } from "@/lib/actions/cart";
 import ProductImages from "@/components/product/ProductImages";
 import ProductClientWrapper from "@/components/product/ProductClientWrapper";
 import RelatedProducts from "@/components/product/RelatedProducts";
+import GardenProduct from "@/components/garden/GardenProduct";
+import { getSiteContent } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
@@ -48,6 +50,7 @@ export default async function ProductPage({ params }: Props) {
   }
 
   const inCart = cartItems.some((i) => i.product_id === product.id);
+  const site = product.configurator === "garden" ? await getSiteContent() : null;
 
   return (
     <div className="pt-16 md:pt-20">
@@ -65,7 +68,7 @@ export default async function ProductPage({ params }: Props) {
               "@type": "Offer",
               url: siteUrl("/product/" + product.slug),
               priceCurrency: "RUB",
-              price: product.price,
+              price: product.configurator === "garden" ? 250 : product.price,
               availability:
                 product.in_stock && product.stock_qty > 0
                   ? "https://schema.org/InStock"
@@ -108,8 +111,8 @@ export default async function ProductPage({ params }: Props) {
       <section className="px-6 md:px-12 lg:px-16 py-12 md:py-20">
         <div className="max-w-[1440px] mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-20">
-            <ProductImages images={product.images} name={product.name} />
-            <ProductClientWrapper product={product} inCart={inCart} />
+            <div className={product.configurator === "garden" ? "lg:sticky lg:top-28 lg:self-start" : undefined}><ProductImages images={product.images} name={product.name} /></div>
+            {product.configurator === "garden" ? <GardenProduct product={product} telegram={site!.telegram} /> : <ProductClientWrapper product={product} inCart={inCart} />}
           </div>
         </div>
       </section>

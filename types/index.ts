@@ -1,4 +1,5 @@
 // types/index.ts
+import type { GardenConfiguration } from "@/lib/garden";
 
 export type Category = {
   id: string;
@@ -20,6 +21,7 @@ export type Product = {
   in_stock: boolean;
   stock_qty: number;
   product_kind?: "batch" | "unique";
+  configurator?: "garden" | null;
   created_at: string;
   updated_at: string;
   material?: string | null;
@@ -45,6 +47,7 @@ export type CartItem = {
   product_id: string;
   quantity: number;
   purchase_mode?: "stock" | "preorder";
+  configuration?: GardenConfiguration | null;
   product: Product;
 };
 

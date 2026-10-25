@@ -14,6 +14,7 @@ type Props = {
   stockQty: number | null;
   preorderEnabled?: boolean;
   leadTimeDays?: number | null;
+  configurator?: "garden" | null;
 };
 
 export default function CardActions({
@@ -24,6 +25,7 @@ export default function CardActions({
   stockQty,
   preorderEnabled = false,
   leadTimeDays = null,
+  configurator,
 }: Props) {
   const [modal, setModal] = useState(false);
   const [modalTab, setModalTab] = useState<"waitlist" | "preorder">("waitlist");
@@ -59,6 +61,8 @@ export default function CardActions({
   // Shared base for both buttons so heights are always identical
   const btnBase =
     "store-control min-w-0 min-h-[44px] box-border flex items-center justify-center font-body text-ui leading-snug tracking-[0.08em] uppercase px-3 py-2 text-center transition-colors duration-200";
+
+  if (configurator === "garden") return <Link href={`/product/${productSlug}#garden-builder`} className={`${btnBase} mt-3 bg-stone-900 text-white hover:bg-stone-700`}>Собрать свой сад</Link>;
 
   return (
     <div

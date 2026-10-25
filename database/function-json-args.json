@@ -79,5 +79,8 @@
   "sync_product_state": [],
   "sync_checkout_notifications": [
     "p_items"
+  ],
+  "mutate_garden_cart": [
+    "p_configuration"
   ]
 }

@@ -1,3 +1,5 @@
+import { gardenCount, type GardenConfiguration } from "@/lib/garden";
+
 export type Dimensions = {
   weight_g: number;
   length_mm: number;
@@ -9,6 +11,7 @@ export type PackingRule = Dimensions & {
   name: string;
   composition: { category_id: string; quantity: number }[];
   active: boolean;
+  garden_size?: number | null;
   updated_at: string;
   parcels?: { items: DeliveryContext["items"]; packing: PackingRule }[];
 };
@@ -49,6 +52,8 @@ export type DeliveryContext = {
     quantity: number;
     price: number;
     purchase_mode: string;
+    configuration?: GardenConfiguration | null;
+    line_id?: string;
   }[];
   packing: PackingRule;
   shipmentMethodId: number;
@@ -81,6 +86,7 @@ export function packingFor(
   const matches = rules.filter(
     (rule) =>
       rule.active &&
+      !rule.garden_size &&
       rule.composition.length === counts.size &&
       rule.composition.every((i) => counts.get(i.category_id) === i.quantity),
   );
@@ -96,6 +102,24 @@ export function packingForParcels(
   rules: PackingRule[],
   plateCategoryId: string,
 ): PackingRule {
+  const gardens = items.filter(item => item.configuration);
+  if (gardens.length) {
+    const parcels: NonNullable<PackingRule["parcels"]> = gardens.map(item => {
+      const count = gardenCount(item.configuration!);
+      const candidates = rules.filter(rule => rule.active && rule.garden_size && rule.garden_size >= count).sort((a, b) => a.garden_size! - b.garden_size!);
+      const packing = candidates[0];
+      if (!packing || candidates[1]?.garden_size === packing.garden_size)
+        throw new Error("Для этого размера сада упаковка ещё не настроена. Свяжитесь со студией.");
+      return { items: [item], packing };
+    });
+    const rest = items.filter(item => !item.configuration);
+    if (rest.length) {
+      const other = packingForParcels(rest, rules, plateCategoryId);
+      parcels.push(...(other.parcels ?? [{ items: rest, packing: other }]));
+    }
+    if (parcels.length > 100) throw new Error("В одном заказе можно отправить не более 100 посылок.");
+    return { ...parcels[0].packing, parcels };
+  }
   if (!items.length || items.some((i) => i.category_id !== plateCategoryId))
     return packingFor(items, rules);
   const parcels: NonNullable<PackingRule["parcels"]> = [];
@@ -153,8 +177,9 @@ export function cartSnapshot(items: DeliveryContext["items"]) {
       quantity: i.quantity,
       price: i.price,
       purchase_mode: i.purchase_mode,
+      ...(i.configuration ? { configuration: { size: i.configuration.size, stems: i.configuration.stems, flowers: i.configuration.flowers, leaves: i.configuration.leaves }, line_id: i.line_id } : {}),
     }))
-    .sort((a, b) => a.product_id.localeCompare(b.product_id));
+    .sort((a, b) => a.product_id.localeCompare(b.product_id) || (a.line_id ?? "").localeCompare(b.line_id ?? ""));
 }
 
 export function pointInCity(address: string, city: string) {

@@ -10,6 +10,7 @@ import { useCartUI } from "@/contexts/CartUIContext";
 import { useCart } from "@/hooks/useCart";
 import { formatPrice } from "@/lib/format-price";
 import CartLineItem from "./CartLineItem";
+import GardenCartItem from "@/components/garden/GardenCartItem";
 
 export default function CartDrawer() {
   const { isOpen, close: closeDrawer } = useCartUI();
@@ -162,15 +163,16 @@ export default function CartDrawer() {
                 </motion.div>
               ) : (
                 <div>
-                  {items.map((item) => (
+                  {items.map((item) => item.configuration ? <GardenCartItem key={item.id} item={item} /> : (
                     <CartLineItem
-                      key={item.product.id}
+                      key={item.id}
                       item={item}
                       compact
                       onUpdate={updateQuantity}
                       onRemove={removeItem}
                     />
                   ))}
+                  {items.some(item => item.configuration) && <Link href="/product/sad#garden-builder" onClick={closeDrawer} className="my-5 inline-flex min-h-11 items-center text-sm underline underline-offset-4">+ Собрать ещё один сад</Link>}
                 </div>
               )}
             </div>

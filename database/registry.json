@@ -46,7 +46,8 @@
       "product_sku",
       "created_at",
       "purchase_mode",
-      "lead_time_days"
+      "lead_time_days",
+      "configuration"
     ],
     "carts": [
       "id",
@@ -61,7 +62,8 @@
       "quantity",
       "created_at",
       "updated_at",
-      "purchase_mode"
+      "purchase_mode",
+      "configuration"
     ],
     "orders": [
       "id",
@@ -187,7 +189,8 @@
       "seo_description",
       "featured_order",
       "capacity_ml",
-      "product_kind"
+      "product_kind",
+      "configurator"
     ],
     "order_events": [
       "id",
@@ -216,7 +219,8 @@
       "width_mm",
       "height_mm",
       "active",
-      "updated_at"
+      "updated_at",
+      "garden_size"
     ],
     "delivery_points": [
       "provider",
@@ -380,6 +384,18 @@
       "publication_consent",
       "state",
       "created_at"
+    ],
+    "garden_requests": [
+      "id",
+      "cart_session",
+      "name",
+      "contact",
+      "wishes",
+      "configuration",
+      "status",
+      "consent_version",
+      "consent_at",
+      "created_at"
     ]
   },
   "views": {
@@ -443,6 +459,12 @@
     "sync_product_state",
     "analytics_product_report",
     "analytics_funnel_report",
-    "sync_checkout_notifications"
+    "sync_checkout_notifications",
+    "mutate_garden_cart",
+    "garden_price",
+    "cart_item_price",
+    "garden_item_name",
+    "cart_line_snapshot",
+    "guard_garden_cart"
   ]
 }

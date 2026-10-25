@@ -72,6 +72,7 @@ export async function createPaidShipment(orderId: string) {
         price: number;
         purchase_mode: string;
         product_name: string;
+        configuration?: import("@/lib/garden").GardenConfiguration | null;
       }) => {
         const categoryId = productsResult.data?.find(
           (p) => p.id === i.product_id,

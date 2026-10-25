@@ -1,4 +1,5 @@
 "use client";
+import GardenCartItem from "@/components/garden/GardenCartItem";
 import { productTitle } from "@/lib/product-title";
 
 import { trackCheckoutProgress } from "@/lib/analytics/checkout-client";
@@ -255,6 +256,8 @@ export default function CheckoutForm({
   const cartKey = JSON.stringify(
     initialItems.map((i) => [
       i.product_id,
+      i.id,
+      i.configuration,
       i.quantity,
       i.product.price,
       i.purchase_mode,
@@ -576,9 +579,9 @@ export default function CheckoutForm({
 
             {/* Товары */}
             <div className="space-y-0">
-              {initialItems.map((item) => (
+              {initialItems.map((item) => item.configuration ? <GardenCartItem key={item.id} item={item} /> : (
                 <div
-                  key={item.product.id}
+                  key={item.id}
                   className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 py-5 border-b border-stone-200 first:pt-0 last:border-b-0 md:gap-x-5"
                 >
                   <div className="relative aspect-square w-20 bg-stone-100 shrink-0 overflow-hidden store-media md:w-24">

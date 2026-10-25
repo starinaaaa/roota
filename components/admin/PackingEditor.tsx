@@ -30,6 +30,7 @@ export default function PackingEditor({
     width_mm: 230,
     height_mm: 50,
     active: true,
+    garden_size: null as number | null | undefined,
   });
   const [form, setForm] = useState(blank),
     [message, setMessage] = useState(""),
@@ -98,6 +99,7 @@ export default function PackingEditor({
           размеры общей коробки. Для неизвестного сочетания доставка не
           рассчитывается.
         </p>
+        <p className="text-sm text-stone-600">Каждый Сад отправляется отдельной коробкой. Правила «до N деталей» выбираются по размеру набора. Начальные параметры: 15 × 15 × 15 см и 65 г на деталь; уточните вес вместе с коробкой и защитой после пробной упаковки.</p>
         <div className="flex flex-wrap gap-2">
           {rules.map((r) => (
             <button
@@ -105,7 +107,7 @@ export default function PackingEditor({
               key={r.id}
               className="admin-secondary"
               onClick={() => {
-                setForm({ ...r });
+                setForm({ ...r, garden_size: r.garden_size ?? null });
                 setMessage("");
               }}
             >
@@ -142,6 +144,7 @@ export default function PackingEditor({
             });
           }}
         >
+          {form.garden_size && <p className="md:col-span-2 text-sm text-stone-600">Упаковка одного Сада до {form.garden_size} деталей. Вес ниже — максимальный вес этой посылки с упаковкой.</p>}
           <label>
             Название
             <input

@@ -1,0 +1,70 @@
+"use client";
+
+import { useState } from "react";
+import { useCart } from "@/hooks/useCart";
+import type { Product } from "@/types";
+import { defaultGarden, gardenCare } from "@/lib/garden";
+import GardenBuilder from "./GardenBuilder";
+import GardenRequest from "./GardenRequest";
+
+export default function GardenProduct({
+  product,
+  telegram,
+}: {
+  product: Product;
+  telegram: string;
+}) {
+  const { saveGardenItem, openDrawer } = useCart();
+  const [lastGarden, setLastGarden] = useState(defaultGarden());
+  return (
+    <div className="min-w-0 space-y-8">
+      <div className="space-y-3">
+        <p className="font-body text-caption uppercase tracking-[0.08em] text-stone-600">
+          Объекты · Керамический конструктор
+        </p>
+        <h1 className="font-display text-section leading-tight text-stone-900">
+          Сад
+        </h1>
+        <p className="max-w-xl text-copy leading-relaxed text-stone-700">
+          Постройте свой домашний сад. Найдите равновесие, перестройте башенки и
+          попробуйте ещё раз.
+        </p>
+      </div>
+      <div id="garden-builder" className="scroll-mt-28">
+        <GardenBuilder
+          onChange={setLastGarden}
+          onSave={async (c) => {
+            const saved = await saveGardenItem(product.id, c);
+            if (saved) {
+              setLastGarden(c);
+              openDrawer();
+            }
+            return saved;
+          }}
+        />
+      </div>
+      <GardenRequest telegram={telegram} configuration={lastGarden} />
+      <div className="divide-y divide-stone-200 border-y border-stone-200">
+        <details open className="py-5">
+          <summary className="cursor-pointer font-body text-ui uppercase tracking-[0.08em]">
+            Об этом саде
+          </summary>
+          <p className="mt-4 whitespace-pre-wrap text-copy leading-relaxed text-stone-700">
+            {product.description}
+          </p>
+          <p className="mt-4 text-sm text-stone-600">
+            Глина, ангобы · Каждая деталь создана вручную
+          </p>
+        </details>
+        <details className="py-5">
+          <summary className="cursor-pointer font-body text-ui uppercase tracking-[0.08em]">
+            Как играть и ухаживать
+          </summary>
+          <p className="mt-4 text-copy leading-relaxed text-stone-700">
+            {product.care || gardenCare}
+          </p>
+        </details>
+      </div>
+    </div>
+  );
+}

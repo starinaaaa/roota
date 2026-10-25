@@ -5,6 +5,7 @@ import FeaturedProducts from "@/components/home/FeaturedProducts";
 import { getProducts } from "@/lib/products";
 import { getSiteContent } from "@/lib/site";
 import { siteUrl } from "@/lib/seo";
+import GardenFeature from "@/components/garden/GardenFeature";
 
 export async function generateMetadata(): Promise<Metadata> {
   const site = await getSiteContent();
@@ -27,8 +28,8 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function HomePage() {
-  const products = await getProducts();
-  const site = await getSiteContent();
+  const [products, site] = await Promise.all([getProducts(), getSiteContent()]);
+  const garden = products.find(p => p.configurator === "garden");
   const featured = products
     .filter((p) => p.featured)
     .sort((a, b) => (a.featured_order ?? 0) - (b.featured_order ?? 0));
@@ -40,6 +41,7 @@ export default async function HomePage() {
         intro={site.heroIntro}
         image={site.heroImage}
       />
+      {garden && <GardenFeature product={garden} />}
       <BrandStatement
         statement={site.studioStatement}
         summary={site.studioSummary}

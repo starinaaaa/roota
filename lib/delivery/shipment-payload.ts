@@ -1,5 +1,6 @@
 import { parcelContexts, type DeliveryContext } from "./model";
 import { postingsFor } from "./postings";
+import { gardenKey } from "@/lib/garden";
 import {
   shipmentDescription,
   type ShipmentCategory,
@@ -35,7 +36,8 @@ export function shipmentPayload(
           const original = items.find(
             (i) =>
               i.product_id === item.product_id &&
-              i.purchase_mode === item.purchase_mode,
+              i.purchase_mode === item.purchase_mode &&
+              (!item.configuration || (i.configuration && gardenKey(i.configuration) === gardenKey(item.configuration))),
           );
           if (!original)
             throw new Error("Состав посылки не соответствует заказу.");

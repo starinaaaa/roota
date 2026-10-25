@@ -26,6 +26,7 @@ interface FeaturedProductsProps {
     | "product_kind"
     | "preorder_enabled"
     | "lead_time_days"
+    | "configurator"
   >[];
 }
 
@@ -68,7 +69,7 @@ export default function FeaturedProducts({ products }: FeaturedProductsProps) {
         </div>
 
         {/* Сетка товаров */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {products.map((product, i) => (
             <ProductCardFeatured
               key={product.id}
@@ -123,6 +124,7 @@ function ProductCardFeatured({
     | "product_kind"
     | "preorder_enabled"
     | "lead_time_days"
+    | "configurator"
   >;
   index: number;
   inView: boolean;
@@ -191,13 +193,14 @@ function ProductCardFeatured({
             {bindPrepositions(productTitle(product.name, product.category))}
           </p>
           <p className="font-body text-copy text-stone-900">
-            {bindPrepositions(formatPrice(product.price))}
+            {product.configurator === "garden" ? "Поштучно от 250 ₽ · Свой набор" : bindPrepositions(formatPrice(product.price))}
           </p>
         </div>
       </Link>
 
       {/* Кнопки действий — вне Link, чтобы не было вложенных <a> */}
       <CardActions
+        configurator={product.configurator}
         productId={product.id}
         productSlug={product.slug}
         productName={product.name}

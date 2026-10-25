@@ -10,6 +10,7 @@ const singular: Record<string, string> = {
 };
 /** Keep existing descriptive names intact; add the category to named designs. */
 export function productTitle(name: string, category?: Category | null): string {
+  if (category?.slug === "objects") return name;
   const kind = singular[category?.slug ?? ""] ?? category?.name;
   if (
     !kind ||

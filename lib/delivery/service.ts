@@ -46,6 +46,7 @@ export async function deliveryContext(
       quantity: i.quantity,
       price: i.product.price,
       purchase_mode: i.purchase_mode ?? "stock",
+      ...(i.configuration ? { configuration: i.configuration, line_id: i.id } : {}),
     })),
   );
   const { data: plateCategory, error: categoryError } =

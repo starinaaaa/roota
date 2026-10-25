@@ -3,9 +3,13 @@
   "funnel_sessions": [],
   "funnel_events": [],
   "customers": [],
-  "order_items": [],
+  "order_items": [
+    "configuration"
+  ],
   "carts": [],
-  "cart_items": [],
+  "cart_items": [
+    "configuration"
+  ],
   "orders": [
     "request_payload",
     "delivery_details"
@@ -65,5 +69,8 @@
   ],
   "email_blocks": [],
   "email_restock_events": [],
-  "customer_reviews": []
+  "customer_reviews": [],
+  "garden_requests": [
+    "configuration"
+  ]
 }

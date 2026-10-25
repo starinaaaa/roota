@@ -65,7 +65,7 @@ export async function processEmailQueue() {
         const { data: o, error: oe } = await db
           .from("orders")
           .select(
-            "order_number,created_at,customer_name,total_amount,delivery_amount,insurance_amount,delivery_type,delivery_address,delivery_details,tracking_number,request_payload,order_items(product_id,product_name,quantity,price,purchase_mode,lead_time_days),payments(expires_at,status,paid_at),order_shipments(state,posting_number,carrier_status,status_history,request_payload)",
+            "order_number,created_at,customer_name,total_amount,delivery_amount,insurance_amount,delivery_type,delivery_address,delivery_details,tracking_number,request_payload,order_items(product_id,product_name,quantity,price,purchase_mode,lead_time_days,configuration),payments(expires_at,status,paid_at),order_shipments(state,posting_number,carrier_status,status_history,request_payload)",
           )
           .eq("id", m.order_id)
           .single();

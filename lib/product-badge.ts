@@ -1,7 +1,8 @@
 import type { Product } from "@/types";
 export function productBadge(
-  product: Pick<Product, "in_stock" | "stock_qty" | "product_kind">,
+  product: Pick<Product, "in_stock" | "stock_qty" | "product_kind" | "configurator">,
 ): string | null {
+  if (product.configurator === "garden") return "На заказ · 3 недели";
   if (product.product_kind === "unique")
     return product.in_stock && product.stock_qty > 0
       ? "Единственный экземпляр"

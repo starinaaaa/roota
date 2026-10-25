@@ -79,13 +79,14 @@ export default function ProductCard({ product, index = 0 }: Props) {
             {bindPrepositions(productTitle(product.name, product.category))}
           </h3>
           <p className="font-body text-copy text-stone-900">
-            {bindPrepositions(formatPrice(product.price))}
+            {product.configurator === "garden" ? "Поштучно от 250 ₽ · Наборы 6–24 детали" : bindPrepositions(formatPrice(product.price))}
           </p>
         </div>
       </Link>
 
       {/* Кнопки действий — вне Link, чтобы не было вложенных <a> */}
       <CardActions
+        configurator={product.configurator}
         productId={product.id}
         productSlug={product.slug}
         productName={product.name}

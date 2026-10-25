@@ -135,7 +135,7 @@ function ProductCardFeatured({
 
   return (
     <motion.div
-      className="h-full flex flex-col"
+      className="h-full min-w-0 flex flex-col"
       initial={false}
       animate={inView ? { opacity: 1, y: 0 } : {}}
       transition={{
@@ -147,7 +147,7 @@ function ProductCardFeatured({
       {/* Link wraps only image + info — CardActions sits outside to avoid nested <a> */}
       <Link
         href={`/product/${product.slug}`}
-        className="group flex flex-col flex-1"
+        className="group flex min-w-0 flex-col flex-1"
       >
         {/* Изображение */}
         <div className="relative aspect-square overflow-hidden store-media bg-stone-100 mb-4">
@@ -189,7 +189,7 @@ function ProductCardFeatured({
 
         {/* Инфо */}
         <div className="space-y-1.5">
-          <p className="font-display text-price text-stone-800 group-hover:text-stone-600 transition-colors duration-300">
+          <p className="font-display text-price [overflow-wrap:anywhere] text-stone-800 group-hover:text-stone-600 transition-colors duration-300">
             {bindPrepositions(productTitle(product.name, product.category))}
           </p>
           <p className="font-body text-copy text-stone-900">

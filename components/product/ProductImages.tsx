@@ -171,12 +171,13 @@ export default function ProductImages({ images: sourceImages, name }: Props) {
                 key={i}
                 onClick={() => setActive(i)}
                 aria-label={`Фото ${i + 1}`}
+                aria-pressed={i === active}
                 className={[
                   "relative w-24 h-24 shrink-0 overflow-hidden store-media bg-stone-100",
                   "cursor-pointer transition-all duration-200",
                   i === active
-                    ? "ring-2 ring-stone-800 opacity-100"
-                    : "opacity-50 hover:opacity-80 ring-1 ring-stone-200",
+                    ? "opacity-100"
+                    : "opacity-50 hover:opacity-80",
                 ].join(" ")}
               >
                 <Image

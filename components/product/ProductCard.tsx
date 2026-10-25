@@ -30,12 +30,12 @@ export default function ProductCard({ product, index = 0 }: Props) {
         delay: Math.min(index, 3) * 0.03,
         ease: [0.16, 1, 0.3, 1],
       }}
-      className="h-full flex flex-col"
+      className="h-full min-w-0 flex flex-col"
     >
       {/* Link wraps only image + info — CardActions sits outside to avoid nested <a> */}
       <Link
         href={`/product/${product.slug}`}
-        className="product-card-link group flex flex-col flex-1"
+        className="product-card-link group flex min-w-0 flex-col flex-1"
       >
         {/* Изображение */}
         <div className="relative mb-5 aspect-square overflow-hidden store-media bg-stone-100">
@@ -75,7 +75,7 @@ export default function ProductCard({ product, index = 0 }: Props) {
           <p className="min-h-[1rem] font-body text-caption tracking-[0.08em] uppercase text-stone-600 transition-colors duration-300 group-hover:text-stone-600">
             {bindPrepositions(product.category?.name ?? "")}
           </p>
-          <h3 className="font-display font-light text-price text-stone-800 group-hover:text-stone-900 transition-colors duration-200">
+          <h3 className="font-display font-light text-price [overflow-wrap:anywhere] text-stone-800 group-hover:text-stone-900 transition-colors duration-200">
             {bindPrepositions(productTitle(product.name, product.category))}
           </h3>
           <p className="font-body text-copy text-stone-900">

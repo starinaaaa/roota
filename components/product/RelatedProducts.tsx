@@ -18,12 +18,12 @@ export default function RelatedProducts({ products }: Props) {
   if (products.length === 0) return null;
 
   return (
-    <section className="px-6 md:px-12 lg:px-16 pb-20 md:pb-28">
+    <section aria-labelledby="related-products-title" className="px-6 md:px-12 lg:px-16 pb-20 md:pb-28">
       <div className="max-w-[1440px] mx-auto">
         <div className="divider mb-14" />
 
         <div className="flex items-baseline justify-between mb-10 md:mb-14">
-          <h2 className="font-display text-section text-stone-900">
+          <h2 id="related-products-title" className="scroll-mt-24 font-display text-section text-stone-900">
             Другие работы
           </h2>
           <Link
@@ -34,11 +34,11 @@ export default function RelatedProducts({ products }: Props) {
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-8 md:gap-6">
           {products.map((p, i) => (
             <motion.div
               key={p.id}
-              className="h-full flex flex-col"
+              className="h-full min-w-0 flex flex-col"
               initial={false}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-40px" }}
@@ -51,7 +51,7 @@ export default function RelatedProducts({ products }: Props) {
               {/* Link wraps only image + info — CardActions sits outside to avoid nested <a> */}
               <Link
                 href={`/product/${p.slug}`}
-                className="group flex flex-col flex-1"
+                className="group flex min-w-0 flex-col flex-1"
               >
                 <div className="relative aspect-square overflow-hidden store-media bg-stone-100 mb-4">
                   {p.images[0] && (
@@ -75,16 +75,17 @@ export default function RelatedProducts({ products }: Props) {
 
                   <div className="absolute inset-0 bg-stone-900/0 group-hover:bg-stone-900/6 transition-colors duration-500" />
                 </div>
-                <p className="font-display text-price text-stone-800 mb-0.5">
+                <p className="font-display text-copy sm:text-price [overflow-wrap:anywhere] text-stone-800 mb-0.5">
                   {bindPrepositions(productTitle(p.name, p.category))}
                 </p>
                 <p className="font-body text-copy text-stone-900">
-                  {bindPrepositions(formatPrice(p.price))}
+                  {p.configurator === "garden" ? "Поштучно от 250 ₽ · Свой набор" : bindPrepositions(formatPrice(p.price))}
                 </p>
               </Link>
 
               {/* Кнопки действий — вне Link, чтобы не было вложенных <a> */}
               <CardActions
+                configurator={p.configurator}
                 productId={p.id}
                 productSlug={p.slug}
                 productName={p.name}

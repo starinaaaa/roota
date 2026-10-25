@@ -9,6 +9,8 @@ import {
   gardenConfigurationSchema,
   gardenPrice,
   gardenName,
+  changeGardenPart,
+  normalizeGarden,
   gardenSizes,
 } from "../lib/garden";
 import {
@@ -22,7 +24,7 @@ test("garden presets, substitutions and loose pieces have consistent prices", ()
   assert.deepEqual(gardenSizes.map(s => s.name), ["Комнатный садик", "Палисадник", "Садовый дворик", "Оранжерея"]);
   assert.deepEqual(
     gardenSizes.map((size) => gardenPrice(defaultGarden(size.size)).total),
-    [2000, 2470, 3510, 6630],
+    [2600, 3900, 4940, 7020],
   );
   for (const size of gardenSizes) {
     const c = defaultGarden(size.size);
@@ -42,13 +44,44 @@ test("garden presets, substitutions and loose pieces have consistent prices", ()
     250,
   );
   for (const c of [
-    { size: 6, stems: 3, flowers: 1, leaves: 1 },
+    { size: 6, stems: 0, flowers: 0, leaves: 0 },
     { size: 6, stems: -1, flowers: 6, leaves: 1 },
     { size: 6, stems: 3.5, flowers: 1.5, leaves: 1 },
     { ...defaultGarden(), price: 1 },
     { size: 0, stems: 100, flowers: 100, leaves: 0 },
   ])
     assert.equal(gardenConfigurationSchema.safeParse(c).success, false);
+});
+
+test("bundle extras cross every tier in both directions and loose pieces keep their mode", () => {
+  let c = defaultGarden(12);
+  assert.equal(gardenPrice(c).discount, 0);
+  c = changeGardenPart(c, "stems", c.stems + 3);
+  assert.equal(gardenCount(c), 15);
+  assert.equal(c.size, 12);
+  assert.equal(gardenPrice(c).discount, 0);
+  c = changeGardenPart(c, "leaves", c.leaves + 1);
+  assert.equal(c.size, 16);
+  assert.equal(gardenPrice(c).discount, 5);
+  c = changeGardenPart(c, "flowers", c.flowers + 7);
+  assert.equal(gardenCount(c), 23);
+  assert.equal(c.size, 16);
+  assert.equal(gardenPrice(c).discount, 5);
+  c = changeGardenPart(c, "stems", c.stems + 1);
+  assert.equal(c.size, 24);
+  assert.equal(gardenPrice(c).discount, 10);
+  c = changeGardenPart(c, "stems", c.stems - 1);
+  assert.equal(c.size, 16);
+  assert.equal(gardenPrice(c).discount, 5);
+  c = changeGardenPart(c, "stems", 1000);
+  assert.equal(gardenCount(c), 100);
+  assert.equal(gardenPrice(c).discount, 10);
+  assert.deepEqual(changeGardenPart(c, "leaves", c.leaves + 1), c);
+  const loose = changeGardenPart(defaultGarden(0), "stems", 100);
+  assert.equal(loose.size, 0);
+  assert.equal(gardenPrice(loose).discount, 0);
+  assert.equal(gardenConfigurationSchema.safeParse(loose).success, true);
+  assert.equal(normalizeGarden(defaultGarden(6)).size, 8);
 });
 
 test("each garden gets its own parcel, mixed orders retain plate packing, snapshots detect same-price edits", () => {
@@ -126,6 +159,7 @@ test("database preserves independent gardens, prevents tampering and freezes com
       await readFile("database/migrations/20261025_garden.sql", "utf8"),
     );
     await db.exec(await readFile("database/migrations/20261025_garden_names.sql", "utf8"));
+    await db.exec(await readFile("database/migrations/20261025_garden_flexible.sql", "utf8"));
     await db.exec(
       "insert into email_templates(kind,subject,body) values('order_created','Заказ','Заказ сохранён')",
     );
@@ -146,6 +180,17 @@ test("database preserves independent gardens, prevents tampering and freezes com
     for (const preset of gardenSizes) {
       const named = await db.query<{ name: string }>("select garden_item_name(p,$2::jsonb) name from products p where id=$1", [garden, JSON.stringify(defaultGarden(preset.size))]);
       assert.ok(named.rows[0].name.startsWith(`Сад — ${gardenName(defaultGarden(preset.size))} (`));
+    }
+    for (const count of [1, 6, 8, 11, 12, 15, 16, 17, 23, 24, 25, 99, 100]) {
+      for (const size of [0, 6, 8, 12, 16, 24] as const) {
+        const configuration = { size, stems: count - 1, flowers: 0, leaves: 1 };
+        const sql = await db.query<{ price: number; name: string }>(
+          "select garden_price($2::jsonb) price,garden_item_name(p,$2::jsonb) name from products p where id=$1",
+          [garden, JSON.stringify(configuration)],
+        );
+        assert.equal(sql.rows[0].price, gardenPrice(configuration).total);
+        assert.ok(sql.rows[0].name.startsWith(`Сад — ${gardenName(configuration)} (`));
+      }
     }
     const a = randomUUID(),
       b = randomUUID(),
@@ -186,7 +231,7 @@ test("database preserves independent gardens, prevents tampering and freezes com
       /INVALID_GARDEN/,
     );
     await assert.rejects(
-      mutate(randomUUID(), { size: 6, stems: 1, flowers: 1, leaves: 1 }),
+      mutate(randomUUID(), { size: 6, stems: 100, flowers: 1, leaves: 1 }),
       /INVALID_GARDEN/,
     );
     await assert.rejects(
@@ -216,7 +261,7 @@ test("database preserves independent gardens, prevents tampering and freezes com
       address: "Москва, тестовый адрес",
       comment: "",
     };
-    const total = 1900 + 3510 + 2000 + 1200;
+    const total = 1900 + 3900 + 2000 + 1200;
     const rule = (
       await db.query<{
         id: string;
@@ -333,7 +378,7 @@ test("database preserves independent gardens, prevents tampering and freezes com
     ).rows;
     assert.deepEqual(
       snapshots.map((s) => s.price),
-      [1900, 2000, 3510],
+      [1900, 2000, 3900],
     );
     assert.ok(
       snapshots.every((s) => s.lead_time_days === 21 && s.configuration),
@@ -356,6 +401,28 @@ test("database preserves independent gardens, prevents tampering and freezes com
       ).rows[0].n,
       0,
     );
+    // Extra pieces retain the bundle discount in persisted order/receipt names.
+    const extraSession = randomUUID();
+    const extras = [
+      { size: 16, stems: 9, flowers: 4, leaves: 4 },
+      { size: 24, stems: 13, flowers: 6, leaves: 6 },
+      { size: 0, stems: 13, flowers: 6, leaves: 6 },
+    ] as const;
+    for (const configuration of extras)
+      await mutate(randomUUID(), configuration, "add", extraSession);
+    const extraTotal = extras.reduce((sum, c) => sum + gardenPrice(c).total, 0);
+    const extraOrder = (await db.query<{ o: { id: string } }>(
+      "select checkout_delivery_order($1,$2,$3::jsonb,$4,null) o",
+      [extraSession, randomUUID(), JSON.stringify(form), extraTotal],
+    )).rows[0].o;
+    const extraLines = (await db.query<{ price: number; product_name: string; configuration: unknown }>(
+      "select price,product_name,configuration from order_items where order_id=$1 order by price",
+      [extraOrder.id],
+    )).rows;
+    assert.deepEqual(extraLines.map(i => i.price), [5273, 7335, 8150]);
+    assert.ok(extraLines[0].product_name.includes("Садовый дворик"));
+    assert.ok(extraLines[1].product_name.includes("Оранжерея"));
+    assert.ok(extraLines[2].product_name.includes("Детали поштучно"));
     await db.query(
       "update products set price=999999,name='Новое имя',lead_time_days=7 where id=$1",
       [garden],

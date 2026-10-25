@@ -26,6 +26,9 @@ export async function updateOrder(input: unknown) {
     const messages: Record<string, string> = {
       ROBOKASSA_PAYMENT_MANAGED:
         "Оплату Robokassa подтверждает платёжный сервис. Для возврата используйте блок возврата в карточке заказа.",
+      PRODUCTION_REQUIRES_PAYMENT: "Начать изготовление можно после подтверждения оплаты.",
+      PRODUCTION_REQUIRES_PREORDER: "В заказе нет изделий по предзаказу.",
+      PRODUCTION_UNAVAILABLE: "Заказ уже передан в доставку, завершён или отменён.",
       EMPTY_ORDER:
         "В старом заказе нет состава. Сначала уточните его у покупателя.",
       PAYMENT_REASON_REQUIRED:

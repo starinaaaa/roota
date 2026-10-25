@@ -40,7 +40,7 @@ try {
       await readFile("database/migrations/20261025_garden.sql", "utf8"),
     );
   const flexible = await db.query<{ applied: boolean }>(
-    "select position('garden-flexible-v1' in pg_get_functiondef('public.garden_price(jsonb)'::regprocedure))>0 applied",
+    "select position('garden-flexible-v1' in pg_get_functiondef('public.garden_price(jsonb)'::regprocedure))>0 and position('garden-production-v1' in pg_get_functiondef('public.change_order(uuid,text,text,text,text,text,uuid)'::regprocedure))>0 applied",
   );
   if (!flexible.rows[0].applied)
     await db.query(await readFile("database/migrations/20261025_garden_flexible.sql", "utf8"));

@@ -17,14 +17,16 @@ export type DeliveryStage =
   | "problem"
   | "cancelled";
 
-export function customerOrderState(order: {
+type CustomerOrder = {
   status: string;
   payment_status: string;
   delivery_stage?: string | null;
   leadTimeDays?: number;
   hasPreorder?: boolean;
   parcelStatuses?: (string | null)[];
-}) {
+};
+
+function baseCustomerOrderState(order: CustomerOrder) {
   if (order.status === "cancelled")
     return {
       title:
@@ -126,6 +128,12 @@ export function customerOrderState(order: {
       detail:
         "Заказ оформлен. После подтверждения оплаты начнём его подготовку.",
     };
+  if (order.hasPreorder && order.status === "in_production")
+    return {
+      title: "Изготавливается",
+      step: 2,
+      detail: `Заказ принят в работу. Начали лепить изделия для вашего заказа.${order.leadTimeDays ? ` Срок изготовления — до ${order.leadTimeDays} ${order.leadTimeDays % 10 === 1 && order.leadTimeDays % 100 !== 11 ? "дня" : "дней"} после оплаты.` : ""} После готовности передадим заказ в доставку.`,
+    };
   const detail = order.leadTimeDays
     ? `Изготовление — до ${order.leadTimeDays} дней после оплаты. После готовности передадим заказ в доставку.`
     : order.hasPreorder
@@ -139,4 +147,16 @@ export function customerOrderState(order: {
     step: order.status === "new" ? 1 : 2,
     detail,
   };
+}
+
+export function customerOrderSteps(hasPreorder = false) {
+  return hasPreorder
+    ? [...orderSteps.slice(0, 2), "Изготавливается", ...orderSteps.slice(2)]
+    : orderSteps;
+}
+export function customerOrderState(order: CustomerOrder) {
+  const state = baseCustomerOrderState(order);
+  return order.hasPreorder && state.step >= 2 && state.title !== "Изготавливается"
+    ? { ...state, step: state.step + 1 }
+    : state;
 }

@@ -40,7 +40,7 @@ export default function Hero({
       </div>
 
       {/* Subtle dark gradient so white text stays readable at any scroll depth */}
-      <div className="absolute inset-0 bg-gradient-to-t from-stone-900/80 via-stone-900/60 to-stone-900/50" />
+      <div className="absolute inset-0 bg-gradient-to-t from-stone-900/65 via-stone-900/45 to-stone-900/35" />
 
       {/* Content */}
       <div className="relative z-10 flex min-h-svh items-center pt-24 md:pt-28 px-6 pb-16 md:px-12 md:pb-20 lg:px-[12.5%] lg:pb-24">

@@ -161,7 +161,7 @@ test("database preserves independent gardens, prevents tampering and freezes com
     await db.exec(await readFile("database/migrations/20261025_garden_names.sql", "utf8"));
     await db.exec(await readFile("database/migrations/20261025_garden_flexible.sql", "utf8"));
     await db.exec(
-      "insert into email_templates(kind,subject,body) values('order_created','Заказ','Заказ сохранён')",
+      "insert into email_templates(kind,subject,body) values('order_created','Заказ','Заказ сохранён'),('order_paid','Оплата','Оплата получена')",
     );
     const category = randomUUID(),
       garden = randomUUID(),
@@ -179,7 +179,7 @@ test("database preserves independent gardens, prevents tampering and freezes com
     );
     for (const preset of gardenSizes) {
       const named = await db.query<{ name: string }>("select garden_item_name(p,$2::jsonb) name from products p where id=$1", [garden, JSON.stringify(defaultGarden(preset.size))]);
-      assert.ok(named.rows[0].name.startsWith(`Сад — ${gardenName(defaultGarden(preset.size))} (`));
+      assert.ok(named.rows[0].name.startsWith(`Керамический конструктор «Сад» — ${gardenName(defaultGarden(preset.size))} (`));
     }
     for (const count of [1, 6, 8, 11, 12, 15, 16, 17, 23, 24, 25, 99, 100]) {
       for (const size of [0, 6, 8, 12, 16, 24] as const) {
@@ -189,7 +189,7 @@ test("database preserves independent gardens, prevents tampering and freezes com
           [garden, JSON.stringify(configuration)],
         );
         assert.equal(sql.rows[0].price, gardenPrice(configuration).total);
-        assert.ok(sql.rows[0].name.startsWith(`Сад — ${gardenName(configuration)} (`));
+        assert.ok(sql.rows[0].name.startsWith(`Керамический конструктор «Сад» — ${gardenName(configuration)} (`));
       }
     }
     const a = randomUUID(),
@@ -401,6 +401,16 @@ test("database preserves independent gardens, prevents tampering and freezes com
       ).rows[0].n,
       0,
     );
+    const actor = randomUUID();
+    const production = () => db.query("select change_order($1,'in_production','paid','','','',$2)", [order.id, actor]);
+    await assert.rejects(production(), /PRODUCTION_REQUIRES_PAYMENT/);
+    await db.query("update orders set payment_status='paid' where id=$1", [order.id]);
+    await production();
+    assert.equal((await db.query<{ status: string }>("select status from orders where id=$1", [order.id])).rows[0].status, "in_production");
+    assert.equal((await db.query<{ n: number }>("select count(*)::int n from order_events where order_id=$1 and kind='status' and new_value='in_production'", [order.id])).rows[0].n, 1);
+    await production();
+    assert.equal((await db.query<{ n: number }>("select count(*)::int n from order_events where order_id=$1 and kind='status' and new_value='in_production'", [order.id])).rows[0].n, 1);
+    await db.query("select change_order($1,'confirmed','paid','','','',$2)", [order.id, actor]);
     // Extra pieces retain the bundle discount in persisted order/receipt names.
     const extraSession = randomUUID();
     const extras = [

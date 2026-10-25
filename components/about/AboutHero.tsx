@@ -14,7 +14,7 @@ export default function AboutHero({ title }: { title: string }) {
           className="object-cover object-[center_48%]"
         />
       </div>
-      <div className="absolute inset-0 -z-10 bg-gradient-to-r from-stone-950/55 via-stone-950/30 to-stone-950/10" />
+      <div className="absolute inset-0 -z-10 bg-gradient-to-r from-stone-950/40 via-stone-950/20 to-stone-950/5" />
       <div className="w-full">
         <p className="mb-8 font-body text-caption uppercase tracking-[0.08em] text-white">
           О студии

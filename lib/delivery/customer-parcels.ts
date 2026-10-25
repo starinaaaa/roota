@@ -1,3 +1,4 @@
+import { gardenProductTitle } from "@/lib/garden-title";
 import {
   carrierStatusLabel,
   shipmentPostings,
@@ -47,8 +48,11 @@ export function customerParcels(
     const posting = postings.find((p) => p.request_id === index);
     const request = requests.find((p) => p.request_id === index);
     const contents = packing?.parcels?.[i]?.items;
+    const gardenParcel = contents
+      ? contents.some(item => item.configuration)
+      : total === 1 && items.some(item => item.configuration);
     const description =
-      request?.description ||
+      (!gardenParcel && request?.description) ||
       (contents
         ? contents
             .map((item) => {
@@ -59,12 +63,13 @@ export function customerParcels(
                     original.purchase_mode === item.purchase_mode) &&
                   (!item.configuration || (original.configuration && gardenKey(original.configuration) === gardenKey(item.configuration))),
               );
-              return `${original?.product_name ?? "Изделие"} × ${item.quantity}`;
+              const title = original?.product_name ?? "Изделие";
+              return `${original?.configuration ? gardenProductTitle(title) : title} × ${item.quantity}`;
             })
             .join("; ")
         : total === 1
           ? items
-              .map((item) => `${item.product_name} × ${item.quantity}`)
+              .map((item) => `${item.configuration ? gardenProductTitle(item.product_name) : item.product_name} × ${item.quantity}`)
               .join("; ")
           : "Состав уточняется у студии");
     const status =

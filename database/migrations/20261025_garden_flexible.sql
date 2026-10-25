@@ -17,7 +17,7 @@ BEGIN
 END $$;
 CREATE OR REPLACE FUNCTION public.garden_item_name(p public.products,c jsonb) RETURNS text
 LANGUAGE sql STABLE SET search_path='' AS $$
- SELECT CASE WHEN c IS NULL THEN p.name ELSE p.name||' — '||
+ SELECT CASE WHEN c IS NULL THEN p.name ELSE 'Керамический конструктор «Сад»'||' — '||
  CASE WHEN (c->>'size')::integer=0 THEN 'Детали поштучно'
  WHEN (c->>'stems')::integer+(c->>'flowers')::integer+(c->>'leaves')::integer>=24 THEN 'Оранжерея'
  WHEN (c->>'stems')::integer+(c->>'flowers')::integer+(c->>'leaves')::integer>=16 THEN 'Садовый дворик'
@@ -36,4 +36,24 @@ WHERE slug='sad' AND configurator='garden';
 INSERT INTO public.delivery_packing_rules(name,composition,weight_g,length_mm,width_mm,height_mm,active,garden_size)
 SELECT 'Сад · до 16 деталей',jsonb_build_array(jsonb_build_object('category_id',c.id,'quantity',1)),1040,150,150,150,true,16
 FROM public.categories c WHERE c.slug='objects' AND NOT EXISTS(SELECT 1 FROM public.delivery_packing_rules WHERE garden_size=16);
+-- Reuse the existing production status and audited admin transition function.
+DO $production$
+DECLARE definition text;
+BEGIN
+ definition:=pg_get_functiondef('public.change_order(uuid,text,text,text,text,text,uuid)'::regprocedure);
+ IF position('garden-production-v1' IN definition)>0 THEN RETURN; END IF;
+ IF position('''new'',''confirmed'',''shipped'',''delivered'',''cancelled''' IN definition)=0
+ OR position('if not found then raise exception ''NOT_FOUND''; end if;' IN definition)=0 THEN RAISE EXCEPTION 'PRODUCTION_MIGRATION_ANCHOR'; END IF;
+ definition:=replace(definition,'''new'',''confirmed'',''shipped'',''delivered'',''cancelled''','''new'',''confirmed'',''in_production'',''shipped'',''delivered'',''cancelled''');
+ definition:=replace(definition,'''confirmed'',''shipped'',''delivered''','''confirmed'',''in_production'',''shipped'',''delivered''');
+ definition:=replace(definition,'if not found then raise exception ''NOT_FOUND''; end if;',
+ 'if not found then raise exception ''NOT_FOUND''; end if;
+ -- garden-production-v1
+ if p_status=''in_production'' then
+   if p_payment<>''paid'' or old_order.payment_status<>''paid'' then raise exception ''PRODUCTION_REQUIRES_PAYMENT''; end if;
+   if old_order.status in (''shipped'',''delivered'',''cancelled'') then raise exception ''PRODUCTION_UNAVAILABLE''; end if;
+   if not exists(select 1 from public.order_items where order_id=p_id and purchase_mode=''preorder'') then raise exception ''PRODUCTION_REQUIRES_PREORDER''; end if;
+ end if;');
+ EXECUTE definition;
+END $production$;
 COMMIT;

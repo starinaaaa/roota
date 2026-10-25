@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { PGlite } from "@electric-sql/pglite";
-import { customerOrderState } from "../lib/customer-order-model";
+import { customerOrderState, customerOrderSteps } from "../lib/customer-order-model";
 import {
   postingInfoSchema,
   postingHistorySchema,
@@ -210,4 +210,20 @@ test("one-to-one shipment and owner notification relations are displayed", () =>
   assert.equal(relationList([shipment])[0].carrier_status, "on_way");
   assert.deepEqual(relationList(null), []);
   assert.equal(relationList({ state: "sent" })[0].state, "sent");
+});
+
+test("preorders show manual production between payment and shipping without changing stock-order steps", () => {
+  const base = { status: "in_production", payment_status: "paid", hasPreorder: true, leadTimeDays: 21 };
+  assert.equal(customerOrderState(base).title, "Изготавливается");
+  assert.equal(customerOrderState(base).step, 2);
+  assert.match(customerOrderState(base).detail, /Начали лепить/);
+  assert.match(customerOrderState(base).detail, /21 дня после оплаты/);
+  assert.equal(customerOrderState({ ...base, payment_status: "pending" }).title, "Ожидаем оплату");
+  assert.equal(customerOrderState({ ...base, status: "confirmed" }).step, 3);
+  assert.equal(customerOrderState({ ...base, status: "shipped" }).step, 4);
+  assert.equal(customerOrderState({ ...base, status: "cancelled" }).step, -1);
+  assert.equal(customerOrderState({ ...base, status: "shipped", hasPreorder: false }).step, 3);
+  assert.equal(customerOrderSteps(true)[2], "Изготавливается");
+  assert.equal(customerOrderSteps(true).length, 7);
+  assert.equal(customerOrderSteps(false).length, 6);
 });

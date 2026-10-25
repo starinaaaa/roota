@@ -215,3 +215,11 @@ test("parcel milestones are transactional, deduplicated and receipt waits for ev
     await db.close();
   }
 });
+
+test("garden parcels describe the constructor while preserving the original purchased composition", () => {
+  const configuration = { size: 12, stems: 6, flowers: 3, leaves: 3 } as const;
+  const parcels = customerParcels(null, [{ product_name: "Сад — Садовый дворик (стебли: 6, цветочки: 3, листочки: 3)", quantity: 1, configuration }], {
+    request_payload: { postings: [{ request_id: 1, description: "Керамическое изделие «Сад» × 1" }] },
+  });
+  assert.equal(parcels[0].description, "Керамический конструктор «Сад» — Садовый дворик (стебли: 6, цветочки: 3, листочки: 3) × 1");
+});

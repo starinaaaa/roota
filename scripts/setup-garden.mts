@@ -39,9 +39,11 @@ try {
     await db.query(
       await readFile("database/migrations/20261025_garden.sql", "utf8"),
     );
-  await db.query(
-    await readFile("database/migrations/20261025_garden_names.sql", "utf8"),
+  const flexible = await db.query<{ applied: boolean }>(
+    "select position('garden-flexible-v1' in pg_get_functiondef('public.garden_price(jsonb)'::regprocedure))>0 and position('garden-production-v1' in pg_get_functiondef('public.change_order(uuid,text,text,text,text,text,uuid)'::regprocedure))>0 applied",
   );
+  if (!flexible.rows[0].applied)
+    await db.query(await readFile("database/migrations/20261025_garden_flexible.sql", "utf8"));
   await db.query("BEGIN");
   await db.query(
     "select pg_advisory_xact_lock(hashtextextended('roota-setup-garden',0))",
@@ -64,7 +66,7 @@ try {
     } = await db.query<{ id: string }>(
       `insert into products(category_id,slug,sku,name,description,price,stock_qty,product_kind,configurator,publication_status,
       preorder_enabled,lead_time_days,featured,featured_order,material,care,seo_title,seo_description)
-      values($1,'sad','SAD','Сад',$2,2000,0,'batch','garden','published',true,21,true,0,'Глина, ангобы',$3,'Сад — керамический конструктор',
+      values($1,'sad','SAD','Сад',$2,2600,0,'batch','garden','published',true,21,true,0,'Глина, ангобы',$3,'Сад — керамический конструктор',
       'Соберите свой керамический сад из стеблей, цветочков и листочков. Четыре размера и свой состав. Изготовление — 3 недели после оплаты.') returning id`,
       [category.id, gardenDescription, gardenCare],
     );
@@ -84,7 +86,7 @@ try {
       );
     }
   }
-  for (const capacity of [6, 8, 12, 24, 100]) {
+  for (const capacity of [6, 8, 12, 16, 24, 100]) {
     await db.query(
       `insert into delivery_packing_rules(name,composition,weight_g,length_mm,width_mm,height_mm,active,garden_size)
       select $1,$2::jsonb,$3,150,150,150,true,$4

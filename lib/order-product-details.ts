@@ -1,4 +1,5 @@
 import "server-only";
+import { gardenProductTitle } from "@/lib/garden-title";
 import { createServerClient } from "@/lib/db";
 import { relationList } from "@/lib/relation-list";
 import { productTitle } from "@/lib/product-title";
@@ -11,7 +12,7 @@ export async function orderProductDetails(ids: (string | null)[]) {
   if (!unique.length) return result;
   const { data, error } = await createServerClient()
     .from("products")
-    .select("id,categories(slug,name),product_images(id,public_url,is_primary,sort_order)")
+    .select("id,configurator,categories(slug,name),product_images(id,public_url,is_primary,sort_order)")
     .in("id", unique);
   if (error) throw new Error("Не удалось загрузить изделия заказа");
   for (const product of data ?? []) {
@@ -22,7 +23,7 @@ export async function orderProductDetails(ids: (string | null)[]) {
         a.sort_order - b.sort_order,
     )[0];
     result.set(product.id, {
-      title: (name) => productTitle(name, category),
+      title: (name) => product.configurator === "garden" ? gardenProductTitle(name) : productTitle(name, category),
       image: image ? (/^\/images\/garden\/garden-[1-5]\.webp$/.test(image.public_url) ? image.public_url : `/media/${product.id}/${image.id}`) : undefined,
     });
   }

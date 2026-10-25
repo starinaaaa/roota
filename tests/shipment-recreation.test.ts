@@ -321,3 +321,7 @@ test("a cancellation failure cannot create a new parcel; the frozen operation re
     await f.sql.close();
   }
 });
+
+test("carrier descriptions identify garden constructors and retain the purchased bundle name", () => {
+  assert.equal(shipmentDescription([{ product_name: "Сад — Палисадник (стебли: 6, цветочки: 3, листочки: 3)", quantity: 1, configuration: { size: 12, stems: 6, flowers: 3, leaves: 3 }, category: { slug: "objects" } }]), "Керамический конструктор «Сад» — Палисадник (стебли: 6, цветочки: 3, листочки: 3) × 1");
+});

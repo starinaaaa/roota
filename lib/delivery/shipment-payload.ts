@@ -45,6 +45,7 @@ export function shipmentPayload(
             product_name: original.product_name,
             quantity: item.quantity,
             category: original.category,
+            configuration: original.configuration,
           };
         }),
       ),

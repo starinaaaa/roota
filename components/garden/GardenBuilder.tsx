@@ -4,6 +4,8 @@ import { useId, useState, useTransition } from "react";
 import { Check, Minus, Plus, Sprout } from "lucide-react";
 import {
   defaultGarden,
+  normalizeGarden,
+  changeGardenPart,
   gardenCount,
   gardenCountLabel,
   gardenName,
@@ -32,24 +34,18 @@ export default function GardenBuilder({
 }: Props) {
   const id = useId();
   const [configuration, setConfiguration] = useState<GardenConfiguration>(
-    () => initial ?? defaultGarden(),
+    () => normalizeGarden(initial ?? defaultGarden()),
   );
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState("");
   const count = gardenCount(configuration);
-  const remaining =
-    configuration.size === 0 ? 100 - count : configuration.size - count;
-  const valid =
-    configuration.size === 0 ? count > 0 && count <= 100 : remaining === 0;
+  const remaining = 100 - count;
+  const valid = count > 0 && count <= 100;
   const price = gardenPrice(configuration);
 
   function changePart(key: GardenPart, value: number) {
     if (!Number.isFinite(value)) return;
-    const limit = configuration[key] + remaining;
-    const next = {
-      ...configuration,
-      [key]: Math.max(0, Math.min(limit, Math.trunc(value))),
-    };
+    const next = changeGardenPart(configuration, key, value);
     setConfiguration(next);
     onChange?.(next);
     setError("");
@@ -79,7 +75,8 @@ export default function GardenBuilder({
           1. Выберите размер сада
         </legend>
         <p className="mb-4 text-sm leading-relaxed text-stone-600">
-          Размер — количество всех деталей, включая листочки.
+          Размер — количество всех деталей, включая листочки. Начните с набора
+          и добавляйте детали — название сада изменится автоматически.
         </p>
         <div className="grid grid-cols-1 min-[360px]:grid-cols-2 gap-3">
           {gardenSizes.map((size) => {
@@ -124,8 +121,8 @@ export default function GardenBuilder({
           })}
         </div>
         <p className="mt-3 text-xs leading-relaxed text-stone-500">
-          На карточках — цена предложенного состава. Её можно изменить, выбирая
-          наполнение.
+          На карточках — цена предложенного состава. В наборе может быть до
+          100 деталей: 16–23 — скидка 5%, от 24 — 10% на весь состав.
         </p>
         <label
           className={`mt-3 flex cursor-pointer items-center justify-between gap-3 rounded-lg border px-4 py-3 text-sm focus-within:ring-2 focus-within:ring-[#687851] ${configuration.size === 0 ? "border-[#687851] bg-[#f1f3eb]" : "border-stone-200"}`}
@@ -159,7 +156,7 @@ export default function GardenBuilder({
         </legend>
         <p className="mb-4 text-sm leading-relaxed text-stone-600">
           Мы предложили сочетание. Меняйте его на свой вкус — формы и цвета
-          подберёт Даша.
+          подберёт Даша. Кнопками «+» можно добавить к набору ещё детали.
         </p>
         <div className="divide-y divide-stone-200">
           {gardenParts.map((part) => (
@@ -224,14 +221,8 @@ export default function GardenBuilder({
         >
           {configuration.size === 0
             ? `Выбрано деталей: ${count} из 100 возможных`
-            : `Выбрано ${count} из ${configuration.size}${remaining ? ` · Добавьте ещё ${remaining}` : " · Сад собран"}`}
+            : `${gardenName(configuration)} · ${gardenCountLabel(count)} из 100 возможных`}
         </p>
-        {!valid && configuration.size !== 0 && (
-          <p className="mt-2 text-xs text-stone-600">
-            Чтобы заменить деталь, сначала уменьшите её количество, затем
-            добавьте другую.
-          </p>
-        )}
       </fieldset>
 
       <div className="rounded-lg bg-[#f1f3eb] p-5">
@@ -260,8 +251,9 @@ export default function GardenBuilder({
           </p>
         )}
         <p className="mt-3 text-xs leading-relaxed text-stone-600">
-          Цена зависит от состава. Скидка сохраняется при замене деталей в
-          выбранном размере.
+          Скидка рассчитывается по общему количеству деталей в этом наборе:
+          16–23 — 5%, от 24 до 100 — 10%. Она действует и на все добавленные
+          детали. В поштучном режиме скидки нет.
         </p>
       </div>
       <div className="space-y-3">

@@ -90,7 +90,7 @@ export default function OrderEditor({ order }: { order: OrderData }) {
   }), { size: 0, stems: 0, flowers: 0, leaves: 0 });
   const [form, setForm] = useState({
       id: order.id,
-      status: order.status === "in_production" ? "confirmed" : order.status,
+      status: order.status,
       payment_status: order.payment_status,
       internal_notes: order.internal_notes,
       tracking_number: order.tracking_number,
@@ -119,6 +119,27 @@ export default function OrderEditor({ order }: { order: OrderData }) {
           У этого старого заказа отсутствует состав. Перед выполнением сверьте
           его с покупателем.
         </p>
+      )}
+      {order.items.some(i => i.purchase_mode === "preorder") && order.payment_status === "paid" && ["new", "confirmed", "in_production"].includes(order.status) && (
+        <section className="admin-card space-y-3">
+          <h3 className="text-lg">Изготовление предзаказа</h3>
+          <p className="text-sm text-stone-600">
+            {order.status === "in_production"
+              ? "Покупатель видит, что заказ принят в работу и изготовление началось. После завершения переведите заказ к подготовке отправления."
+              : "Когда начнёте лепить изделия, отметьте начало работы — покупатель увидит статус на своей странице заказа."}
+          </p>
+          <button type="button" className="admin-button" disabled={pending} onClick={() => start(async () => {
+            const status = order.status === "in_production" ? "confirmed" : "in_production";
+            setMessage("");
+            try {
+              const result = await updateOrder({ ...form, status });
+              setMessage(result.error ?? (status === "in_production" ? "Изготовление начато" : "Изготовление завершено. Заказ готовится к отправке"));
+              if (!result.error) { field("status", status); router.refresh(); }
+            } catch { setMessage("Не удалось изменить статус. Проверьте доступ."); }
+          })}>
+            {pending ? "Сохраняю…" : order.status === "in_production" ? "Изготовление завершено" : "Начать изготовление"}
+          </button>
+        </section>
       )}
       <div className="grid lg:grid-cols-2 gap-6">
         <section className="admin-card space-y-3">
@@ -221,9 +242,9 @@ export default function OrderEditor({ order }: { order: OrderData }) {
             onChange={(e) => field("status", e.target.value)}
           >
             {Object.entries(orderLabels)
-              .filter(([k]) => k !== "in_production")
+              .filter(([k]) => k !== "in_production" || order.items.some(i => i.purchase_mode === "preorder") || order.status === "in_production")
               .map(([k, v]) => (
-                <option value={k} key={k}>
+                <option value={k} key={k} disabled={k === "in_production" && order.payment_status !== "paid"}>
                   {v}
                 </option>
               ))}

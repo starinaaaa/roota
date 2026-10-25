@@ -1,3 +1,4 @@
+import { gardenProductTitle } from "../lib/garden-title";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { productTitle } from "../lib/product-title";
@@ -37,4 +38,11 @@ test("purchase email renders category title and photo in HTML and title in plain
     /<img src="https:\/\/roota.moscow\/media\/demo\/photo"/,
   );
   assert.match(email.plaintext, /Тарелка «Лес <3>»/);
+});
+
+test("garden display titles retain the frozen bundle name and avoid repeating the type", () => {
+  const legacy = "Сад — Садовый дворик (стебли: 6, цветочки: 3, листочки: 3)";
+  const title = "Керамический конструктор «Сад» — Садовый дворик (стебли: 6, цветочки: 3, листочки: 3)";
+  assert.equal(gardenProductTitle(legacy), title);
+  assert.equal(gardenProductTitle(title), title);
 });

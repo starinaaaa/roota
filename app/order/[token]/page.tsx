@@ -1,3 +1,4 @@
+import { gardenProductTitle } from "@/lib/garden-title";
 import { customerParcels } from "@/lib/delivery/customer-parcels";
 import ParcelList from "@/components/order/ParcelList";
 import { relationList } from "@/lib/relation-list";
@@ -7,7 +8,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { orderIdForToken, paymentForOrderToken } from "@/lib/order-access";
 import { createServerClient } from "@/lib/db";
-import { customerOrderState, orderSteps } from "@/lib/customer-order-model";
+import { customerOrderState, customerOrderSteps } from "@/lib/customer-order-model";
 import { formatPrice } from "@/lib/format-price";
 import { orderProductDetails } from "@/lib/order-product-details";
 import { getSiteContent } from "@/lib/site";
@@ -57,7 +58,10 @@ export default async function CustomerOrderPage({
     throw new Error(
       "Не удалось загрузить заказ. Попробуйте обновить страницу.",
     );
-  const items = order.items as Item[];
+  const items = (order.items as Item[]).map(item => ({
+    ...item,
+    product_name: item.configuration ? gardenProductTitle(item.product_name) : item.product_name,
+  }));
   const leadTimeDays = Math.max(
     0,
     ...items
@@ -77,11 +81,13 @@ export default async function CustomerOrderPage({
     order.delivery_details?.provider === "ozon"
       ? customerParcels(order.delivery_details?.packing, items, shipment)
       : [];
+  const hasPreorder = items.some(i => i.purchase_mode === "preorder");
+  const steps = customerOrderSteps(hasPreorder);
   const state = customerOrderState({
     ...order,
     parcelStatuses: parcels.map((parcel) => parcel.status),
     leadTimeDays,
-    hasPreorder: items.some((i) => i.purchase_mode === "preorder"),
+    hasPreorder,
   });
   const tracking = order.tracking_number;
   const point = order.delivery_details?.point;
@@ -138,9 +144,9 @@ export default async function CustomerOrderPage({
       {state.step >= 0 && (
         <ol
           aria-label="Этапы заказа"
-          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 my-10 md:my-14"
+          className={`grid grid-cols-2 sm:grid-cols-3 ${hasPreorder ? "lg:grid-cols-7" : "lg:grid-cols-6"} gap-4 my-10 md:my-14`}
         >
-          {orderSteps.map((step, index) => (
+          {steps.map((step, index) => (
             <li
               key={step}
               aria-current={index === state.step ? "step" : undefined}

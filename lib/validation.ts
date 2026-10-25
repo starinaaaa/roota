@@ -165,7 +165,7 @@ export const productSchema = z
   );
 export const orderChangeSchema = z.object({
   id: uuid,
-  status: z.enum(["new", "confirmed", "shipped", "delivered", "cancelled"]),
+  status: z.enum(["new", "confirmed", "in_production", "shipped", "delivered", "cancelled"]),
   payment_status: z.enum(["pending", "paid", "failed", "refunded"]),
   internal_notes: z.string().max(5000),
   tracking_number: z.string().max(200),
@@ -173,8 +173,8 @@ export const orderChangeSchema = z.object({
 });
 export const orderLabels: Record<string, string> = {
   new: "Новый",
-  confirmed: "Собирается",
-  in_production: "Собирается",
+  confirmed: "Готовится к отправке",
+  in_production: "Изготавливается",
   shipped: "Отправлен",
   delivered: "Завершён",
   cancelled: "Отменён",

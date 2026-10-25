@@ -1,3 +1,5 @@
+import { gardenProductTitle } from "@/lib/garden-title";
+import type { GardenConfiguration } from "@/lib/garden";
 export type ShipmentCategory = { name?: string | null; slug?: string | null };
 
 // Explicit singular forms keep the noun and adjective in the correct grammatical gender.
@@ -42,9 +44,12 @@ export function shipmentDescription(
     product_name: string;
     quantity: number;
     category?: ShipmentCategory | null;
+    configuration?: GardenConfiguration | null;
   }[],
 ) {
   const parts = items.map((item) => {
+    if (item.configuration)
+      return `${gardenProductTitle(item.product_name)} × ${item.quantity}`;
     const type = ceramicCategoryName(item.category);
     const noun = type.split(" ")[0];
     // Product titles sometimes already include their type; do not repeat it.

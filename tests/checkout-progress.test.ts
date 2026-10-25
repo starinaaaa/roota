@@ -25,6 +25,13 @@ async function fixture() {
     create table checkout_drafts(session_id text,subscription_id uuid,completed_at timestamptz,expires_at timestamptz default now()+interval '7 days');
     create table email_messages(subscription_id uuid,kind text,state text,created_at timestamptz default now());
   `);
+  await db.exec("alter table products add column configurator text; alter table cart_items add column configuration jsonb");
+  const gardenMigration = await readFile("database/migrations/20261025_garden.sql", "utf8");
+  for (const name of ["garden_price", "cart_item_price", "garden_item_name"]) {
+    const definition = gardenMigration.match(new RegExp(`CREATE OR REPLACE FUNCTION public\\.${name}\\([\\s\\S]*?\\$\\$;`));
+    assert.ok(definition);
+    await db.exec(definition[0]);
+  }
   await db.exec(
     await readFile(
       "database/migrations/20261023_checkout_progress.sql",

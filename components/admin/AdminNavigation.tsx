@@ -11,6 +11,7 @@ const sections = [
   ["messages", "Сообщения"],
   ["reviews", "Отзывы"],
   ["waitlist", "Заявки на поступление"],
+  ["garden-requests", "Выбор Сада"],
   ["site", "Сайт"],
   ["delivery", "Доставка"],
 ] as const;

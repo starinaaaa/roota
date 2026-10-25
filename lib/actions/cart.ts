@@ -6,6 +6,7 @@ import { createServerClient } from "@/lib/db";
 import { getProductsByIds } from "@/lib/products";
 import { uuid } from "@/lib/validation";
 import type { CartItem } from "@/types";
+import { gardenName, gardenPrice, gardenConfigurationSchema } from "@/lib/garden";
 async function sessionId() {
   return (await cookies()).get("cart_session")?.value;
 }
@@ -19,7 +20,7 @@ export async function getCart(): Promise<{ items: CartItem[] }> {
   try {
     const { data, error } = await createServerClient()
       .from("carts")
-      .select("id,cart_items(id,cart_id,product_id,quantity,purchase_mode)")
+      .select("id,cart_items(id,cart_id,product_id,quantity,purchase_mode,configuration)")
       .eq("session_id", session)
       .maybeSingle();
     if (error || !data) return { items: [] };
@@ -28,7 +29,15 @@ export async function getCart(): Promise<{ items: CartItem[] }> {
     );
     const items = data.cart_items.flatMap((r) => {
       const product = products.find((p) => p.id === r.product_id);
-      return product ? [{ ...r, product } as CartItem] : [];
+      if (!product) return [];
+      if (product.configurator === "garden") {
+        const parsed = gardenConfigurationSchema.safeParse(r.configuration);
+        if (!parsed.success) return [];
+        return [{ ...r, configuration: parsed.data, product: {
+          ...product, name: `Сад — ${gardenName(parsed.data)}`, price: gardenPrice(parsed.data).total,
+        } } as CartItem];
+      }
+      return [{ ...r, product } as CartItem];
     });
     return { items };
   } catch {

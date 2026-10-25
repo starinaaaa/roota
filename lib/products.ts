@@ -34,6 +34,7 @@ type ProductRow = {
   in_stock: boolean;
   stock_qty: number;
   product_kind: "batch" | "unique";
+  configurator: "garden" | null;
   created_at: string;
   updated_at: string;
   material: string | null;
@@ -65,6 +66,7 @@ const PRODUCT_SELECT = `
   in_stock,
   stock_qty,
   product_kind,
+  configurator,
   created_at,
   updated_at,
   material,
@@ -104,7 +106,7 @@ function mapProduct(row: ProductRow): Product {
       if (a.is_primary !== b.is_primary) return a.is_primary ? -1 : 1;
       return a.sort_order - b.sort_order;
     })
-    .map((img) => `/media/${row.id}/${img.id}`);
+    .map((img) => /^\/images\/garden\/garden-[1-5]\.webp$/.test(img.public_url) ? img.public_url : `/media/${row.id}/${img.id}`);
 
   return {
     id: row.id,
@@ -119,6 +121,7 @@ function mapProduct(row: ProductRow): Product {
     in_stock: row.in_stock,
     stock_qty: row.stock_qty,
     product_kind: row.product_kind,
+    configurator: row.configurator,
     created_at: row.created_at,
     updated_at: row.updated_at,
     material: row.material ?? null,
@@ -160,7 +163,9 @@ export const getProducts = unstable_cache(async (): Promise<Product[]> => {
 }, ["public-products"], { tags: ["catalog"], revalidate: 60 });
 
 export async function getFilterCategories() {
-  return [{slug:"all",label:"Все работы"},...(await getCategories()).map(c=>({slug:c.slug,label:c.name}))];
+  const [categories, products] = await Promise.all([getCategories(), getProducts()]);
+  const populated = new Set(products.map(p => p.category_id));
+  return [{slug:"all",label:"Все работы"},...categories.filter(c => populated.has(c.id)).map(c=>({slug:c.slug,label:c.name}))];
 }
 export const getProductBySlug = cache(async (slug: string) => (await getProducts()).find(p=>p.slug===slug));
 

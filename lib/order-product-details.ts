@@ -11,7 +11,7 @@ export async function orderProductDetails(ids: (string | null)[]) {
   if (!unique.length) return result;
   const { data, error } = await createServerClient()
     .from("products")
-    .select("id,categories(slug,name),product_images(id,is_primary,sort_order)")
+    .select("id,categories(slug,name),product_images(id,public_url,is_primary,sort_order)")
     .in("id", unique);
   if (error) throw new Error("Не удалось загрузить изделия заказа");
   for (const product of data ?? []) {
@@ -23,7 +23,7 @@ export async function orderProductDetails(ids: (string | null)[]) {
     )[0];
     result.set(product.id, {
       title: (name) => productTitle(name, category),
-      image: image ? `/media/${product.id}/${image.id}` : undefined,
+      image: image ? (/^\/images\/garden\/garden-[1-5]\.webp$/.test(image.public_url) ? image.public_url : `/media/${product.id}/${image.id}`) : undefined,
     });
   }
   return result;

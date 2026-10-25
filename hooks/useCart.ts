@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useCartUI } from "@/contexts/CartUIContext";
 import { addToCart, removeFromCart, updateCartItem } from "@/lib/actions/cart";
 import type { Product } from "@/types";
+import { saveGarden } from "@/lib/actions/garden";
+import type { GardenConfiguration } from "@/lib/garden";
 
 // useCart reads from and writes to the shared CartUIContext so that all
 // mounted instances (CartDrawer, ProductClientWrapper, CartPageContent, …)
@@ -138,7 +140,19 @@ export function useCart() {
     });
   }
 
+  async function saveGardenItem(productId: string, configuration: GardenConfiguration | null, lineId?: string, operation?: "add" | "set" | "remove") {
+    setError(null);
+    try {
+      const result = await saveGarden({ productId, configuration, lineId: lineId ?? crypto.randomUUID(), operation: operation ?? (lineId ? "set" : "add") });
+      if (result.error) { setError(result.error); return false; }
+      if (result.items) setItems(result.items);
+      router.refresh();
+      return true;
+    } catch { setError("Не удалось сохранить сад. Проверьте соединение и попробуйте ещё раз."); return false; }
+  }
+
   return {
+    saveGardenItem,
     items,
     isPending,
     addItem,

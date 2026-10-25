@@ -1,4 +1,5 @@
 "use client";
+import { gardenCount, gardenSummary, type GardenConfiguration } from "@/lib/garden";
 import {
   carrierStatusLabel,
   type CarrierPosting,
@@ -62,6 +63,7 @@ type OrderData = {
     price: number;
     purchase_mode: string;
     lead_time_days: number | null;
+    configuration?: GardenConfiguration | null;
   }[];
   events: {
     id: string;
@@ -80,6 +82,12 @@ type OrderData = {
   }[];
 };
 export default function OrderEditor({ order }: { order: OrderData }) {
+  const gardenTotals = order.items.reduce<GardenConfiguration>((total, item) => ({
+    size: 0,
+    stems: total.stems + (item.configuration?.stems ?? 0) * item.quantity,
+    flowers: total.flowers + (item.configuration?.flowers ?? 0) * item.quantity,
+    leaves: total.leaves + (item.configuration?.leaves ?? 0) * item.quantity,
+  }), { size: 0, stems: 0, flowers: 0, leaves: 0 });
   const [form, setForm] = useState({
       id: order.id,
       status: order.status === "in_production" ? "confirmed" : order.status,
@@ -174,6 +182,7 @@ export default function OrderEditor({ order }: { order: OrderData }) {
               )}
             </div>
           ))}
+          {gardenCount(gardenTotals) > 0 && <div className="rounded-md bg-stone-100 p-4 text-sm"><p className="font-medium">Всего деталей Сада для изготовления: {gardenCount(gardenTotals)}</p><p className="mt-1">{gardenSummary(gardenTotals)}</p><p className="mt-1 text-stone-600">Состав каждого набора сохранён выше. Срок — 3 недели после оплаты.</p></div>}
           {order.delivery_amount != null && (
             <p>
               Доставка:{" "}

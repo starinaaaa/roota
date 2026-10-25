@@ -87,6 +87,7 @@ export async function recreatePaidShipment({
       price: Number(i.price),
       purchase_mode: i.purchase_mode,
       product_name: i.product_name,
+      ...(i.configuration ? { configuration: i.configuration, line_id: i.id } : {}),
       category: { name: i.category_name, slug: i.category_slug },
     }));
     if (!items.length) throw new Error("Состав заказа пуст.");

@@ -24,8 +24,8 @@ on conflict(session_id) do update set
 export const unfinishedCartsSql = `
 with baskets as (
   select c.id, c.session_id, c.updated_at as basket_at,
-    jsonb_agg(jsonb_build_object('name',p.name,'quantity',i.quantity,'mode',i.purchase_mode) order by p.name) as items,
-    sum(p.price*i.quantity) as goods_total
+    jsonb_agg(jsonb_build_object('name',public.garden_item_name(p,i.configuration),'quantity',i.quantity,'mode',i.purchase_mode) order by p.name) as items,
+    sum(public.cart_item_price(p,i.configuration)*i.quantity) as goods_total
   from public.carts c join public.cart_items i on i.cart_id=c.id
   join public.products p on p.id=i.product_id
   where not exists (select 1 from public.analytics_excluded_sessions x where x.id=md5(c.session_id))

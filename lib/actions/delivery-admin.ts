@@ -33,6 +33,7 @@ const ruleSchema = z.object({
   width_mm: z.number().int().min(1).max(3000),
   height_mm: z.number().int().min(1).max(3000),
   active: z.boolean(),
+  garden_size: z.number().int().min(1).max(100).nullable().optional(),
 });
 export async function savePackingRule(input: unknown) {
   await requireAdmin();

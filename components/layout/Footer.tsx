@@ -2,14 +2,9 @@ import { bindPrepositions } from "@/lib/typography";
 import Link from "next/link";
 import { getSiteContent } from "@/lib/site";
 import { seller } from "@/lib/seller";
+import { getFilterCategories } from "@/lib/products";
 
-const SHOP_LINKS = [
-  { href: "/catalog", label: "Все товары" },
-  { href: "/catalog?category=plates", label: "Тарелки" },
-  { href: "/catalog?category=glasses", label: "Стаканы" },
-  { href: "/catalog?category=vases", label: "Вазы" },
-  { href: "/catalog?category=decor", label: "Декор" },
-];
+
 
 const INFO_LINKS = [
   { href: "/about", label: "О студии" },
@@ -18,7 +13,8 @@ const INFO_LINKS = [
 ];
 
 export default async function Footer() {
-  const site = await getSiteContent();
+  const [site, categories] = await Promise.all([getSiteContent(), getFilterCategories()]);
+  const shopLinks = categories.map(c => ({ href: c.slug === "all" ? "/catalog" : `/catalog?category=${c.slug}`, label: c.slug === "all" ? "Все товары" : c.label }));
   const year = new Date().getFullYear();
 
   return (
@@ -53,7 +49,7 @@ export default async function Footer() {
                 Каталог
               </p>
               <ul className="space-y-3">
-                {SHOP_LINKS.map(({ href, label }) => (
+                {shopLinks.map(({ href, label }) => (
                   <li key={href}>
                     <Link
                       href={href}

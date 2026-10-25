@@ -11,6 +11,7 @@ test("category names are singular and existing descriptive titles are preserved"
   assert.equal(productTitle('"Лес"', { slug: "glasses" }), "Стакан «Лес»");
   assert.equal(productTitle("Ваза «Лес»", { slug: "vases" }), "Ваза «Лес»");
   assert.equal(productTitle("Без категории"), "Без категории");
+  assert.equal(productTitle("Сад — Тайный сад (стебли: 6, цветочки: 3, листочки: 3)", { slug: "objects", name: "Объекты" }), "Сад — Тайный сад (стебли: 6, цветочки: 3, листочки: 3)");
 });
 test("purchase email renders category title and photo in HTML and title in plain text", () => {
   const name = productTitle("Лес <3>", { slug: "plates" });

@@ -4,6 +4,7 @@ import {
   type CarrierPosting,
 } from "./parcel-status";
 import type { PackingRule } from "./model";
+import { gardenKey, type GardenConfiguration } from "@/lib/garden";
 export type CustomerParcel = {
   index: number;
   total: number;
@@ -17,6 +18,7 @@ type Item = {
   product_name: string;
   quantity: number;
   purchase_mode?: string;
+  configuration?: GardenConfiguration | null;
 };
 type Shipment = {
   state?: string;
@@ -54,7 +56,8 @@ export function customerParcels(
                 (original) =>
                   original.product_id === item.product_id &&
                   (!original.purchase_mode ||
-                    original.purchase_mode === item.purchase_mode),
+                    original.purchase_mode === item.purchase_mode) &&
+                  (!item.configuration || (original.configuration && gardenKey(original.configuration) === gardenKey(item.configuration))),
               );
               return `${original?.product_name ?? "Изделие"} × ${item.quantity}`;
             })

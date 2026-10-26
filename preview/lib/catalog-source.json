@@ -1,0 +1,130 @@
+[
+  {
+    "name": "Невидимка",
+    "slug": "nevidimka",
+    "description": "Маленькая колючка на широком листе мака. Издалека непонятно, что она тут забыла. Никто не знает, что колючка очень, очень нужна. Ведь это садовник, у него есть важное дело. Он подпирает стебель, чтобы бутон не клонил головы. От вида поникших цветов садовнику хочется плакать, поэтому разве важно, что руки уже затекли? Может, однажды они превратятся в листья. Садовник часто мечтает об этом, когда приближается ночь. \nЛицо мака всегда повернуто к звездам, так что он никогда не видел, что там - внизу. Мак не заметил, что у него появился бутон.",
+    "price": 6000,
+    "primary_image_url": "/products/nevidimka-0.webp",
+    "images": [
+      "/products/nevidimka-0.webp",
+      "/products/nevidimka-1.webp",
+      "/products/nevidimka-2.webp",
+      "/products/nevidimka-3.webp",
+      "/products/nevidimka-4.webp"
+    ],
+    "product_kind": "batch",
+    "material": "Высокотемпературная глина, подглазурный карандаш, прозрачная глазурь",
+    "dimensions": "20-21 см в диаметре",
+    "weight": "300 гр",
+    "capacity_ml": null,
+    "dishwasher_safe": true,
+    "microwave_safe": true,
+    "care": null,
+    "preorder_enabled": false,
+    "lead_time_days": null,
+    "seo_title": null,
+    "seo_description": null,
+    "category": {
+      "id": "64d9cd8d-c121-49bf-8766-d1e682ea3696",
+      "slug": "plates",
+      "name": "Тарелки",
+      "sort_order": 1
+    }
+  },
+  {
+    "name": "Поцелуй",
+    "slug": "potseluy",
+    "description": "Каждое утро маленький садовник надевал свой лучший костюмчик, даже если небо было серым и капал дождь. Он бежал к своему цветку, высокому и молчаливому, вставал на цыпочки и здоровался так, будто они не виделись тысячу лет. Иногда ему казалось, что цветок тоже тянется к нему, но, может это был просто ветер.\nСадовник просто радовался, что у него кто-то есть.",
+    "price": 6000,
+    "primary_image_url": "/products/potseluy-0.webp",
+    "images": [
+      "/products/potseluy-0.webp",
+      "/products/potseluy-1.webp",
+      "/products/potseluy-2.webp",
+      "/products/potseluy-3.webp",
+      "/products/potseluy-4.webp"
+    ],
+    "product_kind": "batch",
+    "material": "Высокотемпературная глина, подглазурный карандаш, прозрачная глазурь",
+    "dimensions": "20-21 см в диаметре",
+    "weight": "300 гр",
+    "capacity_ml": null,
+    "dishwasher_safe": true,
+    "microwave_safe": true,
+    "care": null,
+    "preorder_enabled": false,
+    "lead_time_days": null,
+    "seo_title": null,
+    "seo_description": null,
+    "category": {
+      "id": "64d9cd8d-c121-49bf-8766-d1e682ea3696",
+      "slug": "plates",
+      "name": "Тарелки",
+      "sort_order": 1
+    }
+  },
+  {
+    "name": "Колыбельный",
+    "slug": "kolybelny",
+    "description": "Садовник думал, что березе с ним очень повезло. Ведь все березы боятся засыпать по ночам. Корявые ветки соседей по лесу становятся похожи на змей, да и пятна на своем стволе в темноте можно спутать с жуткими насекомыми. Садовник приходил к березе когда смеркалось, прячась за капюшончик, и ждал у ее корней. А ночью наверх. Он ничего не боялся и прятал березу от темноты у себя на руках.\nА у березы не было мыслей. Но она постепенно привыкла.",
+    "price": 6000,
+    "primary_image_url": "/products/kolybelny-0.webp",
+    "images": [
+      "/products/kolybelny-0.webp",
+      "/products/kolybelny-1.webp",
+      "/products/kolybelny-2.webp",
+      "/products/kolybelny-3.webp",
+      "/products/kolybelny-4.webp"
+    ],
+    "product_kind": "batch",
+    "material": "Высокотемпературная глина, подглазурный карандаш, прозрачная глазурь",
+    "dimensions": "20-21 см в диаметре",
+    "weight": "300 гр",
+    "capacity_ml": null,
+    "dishwasher_safe": true,
+    "microwave_safe": true,
+    "care": null,
+    "preorder_enabled": false,
+    "lead_time_days": null,
+    "seo_title": null,
+    "seo_description": null,
+    "category": {
+      "id": "64d9cd8d-c121-49bf-8766-d1e682ea3696",
+      "slug": "plates",
+      "name": "Тарелки",
+      "sort_order": 1
+    }
+  },
+  {
+    "name": "Солнышко",
+    "slug": "solnyshko",
+    "description": "Пригладить листики на костюме. Нарисовать новые точки, чтобы подчеркивали веснушки. Смахнуть пылинки. Взять корзинку. \nКаждое утро садовник волновался. Вдруг сегодня на земле не будет новых семечек? Что он тогда скажет цветку? А что, если перепачкается по пути? Подсолнух встречал его привычным наклоном головы и приветливо подставленным листом. Садовник верил, что он расправляет лист только для него, и всегда уходил не оборачиваясь. Семечки в корзинку, улыбнуться на прощание. \nПодсолнух всегда тянулся к солнцу. Но он слишком устал, чтобы смотреть наверх.",
+    "price": 6000,
+    "primary_image_url": "/products/solnyshko-0.webp",
+    "images": [
+      "/products/solnyshko-0.webp",
+      "/products/solnyshko-1.webp",
+      "/products/solnyshko-2.webp",
+      "/products/solnyshko-3.webp",
+      "/products/solnyshko-4.webp"
+    ],
+    "product_kind": "batch",
+    "material": "Высокотемпературная глина, подглазурный карандаш, прозрачная глазурь",
+    "dimensions": "20-21 см в диаметре",
+    "weight": "300 гр",
+    "capacity_ml": null,
+    "dishwasher_safe": true,
+    "microwave_safe": true,
+    "care": null,
+    "preorder_enabled": false,
+    "lead_time_days": null,
+    "seo_title": null,
+    "seo_description": null,
+    "category": {
+      "id": "64d9cd8d-c121-49bf-8766-d1e682ea3696",
+      "slug": "plates",
+      "name": "Тарелки",
+      "sort_order": 1
+    }
+  }
+]

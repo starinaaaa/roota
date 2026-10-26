@@ -4,17 +4,17 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
-    "start": "node scripts/start.mjs",
+    "build": "node scripts/sales-preview.mjs build",
+    "start": "node scripts/sales-preview.mjs start",
     "lint": "eslint",
     "test": "node --import tsx --test tests/*.test.ts",
-    "postbuild": "node --import tsx scripts/check-ozon.ts",
     "migration:backup": "node --env-file=.env.local --env-file=.env.migration.local --import tsx scripts/migration/backup.ts",
     "migration:restore-drill": "node --env-file=.env.migration.local --import tsx scripts/migration/restore-backup.ts",
     "migration:export": "node --env-file=.env.migration.local --import tsx scripts/migration/export.ts",
     "migration:import": "node --env-file=.env.migration.local --import tsx scripts/migration/import.ts",
     "migration:storage": "node --env-file=.env.migration.local --import tsx scripts/migration/storage.ts",
-    "migration:verify": "node --env-file=.env.migration.local --import tsx scripts/migration/verify.ts"
+    "migration:verify": "node --env-file=.env.migration.local --import tsx scripts/migration/verify.ts",
+    "dev:preview": "node scripts/sales-preview.mjs dev"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1152.0",

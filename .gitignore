@@ -40,3 +40,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Isolated sales preview build output
+/preview/.next/
+/preview/next-env.d.ts

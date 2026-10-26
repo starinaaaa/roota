@@ -25,13 +25,13 @@
     "embla-carousel-wheel-gestures": "8.1.0",
     "framer-motion": "^12.35.2",
     "lucide-react": "^0.577.0",
-    "next": "^16.3.8",
+    "next": "16.4.1",
     "pg": "8.23.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "server-only": "^0.0.1",
     "sharp": "^0.35.5",
-    "zod": "^4.6.5"
+    "zod": "4.6.6"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",

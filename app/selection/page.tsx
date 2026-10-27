@@ -1,3 +1,4 @@
+import { shopFeatures } from "@/lib/shop-features";
 import { notFound } from "next/navigation";
 import { getProducts } from "@/lib/products";
 import { decodeSelection } from "@/lib/favorites";
@@ -12,6 +13,7 @@ export default async function SelectionPage({
 }: {
   searchParams: Promise<{ items?: string }>;
 }) {
+  if (!shopFeatures.wishlist) notFound();
   const items = decodeSelection((await searchParams).items);
   if (!items) notFound();
   return (

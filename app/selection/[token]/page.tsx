@@ -1,3 +1,4 @@
+import { shopFeatures } from "@/lib/shop-features";
 import { reviewQuery } from "@/lib/review-schema";
 import { notFound } from "next/navigation";
 import { getProducts } from "@/lib/products";
@@ -13,9 +14,11 @@ export default async function Page({
 }: {
   params: Promise<{ token: string }>;
 }) {
+  if (!shopFeatures.wishlist) notFound();
   const { token } = await params;
   if (!/^[a-f0-9]{48}$/.test(token)) notFound();
-  const { rows } = await reviewQuery("saved_selections",
+  const { rows } = await reviewQuery(
+    "saved_selections",
     "select items from public.saved_selections where token=$1 and expires_at>now()",
     [token],
   );

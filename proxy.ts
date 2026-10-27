@@ -1,3 +1,4 @@
+import { hiddenShopPath } from "@/lib/shop-features";
 import {
   reviewCookie,
   reviewAccessToken,
@@ -6,6 +7,14 @@ import {
 } from "@/lib/review-access";
 import { NextRequest, NextResponse } from "next/server";
 export function proxy(request: NextRequest) {
+  if (hiddenShopPath(request.nextUrl.pathname))
+    return new NextResponse("Страница не найдена", {
+      status: 404,
+      headers: {
+        "X-Robots-Tag": "noindex, nofollow",
+        "Cache-Control": "no-store",
+      },
+    });
   const reviewHost = process.env.ROOTA_REVIEW_HOST;
   if (reviewHost) {
     const secret = process.env.BETTER_AUTH_SECRET;

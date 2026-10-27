@@ -1,3 +1,5 @@
+import { notFound } from "next/navigation";
+import { shopFeatures } from "@/lib/shop-features";
 import { getProducts } from "@/lib/products";
 import FavoritesList from "@/components/favorites/FavoritesList";
 export const metadata = {
@@ -5,6 +7,7 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 export default async function Page() {
+  if (!shopFeatures.wishlist) notFound();
   return (
     <main className="px-6 md:px-12 pt-28 pb-20 max-w-5xl mx-auto">
       <h1 className="font-display text-page mb-8">Избранное и подборки</h1>

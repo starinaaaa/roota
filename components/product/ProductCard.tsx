@@ -1,4 +1,5 @@
 "use client";
+import { shopFeatures } from "@/lib/shop-features";
 import FavoriteButton from "@/components/favorites/FavoriteButton";
 import { productTitle } from "@/lib/product-title";
 
@@ -80,13 +81,17 @@ export default function ProductCard({ product, index = 0 }: Props) {
             {bindPrepositions(productTitle(product.name, product.category))}
           </h3>
           <p className="font-body text-copy text-stone-900">
-            {product.configurator === "garden" ? "Поштучно от 250 ₽ · Наборы от 8 деталей" : bindPrepositions(formatPrice(product.price))}
+            {product.configurator === "garden"
+              ? "Поштучно от 250 ₽ · Наборы от 8 деталей"
+              : bindPrepositions(formatPrice(product.price))}
           </p>
         </div>
       </Link>
 
       {/* Кнопки действий — вне Link, чтобы не было вложенных <a> */}
-      <FavoriteButton productId={product.id} configuration={null} />
+      {shopFeatures.wishlist && (
+        <FavoriteButton productId={product.id} configuration={null} />
+      )}
       <CardActions
         configurator={product.configurator}
         productId={product.id}

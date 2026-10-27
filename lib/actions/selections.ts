@@ -1,4 +1,5 @@
 "use server";
+import { shopFeatures } from "@/lib/shop-features";
 import { randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
 import { getPool } from "@/lib/db/pool";
@@ -6,6 +7,7 @@ import { selectionSchema } from "@/lib/favorites";
 import { siteUrl } from "@/lib/seo";
 import { uuid } from "@/lib/validation";
 export async function createSelection(input: unknown) {
+  if (!shopFeatures.wishlist) throw new Error("Подборки временно недоступны");
   const items = selectionSchema.parse(input),
     jar = await cookies();
   let owner = jar.get("selection_session")?.value;

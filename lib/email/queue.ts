@@ -187,10 +187,13 @@ export async function processEmailQueue() {
         const paidAt = relationList(o.payments).find(
           (p: { status: string }) => p.status === "paid",
         )?.paid_at;
-        if (o.order_items.some(i => i.purchase_mode === "preorder")) {
+        if (o.order_items.some((i) => i.purchase_mode === "preorder")) {
           const production = await orderProduction(m.order_id);
-          const ready = production?.task_count ? production.ready_on : plannedReadyDate(paidAt, leadDays);
-          if (ready) values.fulfillment = `Плановая готовность всего заказа — ${readyDateLabel(ready)}. Отправим весь заказ после готовности всех изделий. Срок доставки добавляется отдельно.`;
+          const ready = production?.task_count
+            ? production.ready_on
+            : plannedReadyDate(paidAt, leadDays);
+          if (ready)
+            values.fulfillment = `Плановая готовность всего заказа — ${readyDateLabel(ready)}. Отправим весь заказ после готовности всех изделий. Срок доставки добавляется отдельно.`;
         }
         values.payment = paidAt
           ? `Оплачено ${new Date(paidAt).toLocaleString("ru-RU", { timeZone: "Europe/Moscow" })} МСК`
@@ -279,7 +282,8 @@ export async function processEmailQueue() {
           label = "Вернуться к корзине";
         }
       }
-      if (m.kind === "collection" && m.payload?.test) unsubscribe = siteUrl("/favorites");
+      if (m.kind === "collection" && m.payload?.test)
+        unsubscribe = siteUrl("/catalog");
       if (marketingKinds.has(m.kind) && !unsubscribe)
         throw new Error("CONSENT");
       const message = {

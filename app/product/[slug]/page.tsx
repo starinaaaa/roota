@@ -1,3 +1,4 @@
+import { shopFeatures } from "@/lib/shop-features";
 import { gardenConfigurationSchema } from "@/lib/garden";
 import { Suspense } from "react";
 import { bindPrepositions } from "@/lib/typography";
@@ -27,10 +28,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: product.seo_title || product.name,
     description: product.seo_description || product.description || undefined,
-    other: {
-      "product:price.amount": String(product.price),
-      "product:price.currency": "RUB",
-    },
+    other: shopFeatures.ohmywishes
+      ? {
+          "product:price.amount": String(product.price),
+          "product:price.currency": "RUB",
+        }
+      : undefined,
     alternates: { canonical: siteUrl("/product/" + product.slug) },
     openGraph: {
       title: product.seo_title || product.name,

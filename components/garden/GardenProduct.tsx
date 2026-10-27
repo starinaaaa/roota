@@ -1,10 +1,15 @@
 "use client";
 
+import { shopFeatures } from "@/lib/shop-features";
 import FavoriteButton from "@/components/favorites/FavoriteButton";
 import { useState } from "react";
 import { useCart } from "@/hooks/useCart";
 import type { Product } from "@/types";
-import { defaultGarden, gardenCare, type GardenConfiguration } from "@/lib/garden";
+import {
+  defaultGarden,
+  gardenCare,
+  type GardenConfiguration,
+} from "@/lib/garden";
 import GardenBuilder from "./GardenBuilder";
 import GardenRequest from "./GardenRequest";
 
@@ -47,7 +52,9 @@ export default function GardenProduct({
           }}
         />
       </div>
-      <FavoriteButton productId={product.id} configuration={lastGarden} />
+      {shopFeatures.wishlist && (
+        <FavoriteButton productId={product.id} configuration={lastGarden} />
+      )}
       <GardenRequest telegram={telegram} configuration={lastGarden} />
       <div className="divide-y divide-stone-200 border-y border-stone-200">
         <details open className="py-5">

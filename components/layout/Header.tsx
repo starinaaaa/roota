@@ -1,4 +1,5 @@
 "use client";
+import { shopFeatures } from "@/lib/shop-features";
 
 import { bindPrepositions } from "@/lib/typography";
 import React, { useState, useEffect } from "react";
@@ -112,18 +113,22 @@ export default function Header({ cartCount }: Props) {
 
               {/* ── COL 3: Действия ──────────────────── */}
               <div className="flex items-center justify-end gap-2 md:gap-4">
-                <Link
-                  href="/favorites"
-                  aria-label="Избранное"
-                  aria-current={pathname === "/favorites" ? "page" : undefined}
-                  className={`rounded-full p-2 transition-colors ${isTransparent ? "text-stone-50 hover:bg-white/15" : "text-stone-800 hover:bg-stone-200/70"}`}
-                >
-                  <Heart
-                    size={21}
-                    strokeWidth={1.3}
-                    fill={pathname === "/favorites" ? "currentColor" : "none"}
-                  />
-                </Link>
+                {shopFeatures.wishlist && (
+                  <Link
+                    href="/favorites"
+                    aria-label="Избранное"
+                    aria-current={
+                      pathname === "/favorites" ? "page" : undefined
+                    }
+                    className={`rounded-full p-2 transition-colors ${isTransparent ? "text-stone-50 hover:bg-white/15" : "text-stone-800 hover:bg-stone-200/70"}`}
+                  >
+                    <Heart
+                      size={21}
+                      strokeWidth={1.3}
+                      fill={pathname === "/favorites" ? "currentColor" : "none"}
+                    />
+                  </Link>
+                )}
                 {/* Корзина — открывает CartDrawer */}
                 <button
                   onClick={openDrawer}

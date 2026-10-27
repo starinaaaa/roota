@@ -122,7 +122,7 @@ export async function saveCampaign(form: FormData) {
               {},
               siteUrl("/catalog"),
               "Посмотреть изделия",
-              siteUrl("/favorites"),
+              siteUrl("/catalog"),
             ),
           },
           "collection",

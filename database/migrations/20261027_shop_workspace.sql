@@ -45,7 +45,7 @@ CREATE FUNCTION public.valid_courier_contact(f jsonb) RETURNS boolean LANGUAGE s
   WHEN 'telegram' THEN f->>'contactValue' ~ '^@[a-zA-Z][a-zA-Z0-9_]{4,31}$'
   WHEN 'instagram' THEN f->>'contactValue' ~ '^@[a-zA-Z0-9_][a-zA-Z0-9_.]{0,29}$' AND f->>'contactValue' !~ '[.]$|[.][.]'
   WHEN 'email' THEN length(f->>'contactValue')<=254 AND f->>'contactValue' ~ '^[^[:space:]@]+@[^[:space:]@.]+([.][^[:space:]@.]+)+$'
-  ELSE false END,false)
+  ELSE CASE WHEN NOT (f ? 'contactChannel') THEN coalesce(f->>'telegram','') ~ '^[a-zA-Z][a-zA-Z0-9_]{4,31}$' ELSE false END END,false)
 $$;
 DO $migration$
 DECLARE fn record; definition text; anchor text := 'coalesce(p_form->>''telegram'','''') !~ ''^[a-zA-Z][a-zA-Z0-9_]{4,31}$''';
@@ -54,8 +54,8 @@ BEGIN
   definition:=pg_get_functiondef(fn.oid);
   IF position(anchor IN definition)=0 THEN RAISE EXCEPTION 'CONTACT_MIGRATION_ANCHOR'; END IF;
   definition:=replace(definition,anchor,'not public.valid_courier_contact(p_form)');
-  definition:=replace(definition,'''coordination'',''telegram''','''coordination'',p_form->>''contactChannel'',''contact'',p_form->>''contactValue''');
-  definition:=replace(definition,'''payment'',''separate'',''telegram''','''payment'',''separate'',''coordination'',p_form->>''contactChannel'',''contact'',p_form->>''contactValue'',''telegram''');
+  definition:=replace(definition,'''coordination'',''telegram''','''coordination'',coalesce(p_form->>''contactChannel'',''telegram''),''contact'',coalesce(p_form->>''contactValue'',''@''||coalesce(p_form->>''telegram'',''''))');
+  definition:=replace(definition,'''payment'',''separate'',''telegram''','''payment'',''separate'',''coordination'',coalesce(p_form->>''contactChannel'',''telegram''),''contact'',coalesce(p_form->>''contactValue'',''@''||coalesce(p_form->>''telegram'','''')),''telegram''');
   EXECUTE definition;
  END LOOP;
 END $migration$;

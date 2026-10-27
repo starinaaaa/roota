@@ -1,6 +1,8 @@
+import { shopFeatures } from "@/lib/shop-features";
 import { getProducts } from "@/lib/products";
 import { siteUrl } from "@/lib/seo";
 export async function GET() {
+  if (!shopFeatures.ohmywishes) return new Response(null, { status: 404 });
   const products = await getProducts();
   return Response.json(
     {

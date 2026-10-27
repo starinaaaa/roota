@@ -39,7 +39,7 @@ export async function paymentForOrderToken(
   const orderId = await orderIdForToken(token);
   if (!orderId) return null;
   const db = createServerClient();
-  const { error: expiryError } = await db.rpc("release_expired_reservations");
+  const { error: expiryError } = process.env.ROOTA_REVIEW_HOST ? { error: null } : await db.rpc("release_expired_reservations");
   if (expiryError) throw new Error("Не удалось обновить резерв");
   const { data, error } = await db
     .from("payments")

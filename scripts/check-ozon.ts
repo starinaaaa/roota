@@ -57,4 +57,5 @@ async function check(attempt = 0) {
       );
   }
 }
-void check();
+if (!process.env.ROOTA_REVIEW_HOST) void check();
+else console.info("Private review: provider checks are skipped");

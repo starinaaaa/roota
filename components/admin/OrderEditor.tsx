@@ -1,4 +1,5 @@
 "use client";
+import { courierContactLabel } from "@/lib/courier-contact";
 import { gardenCount, gardenSummary, type GardenConfiguration } from "@/lib/garden";
 import {
   carrierStatusLabel,
@@ -39,6 +40,7 @@ type OrderData = {
   delivery_amount?: number | null;
   insurance_amount?: number | null;
   delivery_details?: {
+    coordination?: string; contact?: string; telegram?: string;
     provider: string;
     point: { name: string; address: string };
     packing: PackingRule;
@@ -173,7 +175,7 @@ export default function OrderEditor({ order }: { order: OrderData }) {
           )}
           <p>
             {order.delivery_details?.provider === "yandex"
-              ? "Курьер Яндекс Доставки · согласовать в Telegram · доставка оплачивается отдельно"
+              ? `Курьер Яндекс Доставки · ${courierContactLabel(order.delivery_details)} · доставка оплачивается отдельно`
               : ({ moscow: "Москва", russia: "По России", pickup: "Самовывоз" }[
                   order.delivery_type
                 ] ?? order.delivery_type)}

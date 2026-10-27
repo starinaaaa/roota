@@ -1,3 +1,7 @@
+import { courierContactLabel } from "@/lib/courier-contact";
+import { orderProduction } from "@/lib/shop-operations";
+import { plannedReadyDate, readyDateLabel } from "@/lib/production";
+import { getPool } from "@/lib/db/pool";
 import { cdnImageUrl } from "@/lib/image-cdn";
 import { orderProductDetails } from "@/lib/order-product-details";
 import {
@@ -25,6 +29,7 @@ export async function processEmailQueue() {
   )
     return { disabled: true };
   const db = createServerClient();
+  await getPool().query("select public.prepare_collection_campaigns()");
   const prepared = await db.rpc("prepare_email_queue");
   if (prepared.error) throw new Error("Не удалось подготовить очередь");
   let accepted = 0,
@@ -44,6 +49,10 @@ export async function processEmailQueue() {
         .eq("kind", m.kind)
         .single();
       if (error || !template) throw new Error("TEMPLATE");
+      if (m.kind === "collection") {
+        template.subject = m.payload.subject;
+        template.body = `${m.payload.body}\n\n${(m.payload.products ?? []).map((p: { name: string; slug: string; price: number }) => `${p.name} — ${money(Number(p.price))}\n${siteUrl(`/product/${p.slug}`)}`).join("\n\n")}`;
+      }
       let url = siteUrl("/"),
         label = "Открыть Roota",
         unsubscribe: string | undefined;
@@ -94,7 +103,7 @@ export async function processEmailQueue() {
           o.delivery_address ||
           "Адрес уточняется";
         values.shipping = courier
-          ? "Оплачивается покупателем отдельно в приложении после согласования в Telegram"
+          ? `Оплачивается покупателем отдельно в приложении после согласования через ${courierContactLabel(o.delivery_details)}`
           : money(
               Number(o.delivery_amount ?? 0) + Number(o.insurance_amount ?? 0),
             );
@@ -120,7 +129,7 @@ export async function processEmailQueue() {
             .join(", ") ||
           o.tracking_number ||
           (courier
-            ? "Время и стоимость доставки согласуем с вами в Telegram"
+            ? `Время и стоимость доставки согласуем: ${courierContactLabel(o.delivery_details)}`
             : "Появится после оформления отправления");
         if (
           m.payload?.posting_number &&
@@ -173,11 +182,16 @@ export async function processEmailQueue() {
         )
           ? `В заказе есть изделие на заказ.${leadDays ? ` Срок изготовления — до ${leadDays} дней.` : " Срок изготовления согласуем с вами."} О передаче в доставку сообщим отдельным письмом.`
           : courier
-            ? "Доставка до двери по Москве и Подмосковью. Напишем в Telegram в течение суток, согласуем время и стоимость, затем передадим заказ курьеру."
+            ? `Доставка до двери по Москве и Подмосковью. Напишем в течение суток: ${courierContactLabel(o.delivery_details)}, согласуем время и стоимость, затем передадим заказ курьеру.`
             : "Готовые изделия передаём в доставку в течение 1–3 рабочих дней после оплаты. О передаче в доставку сообщим отдельным письмом.";
         const paidAt = relationList(o.payments).find(
           (p: { status: string }) => p.status === "paid",
         )?.paid_at;
+        if (o.order_items.some(i => i.purchase_mode === "preorder")) {
+          const production = await orderProduction(m.order_id);
+          const ready = production?.task_count ? production.ready_on : plannedReadyDate(paidAt, leadDays);
+          if (ready) values.fulfillment = `Плановая готовность всего заказа — ${readyDateLabel(ready)}. Отправим весь заказ после готовности всех изделий. Срок доставки добавляется отдельно.`;
+        }
         values.payment = paidAt
           ? `Оплачено ${new Date(paidAt).toLocaleString("ru-RU", { timeZone: "Europe/Moscow" })} МСК`
           : "Актуальный статус оплаты — на странице заказа";
@@ -265,6 +279,7 @@ export async function processEmailQueue() {
           label = "Вернуться к корзине";
         }
       }
+      if (m.kind === "collection" && m.payload?.test) unsubscribe = siteUrl("/favorites");
       if (marketingKinds.has(m.kind) && !unsubscribe)
         throw new Error("CONSENT");
       const message = {

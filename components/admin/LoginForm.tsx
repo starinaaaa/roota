@@ -16,7 +16,7 @@ export default function LoginForm() {
   const router = useRouter();
   const [state, action, pending] = useActionState(async (_previous: {error:string}, form:FormData) => {
     const result=await login(form);
-    if (!result.error) { router.push("/admin/orders"); router.refresh(); }
+    if (!result.error) { router.push("/admin"); router.refresh(); }
     return result;
   }, { error: "" });
   return (

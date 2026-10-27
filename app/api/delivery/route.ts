@@ -1,3 +1,5 @@
+import { deliveryDiagnostic } from "@/lib/delivery/checkout-errors";
+import { getPool } from "@/lib/db/pool";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createServerClient } from "@/lib/db";
@@ -68,8 +70,11 @@ export async function POST(request: NextRequest) {
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (error) {
+    const code = deliveryDiagnostic(error);
+    try { const session = request.cookies.get("cart_session")?.value; if (session) await getPool().query("select public.record_checkout_obstacle($1,'delivery_error','deliveryQuoteId',$2)", [session, code]); } catch {}
     return NextResponse.json(
       {
+        code,
         error:
           error instanceof Error &&
           !/fetch|JSON|network|abort|timeout/i.test(error.message)

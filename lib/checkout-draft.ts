@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { courierContactFields } from "./courier-contact";
 
 export const CHECKOUT_DRAFT_TTL = 7 * 86400000;
 export const checkoutDeliveryDraft = z.object({
@@ -23,6 +24,7 @@ export const checkoutDeliveryDraft = z.object({
 });
 export type CheckoutDeliveryDraft = z.infer<typeof checkoutDeliveryDraft>;
 const draftSchema = z.object({
+  ...courierContactFields,
   savedAt: z.number(),
   legalVersion: z.string(),
   firstName: z.string().max(50),

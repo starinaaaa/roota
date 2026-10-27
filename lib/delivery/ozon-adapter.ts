@@ -1,4 +1,4 @@
-import { ozonCheckoutError } from "./checkout-errors";
+import { ozonCheckoutError, DeliveryCheckoutError } from "./checkout-errors";
 import type { OzonTransport } from "./ozon-transport";
 import {
   estimatedDeliveryDays,
@@ -29,7 +29,7 @@ export function createOzonAdapter(
         { phone_number: phone },
       );
       if (data.can_be_delivered !== true)
-        throw new Error(
+        throw new DeliveryCheckoutError("RECIPIENT_REJECTED",
           "Ozon не может доставить заказ по этому номеру. Укажите телефон вашего аккаунта Ozon.",
         );
     },
@@ -89,7 +89,7 @@ export function createOzonAdapter(
             pointId,
             shipmentMethodId: context.shipmentMethodId,
           });
-          throw new Error(ozonCheckoutError(code, goodsAmount));
+          throw new DeliveryCheckoutError(`OZON_${code.toUpperCase().slice(0,70)}`, ozonCheckoutError(code, goodsAmount));
         }
         const delivery = r.posting.estimated_delivery_cost,
           insurance = r.posting.estimated_insurance_cost;

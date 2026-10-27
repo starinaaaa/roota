@@ -1,4 +1,5 @@
 "use client";
+import FavoriteButton from "@/components/favorites/FavoriteButton";
 import { productTitle } from "@/lib/product-title";
 
 import { bindPrepositions } from "@/lib/typography";
@@ -51,6 +52,7 @@ export default function ProductInfo({
         </p>
       </div>
 
+      <FavoriteButton productId={product.id} configuration={null} />
       {/* Описание */}
       {product.description && (
         <p className="font-body text-copy text-stone-800 leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere]">

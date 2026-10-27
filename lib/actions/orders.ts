@@ -1,4 +1,6 @@
 "use server";
+import { checkoutIssue } from "@/lib/analytics/checkout-errors";
+import { getPool } from "@/lib/db/pool";
 import { recordFunnelEvent } from "@/lib/analytics/server";
 import { revalidateTag } from "next/cache";
 import { createServerClient } from "@/lib/db";
@@ -40,7 +42,11 @@ async function createOrderInternal(
   const form = checkoutSchema.safeParse(formData),
     key = uuid.safeParse(requestKey);
   if (!form.success)
-    return { success: false, error: form.error.issues[0].message };
+    return {
+      success: false,
+      error: form.error.issues[0].message,
+      ...checkoutIssue(form.error.issues[0]),
+    };
   if (
     !key.success ||
     !(
@@ -100,6 +106,8 @@ async function createOrderInternal(
         )
           return {
             success: false,
+            code: "DELIVERY_EXPIRED",
+            field: "deliveryQuoteId",
             error: "Расчёт доставки устарел. Рассчитайте доставку ещё раз.",
           };
         const fresh = await quoteDelivery(
@@ -127,6 +135,14 @@ async function createOrderInternal(
     if (error)
       return {
         success: false,
+        code: /^[A-Z_]{1,80}$/.test(error.message)
+          ? error.message
+          : "SAVE_FAILED",
+        field: /DELIVERY|PACKING/.test(error.message)
+          ? "deliveryQuoteId"
+          : /STOCK|CART|PRICE|UNAVAILABLE|PREORDER/.test(error.message)
+            ? "cart"
+            : "order",
         error:
           messages[error.message] ??
           "Не удалось сохранить заказ. Попробуйте ещё раз.",
@@ -189,6 +205,8 @@ async function createOrderInternal(
   } catch (e) {
     return {
       success: false,
+      code: "SAVE_OR_PAYMENT_FAILED",
+      field: "order",
       error:
         e instanceof Error &&
         !/PAYMENT_CONFIG|RECEIPT_|INVALID_AMOUNT|ZodError|Unexpected/i.test(
@@ -207,7 +225,30 @@ export async function createOrder(
   expectedTotal: unknown,
 ): Promise<CreateOrderResult> {
   const result = await createOrderInternal(formData, requestKey, expectedTotal);
-  if (!result.success)
+  if (!result.success) {
     await recordFunnelEvent("checkout_error", "order_submission");
+    try {
+      const session = (await cookies()).get("cart_session")?.value;
+      if (session)
+        await getPool().query(
+          "select public.record_checkout_obstacle($1,'order_error',$2,$3)",
+          [session, result.field ?? "order", result.code ?? "ORDER_FAILED"],
+        );
+    } catch {
+      /* Diagnostics must never change the checkout result. */
+    }
+  }
+  if (result.success) {
+    try {
+      const session = (await cookies()).get("cart_session")?.value;
+      if (session)
+        await getPool().query(
+          `update public.checkout_obstacles e set corrected_at=coalesce(e.corrected_at,now()),order_id=o.id from public.orders o where o.id=$2 and o.cart_session=$1 and e.session_id=md5($1) and (e.order_id is null or e.order_id=o.id) and e.created_at>now()-interval '7 days'`,
+          [session, result.orderId],
+        );
+    } catch {
+      /* A diagnostics failure cannot change a committed checkout. */
+    }
+  }
   return result;
 }

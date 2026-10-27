@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { checkoutErrorFields } from "./checkout-errors";
 
 export const checkoutStages = {
   checkout_opened: "Открыл оформление",
@@ -7,10 +8,13 @@ export const checkoutStages = {
   delivery_quote_seen: "Получил стоимость доставки",
   delivery_error: "Ошибка расчёта доставки",
   validation_error: "Не прошла проверка полей",
+  error_corrected: "Ошибка исправлена",
   order_error: "Ошибка создания заказа",
 } as const;
 export const checkoutProgressInput = z
   .object({
+    field: z.enum(checkoutErrorFields).optional(),
+    code: z.string().regex(/^[A-Z][A-Z0-9_]{0,79}$/).optional(),
     stage: z.enum(
       Object.keys(checkoutStages) as [
         keyof typeof checkoutStages,

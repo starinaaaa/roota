@@ -1,3 +1,6 @@
+import { courierContactLabel } from "@/lib/courier-contact";
+import { orderProduction } from "@/lib/shop-operations";
+import { plannedReadyDate } from "@/lib/production";
 import Image from "@/components/ui/StoreImage";
 import { orderProductDetails } from "@/lib/order-product-details";
 import { customerParcels } from "@/lib/delivery/customer-parcels";
@@ -57,11 +60,15 @@ export default async function ConfirmationPage({
           shipment,
         )
       : [];
+  const production = await orderProduction(orderId);
+  const leadDays = Math.max(0, ...order.items.filter(i => i.purchase_mode === "preorder").map(i => i.lead_time_days ?? 0));
+  const readyOn = production?.task_count ? production.ready_on : plannedReadyDate(payment?.paid_at, leadDays);
   const state = customerOrderState({
+    readyOn,
     ...order,
     parcelStatuses: parcels.map((parcel) => parcel.status),
     hasPreorder: order.items.some((i) => i.purchase_mode === "preorder"),
-    leadTimeDays: Math.max(0, ...order.items.map((i) => i.lead_time_days ?? 0)),
+    leadTimeDays: production?.has_unplanned ? 0 : Math.max(0, ...order.items.map((i) => i.lead_time_days ?? 0)),
   });
   const date = (value: string) =>
     new Date(value).toLocaleString("ru-RU", {
@@ -205,7 +212,7 @@ export default async function ConfirmationPage({
               Номер отправления:{" "}
               {order.tracking_number ||
                 (courier
-                  ? "Детали отправки сообщим в Telegram"
+                  ? `Детали отправки сообщим: ${courierContactLabel(order.delivery_details)}`
                   : "Появится после оформления отправления")}
             </p>
           )}

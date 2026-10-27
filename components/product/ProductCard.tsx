@@ -1,4 +1,5 @@
 "use client";
+import FavoriteButton from "@/components/favorites/FavoriteButton";
 import { productTitle } from "@/lib/product-title";
 
 import { productBadge } from "@/lib/product-badge";
@@ -85,6 +86,7 @@ export default function ProductCard({ product, index = 0 }: Props) {
       </Link>
 
       {/* Кнопки действий — вне Link, чтобы не было вложенных <a> */}
+      <FavoriteButton productId={product.id} configuration={null} />
       <CardActions
         configurator={product.configurator}
         productId={product.id}

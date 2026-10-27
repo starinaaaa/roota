@@ -1,3 +1,4 @@
+import { contactChannels } from "@/lib/courier-contact";
 import type { CheckoutContactData } from "@/lib/checkout-contact";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -190,6 +191,7 @@ export default async function CartsPage({
                         {cart.checkout_contact.email && (
                           <p>Email: {cart.checkout_contact.email}</p>
                         )}
+                        {cart.checkout_contact.contactChannel && cart.checkout_contact.contactValue && <p>Для курьера ({contactChannels[cart.checkout_contact.contactChannel]}): {cart.checkout_contact.contactValue}</p>}
                         {cart.checkout_contact.telegram && (
                           <p>Telegram: {cart.checkout_contact.telegram}</p>
                         )}

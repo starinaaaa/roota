@@ -1,3 +1,6 @@
+import { courierContactLabel } from "@/lib/courier-contact";
+import { orderProduction } from "@/lib/shop-operations";
+import { plannedReadyDate } from "@/lib/production";
 import { gardenProductTitle } from "@/lib/garden-title";
 import { customerParcels } from "@/lib/delivery/customer-parcels";
 import ParcelList from "@/components/order/ParcelList";
@@ -83,10 +86,14 @@ export default async function CustomerOrderPage({
       : [];
   const hasPreorder = items.some(i => i.purchase_mode === "preorder");
   const steps = customerOrderSteps(hasPreorder);
+  const production = await orderProduction(orderId);
+  const leadDays = Math.max(0, ...order.items.filter(i => i.purchase_mode === "preorder").map(i => i.lead_time_days ?? 0));
+  const readyOn = production?.task_count ? production.ready_on : plannedReadyDate(payment?.paid_at, leadDays);
   const state = customerOrderState({
+    readyOn,
     ...order,
     parcelStatuses: parcels.map((parcel) => parcel.status),
-    leadTimeDays,
+    leadTimeDays: production?.has_unplanned ? 0 : leadTimeDays,
     hasPreorder,
   });
   const tracking = order.tracking_number;
@@ -242,7 +249,7 @@ export default async function CustomerOrderPage({
             </p>
             {courier && (
               <p className="text-stone-600">
-                Напишем в Telegram в течение суток и согласуем стоимость и
+                Напишем в течение суток ({courierContactLabel(order.delivery_details)}) и согласуем стоимость и
                 удобное время доставки до двери по Москве и Подмосковью. Курьера
                 вы оплачиваете отдельно в приложении.
               </p>

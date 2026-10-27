@@ -31,7 +31,8 @@ export async function POST(request: Request) {
     if (jar.get(exclusionCookie)?.value === "1")
       await excludeAnalyticsSession(session!);
     else {
-      const { stage, method, point, quote } = parsed.data;
+      const { stage, method, point, quote, field, code } = parsed.data;
+      if (code || stage === "error_corrected") await getPool().query(`select public.record_checkout_obstacle($1,$2,$3,$4)`, [session, stage, field ?? "order", code ?? "UNKNOWN_ERROR"]);
       const query = {
         text: saveCheckoutProgressSql,
         values: [session, stage, method, point ?? null, quote ?? null],

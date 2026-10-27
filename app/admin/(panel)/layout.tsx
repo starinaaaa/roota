@@ -20,7 +20,7 @@ export default async function PanelLayout({
           </form>
         </div>
         <AdminNavigation />
-        {children}
+        {process.env.ROOTA_REVIEW_HOST ? <><p className="mb-5 rounded border border-stone-300 p-4 text-sm">Только просмотр. Журналы и редактирование новых разделов будут включены после одобрения миграции. Данные читаются из рабочего магазина.</p><fieldset disabled className="min-w-0">{children}</fieldset></> : children}
       </div>
     </div>
   );

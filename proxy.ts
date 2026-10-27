@@ -1,5 +1,58 @@
+import {
+  reviewCookie,
+  reviewAccessToken,
+  validReviewToken,
+  reviewAllowsRequest,
+} from "@/lib/review-access";
 import { NextRequest, NextResponse } from "next/server";
 export function proxy(request: NextRequest) {
+  const reviewHost = process.env.ROOTA_REVIEW_HOST;
+  if (reviewHost) {
+    const secret = process.env.BETTER_AUTH_SECRET;
+    const headers = {
+      "Cache-Control": "private, no-store",
+      "X-Robots-Tag": "noindex, nofollow, noarchive",
+      "Referrer-Policy": "no-referrer",
+      "X-Content-Type-Options": "nosniff",
+    };
+    const supplied =
+      request.nextUrl.searchParams.get("review_access") ?? undefined;
+    if (validReviewToken(supplied, secret, reviewHost)) {
+      const url = new URL(request.nextUrl.pathname, `https://${reviewHost}`);
+      const response = NextResponse.redirect(url);
+      response.cookies.set(
+        reviewCookie,
+        reviewAccessToken(secret!, reviewHost),
+        {
+          httpOnly: true,
+          secure: true,
+          sameSite: "lax",
+          path: "/",
+          maxAge: 86400,
+        },
+      );
+      for (const [key, value] of Object.entries(headers))
+        response.headers.set(key, value);
+      return response;
+    }
+    if (
+      !validReviewToken(
+        request.cookies.get(reviewCookie)?.value,
+        secret,
+        reviewHost,
+      )
+    ) {
+      return new NextResponse(
+        "Закрытый стенд Roota. Для просмотра откройте персональную ссылку.",
+        { status: request.nextUrl.pathname === "/" ? 200 : 401, headers },
+      );
+    }
+    if (!reviewAllowsRequest(request.method, request.nextUrl.pathname))
+      return new NextResponse(
+        "Стенд доступен только для просмотра. Оплата, отправки и изменение магазина здесь не выполняются.",
+        { status: 405, headers },
+      );
+  }
   if (
     process.env.APP_ENV === "migration" &&
     process.env.MIGRATION_MAINTENANCE === "true"
@@ -25,6 +78,11 @@ export function proxy(request: NextRequest) {
   // Always overwrite this internal signal; a public request cannot spoof it.
   requestHeaders.set("x-roota-surface", wheel ? "wheel" : "store");
   const response = NextResponse.next({ request: { headers: requestHeaders } });
+  if (reviewHost) {
+    response.headers.set("Cache-Control", "private, no-store");
+    response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
+    response.headers.set("Referrer-Policy", "no-referrer");
+  }
   if (wheel) {
     response.headers.set("Cache-Control", "private, no-store");
     response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
@@ -44,6 +102,9 @@ export function proxy(request: NextRequest) {
     "/checkout",
     "/email",
     "/review",
+    "/draft",
+    "/selection",
+    "/favorites",
   ].some((prefix) => path === prefix || path.startsWith(prefix + "/"));
   if (privatePath) {
     response.headers.set("Cache-Control", "private, no-store");

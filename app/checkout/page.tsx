@@ -23,6 +23,7 @@ export default async function CheckoutPage() {
         initialItems={items}
         deliveryEnabled={ozonConfigured()}
         draftKey={draftKey}
+        reviewOnly={Boolean(process.env.ROOTA_REVIEW_HOST)}
       />
     </div>
   );

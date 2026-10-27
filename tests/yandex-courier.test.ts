@@ -12,6 +12,8 @@ const form = {
   phone: "+79991234567",
   email: "anna@example.com",
   telegram: "anna_ceramics",
+  contactChannel: "telegram",
+  contactValue: "@anna_ceramics",
   deliveryMethod: "yandex_courier",
   deliveryType: "moscow",
   address: "Москва, Тестовая 1",
@@ -19,10 +21,10 @@ const form = {
   legalVersion: LEGAL_VERSION,
   acceptedTerms: true,
 };
-test("courier requires Telegram and address and restores its draft", () => {
+test("courier requires a chosen contact and address and restores its draft", () => {
   assert.equal(checkoutSchema.safeParse(form).success, true);
   for (const override of [
-    { telegram: "" },
+    { contactValue: "" },
     { telegram: "invalid!" },
     { address: "" },
     { address: "", deliveryType: "pickup" },

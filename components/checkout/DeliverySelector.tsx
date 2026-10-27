@@ -263,7 +263,7 @@ export default function DeliverySelector({
       const result = await response.json();
       if (version !== revision.current) return;
       if (!response.ok)
-        throw new Error(result.error || "Не удалось рассчитать доставку.");
+        throw Object.assign(new Error(result.error || "Не удалось рассчитать доставку."), { diagnosticCode: result.code });
       setQuote(result.quote);
       onQuoteRef.current(result.quote);
       setOpen(false);
@@ -272,6 +272,8 @@ export default function DeliverySelector({
         trackCheckoutProgress({
           stage: "delivery_error",
           method: "ozon_point",
+          field: "deliveryQuoteId",
+          code: e instanceof Error && "diagnosticCode" in e && typeof e.diagnosticCode === "string" && /^[A-Z][A-Z0-9_]{0,79}$/.test(e.diagnosticCode) ? e.diagnosticCode : "DELIVERY_NETWORK_ERROR",
           point: selected?.id,
         });
         setError(
@@ -360,7 +362,7 @@ export default function DeliverySelector({
             }
           }}
           placeholder="Начните вводить название города"
-          className="store-control w-full border border-stone-200 bg-transparent font-body text-ui px-4 py-3"
+          className="w-full border border-stone-200 bg-transparent font-body text-ui px-4 py-3"
         />
         <p
           id="delivery-city-status"
@@ -407,7 +409,7 @@ export default function DeliverySelector({
       ) : selectedCity ? (
         <>
           <label
-            className={`store-control flex items-center gap-4 border px-4 py-4 cursor-pointer ${method ? "border-stone-900" : "border-stone-200"}`}
+            className={`flex items-center gap-4 border px-4 py-4 cursor-pointer ${method ? "border-stone-900" : "border-stone-200"}`}
           >
             <input
               type="radio"
@@ -518,7 +520,7 @@ export default function DeliverySelector({
               setListLimit(100);
             }}
             placeholder="Улица или название пункта"
-            className="store-control w-full border border-stone-200 bg-transparent px-4 py-3 text-ui"
+            className="w-full border border-stone-200 bg-transparent px-4 py-3 text-ui"
           />
           <div className="grid md:grid-cols-[minmax(0,1fr)_300px] gap-4">
             {open && selectedCity && (

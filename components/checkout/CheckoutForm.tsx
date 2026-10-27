@@ -1,6 +1,10 @@
 "use client";
-import GardenCartItem from "@/components/garden/GardenCartItem";
+
+import { contactChannels, contactForChannel, type ContactChannel } from "@/lib/courier-contact";
+import { checkoutIssue } from "@/lib/analytics/checkout-errors";
+import { plannedReadyDate, readyDateLabel } from "@/lib/production";
 import { productTitle } from "@/lib/product-title";
+import GardenCartItem from "@/components/garden/GardenCartItem";
 
 import { trackCheckoutProgress } from "@/lib/analytics/checkout-client";
 import { bindPrepositions } from "@/lib/typography";
@@ -33,12 +37,14 @@ type Props = {
   initialItems: CartItem[];
   deliveryEnabled: boolean;
   draftKey: string;
+  reviewOnly?: boolean;
 };
 
 export default function CheckoutForm({
   initialItems,
   deliveryEnabled,
   draftKey,
+  reviewOnly = false,
 }: Props) {
   const router = useRouter();
   const requestKey = useRef<string | null>(null);
@@ -62,6 +68,7 @@ export default function CheckoutForm({
     lastName: "",
     name: "",
     telegram: "",
+    contactValue: "",
     phone: "+7",
     email: "",
     deliveryType: "russia",
@@ -90,6 +97,8 @@ export default function CheckoutForm({
           phone: draft.phone,
           email: draft.email,
           telegram: draft.telegram,
+          contactChannel: draft.contactChannel,
+          contactValue: draft.contactValue,
           comment: draft.comment,
           deliveryMethod: draft.deliveryMethod,
           deliveryType:
@@ -121,6 +130,8 @@ export default function CheckoutForm({
           phone: formData.phone,
           email: formData.email,
           telegram: formData.telegram,
+          contactChannel: formData.contactChannel,
+          contactValue: formData.contactValue,
           comment: formData.comment,
           emailConsent: false,
           delivery: deliveryDraft,
@@ -144,6 +155,8 @@ export default function CheckoutForm({
       phone: formData.phone,
       email: formData.email ?? "",
       telegram: formData.telegram ?? "",
+      contactChannel: formData.contactChannel,
+      contactValue: formData.contactValue ?? "",
       address: formData.address ?? "",
       comment: formData.comment ?? "",
       deliveryMethod: formData.deliveryMethod ?? "ozon_point",
@@ -155,6 +168,8 @@ export default function CheckoutForm({
       formData.phone,
       formData.email,
       formData.telegram,
+      formData.contactChannel,
+      formData.contactValue,
       formData.address,
       formData.comment,
       formData.deliveryMethod,
@@ -163,7 +178,7 @@ export default function CheckoutForm({
   );
   const contactDraft = useCheckoutContactDraft(
     contactData,
-    draftReady && !pending,
+    draftReady && !pending && !reviewOnly,
   );
 
   const totalPrice = initialItems.reduce(
@@ -201,6 +216,7 @@ export default function CheckoutForm({
     if (name === "firstName" || name === "lastName")
       next.name = `${next.firstName.trim()} ${next.lastName.trim()}`.trim();
     if (name === "telegram") next.telegram = value.replace(/^@+/, "");
+    if (name === "contactValue" && formData.contactChannel !== "email" && value && !value.startsWith("@")) next.contactValue = `@${value}`;
     if (name === "email") {
       next.emailConsent = false;
       setConsentEmail("");
@@ -208,6 +224,7 @@ export default function CheckoutForm({
     setFormData(next);
     if (fieldErrors[name]) {
       const parsed = checkoutSchema.safeParse(next);
+      if (parsed.success || !parsed.error.issues.some((i) => i.path[0] === name)) trackCheckoutProgress({ stage: "error_corrected", method: formData.deliveryMethod!, ...checkoutIssue({ path: [name], code: "custom" }) });
       setFieldErrors((prev) => ({
         ...prev,
         [name]: parsed.success
@@ -240,6 +257,10 @@ export default function CheckoutForm({
     const message = parsed.success
       ? ""
       : (parsed.error.issues.find((i) => i.path[0] === name)?.message ?? "");
+    if (message) {
+      const issue = !parsed.success && parsed.error.issues.find((i) => i.path[0] === name);
+      if (issue) trackCheckoutProgress({ stage: "validation_error", method: formData.deliveryMethod!, ...checkoutIssue(issue) });
+    } else if (fieldErrors[name]) trackCheckoutProgress({ stage: "error_corrected", method: formData.deliveryMethod!, ...checkoutIssue({ path: [name], code: "custom" }) });
     setFieldErrors((prev) => ({ ...prev, [name]: message }));
   }
   useEffect(() => {
@@ -264,11 +285,12 @@ export default function CheckoutForm({
     ]),
   );
   useEffect(() => {
+    if (reviewOnly) return;
     const timer = setTimeout(() => {
       void touchCheckoutEmail().catch(() => {});
     }, 1000);
     return () => clearTimeout(timer);
-  }, [formData, cartKey]);
+  }, [formData, cartKey, reviewOnly]);
   const finalTotal = courier
     ? totalPrice
     : quote
@@ -277,7 +299,7 @@ export default function CheckoutForm({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (submitting.current) return;
+    if (reviewOnly || submitting.current) return;
     const validated = checkoutSchema.safeParse({
       ...formData,
       address: courier
@@ -285,10 +307,7 @@ export default function CheckoutForm({
         : (quote?.point.address ?? "Пункт ещё не выбран"),
     });
     if (!validated.success) {
-      trackCheckoutProgress({
-        stage: "validation_error",
-        method: formData.deliveryMethod!,
-      });
+      for (const issue of validated.error.issues) trackCheckoutProgress({ stage: "validation_error", method: formData.deliveryMethod!, ...checkoutIssue(issue) });
       const fields: Record<string, string> = {};
       for (const issue of validated.error.issues) {
         const name = String(issue.path[0]);
@@ -302,8 +321,10 @@ export default function CheckoutForm({
     setFieldErrors({});
     if ((!courier && !quote) || finalTotal === null) {
       trackCheckoutProgress({
-        stage: "delivery_started",
+        stage: "validation_error",
         method: "ozon_point",
+        field: "deliveryQuoteId",
+        code: "QUOTE_REQUIRED",
       });
       setError("Выберите пункт выдачи и рассчитайте доставку.");
       return;
@@ -320,6 +341,7 @@ export default function CheckoutForm({
       result = await createOrder(formData, requestKey.current, finalTotal);
     } catch {
       result = {
+        code: "NETWORK_ERROR",
         success: false as const,
         error: "Нет соединения. Повторите отправку.",
       };
@@ -343,6 +365,8 @@ export default function CheckoutForm({
       trackCheckoutProgress({
         stage: "order_error",
         method: formData.deliveryMethod!,
+        code: result.code ?? "NETWORK_ERROR",
+        field: result.field as import("@/lib/analytics/checkout-errors").CheckoutErrorField | undefined,
       });
       setError(result.error);
       setPending(false);
@@ -450,7 +474,7 @@ export default function CheckoutForm({
                 required
               />
               <Field
-                label={courier ? "Telegram *" : "Telegram"}
+                label="Telegram"
                 id="telegram"
                 name="telegram"
                 type="text"
@@ -461,7 +485,7 @@ export default function CheckoutForm({
                 placeholder="anna_ceramics"
                 prefix="@"
                 autoComplete="off"
-                required={courier}
+                required={false}
               />
             </fieldset>
 
@@ -481,13 +505,13 @@ export default function CheckoutForm({
                   [
                     "yandex_courier",
                     "Курьером Яндекс Доставки",
-                    "Москва и Подмосковье. Напишем в Telegram в течение суток. Курьер оплачивается покупателем в приложении Яндекс Доставки, отдельно от изделий.",
+                    "Москва и Подмосковье. Напишем в выбранном канале в течение суток. Курьер оплачивается покупателем в приложении Яндекс Доставки, отдельно от изделий.",
                   ],
                 ] as const
               ).map(([value, title, description]) => (
                 <label
                   key={value}
-                  className={`flex items-start gap-3 p-4 store-control border cursor-pointer transition-colors hover:border-stone-500 ${formData.deliveryMethod === value ? "border-stone-900" : "border-stone-200"}`}
+                  className={`flex items-start gap-3 p-4 border cursor-pointer transition-colors hover:border-stone-500 ${formData.deliveryMethod === value ? "border-stone-900" : "border-stone-200"}`}
                 >
                   <input
                     type="radio"
@@ -508,6 +532,20 @@ export default function CheckoutForm({
             </fieldset>
             {courier ? (
               <div className="space-y-3">
+                <fieldset className="space-y-3">
+                  <legend className="font-body text-ui">Где согласовать доставку? *</legend>
+                  <div className="flex flex-wrap gap-4">
+                    {Object.entries(contactChannels).map(([channel, label]) => <label key={channel} className="flex items-center gap-2 font-body text-ui">
+                      <input type="radio" name="contactChannel" value={channel} checked={formData.contactChannel === channel}
+                        onChange={() => { setFormData(prev => ({ ...prev, contactChannel: channel as ContactChannel, contactValue: contactForChannel(channel as ContactChannel, prev) })); setFieldErrors(prev => ({ ...prev, contactValue: "" })); }} />{label}
+                    </label>)}
+                  </div>
+                  {formData.contactChannel && <Field label={`${contactChannels[formData.contactChannel]} для связи *`} id="contactValue" name="contactValue"
+                    type={formData.contactChannel === "email" ? "email" : "text"} value={formData.contactValue ?? ""}
+                    onChange={handleChange} onBlur={() => validateField("contactValue")} error={fieldErrors.contactValue}
+                    placeholder={formData.contactChannel === "email" ? "example@email.com" : "@username"} required />}
+                  {!formData.contactChannel && fieldErrors.contactValue && <p role="alert" className="text-red-700 text-caption">{fieldErrors.contactValue}</p>}
+                </fieldset>
                 <Field
                   label="Адрес курьерской доставки *"
                   id="address"
@@ -529,7 +567,7 @@ export default function CheckoutForm({
               <DeliverySelector
                 phone={formData.phone}
                 cartKey={cartKey}
-                enabled={deliveryEnabled}
+                enabled={deliveryEnabled && !reviewOnly}
                 onQuote={receiveQuote}
                 initialSelection={initialDelivery.current}
                 onSelection={saveDeliveryDraft}
@@ -552,7 +590,7 @@ export default function CheckoutForm({
                 placeholder="Пожелания к заказу"
                 rows={3}
                 className="
-                  store-control w-full border border-stone-200 bg-transparent
+                  w-full border border-stone-200 bg-transparent
                   font-body text-ui text-stone-800
                   px-4 py-3 resize-none
                   placeholder:text-stone-600
@@ -597,9 +635,7 @@ export default function CheckoutForm({
                   </div>
                   <div className="flex flex-col justify-center flex-1 min-w-0">
                     <p className="font-body text-copy text-stone-900 break-words">
-                      {bindPrepositions(
-                        productTitle(item.product.name, item.product.category),
-                      )}
+                      {bindPrepositions(productTitle(item.product.name, item.product.category))}
                     </p>
                     <p className="font-body text-copy text-stone-600 mt-1">
                       × {item.quantity}
@@ -621,6 +657,7 @@ export default function CheckoutForm({
               ))}
             </div>
 
+            {initialItems.some(i => i.purchase_mode === "preorder") && <p className="text-ui text-stone-600">Если оплатить сегодня, плановая готовность — {readyDateLabel(plannedReadyDate(new Date(), Math.max(1, ...initialItems.filter(i => i.purchase_mode === "preorder").map(i => i.product.lead_time_days ?? 21)))!)}. Весь заказ отправим после готовности всех изделий. Срок доставки добавляется отдельно; дата закрепится после оплаты.</p>}
             {/* Итого */}
             <div className="space-y-4">
               <div className="flex justify-between gap-6">
@@ -720,6 +757,7 @@ export default function CheckoutForm({
                   )}
                 </div>
                 <EmailConsent
+                  reviewOnly={reviewOnly}
                   email={consentEmail}
                   serviceConsent={formData.acceptedTerms}
                   marketingConsent={formData.subscribeToNews}
@@ -746,6 +784,9 @@ export default function CheckoutForm({
                   </p>
                 )}
               </fieldset>
+              {Object.values(fieldErrors).some(Boolean) && <ul className="space-y-2 text-red-700 text-ui" aria-label="Ошибки оформления">
+                {Object.entries(fieldErrors).filter(([, message]) => message).map(([field, message]) => <li key={field}><a href={`#${field}`} onClick={() => document.getElementById(field)?.focus()} className="underline">{message}</a></li>)}
+              </ul>}
               {error && (
                 <p
                   role="alert"
@@ -757,7 +798,7 @@ export default function CheckoutForm({
               <button
                 type="submit"
                 form="checkout-form"
-                disabled={pending}
+                disabled={pending || reviewOnly}
                 className="
                   w-full bg-stone-900 text-stone-50
                   font-body text-ui tracking-[0.08em] uppercase
@@ -835,7 +876,7 @@ function Field({
       <div
         className={
           prefix
-            ? "store-control flex items-baseline border border-stone-200 px-4 focus-within:border-stone-500 transition-colors duration-200"
+            ? "flex items-baseline border border-stone-200 px-4 focus-within:border-stone-500 transition-colors duration-200"
             : undefined
         }
       >
@@ -863,7 +904,7 @@ function Field({
             prefix
               ? "w-full min-w-0 border-0 bg-transparent font-body text-ui text-stone-800 pl-0 py-3 placeholder:text-stone-600 focus:outline-none"
               : `
-          store-control w-full border border-stone-200 bg-transparent
+          w-full border border-stone-200 bg-transparent
           font-body text-ui text-stone-800
           px-4 py-3
           placeholder:text-stone-600

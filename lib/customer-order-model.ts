@@ -1,3 +1,4 @@
+import { readyDateLabel } from "./production";
 export const orderSteps = [
   "Оформлен",
   "Оплачен",
@@ -22,6 +23,7 @@ type CustomerOrder = {
   payment_status: string;
   delivery_stage?: string | null;
   leadTimeDays?: number;
+  readyOn?: string | null;
   hasPreorder?: boolean;
   parcelStatuses?: (string | null)[];
 };
@@ -134,7 +136,7 @@ function baseCustomerOrderState(order: CustomerOrder) {
       step: 2,
       detail: `Заказ принят в работу. Начали лепить изделия для вашего заказа.${order.leadTimeDays ? ` Срок изготовления — до ${order.leadTimeDays} ${order.leadTimeDays % 10 === 1 && order.leadTimeDays % 100 !== 11 ? "дня" : "дней"} после оплаты.` : ""} После готовности передадим заказ в доставку.`,
     };
-  const detail = order.leadTimeDays
+  const detail = order.readyOn ? `Плановая готовность — ${readyDateLabel(order.readyOn)}. Весь заказ отправим после готовности всех изделий; срок доставки добавляется отдельно.` : order.leadTimeDays
     ? `Изготовление — до ${order.leadTimeDays} дней после оплаты. После готовности передадим заказ в доставку.`
     : order.hasPreorder
       ? "Оплата получена. Срок изготовления предзаказа уточним лично."

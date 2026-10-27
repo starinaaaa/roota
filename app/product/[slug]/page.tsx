@@ -1,3 +1,4 @@
+import { gardenConfigurationSchema } from "@/lib/garden";
 import { Suspense } from "react";
 import { bindPrepositions } from "@/lib/typography";
 import { notFound, permanentRedirect } from "next/navigation";
@@ -16,6 +17,7 @@ export const dynamic = "force-dynamic";
 
 type Props = {
   params: Promise<{ slug: string }>;
+  searchParams?: Promise<{ garden?: string }>;
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -25,6 +27,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: product.seo_title || product.name,
     description: product.seo_description || product.description || undefined,
+    other: { "product:price.amount": String(product.price), "product:price.currency": "RUB" },
     alternates: { canonical: siteUrl("/product/" + product.slug) },
     openGraph: {
       title: product.seo_title || product.name,
@@ -35,9 +38,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function ProductPage({ params }: Props) {
+export default async function ProductPage({ params, searchParams }: Props) {
   const { slug } = await params;
 
+  const query = await searchParams;
+  let initialGarden;
+  try { const parsed = gardenConfigurationSchema.safeParse(JSON.parse(query?.garden ?? "null")); if (parsed.success) initialGarden = parsed.data; } catch {}
   const [product, { items: cartItems }] = await Promise.all([
     getProductBySlug(slug),
     getCart(),
@@ -112,7 +118,7 @@ export default async function ProductPage({ params }: Props) {
         <div className="max-w-[1440px] mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-20">
             <div className={product.configurator === "garden" ? "lg:sticky lg:top-28 lg:self-start" : undefined}><ProductImages images={product.images} name={product.name} /></div>
-            {product.configurator === "garden" ? <GardenProduct product={product} telegram={site!.telegram} /> : <ProductClientWrapper product={product} inCart={inCart} />}
+            {product.configurator === "garden" ? <GardenProduct key={JSON.stringify(initialGarden ?? null)} initial={initialGarden} product={product} telegram={site!.telegram} /> : <ProductClientWrapper product={product} inCart={inCart} />}
           </div>
         </div>
       </section>

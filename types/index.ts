@@ -110,6 +110,8 @@ export type OrderItem = {
 
 // Форма оформления заказа
 export type CheckoutFormData = {
+  contactChannel?: import("@/lib/courier-contact").ContactChannel;
+  contactValue?: string;
   name: string;
   telegram: string;
   phone: string;
@@ -130,7 +132,7 @@ export type CheckoutFormData = {
 // Результат Server Action createOrder
 export type CreateOrderResult =
   | { success: true; orderId: string; orderNumber: string; paymentId?: string }
-  | { success: false; error: string };
+  | { success: false; error: string; code?: string; field?: string };
 
 // Список ожидания
 export type WaitlistEntry = {

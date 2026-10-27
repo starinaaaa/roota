@@ -25,6 +25,7 @@ export default async function OrdersPage({
   return (
     <div className="space-y-6">
       <h2 className="text-xl">Заказы · {count}</h2>
+      <Link href="/admin/orders/new" className="admin-button">Создать заказ вручную</Link>
       <form className="grid sm:grid-cols-2 lg:grid-cols-5 gap-3">
         <label>
           Режим

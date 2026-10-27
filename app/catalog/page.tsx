@@ -1,3 +1,4 @@
+import { filterCatalog, type CatalogParams } from "@/lib/catalog-filter";
 import { bindPrepositions } from "@/lib/typography";
 import { Suspense } from "react";
 import type { Metadata } from "next";
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
 };
 
 type Props = {
-  searchParams: Promise<{ category?: string; stock?: string }>;
+  searchParams: Promise<CatalogParams>;
 };
 
 export default async function CatalogPage({ searchParams }: Props) {
@@ -27,10 +28,7 @@ export default async function CatalogPage({ searchParams }: Props) {
     getFilterCategories(),
   ]);
 
-  const filtered =
-    params.stock === "1"
-      ? products.filter((p) => p.in_stock && p.stock_qty > 0)
-      : products;
+  const filtered = filterCatalog(products, params);
 
   const countLabel = (() => {
     const n = filtered.length;
@@ -65,6 +63,17 @@ export default async function CatalogPage({ searchParams }: Props) {
         </div>
       </section>
 
+      <form action="/catalog" className="mx-auto max-w-[1440px] px-6 md:px-12 py-6 flex flex-wrap items-end gap-4">
+        <input type="hidden" name="category" value={activeSlug} />
+        {params.stock === "1" && <input type="hidden" name="stock" value="1" />}
+        <label className="space-y-2 text-ui">Поиск<input className="block border border-stone-300 p-3" name="q" type="search" maxLength={150} defaultValue={params.q} placeholder="Название изделия" /></label>
+        <label className="space-y-2 text-ui">От, ₽<input className="block border border-stone-300 p-3 w-28" name="min" type="number" min="0" defaultValue={params.min} /></label>
+        <label className="space-y-2 text-ui">До, ₽<input className="block border border-stone-300 p-3 w-28" name="max" type="number" min="0" defaultValue={params.max} /></label>
+        <label className="space-y-2 text-ui">Сортировка<select name="sort" defaultValue={params.sort ?? "newest"} className="block border border-stone-300 p-3"><option value="newest">Сначала новые</option><option value="price_asc">Сначала дешевле</option><option value="price_desc">Сначала дороже</option></select></label>
+        <button className="bg-stone-900 text-white px-6 py-3">Показать</button>
+        <a href="/favorites" className="underline py-3">Избранное и подборки</a>
+      </form>
+      {filtered.length === 0 && <p className="px-6 py-8 text-ui">По этим условиям изделий нет. Попробуйте изменить поиск или бюджет.</p>}
       {/* Сетка товаров */}
       <section className="px-6 md:px-12 lg:px-16 pt-6 pb-12 md:py-12">
         <div className="max-w-[1440px] mx-auto">

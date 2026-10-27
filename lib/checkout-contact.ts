@@ -1,9 +1,11 @@
 import { z } from "zod";
+import { courierContactFields } from "./courier-contact";
 import { checkoutDeliveryDraft } from "./checkout-draft";
 
 // Intentionally accept incomplete contact values: this is a draft, not an order.
 export const checkoutContactData = z
   .object({
+    ...courierContactFields,
     firstName: z.string().max(50),
     lastName: z.string().max(50),
     phone: z.string().max(40),
@@ -15,7 +17,7 @@ export const checkoutContactData = z
     delivery: checkoutDeliveryDraft.nullable(),
   })
   .strict();
-export type CheckoutContactData = z.infer<typeof checkoutContactData>;
+export type CheckoutContactData = z.input<typeof checkoutContactData>;
 export const checkoutContactInput = z
   .object({
     capturedAt: z.number().int().positive(),
@@ -30,9 +32,10 @@ export function hasCheckoutContact(data: CheckoutContactData) {
       data.phone.replace(/^\+7\s*$/, ""),
       data.email,
       data.telegram,
+      data.contactValue,
       data.address,
       data.comment,
-    ].some((value) => value.trim()) ||
+    ].some((value) => value?.trim()) ||
     Boolean(data.delivery?.city || data.delivery?.point)
   );
 }

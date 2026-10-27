@@ -5,17 +5,20 @@ import { syncCheckoutEmailConsent } from "@/lib/actions/email";
 
 export default function EmailConsent({
   email,
+  reviewOnly = false,
   serviceConsent,
   marketingConsent,
   onChange,
 }: {
   email: string;
+  reviewOnly?: boolean;
   serviceConsent: boolean;
   marketingConsent: boolean;
   onChange: (marketingConsent: boolean) => void;
 }) {
   const [error, setError] = useState("");
   useEffect(() => {
+    if (reviewOnly) return;
     if ((serviceConsent || marketingConsent) && !email) return;
     let current = true;
     const timer = setTimeout(() => {
@@ -34,7 +37,7 @@ export default function EmailConsent({
       current = false;
       clearTimeout(timer);
     };
-  }, [email, serviceConsent, marketingConsent]);
+  }, [email, serviceConsent, marketingConsent, reviewOnly]);
   const linkClass = "underline underline-offset-4 hover:text-stone-900";
   return (
     <div className="font-body text-caption leading-relaxed text-stone-600 space-y-3">

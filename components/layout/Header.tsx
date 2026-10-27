@@ -10,6 +10,7 @@ import { useCartUI } from "@/contexts/CartUIContext";
 
 const NAV_LINKS = [
   { href: "/catalog", label: "Каталог" },
+  { href: "/favorites", label: "Избранное" },
   { href: "/about", label: "О студии" },
   { href: "/delivery", label: "Доставка и оплата" },
   { href: "/contacts", label: "Контакты" },

@@ -87,11 +87,12 @@ export default async function RootLayout({
       <body className="storefront bg-stone-50 text-stone-900 antialiased">
         <CartUIProvider initialItems={items}>
           <Header cartCount={cartCount} />
+          {process.env.ROOTA_REVIEW_HOST && <div role="status" className="fixed bottom-3 left-3 right-3 z-[60] rounded border border-stone-300 bg-white/95 px-4 py-2 text-center text-xs shadow-sm">Закрытый просмотр · данные магазина не изменяются · оплата и отправки не запускаются</div>}
           <main>{children}</main>
           <Footer />
           <CartDrawer />
           <CookieBanner />
-          <FunnelTracker />
+          {!process.env.ROOTA_REVIEW_HOST && <FunnelTracker />}
         </CartUIProvider>
       </body>
     </html>

@@ -1,6 +1,7 @@
 import { EMAIL_CONSENT_VERSION, LEGAL_VERSION } from "./legal";
 import { normalizeRussianPhone } from "./contacts";
 import { z } from "zod";
+import { courierContactFields, validCourierContact } from "./courier-contact";
 export const uuid = z.string().uuid();
 export const phone = z
   .string()
@@ -18,6 +19,7 @@ export const phone = z
   });
 export const checkoutSchema = z
   .object({
+    ...courierContactFields,
     name: z.string().trim().max(100).optional().default(""),
     firstName: z.string().trim().min(1, "Введите имя").max(50).optional(),
     lastName: z.string().trim().min(1, "Введите фамилию").max(50).optional(),
@@ -91,21 +93,20 @@ export const checkoutSchema = z
     emailConsentVersion: EMAIL_CONSENT_VERSION,
   }))
   .refine(
-    (v) => v.deliveryMethod !== "yandex_courier" || v.telegram.length > 0,
+    (v) => v.deliveryMethod !== "yandex_courier" || validCourierContact(v.contactChannel, v.contactValue),
     {
-      message: "Укажите Telegram для согласования курьерской доставки",
-      path: ["telegram"],
+      message: "Выберите канал и укажите корректный email или имя пользователя с @",
+      path: ["contactValue"],
     },
   )
-  .refine(
-    (v) =>
-      (v.deliveryMethod !== "yandex_courier" && v.deliveryType === "pickup") ||
-      v.address.length >= 5,
-    {
-      message: "Укажите адрес доставки",
-      path: ["address"],
-    },
-  );
+  .superRefine((v, ctx) => {
+    if (v.deliveryMethod !== "yandex_courier" && v.deliveryType === "pickup") return;
+    if (v.address.length < 5) ctx.addIssue({
+      code: "custom", path: ["address"],
+      message: v.address.length === 0 ? "Не заполнен адрес доставки" : "Укажите город, улицу и дом",
+      params: { diagnosticCode: v.address.length === 0 ? "ADDRESS_REQUIRED" : "ADDRESS_INCOMPLETE" },
+    });
+  });
 const optionalText = (max: number) =>
   z
     .string()

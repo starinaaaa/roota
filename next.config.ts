@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   async headers() {
     return [
-      ...["/email/:path*", "/review/:path*", "/cart/restore/:path*"].map(
+      ...["/email/:path*", "/review/:path*", "/cart/restore/:path*", "/draft/:path*", "/selection/:path*"].map(
         (source) => ({
           source,
           headers: [

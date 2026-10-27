@@ -10,3 +10,21 @@ export function ozonCheckoutError(
       : "Ozon не смог рассчитать стоимость доставки. Повторите расчёт; если ошибка сохраняется, свяжитесь со студией.";
   return "Ozon не подтвердил доставку этого заказа. Повторите расчёт или выберите другой пункт. Если ошибка сохраняется, свяжитесь со студией.";
 }
+
+export class DeliveryCheckoutError extends Error {
+  constructor(public diagnosticCode: string, message: string) { super(message); }
+}
+export function deliveryDiagnostic(error: unknown) {
+  if (error instanceof DeliveryCheckoutError) return error.diagnosticCode;
+  if (error && typeof error === "object") {
+    const e = error as { code?: unknown; status?: unknown; reason?: unknown };
+    if (typeof e.code === "string" && /^[A-Z0-9_]{1,60}$/.test(e.code)) return `DELIVERY_${e.code}`;
+    if (typeof e.status === "number") return `DELIVERY_HTTP_${e.status}`;
+  }
+  const message = error instanceof Error ? error.message : "";
+  if (/упаков/i.test(message)) return "PACKING_UNAVAILABLE";
+  if (/сохранить расчёт/i.test(message)) return "QUOTE_SAVE_FAILED";
+  if (/телефон/i.test(message)) return "PHONE_INVALID";
+  if (/расчёт.*устарел/i.test(message)) return "DELIVERY_EXPIRED";
+  return "DELIVERY_UNAVAILABLE";
+}

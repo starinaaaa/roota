@@ -1,3 +1,4 @@
+import { reviewHidden } from "@/lib/review-hidden";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
 import { getPool } from "@/lib/db/pool";
@@ -20,12 +21,13 @@ export default async function Page({
     `select c.id,c.name,c.phone,c.email,count(o.id) filter(where o.payment_status in ('paid','refunded'))::int purchases,
    coalesce(sum(case when o.payment_status in ('paid','refunded') then o.total_amount else 0 end),0)-coalesce(sum(case when r.money_state='finished' then r.amount else 0 end),0) net
    from public.customers c left join public.orders o on o.customer_id=c.id left join public.order_returns r on r.order_id=o.id
-   where concat_ws(' ',c.name,c.phone,c.email) ilike '%'||$1||'%' group by c.id order by max(o.created_at) desc nulls last limit 200`,
+   where not(c.id=any($2::uuid[])) and concat_ws(' ',c.name,c.phone,c.email) ilike '%'||$1||'%' group by c.id order by max(o.created_at) desc nulls last limit 200`,
     [
       q
         .trim()
         .slice(0, 100)
         .replace(/[\\%_]/g, "\\$&"),
+      reviewHidden.customers,
     ],
   );
   return (

@@ -1,3 +1,4 @@
+import { reviewHidden } from "./review-hidden";
 import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import "server-only";
@@ -159,7 +160,7 @@ export const getCategories = unstable_cache(async (): Promise<Category[]> => {
 export const getProducts = unstable_cache(async (): Promise<Product[]> => {
   const { data, error } = await supabase().from("products").select(PRODUCT_SELECT).eq("publication_status","published").eq("is_active",true).order("created_at",{ascending:false});
   if (error) throw new Error("CATALOGUE_UNAVAILABLE");
-  return (data ?? []).map(row=>mapProduct(row as unknown as ProductRow));
+  return (data ?? []).filter(row => !reviewHidden.products.includes(row.id)).map(row=>mapProduct(row as unknown as ProductRow));
 }, ["public-products"], { tags: ["catalog"], revalidate: 60 });
 
 export async function getFilterCategories() {
@@ -174,7 +175,7 @@ export async function getProductsByIds(ids: string[]): Promise<Product[]> {
   if (!ids.length) return [];
   const { data, error } = await supabase().from("products").select(PRODUCT_SELECT).in("id",ids).eq("publication_status","published").eq("is_active",true);
   if (error) throw new Error("CATALOGUE_UNAVAILABLE");
-  return (data ?? []).map(row=>mapProduct(row as unknown as ProductRow));
+  return (data ?? []).filter(row => !reviewHidden.products.includes(row.id)).map(row=>mapProduct(row as unknown as ProductRow));
 }
 export async function getRelatedProducts(categoryId: string, excludeSlug: string, limit=4) {
   return (await getProducts()).filter(p=>p.slug!==excludeSlug).sort((a,b)=>Number(b.category_id===categoryId)-Number(a.category_id===categoryId)).slice(0,limit);

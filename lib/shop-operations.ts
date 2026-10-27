@@ -1,4 +1,6 @@
 import "server-only";
+import { createHash } from "node:crypto";
+import { reviewHidden } from "./review-hidden";
 import { productionTasksSource } from "./review-schema";
 import { requireAdmin } from "./auth";
 import { getPool } from "./db/pool";
@@ -26,7 +28,7 @@ export async function productionQueue() {
    from ${source} t join public.order_items i on i.id=t.order_item_id join public.orders o on o.id=i.order_id
    where o.payment_status='paid' and o.status not in ('cancelled','shipped','delivered')
    order by t.ready_on nulls first,o.created_at,t.id`)
-  ).rows;
+  ).rows.filter((item) => !reviewHidden.orders.includes(item.order_id));
 }
 export async function attentionItems() {
   await requireAdmin();
@@ -48,7 +50,19 @@ export async function attentionItems() {
    union all select m.id::text,'Проблема письма',coalesce(m.last_error,m.state),'/admin/messages' from public.email_messages m where m.state in ('failed','unknown','bounced','complained') and m.created_at>now()-interval '30 days'
    union all select r.id::text,'Незавершённый возврат',o.order_number||' · деньги: '||r.money_state||', изделие: '||r.goods_state,'/admin/orders/'||o.id from public.order_returns r join public.orders o on o.id=r.order_id where r.goods_state='expected' or r.money_state in ('none','sending','processing','unknown','rejected')
    order by title,detail limit 500`)
-  ).rows;
+  ).rows
+    .filter(
+      (item) =>
+        !reviewHidden.orderNumbers.some((number) =>
+          item.detail.startsWith(number),
+        ) && !reviewHidden.orders.includes(item.id),
+    )
+    .map((item) => ({
+      ...item,
+      key: createHash("sha256")
+        .update(JSON.stringify([item.id, item.title, item.detail]))
+        .digest("hex"),
+    }));
 }
 export async function orderProduction(orderId: string) {
   const source = await productionTasksSource();

@@ -1,3 +1,4 @@
+import { reviewHidden } from "@/lib/review-hidden";
 import { reviewHasColumn } from "@/lib/review-schema";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
@@ -22,13 +23,13 @@ export default async function Page({
     rows: [r],
   } = await getPool().query(
     `with period as (select $1::date::timestamp at time zone 'Europe/Moscow' since,($2::date+1)::timestamp at time zone 'Europe/Moscow' until),
- sales as (select o.*,coalesce(p.paid_at,o.created_at) sold_at from public.orders o left join lateral (select min(paid_at) paid_at from public.payments where order_id=o.id and mode='live' and paid_at is not null) p on true where p.paid_at is not null or o.payment_status in ('paid','refunded')),
+ sales as (select o.*,coalesce(p.paid_at,o.created_at) sold_at from public.orders o left join lateral (select min(paid_at) paid_at from public.payments where order_id=o.id and mode='live' and paid_at is not null) p on true where not(o.id=any($3::uuid[])) and (p.paid_at is not null or o.payment_status in ('paid','refunded'))),
  current_sales as (select s.* from sales s,period where sold_at>=since and sold_at<until),
- returns as (select coalesce(sum(amount),0) amount from public.order_returns r,period where money_state='finished' and ${refundStamp}>=since and ${refundStamp}<until)
+ returns as (select coalesce(sum(amount),0) amount from public.order_returns r,period where not(r.order_id=any($3::uuid[])) and money_state='finished' and ${refundStamp}>=since and ${refundStamp}<until)
  select count(*)::int orders,coalesce(sum(total_amount),0) sales,coalesce(avg(total_amount),0) average,(select amount from returns) refunds,
  count(*) filter(where exists(select 1 from sales older where older.customer_id=s.customer_id and (older.sold_at,older.id)<(s.sold_at,s.id)))::int repeat_orders,
  count(distinct customer_id)::int customers from current_sales s`,
-    [since, until],
+    [since, until, reviewHidden.orders],
   );
   const stats = [
     ["Продажи", formatPrice(Number(r.sales))],

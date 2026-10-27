@@ -2,10 +2,13 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import type { Product } from "@/types";
-import { favoriteKey, type FavoriteItem } from "@/lib/favorites";
+import {
+  favoriteKey,
+  encodeSelection,
+  type FavoriteItem,
+} from "@/lib/favorites";
 import { gardenSummary, gardenPrice } from "@/lib/garden";
 import { formatPrice } from "@/lib/format-price";
-import { createSelection } from "@/lib/actions/selections";
 import FavoriteButton, { useFavorites, storeFavorites } from "./FavoriteButton";
 export default function FavoritesList({
   products,
@@ -17,6 +20,7 @@ export default function FavoritesList({
   const saved = useFavorites(),
     items = shared ?? saved;
   const [status, setStatus] = useState(""),
+    [shareUrl, setShareUrl] = useState(""),
     [pending, start] = useTransition();
   return (
     <div className="space-y-6">
@@ -95,24 +99,41 @@ export default function FavoritesList({
             onClick={() =>
               start(async () => {
                 try {
-                  const url = await createSelection(items);
-                  setStatus(url);
-                  await navigator.clipboard?.writeText(url);
+                  const url = `${window.location.origin}/selection?items=${encodeSelection(items)}`;
+                  setShareUrl(url);
+                  try {
+                    await navigator.clipboard.writeText(url);
+                    setStatus(
+                      "Ссылка скопирована — можно отправить её близкому человеку.",
+                    );
+                  } catch {
+                    setStatus("Ссылка готова. Скопируйте её из поля ниже.");
+                  }
                 } catch {
-                  setStatus(
-                    "Не удалось создать или скопировать ссылку. Повторите попытку.",
-                  );
+                  setStatus("Не удалось создать ссылку. Повторите попытку.");
                 }
               })
             }
           >
-            {pending ? "Создаём ссылку…" : "Поделиться подборкой"}
+            {pending ? "Создаём ссылку…" : "Скопировать ссылку на избранное"}
           </button>
         )}
         <Link href="/catalog" className="underline py-3">
           В каталог
         </Link>
       </div>
+      {shareUrl && (
+        <label className="block space-y-2 text-ui">
+          <span>Ссылка на подборку</span>
+          <input
+            aria-label="Ссылка на подборку"
+            readOnly
+            value={shareUrl}
+            onFocus={(event) => event.currentTarget.select()}
+            className="w-full border border-stone-300 p-3"
+          />
+        </label>
+      )}
       {status && (
         <p role="status" className="break-all">
           {status.startsWith("http") ? (

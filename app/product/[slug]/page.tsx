@@ -27,7 +27,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: product.seo_title || product.name,
     description: product.seo_description || product.description || undefined,
-    other: { "product:price.amount": String(product.price), "product:price.currency": "RUB" },
+    other: {
+      "product:price.amount": String(product.price),
+      "product:price.currency": "RUB",
+    },
     alternates: { canonical: siteUrl("/product/" + product.slug) },
     openGraph: {
       title: product.seo_title || product.name,
@@ -43,7 +46,12 @@ export default async function ProductPage({ params, searchParams }: Props) {
 
   const query = await searchParams;
   let initialGarden;
-  try { const parsed = gardenConfigurationSchema.safeParse(JSON.parse(query?.garden ?? "null")); if (parsed.success) initialGarden = parsed.data; } catch {}
+  try {
+    const parsed = gardenConfigurationSchema.safeParse(
+      JSON.parse(query?.garden ?? "null"),
+    );
+    if (parsed.success) initialGarden = parsed.data;
+  } catch {}
   const [product, { items: cartItems }] = await Promise.all([
     getProductBySlug(slug),
     getCart(),
@@ -56,7 +64,8 @@ export default async function ProductPage({ params, searchParams }: Props) {
   }
 
   const inCart = cartItems.some((i) => i.product_id === product.id);
-  const site = product.configurator === "garden" ? await getSiteContent() : null;
+  const site =
+    product.configurator === "garden" ? await getSiteContent() : null;
 
   return (
     <div className="pt-16 md:pt-20">
@@ -117,8 +126,19 @@ export default async function ProductPage({ params, searchParams }: Props) {
       <section className="px-6 md:px-12 lg:px-16 py-12 md:py-20">
         <div className="max-w-[1440px] mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-20">
-            <div className={product.configurator === "garden" ? "lg:sticky lg:top-28 lg:self-start" : undefined}><ProductImages images={product.images} name={product.name} /></div>
-            {product.configurator === "garden" ? <GardenProduct key={JSON.stringify(initialGarden ?? null)} initial={initialGarden} product={product} telegram={site!.telegram} /> : <ProductClientWrapper product={product} inCart={inCart} />}
+            <div className="lg:sticky lg:top-28 lg:self-start">
+              <ProductImages images={product.images} name={product.name} />
+            </div>
+            {product.configurator === "garden" ? (
+              <GardenProduct
+                key={JSON.stringify(initialGarden ?? null)}
+                initial={initialGarden}
+                product={product}
+                telegram={site!.telegram}
+              />
+            ) : (
+              <ProductClientWrapper product={product} inCart={inCart} />
+            )}
           </div>
         </div>
       </section>

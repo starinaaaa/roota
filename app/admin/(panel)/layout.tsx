@@ -1,3 +1,4 @@
+import ReviewAdminContent from "@/components/admin/ReviewAdminContent";
 import SubmitButton from "@/components/ui/SubmitButton";
 import { redirect } from "next/navigation";
 import { getAdmin } from "@/lib/auth";
@@ -20,7 +21,18 @@ export default async function PanelLayout({
           </form>
         </div>
         <AdminNavigation />
-        {process.env.ROOTA_REVIEW_HOST ? <><p className="mb-5 rounded border border-stone-300 p-4 text-sm">Только просмотр. Журналы и редактирование новых разделов будут включены после одобрения миграции. Данные читаются из рабочего магазина.</p><fieldset disabled className="min-w-0">{children}</fieldset></> : children}
+        {process.env.ROOTA_REVIEW_HOST ? (
+          <>
+            <p className="mb-5 rounded border border-stone-300 p-4 text-sm">
+              Только просмотр. Журналы и редактирование новых разделов будут
+              включены после одобрения миграции. Данные читаются из рабочего
+              магазина.
+            </p>
+            <ReviewAdminContent>{children}</ReviewAdminContent>
+          </>
+        ) : (
+          children
+        )}
       </div>
     </div>
   );

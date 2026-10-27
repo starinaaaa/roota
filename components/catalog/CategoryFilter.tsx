@@ -19,7 +19,9 @@ export default function CategoryFilter({ activeSlug, categories }: Props) {
   const searchParams = useSearchParams();
 
   const handleSelect = (slug: string) => {
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(
+      searchParams.get("sort") ? { sort: searchParams.get("sort")! } : {},
+    );
     if (slug === "all") {
       params.delete("category");
     } else {
@@ -32,7 +34,7 @@ export default function CategoryFilter({ activeSlug, categories }: Props) {
   return (
     <nav
       aria-label="Фильтр по категориям"
-      className="flex flex-wrap gap-x-1 gap-y-2 pb-1"
+      className="flex flex-wrap items-center gap-x-1 gap-y-2 pb-1"
     >
       {categories.map(({ slug, label }) => {
         const isActive = slug === activeSlug;
@@ -68,23 +70,28 @@ export default function CategoryFilter({ activeSlug, categories }: Props) {
           </button>
         );
       })}
-      <label className="group flex items-center gap-2 py-2 font-body text-ui text-stone-800 cursor-pointer transition-colors duration-200 hover:text-stone-900 motion-reduce:transition-none">
-        <input
-          type="checkbox"
-          checked={searchParams.get("stock") === "1"}
+      <label className="flex items-center gap-2 py-2 font-body text-ui text-stone-800 sm:ml-auto">
+        <span className="sr-only">Сортировка</span>
+        <select
+          aria-label="Сортировка"
+          value={
+            searchParams.get("sort") === "price_asc" ||
+            searchParams.get("sort") === "price_desc"
+              ? searchParams.get("sort")!
+              : "newest"
+          }
           onChange={(event) => {
-            const params = new URLSearchParams(searchParams.toString());
-            if (event.target.checked) params.set("stock", "1");
-            else params.delete("stock");
-            router.push(`/catalog${params.size ? `?${params}` : ""}`, {
-              scroll: false,
-            });
+            const params = new URLSearchParams();
+            if (activeSlug !== "all") params.set("category", activeSlug);
+            params.set("sort", event.target.value);
+            router.push(`/catalog?${params}`, { scroll: false });
           }}
-          className="accent-stone-900 cursor-pointer transition-shadow duration-200 group-hover:ring-2 group-hover:ring-stone-300 ring-offset-2 ring-offset-stone-50 motion-reduce:transition-none"
-        />
-        <span className="underline-offset-4 group-hover:underline group-focus-within:underline">
-          В наличии
-        </span>
+          className="max-w-full cursor-pointer bg-transparent py-1 pr-2 focus-visible:outline-stone-500"
+        >
+          <option value="newest">Сначала новые</option>
+          <option value="price_asc">Сначала дешевле</option>
+          <option value="price_desc">Сначала дороже</option>
+        </select>
       </label>
     </nav>
   );

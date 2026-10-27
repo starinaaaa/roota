@@ -220,12 +220,19 @@ ALTER TABLE public.order_returns ADD COLUMN refunded_at timestamptz;
 CREATE FUNCTION public.stamp_refund_finished() RETURNS trigger LANGUAGE plpgsql SET search_path='' AS $$
 BEGIN IF new.money_state='finished' AND old.money_state IS DISTINCT FROM 'finished' THEN new.refunded_at:=now(); END IF; RETURN new; END $$;
 CREATE TRIGGER stamp_refund_finished BEFORE UPDATE OF money_state ON public.order_returns FOR EACH ROW EXECUTE FUNCTION public.stamp_refund_finished();
-REVOKE ALL ON public.checkout_obstacles,public.production_tasks,public.inventory_movements,public.saved_selections,public.email_campaigns,public.manual_order_drafts FROM PUBLIC;
+
+-- Resolving a dashboard task does not change its order, shipment or payment state.
+create table if not exists public.admin_attention_resolutions (
+  task_key text primary key check (task_key ~ '^[a-f0-9]{64}$'),
+  resolved_at timestamptz not null default now()
+);
+
+REVOKE ALL ON public.checkout_obstacles,public.production_tasks,public.inventory_movements,public.saved_selections,public.email_campaigns,public.manual_order_drafts,public.admin_attention_resolutions FROM PUBLIC;
 REVOKE EXECUTE ON FUNCTION public.record_checkout_obstacle(text,text,text,text),public.valid_courier_contact(jsonb),public.prepare_collection_campaigns(),public.accept_manual_order(text,jsonb) FROM PUBLIC;
 DO $$ BEGIN
  IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname='roota_app') THEN
   GRANT EXECUTE ON FUNCTION public.record_checkout_obstacle(text,text,text,text),public.valid_courier_contact(jsonb),public.prepare_collection_campaigns(),public.accept_manual_order(text,jsonb) TO roota_app;
-  GRANT SELECT,INSERT,UPDATE,DELETE ON public.checkout_obstacles,public.production_tasks,public.inventory_movements,public.saved_selections,public.email_campaigns,public.manual_order_drafts TO roota_app;
+  GRANT SELECT,INSERT,UPDATE,DELETE ON public.checkout_obstacles,public.production_tasks,public.inventory_movements,public.saved_selections,public.email_campaigns,public.manual_order_drafts,public.admin_attention_resolutions TO roota_app;
   GRANT USAGE,SELECT ON SEQUENCE public.checkout_obstacles_id_seq,public.inventory_movements_id_seq TO roota_app;
  END IF;
 END $$;

@@ -1,3 +1,4 @@
+import { reviewHidden } from "./review-hidden";
 import { relationList } from "./relation-list";
 import "server-only";
 import { requireAdmin } from "./auth";
@@ -20,6 +21,7 @@ export async function listOrders(
       { count: "exact" },
     )
     .order("created_at", { ascending: false });
+  for (const id of reviewHidden.orders) query = query.neq("id", id);
   if (safe)
     query = query.or(
       `order_number.ilike.%${safe}%,customer_name.ilike.%${safe}%`,
@@ -80,6 +82,7 @@ export async function getTestOrder(id: string): Promise<TestOrder | null> {
 }
 export async function getOrder(id: string) {
   await requireAdmin();
+  if (reviewHidden.orders.includes(id)) return null;
   if (!uuid.safeParse(id).success) return null;
   const { data, error } = await createServerClient()
     .from("orders")
@@ -106,10 +109,13 @@ export async function listAdminProducts() {
     )
     .order("created_at", { ascending: false });
   if (error) throw new Error("Не удалось загрузить товары");
-  return data ?? [];
+  return (data ?? []).filter(
+    (product) => !reviewHidden.products.includes(product.id),
+  );
 }
 export async function getAdminProduct(id: string) {
   await requireAdmin();
+  if (reviewHidden.products.includes(id)) return null;
   if (!uuid.safeParse(id).success) return null;
   const db = createServerClient();
   const { data, error } = await db

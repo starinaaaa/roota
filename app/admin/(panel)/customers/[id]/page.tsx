@@ -1,3 +1,4 @@
+import { reviewHidden } from "@/lib/review-hidden";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
@@ -12,7 +13,8 @@ export default async function Page({
 }) {
   await requireAdmin();
   const { id } = await params;
-  if (!uuid.safeParse(id).success) notFound();
+  if (!uuid.safeParse(id).success || reviewHidden.customers.includes(id))
+    notFound();
   const db = getPool();
   const {
     rows: [c],

@@ -39,7 +39,7 @@ export default function GardenFeature({ product }: { product: Product }) {
             листочков.
           </p>
           <p className="text-sm text-stone-600">
-            Четыре размера сада · Свой состав · Изготовление за 3 недели
+            Четыре размера сада · Свой состав · Изготовление — примерно 3 недели
           </p>
           <Link
             href={`/product/${product.slug}#garden-builder`}

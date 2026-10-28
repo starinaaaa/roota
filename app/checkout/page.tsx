@@ -1,3 +1,4 @@
+import { plannedReadyDate } from "@/lib/production";
 import { createHash } from "node:crypto";
 import { cookies } from "next/headers";
 import type { Metadata } from "next";
@@ -24,6 +25,7 @@ export default async function CheckoutPage() {
         deliveryEnabled={ozonConfigured()}
         draftKey={draftKey}
         reviewOnly={Boolean(process.env.ROOTA_REVIEW_HOST)}
+        preorderReadyOn={plannedReadyDate(new Date(), Math.max(0, ...items.filter(i => i.purchase_mode === "preorder").map(i => i.product.lead_time_days ?? 0)))}
       />
     </div>
   );

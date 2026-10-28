@@ -1,4 +1,5 @@
 "use client";
+import { productionEstimate } from "@/lib/preorder-copy";
 import { bindPrepositions } from "@/lib/typography";
 import {
   useEffect,
@@ -94,7 +95,7 @@ export default function StockLimitModal({
         <X size={20} />
       </button>
       <p className="mb-3 pr-10 text-xs uppercase tracking-[0.12em] text-stone-500">
-        {saved ? "Заявка сохранена" : "Поступление изделия"}
+        {saved ? "Заявка сохранена" : tab === "preorder" && hasPreorder ? "Предзаказ" : "Поступление изделия"}
       </p>
       <h2 id="stock-modal-title" className="mb-3 pr-7 text-2xl leading-tight">
         {bindPrepositions(productName)}
@@ -106,6 +107,8 @@ export default function StockLimitModal({
         {bindPrepositions(
           saved
             ? "Сообщим на указанный email, когда изделие появится в наличии. Подтверждать адрес не нужно."
+            : tab === "preorder" && hasPreorder
+              ? "Изготовим специально для вас. Начнём после оплаты."
             : availableQty > 0
               ? "Нужное количество недоступно. Оставьте email — сообщим о пополнении."
               : "Оставьте email — сообщим, когда изделие появится в наличии.",
@@ -152,7 +155,7 @@ export default function StockLimitModal({
           {tab === "preorder" && hasPreorder ? (
             <div className="space-y-5">
               <p className="text-sm leading-relaxed">
-                Изготовление: {leadTimeDays} дней. Контакты и доставку можно
+                Изготовление — {productionEstimate(leadTimeDays)} после оплаты. Контакты и доставку можно
                 указать при оформлении.
               </p>
               <button

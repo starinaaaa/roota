@@ -1,6 +1,7 @@
 "use client";
 import { productTitle } from "@/lib/product-title";
 
+import { productionEstimate } from "@/lib/preorder-copy";
 import { bindPrepositions } from "@/lib/typography";
 import Image from "@/components/ui/StoreImage";
 import Link from "next/link";
@@ -65,7 +66,7 @@ export default function CartLineItem({
           </div>
           {item.purchase_mode === "preorder" && (
             <p className="text-caption">
-              Предзаказ · {product.lead_time_days} дней
+              Предзаказ · {productionEstimate(product.lead_time_days)}
             </p>
           )}
 

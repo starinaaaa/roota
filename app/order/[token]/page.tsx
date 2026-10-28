@@ -1,3 +1,4 @@
+import { productionEstimate } from "@/lib/preorder-copy";
 import { courierContactLabel } from "@/lib/courier-contact";
 import { orderProduction } from "@/lib/shop-operations";
 import { plannedReadyDate } from "@/lib/production";
@@ -216,7 +217,7 @@ export default async function CustomerOrderPage({
                     <p className="text-stone-600">
                       Предзаказ
                       {item.lead_time_days
-                        ? ` · изготовление до ${item.lead_time_days} дней`
+                        ? ` · ${productionEstimate(item.lead_time_days)}`
                         : " · срок изготовления уточним"}
                     </p>
                   )}

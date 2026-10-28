@@ -22,7 +22,7 @@ test("customer states distinguish pickup, receipt, preorders and late payment", 
   );
   assert.match(
     customerOrderState({ ...paid, hasPreorder: true, leadTimeDays: 21 }).detail,
-    /21/,
+    /примерно 3 недели/,
   );
   assert.doesNotMatch(
     customerOrderState({ ...paid, hasPreorder: true }).detail,
@@ -217,7 +217,7 @@ test("preorders show manual production between payment and shipping without chan
   assert.equal(customerOrderState(base).title, "Изготавливается");
   assert.equal(customerOrderState(base).step, 2);
   assert.match(customerOrderState(base).detail, /Начали лепить/);
-  assert.match(customerOrderState(base).detail, /21 дня после оплаты/);
+  assert.match(customerOrderState(base).detail, /примерно 3 недели после оплаты/);
   assert.equal(customerOrderState({ ...base, payment_status: "pending" }).title, "Ожидаем оплату");
   assert.equal(customerOrderState({ ...base, status: "confirmed" }).step, 3);
   assert.equal(customerOrderState({ ...base, status: "shipped" }).step, 4);

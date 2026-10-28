@@ -177,7 +177,7 @@ test("catalogue search, price bounds and sort combine without mutating products;
     selectionSchema.safeParse([
       {
         productId: randomUUID(),
-        configuration: { size: 6, stems: 1, flowers: 2, leaves: 1 },
+        configuration: { size: 6, stems: 0, flowers: 0, leaves: 0 },
       },
     ]).success,
     false,
@@ -422,7 +422,7 @@ test("manual confirmation is atomic and idempotent; production plans start at pa
       sales: string;
       refunds: string;
       repeat_orders: number;
-    }>(financeSql, ["2026-10-27", "2026-10-28"]);
+    }>(financeSql, ["2026-10-27", "2026-10-28", []]);
     assert.equal(report.orders, 1);
     assert.equal(Number(report.sales), 3300);
     assert.equal(Number(report.refunds), 500);

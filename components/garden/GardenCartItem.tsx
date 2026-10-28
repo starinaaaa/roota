@@ -11,6 +11,7 @@ import {
   gardenPrice,
   gardenSummary,
 } from "@/lib/garden";
+import { productionEstimate } from "@/lib/preorder-copy";
 import { formatPrice } from "@/lib/format-price";
 import type { CartItem } from "@/types";
 import GardenBuilder from "./GardenBuilder";
@@ -56,8 +57,8 @@ export default function GardenCartItem({ item }: { item: CartItem }) {
               </span>
             )}
           </p>
-          <p className="text-xs leading-relaxed text-stone-600">
-            3 недели изготовления после оплаты
+          <p className="text-ui font-medium leading-relaxed text-[#526444]">
+            Предзаказ · {productionEstimate(21)} после оплаты
           </p>
         </div>
       </div>

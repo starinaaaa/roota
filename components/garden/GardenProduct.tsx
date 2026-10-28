@@ -1,6 +1,7 @@
 "use client";
 
 import { shopFeatures } from "@/lib/shop-features";
+import { productionEstimate } from "@/lib/preorder-copy";
 import FavoriteButton from "@/components/favorites/FavoriteButton";
 import { useState } from "react";
 import { useCart } from "@/hooks/useCart";
@@ -33,6 +34,9 @@ export default function GardenProduct({
         <h1 className="font-display text-section leading-tight text-stone-900">
           Сад
         </h1>
+        <p className="inline-block rounded-md border border-[#687851]/30 bg-[#f1f3eb] px-4 py-3 text-ui font-medium text-[#526444]">
+          Предзаказ · {productionEstimate(21)} после оплаты
+        </p>
         <p className="max-w-xl text-copy leading-relaxed text-stone-700">
           Постройте свой домашний сад. Найдите равновесие, соберите башенки и
           попробуйте ещё раз.

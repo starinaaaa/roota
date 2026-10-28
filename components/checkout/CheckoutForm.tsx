@@ -2,7 +2,8 @@
 
 import { contactChannels, contactForChannel, type ContactChannel } from "@/lib/courier-contact";
 import { checkoutIssue } from "@/lib/analytics/checkout-errors";
-import { plannedReadyDate, readyDateLabel } from "@/lib/production";
+import PreorderNotice from "@/components/product/PreorderNotice";
+import { productionEstimate } from "@/lib/preorder-copy";
 import { productTitle } from "@/lib/product-title";
 import GardenCartItem from "@/components/garden/GardenCartItem";
 
@@ -38,6 +39,7 @@ type Props = {
   deliveryEnabled: boolean;
   draftKey: string;
   reviewOnly?: boolean;
+  preorderReadyOn: string | null;
 };
 
 export default function CheckoutForm({
@@ -45,6 +47,7 @@ export default function CheckoutForm({
   deliveryEnabled,
   draftKey,
   reviewOnly = false,
+  preorderReadyOn,
 }: Props) {
   const router = useRouter();
   const requestKey = useRef<string | null>(null);
@@ -641,10 +644,8 @@ export default function CheckoutForm({
                       × {item.quantity}
                     </p>
                     {item.purchase_mode === "preorder" && (
-                      <p className="text-caption text-stone-600">
-                        Предзаказ · изготовление {item.product.lead_time_days}
-                        {bindPrepositions(" ")}
-                        дней
+                      <p className="mt-2 text-ui font-medium text-[#526444]">
+                        Предзаказ · {productionEstimate(item.product.lead_time_days)}
                       </p>
                     )}
                   </div>
@@ -657,7 +658,12 @@ export default function CheckoutForm({
               ))}
             </div>
 
-            {initialItems.some(i => i.purchase_mode === "preorder") && <p className="text-ui text-stone-600">Если оплатить сегодня, плановая готовность — {readyDateLabel(plannedReadyDate(new Date(), Math.max(1, ...initialItems.filter(i => i.purchase_mode === "preorder").map(i => i.product.lead_time_days ?? 21)))!)}. Весь заказ отправим после готовности всех изделий. Срок доставки добавляется отдельно; дата закрепится после оплаты.</p>}
+            {initialItems.some(i => i.purchase_mode === "preorder") && (
+              <PreorderNotice
+                days={Math.max(0, ...initialItems.filter(i => i.purchase_mode === "preorder").map(i => i.product.lead_time_days ?? 0))}
+                readyOn={preorderReadyOn}
+              />
+            )}
             {/* Итого */}
             <div className="space-y-4">
               <div className="flex justify-between gap-6">

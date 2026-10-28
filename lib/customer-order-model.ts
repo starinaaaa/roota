@@ -1,4 +1,4 @@
-import { readyDateLabel } from "./production";
+import { estimatedReadyLabel, productionEstimate } from "./preorder-copy";
 export const orderSteps = [
   "Оформлен",
   "Оплачен",
@@ -134,10 +134,10 @@ function baseCustomerOrderState(order: CustomerOrder) {
     return {
       title: "Изготавливается",
       step: 2,
-      detail: `Заказ принят в работу. Начали лепить изделия для вашего заказа.${order.leadTimeDays ? ` Срок изготовления — до ${order.leadTimeDays} ${order.leadTimeDays % 10 === 1 && order.leadTimeDays % 100 !== 11 ? "дня" : "дней"} после оплаты.` : ""} После готовности передадим заказ в доставку.`,
+      detail: `Заказ принят в работу. Начали лепить изделия для вашего заказа.${order.readyOn ? ` Готовность — ${estimatedReadyLabel(order.readyOn)}.` : order.leadTimeDays ? ` Изготовление — ${productionEstimate(order.leadTimeDays)} после оплаты.` : ""} После готовности передадим заказ в доставку.`,
     };
-  const detail = order.readyOn ? `Плановая готовность — ${readyDateLabel(order.readyOn)}. Весь заказ отправим после готовности всех изделий; срок доставки добавляется отдельно.` : order.leadTimeDays
-    ? `Изготовление — до ${order.leadTimeDays} дней после оплаты. После готовности передадим заказ в доставку.`
+  const detail = order.readyOn ? `Готовность — ${estimatedReadyLabel(order.readyOn)}. Весь заказ отправим после готовности всех изделий; срок доставки добавляется отдельно.` : order.leadTimeDays
+    ? `Изготовление — ${productionEstimate(order.leadTimeDays)} после оплаты. После готовности передадим заказ в доставку.`
     : order.hasPreorder
       ? "Оплата получена. Срок изготовления предзаказа уточним лично."
       : "Оплата получена. Отправим в течение 1–3 рабочих дней.";

@@ -15,6 +15,7 @@ import {
   type GardenConfiguration,
   type GardenPart,
 } from "@/lib/garden";
+import PreorderNotice from "@/components/product/PreorderNotice";
 import { formatPrice } from "@/lib/format-price";
 
 type Props = {
@@ -257,6 +258,7 @@ export default function GardenBuilder({
           детали. В поштучном режиме скидки нет.
         </p>
       </div>
+      <PreorderNotice days={21} garden />
       <div className="space-y-3">
         <button
           disabled={!valid || pending}
@@ -281,12 +283,6 @@ export default function GardenBuilder({
             {error}
           </p>
         )}
-        <p className="text-sm leading-relaxed text-stone-700">
-          Изготовление —{" "}
-          <strong className="font-medium">3 недели после оплаты.</strong>{" "}
-          Кубикам нужно хорошо высохнуть перед обжигом! Срок доставки
-          добавляется отдельно.
-        </p>
       </div>
     </form>
   );

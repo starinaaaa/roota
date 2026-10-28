@@ -1,4 +1,5 @@
 "use client";
+import PreorderNotice from "./PreorderNotice";
 import { shopFeatures } from "@/lib/shop-features";
 import FavoriteButton from "@/components/favorites/FavoriteButton";
 import { productTitle } from "@/lib/product-title";
@@ -169,33 +170,30 @@ export default function ProductInfo({
           </>
         ) : (
           <>
-            <button
-              disabled
-              className="
-                w-full border border-stone-200 text-stone-300
-                font-body text-ui tracking-[0.08em] uppercase
-                py-4 px-8 cursor-not-allowed
-              "
-            >
-              Скоро в наличии
-            </button>
-            <button
-              onClick={onUnavailable}
-              className="
-              w-full border border-stone-300 text-stone-700
-              font-body text-ui tracking-[0.08em] uppercase
-              py-4 px-8
-              hover:bg-stone-900 hover:text-stone-50 hover:border-stone-900
-              transition-all duration-300
-            "
-            >
-              Уведомить о поступлении
-            </button>
-            {product.preorder_enabled && product.lead_time_days && (
-              <button className="admin-secondary" onClick={onPreorder}>
-                Предзаказ · изготовление {product.lead_time_days} дней
+            {product.preorder_enabled && product.lead_time_days ? (
+              <>
+                <PreorderNotice days={product.lead_time_days} />
+                <button
+                  className="w-full rounded-md bg-stone-900 px-8 py-4 font-body text-ui uppercase tracking-[0.08em] text-stone-50 transition-colors hover:bg-stone-700"
+                  onClick={onPreorder}
+                >
+                  Оформить предзаказ
+                </button>
+              </>
+            ) : (
+              <button
+                disabled
+                className="w-full border border-stone-200 px-8 py-4 font-body text-ui uppercase tracking-[0.08em] text-stone-400 cursor-not-allowed"
+              >
+                Скоро в наличии
               </button>
             )}
+            <button
+              onClick={onUnavailable}
+              className="w-full border border-stone-300 px-8 py-4 font-body text-ui uppercase tracking-[0.08em] text-stone-700 transition-colors hover:bg-stone-900 hover:text-stone-50 hover:border-stone-900"
+            >
+              Уведомить о поступлении
+            </button>
           </>
         )}
       </div>

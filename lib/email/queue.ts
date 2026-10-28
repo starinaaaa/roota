@@ -1,6 +1,7 @@
+import { estimatedReadyLabel, productionEstimate } from "@/lib/preorder-copy";
 import { courierContactLabel } from "@/lib/courier-contact";
 import { orderProduction } from "@/lib/shop-operations";
-import { plannedReadyDate, readyDateLabel } from "@/lib/production";
+import { plannedReadyDate } from "@/lib/production";
 import { getPool } from "@/lib/db/pool";
 import { cdnImageUrl } from "@/lib/image-cdn";
 import { orderProductDetails } from "@/lib/order-product-details";
@@ -180,7 +181,7 @@ export async function processEmailQueue() {
         values.fulfillment = o.order_items.some(
           (i) => i.purchase_mode === "preorder",
         )
-          ? `В заказе есть изделие на заказ.${leadDays ? ` Срок изготовления — до ${leadDays} дней.` : " Срок изготовления согласуем с вами."} О передаче в доставку сообщим отдельным письмом.`
+          ? `В заказе есть изделие на заказ.${leadDays ? ` Изготовление — ${productionEstimate(leadDays)} после оплаты.` : " Срок изготовления согласуем с вами."} О передаче в доставку сообщим отдельным письмом.`
           : courier
             ? `Доставка до двери по Москве и Подмосковью. Напишем в течение суток: ${courierContactLabel(o.delivery_details)}, согласуем время и стоимость, затем передадим заказ курьеру.`
             : "Готовые изделия передаём в доставку в течение 1–3 рабочих дней после оплаты. О передаче в доставку сообщим отдельным письмом.";
@@ -193,7 +194,7 @@ export async function processEmailQueue() {
             ? production.ready_on
             : plannedReadyDate(paidAt, leadDays);
           if (ready)
-            values.fulfillment = `Плановая готовность всего заказа — ${readyDateLabel(ready)}. Отправим весь заказ после готовности всех изделий. Срок доставки добавляется отдельно.`;
+            values.fulfillment = `Готовность всего заказа — ${estimatedReadyLabel(ready)}. Отправим весь заказ после готовности всех изделий. Срок доставки добавляется отдельно.`;
         }
         values.payment = paidAt
           ? `Оплачено ${new Date(paidAt).toLocaleString("ru-RU", { timeZone: "Europe/Moscow" })} МСК`

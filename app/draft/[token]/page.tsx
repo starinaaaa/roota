@@ -1,3 +1,4 @@
+import { productionEstimate } from "@/lib/preorder-copy";
 import { reviewQuery } from "@/lib/review-schema";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -61,7 +62,7 @@ export default async function Page({
           <p>{formatPrice(i.price * i.quantity)}</p>
           {i.configuration && <p>{gardenSummary(i.configuration)}</p>}
           {i.mode === "preorder" && (
-            <p>Изготовление: до {i.lead_days} дней после оплаты</p>
+            <p>Изготовление — {productionEstimate(i.lead_days)} после оплаты</p>
           )}
         </article>
       ))}

@@ -12,7 +12,8 @@
   ],
   "orders": [
     "request_payload",
-    "delivery_details"
+    "delivery_details",
+    "promo_checkout_payload"
   ],
   "site_drafts": [
     "payload"
@@ -48,7 +49,8 @@
     "request_payload",
     "form",
     "items",
-    "delivery"
+    "delivery",
+    "promo_checkout_payload"
   ],
   "order_shipments": [
     "request_payload",

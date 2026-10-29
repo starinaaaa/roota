@@ -3,6 +3,9 @@ import { relationList } from "@/lib/relation-list";
 import { requireAdmin } from "@/lib/auth";
 import { createServerClient } from "@/lib/db";
 import { moderateReview } from "@/lib/actions/email-admin";
+import { getPool } from "@/lib/db/pool";
+import { confirmTelegramReview } from "@/lib/actions/review-rewards";
+import { rewardExpiry } from "@/lib/review-copy";
 export const dynamic = "force-dynamic";
 export default async function ReviewsAdmin() {
   await requireAdmin();
@@ -22,6 +25,19 @@ export default async function ReviewsAdmin() {
   ]);
   if (reviews.error || invites.error)
     throw new Error("Не удалось загрузить отзывы");
+  const telegramOrders = (
+    await getPool().query<{
+      id: string;
+      order_number: string;
+      customer_name: string;
+      code: string | null;
+      expires_at: Date | null;
+      source: string | null;
+    }>(`select o.id,o.order_number,o.customer_name,r.code,r.expires_at,r.source from orders o
+    left join review_rewards r on r.source_order_id=o.id
+    where o.payment_status='paid' and o.delivery_stage='delivered' and o.status::text<>'cancelled'
+    order by o.updated_at desc limit 100`)
+  ).rows;
   return (
     <div className="space-y-6">
       <h1 className="font-display text-page">Отзывы</h1>
@@ -29,6 +45,41 @@ export default async function ReviewsAdmin() {
         Публикуйте отзывы любой оценки, если покупатель разрешил публикацию.
         Контакты остаются в админке.
       </p>
+      <section className="admin-card space-y-4">
+        <h2 className="text-xl">Отзывы в Telegram и промокоды</h2>
+        <p>
+          После получения честного отзыва подтвердите его здесь. Покупатель
+          получит персональный код на 10% на изделия на 30 дней. Оценка, фото и
+          согласие на публикацию не влияют на выдачу.
+        </p>
+        {telegramOrders.length === 0 && <p>Пока нет полученных заказов.</p>}
+        {telegramOrders.map((o) => (
+          <div key={o.id} className="border-t border-stone-200 pt-4 space-y-2">
+            <p>
+              Заказ {o.order_number} · {o.customer_name}
+            </p>
+            {o.code ? (
+              <p>
+                Код выдан за отзыв{" "}
+                {o.source === "telegram" ? "в Telegram" : "на сайте"}:{" "}
+                <span className="font-mono select-all">{o.code}</span> · до{" "}
+                {rewardExpiry(o.expires_at!)}
+              </p>
+            ) : (
+              <form action={confirmTelegramReview} className="space-y-3">
+                <input type="hidden" name="order_id" value={o.id} />
+                <label className="flex gap-2">
+                  <input type="checkbox" name="confirmed" required />
+                  Получен отзыв об этом заказе в Telegram
+                </label>
+                <SubmitButton className="admin-button">
+                  Подтвердить отзыв и выдать промокод
+                </SubmitButton>
+              </form>
+            )}
+          </div>
+        ))}
+      </section>
       {reviews.data.map((r) => (
         <article key={r.id} className="admin-card space-y-3">
           <p>

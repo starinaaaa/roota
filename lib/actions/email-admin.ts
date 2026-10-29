@@ -1,17 +1,15 @@
 "use server";
-import { deliveryEmailUpdate } from "@/lib/delivery/customer-parcels";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
 import { createServerClient } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { emailProviderKey } from "@/lib/email/provider-config";
-import { renderEmail, templateKinds } from "@/lib/email/templates";
+import { templateKinds } from "@/lib/email/templates";
+import { renderEmailPreview, reviewPreviewVariants } from "@/lib/email/preview";
+import { getSiteContent } from "@/lib/site";
 import { sendUnisenderEmail } from "@/lib/email/unisender-transport";
 import { randomUUID } from "node:crypto";
-import { siteUrl } from "@/lib/seo";
 import { studioEmailMessage } from "@/lib/email/studio-notifications";
-import { LEGAL_VERSION } from "@/lib/legal";
-import { ozonTrackingHint } from "@/lib/delivery/tracking";
 
 export async function testStudioNotification() {
   await requireAdmin();
@@ -138,34 +136,11 @@ export async function testEmailTemplate(form: FormData) {
     to: "hello@roota.moscow",
     idempotenceKey: messageId,
     metadata: { message_id: messageId },
-    ...renderEmail(
-      t,
-      {
-        number: "GL-ТЕСТ",
-        legal_version: LEGAL_VERSION,
-        total: "3500",
-        items: "Тарелочка × 1 — 3500 ₽",
-        product: "Тарелочка",
-        date: "14 октября 2026, 12:00 МСК",
-        shipping: "350 ₽",
-        payment: "Оплачено · пример",
-        recipient: "Покупатель Roota",
-        delivery: "Пункт выдачи Ozon",
-        address: "Адрес выбранного пункта",
-        tracking: "Появится после оформления отправления",
-        delivery_subject: deliveryEmailUpdate(kind, "ПРИМЕР", []).subject,
-        delivery_update: deliveryEmailUpdate(kind, "ПРИМЕР", []).message,
-        tracking_hint: ozonTrackingHint(false),
-        fulfillment:
-          "Готовые изделия передаём в доставку в течение 1–3 рабочих дней после оплаты.",
-        reservation: "Тестовый резерв",
-        purpose: "тестовое уведомление",
-      },
-      siteUrl("/"),
-      "Открыть Roota",
-      undefined,
-      kind.startsWith("order_"),
-      [{ name: "Тарелочка", quantity: 1, price: 3150 }],
+    ...renderEmailPreview(
+      { ...t, kind },
+      reviewPreviewVariants.find((v) => v.id === form.get("variant"))?.id ??
+        "plate",
+      (await getSiteContent()).telegram,
     ),
   });
   const { error: saveError } = await db

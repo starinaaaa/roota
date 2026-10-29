@@ -52,7 +52,7 @@ export default async function CustomerOrderPage({
     createServerClient()
       .from("orders")
       .select(
-        "order_number,created_at,status,payment_status,total_amount,delivery_amount,insurance_amount,delivery_type,delivery_address,delivery_details,tracking_number,delivery_stage,items:order_items(id,product_id,product_name,quantity,price,purchase_mode,lead_time_days,configuration),shipments:order_shipments(state,posting_number,status_history,request_payload,carrier_status,synced_at)",
+        "order_number,created_at,status,payment_status,total_amount,discount_amount,delivery_amount,insurance_amount,delivery_type,delivery_address,delivery_details,tracking_number,delivery_stage,items:order_items(id,product_id,product_name,quantity,price,purchase_mode,lead_time_days,configuration),shipments:order_shipments(state,posting_number,status_history,request_payload,carrier_status,synced_at)",
       )
       .eq("id", orderId)
       .single(),
@@ -305,6 +305,7 @@ export default async function CustomerOrderPage({
                 )}
               </span>
             </div>
+            {Number(order.discount_amount)>0 && <div className="flex justify-between gap-6 text-copy text-[#526444]"><span>Скидка на изделия · 10%</span><span>−{formatPrice(Number(order.discount_amount))}</span></div>}
             <div className="flex justify-between gap-6 text-copy text-stone-600">
               <span>Доставка</span>
               <span className="text-right tabular-nums">

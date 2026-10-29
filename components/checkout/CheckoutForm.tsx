@@ -18,6 +18,8 @@ import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { formatPrice } from "@/lib/format-price";
 import { createOrder } from "@/lib/actions/orders";
+import { checkReviewPromo } from "@/lib/actions/review-rewards";
+import { normalizeRussianPhone } from "@/lib/contacts";
 import type { CartItem, CheckoutFormData } from "@/types";
 
 import { touchCheckoutEmail } from "@/lib/actions/email";
@@ -60,6 +62,24 @@ export default function CheckoutForm({
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [promoInput, setPromoInput] = useState("");
+  const [promo, setPromo] = useState<{code: string; discount: number; phone: string; expiresAt: string} | null>(null);
+  const [promoPending, setPromoPending] = useState(false);
+  const [promoError, setPromoError] = useState("");
+  const [promoExpired, setPromoExpired] = useState(false);
+  const promoRequest = useRef(0);
+  useEffect(() => {
+    if (!promo) return;
+    let timer: ReturnType<typeof setTimeout>;
+    const checkExpiry = () => {
+      const remaining = Date.parse(promo.expiresAt)-Date.now();
+      if (remaining<=0) setPromoExpired(true);
+      else timer=setTimeout(checkExpiry,Math.min(remaining,86_400_000));
+    };
+    timer=setTimeout(checkExpiry,Math.min(Math.max(0,Date.parse(promo.expiresAt)-Date.now()),86_400_000));
+    return () => clearTimeout(timer);
+  }, [promo]);
 
   const [draftReady, setDraftReady] = useState(false);
   const [deliveryDraft, setDeliveryDraft] =
@@ -194,6 +214,22 @@ export default function CheckoutForm({
     (sum, i) => sum + i.product.price * i.quantity,
     0,
   );
+  const activePromo = promo && promo.phone === normalizeRussianPhone(formData.phone) && !promoExpired ? promo : null;
+  const discount = activePromo?.discount ?? 0;
+  async function applyPromo() {
+    if (reviewOnly) return;
+    const attempt = ++promoRequest.current;
+    const currentPhone = formData.phone;
+    setPromoPending(true);
+    setPromoError("");
+    try {
+      const result = await checkReviewPromo(promoInput, currentPhone);
+      if (attempt !== promoRequest.current) return;
+      if (result.error || !result.code) { setPromo(null); setPromoError(result.error ?? "Не удалось применить промокод."); }
+      else { setPromoExpired(false); setPromo({ code: result.code, discount: result.discount, expiresAt: result.expiresAt, phone: normalizeRussianPhone(currentPhone)! }); requestKey.current=null; }
+    } catch { if (attempt === promoRequest.current) setPromoError("Не удалось проверить промокод. Попробуйте ещё раз."); }
+    finally { if (attempt === promoRequest.current) setPromoPending(false); }
+  }
   const courier = formData.deliveryMethod === "yandex_courier";
 
   function selectDelivery(method: "ozon_point" | "yandex_courier") {
@@ -232,6 +268,7 @@ export default function CheckoutForm({
       setConsentEmail("");
     }
     setFormData(next);
+    requestKey.current = null;
     if (fieldErrors[name]) {
       const parsed = checkoutSchema.safeParse(next);
       if (parsed.success || !parsed.error.issues.some((i) => i.path[0] === name)) trackCheckoutProgress({ stage: "error_corrected", method: formData.deliveryMethod!, ...checkoutIssue({ path: [name], code: "custom" }) });
@@ -302,16 +339,22 @@ export default function CheckoutForm({
     return () => clearTimeout(timer);
   }, [formData, cartKey, reviewOnly]);
   const finalTotal = courier
-    ? totalPrice
+    ? Math.round((totalPrice-discount)*100)/100
     : quote
-      ? Math.round((totalPrice + quote.totalCost) * 100) / 100
+      ? Math.round((totalPrice-discount + quote.totalCost) * 100) / 100
       : null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (reviewOnly || submitting.current) return;
+    if (promoPending || (promoInput.trim() && !activePromo)) {
+      setPromoError(promoPending ? "Дождитесь проверки промокода." : "Примените промокод или очистите поле, чтобы продолжить без скидки.");
+      document.getElementById("promoCode")?.focus();
+      return;
+    }
     const validated = checkoutSchema.safeParse({
       ...formData,
+      promoCode: activePromo?.code ?? "",
       address: courier
         ? formData.address
         : (quote?.point.address ?? "Пункт ещё не выбран"),
@@ -348,7 +391,7 @@ export default function CheckoutForm({
     // The server reads the cart and verifies the total; no items are trusted from the browser.
     let result;
     try {
-      result = await createOrder(formData, requestKey.current, finalTotal);
+      result = await createOrder({ ...formData, promoCode: activePromo?.code ?? "" }, requestKey.current, finalTotal);
     } catch {
       result = {
         code: "NETWORK_ERROR",
@@ -673,6 +716,21 @@ export default function CheckoutForm({
               />
             )}
             {/* Итого */}
+            <div className="space-y-2">
+              <label htmlFor="promoCode" className="block font-body text-ui">Промокод</label>
+              <div className="flex gap-2">
+                <input id="promoCode" value={promoInput} maxLength={40} autoComplete="off" spellCheck={false}
+                  disabled={pending || promoPending || reviewOnly} aria-describedby="promo-help" aria-invalid={Boolean(promoError)}
+                  onChange={e=>{setPromoInput(e.target.value.toUpperCase());setPromo(null);setPromoError("");requestKey.current=null;}}
+                  className="min-w-0 flex-1 border border-stone-200 bg-transparent px-3 py-3 text-ui" />
+                <button type="button" onClick={applyPromo} disabled={pending || promoPending || reviewOnly || !promoInput.trim()}
+                  className="border border-stone-300 px-3 text-ui disabled:opacity-50">{promoPending ? "Проверяем…" : "Применить"}</button>
+              </div>
+              <p id="promo-help" className="text-caption text-stone-600">Персональный код проверяется по телефону. Скидка действует только на изделия.</p>
+              {activePromo && <p role="status" className="text-ui text-[#526444]">Скидка 10% применена: −{formatPrice(discount)}. <button type="button" className="underline" disabled={pending} onClick={()=>{setPromo(null);setPromoInput("");requestKey.current=null;}}>Убрать</button></p>}
+              {promo && !activePromo && <p role="status" className="text-caption">Проверьте промокод повторно: телефон изменился или срок кода истёк.</p>}
+              {(promoError || fieldErrors.promoCode) && <p role="alert" className="text-caption text-red-700">{promoError || fieldErrors.promoCode}</p>}
+            </div>
             <div className="space-y-4">
               <div className="flex justify-between gap-6">
                 <span className="font-body text-copy text-stone-600">
@@ -682,6 +740,7 @@ export default function CheckoutForm({
                   {bindPrepositions(formatPrice(totalPrice))}
                 </span>
               </div>
+              {discount>0 && <div className="flex justify-between gap-6 text-ui text-[#526444]"><span>Скидка на изделия · 10%</span><span>−{formatPrice(discount)}</span></div>}
               <div className="flex justify-between gap-6">
                 <span className="font-body text-copy text-stone-600">
                   Доставка
@@ -712,7 +771,7 @@ export default function CheckoutForm({
                   )}
                 </span>
                 <span className="font-display text-[2rem] leading-none md:text-section text-stone-900 tabular-nums whitespace-nowrap">
-                  {bindPrepositions(formatPrice(finalTotal ?? totalPrice))}
+                  {bindPrepositions(formatPrice(finalTotal ?? totalPrice-discount))}
                 </span>
               </div>
             </div>

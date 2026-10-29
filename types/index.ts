@@ -110,6 +110,7 @@ export type OrderItem = {
 
 // Форма оформления заказа
 export type CheckoutFormData = {
+  promoCode?: string;
   contactChannel?: import("@/lib/courier-contact").ContactChannel;
   contactValue?: string;
   name: string;

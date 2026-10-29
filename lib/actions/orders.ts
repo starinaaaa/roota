@@ -18,6 +18,10 @@ import {
   orderNumberForPayment,
 } from "@/lib/payments/robokassa";
 const messages: Record<string, string> = {
+  PROMO_INVALID: "Промокод не найден или не подходит для указанного телефона.",
+  PROMO_EXPIRED: "Срок действия промокода истёк или он был отменён.",
+  PROMO_USED: "Этот промокод уже использован.",
+  PROMO_RESERVED: "Промокод уже применён к неоплаченному заказу. Оплатите или отмените его перед новым оформлением.",
   ORDER_UNAVAILABLE:
     "Срок резерва истёк. Соберите заказ заново, чтобы проверить наличие.",
   EMPTY_CART: "Корзина пуста",
@@ -122,15 +126,17 @@ async function createOrderInternal(
           throw new Error("Не удалось проверить доставку.");
       }
     }
+    // Preserve existing retry payloads for orders without a promotion.
+    const { promoCode, ...ordinaryForm } = form.data;
     const { data, error } = await db.rpc(
-      mode ? "checkout_robokassa" : "checkout_delivery_order",
+      form.data.promoCode ? "checkout_reward_order" : mode ? "checkout_robokassa" : "checkout_delivery_order",
       {
         p_session: session,
         p_key: key.data,
-        p_form: form.data,
+        p_form: promoCode ? form.data : ordinaryForm,
         p_expected_total: expectedTotal,
         p_quote: courier ? null : form.data.deliveryQuoteId,
-        ...(mode ? { p_mode: mode } : {}),
+        ...(form.data.promoCode ? { p_mode: mode ?? "none" } : mode ? { p_mode: mode } : {}),
       },
     );
     if (error)
@@ -139,7 +145,7 @@ async function createOrderInternal(
         code: /^[A-Z_]{1,80}$/.test(error.message)
           ? error.message
           : "SAVE_FAILED",
-        field: /DELIVERY|PACKING/.test(error.message)
+        field: /PROMO/.test(error.message) ? "promoCode" : /DELIVERY|PACKING/.test(error.message)
           ? "deliveryQuoteId"
           : /STOCK|CART|PRICE|UNAVAILABLE|PREORDER/.test(error.message)
             ? "cart"

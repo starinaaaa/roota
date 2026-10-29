@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Image from "@/components/ui/StoreImage";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 
@@ -44,9 +45,11 @@ export default function ProductImages({ images: sourceImages, name }: Props) {
 
   // Scroll lock while lightbox is open
   useEffect(() => {
-    document.body.style.overflow = lightboxOpen ? "hidden" : "";
+    if (!lightboxOpen) return;
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = "";
+      document.body.style.overflow = overflow;
     };
   }, [lightboxOpen]);
 
@@ -196,12 +199,13 @@ export default function ProductImages({ images: sourceImages, name }: Props) {
       </div>
 
       {/* ── Lightbox ────────────────────────────────────────────────────────────
-          fixed inset-0 works even inside overflow:hidden parents.
+          Portal to body escapes the sticky gallery's stacking context so the
+          lightbox covers the header and the product configuration controls.
           Active state is shared with the gallery — thumbnails and lightbox
           stay in sync, and closing the lightbox leaves the gallery on the
           last image viewed.
       ─────────────────────────────────────────────────────────────────────── */}
-      {lightboxOpen && (
+      {lightboxOpen && createPortal(
         <div
           role="dialog"
           aria-modal="true"
@@ -276,7 +280,8 @@ export default function ProductImages({ images: sourceImages, name }: Props) {
               {active + 1} / {images.length}
             </p>
           )}
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );

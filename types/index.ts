@@ -118,6 +118,7 @@ export type CheckoutFormData = {
   email: string;
   deliveryType: DeliveryType;
   deliveryMethod?: "ozon_point" | "yandex_courier";
+  splitShipments?: boolean;
   address: string;
   comment: string;
   legalVersion: string;

@@ -1,7 +1,7 @@
 "use client";
 import { trackCheckoutProgress } from "@/lib/analytics/checkout-client";
 import { bindPrepositions } from "@/lib/typography";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { normalizeRussianPhone } from "@/lib/contacts";
 import type { DeliveryPoint, DeliveryQuote } from "@/lib/delivery/model";
@@ -19,6 +19,7 @@ import type { CheckoutDeliveryDraft } from "@/lib/checkout-draft";
 
 type Props = {
   phone: string;
+  splitShipments?: boolean;
   cartKey: string;
   enabled: boolean;
   onQuote: (quote: DeliveryQuote | null) => void;
@@ -27,6 +28,7 @@ type Props = {
 };
 export default function DeliverySelector({
   phone,
+  splitShipments = false,
   cartKey,
   enabled,
   onQuote,
@@ -81,14 +83,20 @@ export default function DeliverySelector({
     setBusy(false);
     onQuoteRef.current(null);
   }
+  const onContextChanged = useEffectEvent(() => {
+    const selected = point;
+    reset();
+    if (selected && normalizeRussianPhone(phone)) void request("quote", selected);
+  });
   const previousContext = useRef({ phone, cartKey });
   useEffect(() => {
     const counter = revision;
     if (
       previousContext.current.phone !== phone ||
       previousContext.current.cartKey !== cartKey
-    )
-      reset();
+    ) {
+      onContextChanged();
+    }
     previousContext.current = { phone, cartKey };
     setOpen(false);
     return () => {
@@ -257,6 +265,7 @@ export default function DeliverySelector({
           phone,
           city: selectedCity.name,
           pointId: selected?.id,
+          splitShipments,
         }),
         signal: abort.signal,
       });

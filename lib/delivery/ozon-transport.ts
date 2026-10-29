@@ -136,6 +136,7 @@ export class OzonTransport {
           "delivery-api.delivery-point",
           "delivery-api.order",
           "delivery-api.posting",
+          "delivery-api.return",
         ]);
       } catch (error) {
         // Apps granted delivery-api.all may reject individual scope names.

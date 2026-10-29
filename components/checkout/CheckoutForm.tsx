@@ -1,5 +1,7 @@
 "use client";
 
+import CourierAddress from "./CourierAddress";
+
 import { contactChannels, contactForChannel, type ContactChannel } from "@/lib/courier-contact";
 import { checkoutIssue } from "@/lib/analytics/checkout-errors";
 import PreorderNotice from "@/components/product/PreorderNotice";
@@ -83,9 +85,11 @@ export default function CheckoutForm({
     newsletterDataConsent: true,
     subscribeToNews: true,
     reviewConsent: false,
+    splitShipments: false,
     emailConsent: false,
   });
 
+  const canSplitShipments = initialItems.some(i=>i.purchase_mode === "preorder") && initialItems.some(i=>i.purchase_mode !== "preorder");
   useEffect(() => {
     let restoredMethod: "ozon_point" | "yandex_courier" = "ozon_point";
     try {
@@ -104,6 +108,7 @@ export default function CheckoutForm({
           contactValue: draft.contactValue,
           comment: draft.comment,
           deliveryMethod: draft.deliveryMethod,
+          splitShipments: draft.splitShipments && canSplitShipments,
           deliveryType:
             draft.deliveryMethod === "yandex_courier" ? "moscow" : "russia",
           address:
@@ -119,7 +124,7 @@ export default function CheckoutForm({
     }
     trackCheckoutProgress({ stage: "checkout_opened", method: restoredMethod });
     setDraftReady(true);
-  }, [storageKey]);
+  }, [storageKey, canSplitShipments]);
   useEffect(() => {
     if (!draftReady) return;
     try {
@@ -140,6 +145,7 @@ export default function CheckoutForm({
           delivery: deliveryDraft,
           deliveryMethod: formData.deliveryMethod,
           address: formData.address,
+          splitShipments: formData.splitShipments,
         }),
       );
     } catch {
@@ -198,6 +204,7 @@ export default function CheckoutForm({
       deliveryMethod: method,
       deliveryType: method === "yandex_courier" ? "moscow" : "russia",
       deliveryQuoteId: undefined,
+      splitShipments: method === "yandex_courier" ? false : prev.splitShipments,
       address: "",
     }));
     setFieldErrors({});
@@ -278,14 +285,14 @@ export default function CheckoutForm({
     return () => clearTimeout(timer);
   }, [quote]);
   const cartKey = JSON.stringify(
-    initialItems.map((i) => [
+    [Boolean(formData.splitShipments), initialItems.map((i) => [
       i.product_id,
       i.id,
       i.configuration,
       i.quantity,
       i.product.price,
       i.purchase_mode,
-    ]),
+    ])],
   );
   useEffect(() => {
     if (reviewOnly) return;
@@ -549,19 +556,8 @@ export default function CheckoutForm({
                     placeholder={formData.contactChannel === "email" ? "example@email.com" : "@username"} required />}
                   {!formData.contactChannel && fieldErrors.contactValue && <p role="alert" className="text-red-700 text-caption">{fieldErrors.contactValue}</p>}
                 </fieldset>
-                <Field
-                  label="Адрес курьерской доставки *"
-                  id="address"
-                  name="address"
-                  type="text"
-                  value={formData.address}
-                  onChange={handleChange}
-                  onBlur={() => validateField("address")}
-                  error={fieldErrors.address}
-                  placeholder="Город, улица, дом, квартира"
-                  autoComplete="street-address"
-                  required
-                />
+                <CourierAddress value={formData.address ?? ""} error={fieldErrors.address}
+                  onChange={address=>{setFormData(prev=>({...prev,address}));setFieldErrors(prev=>({...prev,address:""}));requestKey.current=null;}} />
                 <p className="font-body text-caption text-stone-600">
                   {COURIER_DESCRIPTION}
                 </p>
@@ -569,6 +565,7 @@ export default function CheckoutForm({
             ) : (
               <DeliverySelector
                 phone={formData.phone}
+                splitShipments={formData.splitShipments}
                 cartKey={cartKey}
                 enabled={deliveryEnabled && !reviewOnly}
                 onQuote={receiveQuote}
@@ -658,12 +655,24 @@ export default function CheckoutForm({
               ))}
             </div>
 
+            {!courier && canSplitShipments && (
+              <label className="flex items-start gap-3 font-body text-ui">
+                <input type="checkbox" checked={Boolean(formData.splitShipments)} onChange={e=>{
+                  const splitShipments=e.target.checked;setQuote(null);setFormData(prev=>({...prev,splitShipments,deliveryQuoteId:undefined}));requestKey.current=null;
+                }} className="mt-1" />
+                <span>Хочу получить посылки раздельно быстрее
+                  <span className="block text-caption text-stone-600 mt-1">Готовые изделия отправим отдельно, предзаказ — после изготовления. Стоимость всех посылок рассчитаем до оплаты.</span>
+                </span>
+              </label>
+            )}
             {initialItems.some(i => i.purchase_mode === "preorder") && (
               <PreorderNotice
                 days={Math.max(0, ...initialItems.filter(i => i.purchase_mode === "preorder").map(i => i.product.lead_time_days ?? 0))}
                 readyOn={preorderReadyOn}
+                splitDispatch={Boolean(formData.splitShipments) && !courier}
               />
             )}
+            {quote?.parcelCount && quote.packagingFee !== undefined ? <p className="font-body text-caption text-stone-600">В стоимость доставки включена упаковка: {quote.parcelCount} × 250 ₽ = {formatPrice(quote.packagingFee)}.</p> : null}
             {/* Итого */}
             <div className="space-y-4">
               <div className="flex justify-between gap-6">

@@ -1,3 +1,4 @@
+import { syncOzonReturns } from "@/lib/delivery/returns-sync";
 import { syncOrderShipments } from "@/lib/delivery/shipment-sync";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,8 +11,11 @@ export async function GET(request: Request) {
     return Response.json({ error: "Доступ запрещён" }, { status: 401 });
   try {
     const result = await syncOrderShipments();
-    console.info("Order shipment sync", result);
-    return Response.json(result, { status: result.failed ? 503 : 200 });
+    let returns;
+    try { returns = await syncOzonReturns(); }
+    catch { returns = { checked: 0, failed: 1 }; }
+    console.info("Order shipment sync", { ...result, returns });
+    return Response.json({ ...result, returns }, { status: result.failed || returns.failed ? 503 : 200 });
   } catch {
     return Response.json(
       { error: "Не удалось обновить доставку" },

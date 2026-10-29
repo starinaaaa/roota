@@ -19,6 +19,7 @@ export const phone = z
   });
 export const checkoutSchema = z
   .object({
+    splitShipments: z.boolean().default(false),
     ...courierContactFields,
     name: z.string().trim().max(100).optional().default(""),
     firstName: z.string().trim().min(1, "Введите имя").max(50).optional(),

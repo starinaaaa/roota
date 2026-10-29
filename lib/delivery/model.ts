@@ -13,8 +13,19 @@ export type PackingRule = Dimensions & {
   active: boolean;
   garden_size?: number | null;
   updated_at: string;
-  parcels?: { items: DeliveryContext["items"]; packing: PackingRule }[];
+  split_dispatch?: boolean;
+  delivery_packaging_fee?: number;
+  delivery_packaging_fee_per_parcel?: number;
+  dispatch_costs?: { request_id: number; deliveryCost: number; insuranceCost: number }[];
+  parcels?: { items: DeliveryContext["items"]; packing: PackingRule; dispatch_group?: "stock" | "preorder"; cutoff_at?: string }[];
 };
+export const PACKAGING_FEE_PER_PARCEL = 250;
+export function packagingFeeFor(packing: PackingRule) {
+  const count = packing.parcels?.length ?? 1;
+  if (!Number.isInteger(count) || count < 1 || count > 100)
+    throw new Error("Не удалось определить количество посылок для упаковки.");
+  return PACKAGING_FEE_PER_PARCEL * count;
+}
 export type DeliveryPoint = {
   id: number;
   name: string;
@@ -27,6 +38,8 @@ export type DeliveryQuote = {
   deliveryCost: number;
   insuranceCost: number;
   totalCost: number;
+  parcelCount?: number;
+  packagingFee?: number;
   estimatedDays: number | null;
   expiresAt: string;
   point: DeliveryPoint;
@@ -71,6 +84,7 @@ export interface DeliveryAdapter {
     deliveryCost: number;
     insuranceCost: number;
     estimatedDays: number | null;
+    parcelCosts?: { request_id: number; deliveryCost: number; insuranceCost: number }[];
   }>;
 }
 export function packingFor(
@@ -150,7 +164,7 @@ export function packingForParcels(
 
 export function parcelContexts(context: DeliveryContext): DeliveryContext[] {
   return (
-    context.packing.parcels?.map((parcel) => ({ ...context, ...parcel })) ?? [
+    context.packing.parcels?.map((parcel) => ({ ...context, ...parcel, cutoffAt: parcel.cutoff_at ?? context.cutoffAt })) ?? [
       context,
     ]
   );

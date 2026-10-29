@@ -26,6 +26,7 @@ type CustomerOrder = {
   readyOn?: string | null;
   hasPreorder?: boolean;
   parcelStatuses?: (string | null)[];
+  splitDispatch?: boolean;
 };
 
 function baseCustomerOrderState(order: CustomerOrder) {
@@ -136,7 +137,7 @@ function baseCustomerOrderState(order: CustomerOrder) {
       step: 2,
       detail: `Заказ принят в работу. Начали лепить изделия для вашего заказа.${order.readyOn ? ` Готовность — ${estimatedReadyLabel(order.readyOn)}.` : order.leadTimeDays ? ` Изготовление — ${productionEstimate(order.leadTimeDays)} после оплаты.` : ""} После готовности передадим заказ в доставку.`,
     };
-  const detail = order.readyOn ? `Готовность — ${estimatedReadyLabel(order.readyOn)}. Весь заказ отправим после готовности всех изделий; срок доставки добавляется отдельно.` : order.leadTimeDays
+  const detail = order.readyOn ? `Готовность — ${estimatedReadyLabel(order.readyOn)}. ${order.splitDispatch ? "Готовые изделия отправим отдельно раньше; предзаказ — после изготовления." : "Весь заказ отправим после готовности всех изделий; срок доставки добавляется отдельно."}` : order.leadTimeDays
     ? `Изготовление — ${productionEstimate(order.leadTimeDays)} после оплаты. После готовности передадим заказ в доставку.`
     : order.hasPreorder
       ? "Оплата получена. Срок изготовления предзаказа уточним лично."

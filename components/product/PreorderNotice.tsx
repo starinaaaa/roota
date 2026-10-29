@@ -4,10 +4,12 @@ export default function PreorderNotice({
   days,
   readyOn,
   garden = false,
+  splitDispatch = false,
 }: {
   days: number | null | undefined;
   readyOn?: string | null;
   garden?: boolean;
+  splitDispatch?: boolean;
 }) {
   return (
     <div className="rounded-lg border border-[#687851]/30 bg-[#f1f3eb] p-5 text-stone-900">
@@ -25,7 +27,7 @@ export default function PreorderNotice({
       <p className="mt-3 text-ui leading-relaxed text-stone-700">
         {garden
           ? "Начнём после оплаты. Кубикам нужно хорошо высохнуть перед обжигом!"
-          : "Начнём после оплаты. Весь заказ отправим, когда будут готовы все изделия."}{" "}
+          : splitDispatch ? "Готовые изделия отправим раньше отдельной посылкой. Предзаказ — после изготовления." : "Начнём после оплаты. Весь заказ отправим, когда будут готовы все изделия."}{" "}
         Срок доставки добавляется отдельно.
       </p>
     </div>

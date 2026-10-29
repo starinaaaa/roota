@@ -1,3 +1,5 @@
+import { carrierStatusLabel } from "@/lib/delivery/parcel-status";
+import { orderedHistory, trackingDate } from "@/lib/delivery/tracking-format";
 import {
   parcelProgress,
   type CustomerParcel,
@@ -34,6 +36,29 @@ export default function ParcelList({
           </h3>
           <p>{parcel.description}</p>
           <p>{parcel.statusLabel}</p>
+          {parcel.deliveryAt && !["delivered", "canceled"].includes(parcel.status ?? "") && (
+            <p>Ожидаемая доставка: {trackingDate(parcel.deliveryAt)}.
+              {parcel.originalDeliveryAt && trackingDate(parcel.originalDeliveryAt) !== trackingDate(parcel.deliveryAt)
+                ? ` Ранее ожидалась ${trackingDate(parcel.originalDeliveryAt)}.` : ""}
+              <span className="block text-caption text-stone-500">Предварительная дата Ozon, может измениться.</span>
+            </p>
+          )}
+          {parcel.storageExpiresAt && parcel.status === "in_delivery_point" && (
+            <p>Заберите до {trackingDate(parcel.storageExpiresAt, true)} (МСК).</p>
+          )}
+          {Boolean(parcel.history?.length) && (
+            <details>
+              <summary className="cursor-pointer text-caption">История доставки</summary>
+              <ol className="mt-3 space-y-2 text-caption">
+                {orderedHistory(parcel.history ?? []).map((event) => (
+                  <li key={`${event.status}:${event.status_changed_at}`}>
+                    {carrierStatusLabel(event.status)} · {trackingDate(event.status_changed_at, true)} (МСК)
+                  </li>
+                ))}
+              </ol>
+            </details>
+          )}
+          {parcel.historyPending && <p className="text-caption text-stone-500">История обновляется; текущий статус показан выше.</p>}
           <p className="break-all text-caption text-stone-600">
             Номер отправления:{" "}
             {parcel.number ?? "Появится после оформления отправления"}

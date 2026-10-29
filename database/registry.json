@@ -396,6 +396,53 @@
       "consent_version",
       "consent_at",
       "created_at"
+    ],
+    "delivery_returns": [
+      "return_number",
+      "order_id",
+      "shipment_method_id",
+      "status",
+      "status_changed_at",
+      "created_at",
+      "current_placement_name",
+      "current_placement_address",
+      "cancellation_reason",
+      "cancellation_responsible",
+      "history",
+      "history_for_status_changed_at",
+      "history_error",
+      "synced_at"
+    ],
+    "delivery_return_sync": [
+      "id",
+      "cursor",
+      "lease_owner",
+      "lease_until",
+      "next_sync_at",
+      "synced_at",
+      "last_error"
+    ],
+    "customer_return_requests": [
+      "id",
+      "order_id",
+      "reason",
+      "description",
+      "photos",
+      "status",
+      "studio_reply",
+      "created_at",
+      "updated_at"
+    ],
+    "delivery_dispatch_batches": [
+      "order_id",
+      "dispatch_group",
+      "idempotency_key",
+      "request_payload",
+      "state",
+      "claimed_at",
+      "result",
+      "request_sent_at",
+      "last_error"
     ]
   },
   "views": {

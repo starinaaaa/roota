@@ -194,7 +194,7 @@ export async function processEmailQueue() {
             ? production.ready_on
             : plannedReadyDate(paidAt, leadDays);
           if (ready)
-            values.fulfillment = `Готовность всего заказа — ${estimatedReadyLabel(ready)}. Отправим весь заказ после готовности всех изделий. Срок доставки добавляется отдельно.`;
+            values.fulfillment = o.delivery_details?.packing?.split_dispatch ? `Предзаказ будет готов ${estimatedReadyLabel(ready)}. Готовые изделия отправим отдельной посылкой раньше. Срок доставки каждой посылки добавляется отдельно.` : `Готовность всего заказа — ${estimatedReadyLabel(ready)}. Отправим весь заказ после готовности всех изделий. Срок доставки добавляется отдельно.`;
         }
         values.payment = paidAt
           ? `Оплачено ${new Date(paidAt).toLocaleString("ru-RU", { timeZone: "Europe/Moscow" })} МСК`

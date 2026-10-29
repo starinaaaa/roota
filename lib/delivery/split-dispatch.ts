@@ -41,3 +41,8 @@ export function groupForRequest(
 ): DispatchGroup | undefined {
   return packing.parcels?.[requestId - 1]?.dispatch_group;
 }
+
+// Zero days means the nearest carrier slot, not a timestamp that expires in transit.
+export function plannedCutoffAt(days: number, now = Date.now()): string | undefined {
+  return days > 0 ? new Date(now + days * 86400000).toISOString() : undefined;
+}

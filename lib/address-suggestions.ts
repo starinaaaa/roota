@@ -1,8 +1,8 @@
 import { z } from "zod";
 const id = z.uuid();
 export const addressSuggestionInput = z.object({
-  part: z.enum(["city", "street", "house"]),
-  query: z.string().trim().min(1).max(100),
+  part: z.enum(["address", "city", "street", "house"]),
+  query: z.string().trim().min(1).max(300),
   parent: z
     .object({
       region_fias_id: id.optional(),
@@ -41,8 +41,12 @@ export async function suggestAddresses(
       body: JSON.stringify({
         query: input.query,
         count: input.part === "house" ? 20 : 8,
-        from_bound: { value: input.part },
-        to_bound: { value: input.part },
+        ...(input.part === "address"
+          ? { to_bound: { value: "house" } }
+          : {
+              from_bound: { value: input.part },
+              to_bound: { value: input.part },
+            }),
         ...(input.parent ? { locations: [input.parent] } : {}),
       }),
       redirect: "error",
@@ -80,7 +84,15 @@ export async function suggestAddresses(
     .map((s) => ({
       value: s.value,
       location: Object.fromEntries(
-        Object.entries(s.data).filter(([k, v]) => ["region_fias_id", "city_fias_id", "settlement_fias_id", "street_fias_id"].includes(k) && v),
+        Object.entries(s.data).filter(
+          ([k, v]) =>
+            [
+              "region_fias_id",
+              "city_fias_id",
+              "settlement_fias_id",
+              "street_fias_id",
+            ].includes(k) && v,
+        ),
       ) as AddressLocation,
     }));
 }

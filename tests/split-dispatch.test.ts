@@ -363,3 +363,83 @@ test("packaging is charged for every physical parcel, including four plates and 
   assert.equal(packagingFeeFor(rule), 250);
   assert.throws(() => packagingFeeFor({ ...rule, parcels: [] }), /количество/);
 });
+
+test("immediate split dispatch lets Ozon choose a slot and keeps the preorder cutoff in the future", async () => {
+  const { plannedCutoffAt } = await import("../lib/delivery/split-dispatch");
+  const { createOzonAdapter } = await import("../lib/delivery/ozon-adapter");
+  const now = Date.parse("2026-10-29T08:46:00Z");
+  const packing = splitDispatchPacking([preorder, stock], [rule], "plates");
+  packing.parcels = packing.parcels!.map((parcel) => ({
+    ...parcel,
+    cutoff_at: plannedCutoffAt(
+      parcel.dispatch_group === "preorder" ? 21 : 0,
+      now,
+    ),
+  }));
+  assert.equal(plannedCutoffAt(0, now), undefined);
+  assert.equal(plannedCutoffAt(1, now), "2026-10-30T08:46:00.000Z");
+  const context: DeliveryContext = {
+    phone: "test",
+    items: [stock, preorder],
+    packing,
+    shipmentMethodId: 7,
+  };
+  const adapter = createOzonAdapter({
+    async call<T>(_path: string, body: unknown): Promise<T> {
+      const postings = (body as { postings: ReturnType<typeof postingsFor> })
+        .postings;
+      // Reproduce carrier validation after the request has spent time in transit.
+      assert.ok(
+        postings.every(
+          (p) => !p.cutoff_at || Date.parse(p.cutoff_at) > now + 2000,
+        ),
+      );
+      assert.equal("cutoff_at" in postings[0], false);
+      assert.equal(postings[1].cutoff_at, "2026-11-19T08:46:00.000Z");
+      return {
+        results: postings.map((p) => ({
+          request_id: p.request_id,
+          posting: {
+            estimated_delivery_cost: { amount: "122.00", currency_code: "RUB" },
+            estimated_insurance_cost: { amount: "36.00", currency_code: "RUB" },
+            estimated_delivery_days: 9,
+          },
+        })),
+      } as T;
+    },
+  });
+  const quote = await adapter.quote(1, context);
+  assert.equal(quote.deliveryCost, 244);
+  assert.equal(quote.insuranceCost, 72);
+  assert.equal(quote.parcelCosts?.length, 2);
+});
+
+test("full address suggestions find streets and houses without a previously selected hierarchy", async () => {
+  let body: Record<string, unknown> = {};
+  const result = await suggestAddresses(
+    { part: "address", query: "москва яблочкова 49" },
+    "key",
+    async (_url, init) => {
+      body = JSON.parse(String(init?.body));
+      return Response.json({
+        suggestions: [
+          {
+            value: "г Москва, ул Яблочкова, д 49",
+            data: {
+              street_fias_id: randomUUID(),
+              house_fias_id: randomUUID(),
+              flat: "436",
+              geo_lat: "55",
+            },
+          },
+        ],
+      });
+    },
+  );
+  assert.equal(body.query, "москва яблочкова 49");
+  assert.deepEqual(body.to_bound, { value: "house" });
+  assert.equal("from_bound" in body, false);
+  assert.equal("locations" in body, false);
+  assert.equal(result[0].value, "г Москва, ул Яблочкова, д 49");
+  assert.equal("flat" in result[0].location, false);
+});

@@ -672,7 +672,6 @@ export default function CheckoutForm({
                 splitDispatch={Boolean(formData.splitShipments) && !courier}
               />
             )}
-            {quote?.parcelCount && quote.packagingFee !== undefined ? <p className="font-body text-caption text-stone-600">В стоимость доставки включена упаковка: {quote.parcelCount} × 250 ₽ = {formatPrice(quote.packagingFee)}.</p> : null}
             {/* Итого */}
             <div className="space-y-4">
               <div className="flex justify-between gap-6">

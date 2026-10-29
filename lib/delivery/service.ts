@@ -1,5 +1,5 @@
 import "server-only";
-import { splitDispatchPacking } from "./split-dispatch";
+import { plannedCutoffAt, splitDispatchPacking } from "./split-dispatch";
 import { coordinates } from "./geo";
 import { cookies } from "next/headers";
 import { getCart } from "@/lib/actions/cart";
@@ -72,14 +72,22 @@ export async function deliveryContext(
       i.purchase_mode === "preorder" ? (i.product.lead_time_days ?? 0) : 0,
     ),
   );
+  // A timestamp equal to Date.now() is already in the past when Ozon receives it.
+  // Omit it for immediate dispatch so the carrier chooses the next available slot.
+  const handling = Number.isInteger(days) && days >= 0 ? days : 0;
+  const now = Date.now();
   const cutoffAt =
-    Number.isInteger(days) && days >= 0 && process.env.OZON_HANDLING_DAYS
-      ? new Date(Date.now() + (days + productionDays) * 86400000).toISOString()
+    !packing.split_dispatch && process.env.OZON_HANDLING_DAYS &&
+    Number.isInteger(days) && days >= 0
+      ? plannedCutoffAt(handling + productionDays, now)
       : undefined;
   if (packing.split_dispatch) {
-    const handling = Number.isInteger(days) && days >= 0 ? days : 0;
-    packing.parcels = packing.parcels?.map(parcel=>({...parcel,
-      cutoff_at: new Date(Date.now() + (handling + (parcel.dispatch_group === "preorder" ? productionDays : 0))*86400000).toISOString(),
+    packing.parcels = packing.parcels?.map((parcel) => ({
+      ...parcel,
+      cutoff_at: plannedCutoffAt(
+        handling + (parcel.dispatch_group === "preorder" ? productionDays : 0),
+        now,
+      ),
     }));
   }
   const context = {

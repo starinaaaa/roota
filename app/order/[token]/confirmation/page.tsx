@@ -20,7 +20,7 @@ import {
 } from "@/lib/shop-policies";
 import { legalArchives } from "@/lib/legal-documents";
 import { relationList } from "@/lib/relation-list";
-import { ozonTrackingHint } from "@/lib/delivery/tracking";
+import { OZON_TRACKING_URL, ozonTrackingHint } from "@/lib/delivery/tracking";
 import PrintConfirmation from "./PrintConfirmation";
 import "./print.css";
 
@@ -219,6 +219,15 @@ export default async function ConfirmationPage({
           )}
           {order.delivery_details?.provider === "ozon" && (
             <p className="text-caption text-stone-600">
+              <a
+                href={OZON_TRACKING_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline underline-offset-4 hover:text-stone-900 focus-visible:outline-2 focus-visible:outline-offset-4"
+              >
+                Ссылка для отслеживания
+              </a>
+              <br />
               {ozonTrackingHint(
                 shipment?.state === "created" && !!shipment.posting_number,
               )}

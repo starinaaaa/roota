@@ -20,7 +20,7 @@ import { getSiteContent } from "@/lib/site";
 import { paymentExpired } from "@/lib/payments/model";
 import { paymentMode } from "@/lib/payments/robokassa";
 import OrderPageControls from "@/components/order/OrderPageControls";
-import { ozonTrackingHint } from "@/lib/delivery/tracking";
+import { OZON_TRACKING_URL, ozonTrackingHint } from "@/lib/delivery/tracking";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -264,6 +264,15 @@ export default async function CustomerOrderPage({
             ) : null}
             {order.delivery_details?.provider === "ozon" && (
               <p className="text-caption text-stone-600">
+                <a
+                  href={OZON_TRACKING_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-4 hover:text-stone-900 focus-visible:outline-2 focus-visible:outline-offset-4"
+                >
+                  Ссылка для отслеживания
+                </a>
+                <br />
                 {ozonTrackingHint(
                   shipment?.state === "created" && !!shipment.posting_number,
                 )}

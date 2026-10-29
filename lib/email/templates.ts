@@ -3,6 +3,7 @@ import {
   type CustomerParcel,
 } from "@/lib/delivery/customer-parcels";
 import { returnInstructionsForVersion } from "@/lib/shop-policies";
+import { OZON_TRACKING_URL } from "@/lib/delivery/tracking";
 
 export const templateKinds = [
   "order_created",
@@ -92,7 +93,9 @@ export function renderEmail(
               ),
             ].filter(Boolean)
           : [`Номер отправления: ${values.tracking}`]),
-        ...(values.tracking_hint ? [values.tracking_hint] : []),
+        ...(values.tracking_hint
+          ? [`Ссылка для отслеживания: ${OZON_TRACKING_URL}`, values.tracking_hint]
+          : []),
         "Возврат и обращение",
         returnInstructions,
       ].join("\n")
@@ -145,7 +148,7 @@ export function renderEmail(
       <p style="margin:0 0 8px;font-size:16px">${text(values.delivery)}</p>
       <p style="margin:0 0 12px">${text(values.address)}<br>Получатель: ${text(values.recipient)}</p>
       ${parcelHtml}
-      ${values.tracking_hint ? `<p style="margin:12px 0 0;font-size:13px;color:#57534e">${text(values.tracking_hint)}</p>` : ""}
+      ${values.tracking_hint ? `<p style="margin:12px 0 0;font-size:13px;color:#57534e"><a href="${OZON_TRACKING_URL}" style="color:#292724;text-decoration:underline">Ссылка для отслеживания</a><br>${text(values.tracking_hint)}</p>` : ""}
     </div>
     <p style="font-size:13px;line-height:1.7">${text(returnInstructions)}</p>
   </div>`

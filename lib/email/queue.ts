@@ -19,6 +19,8 @@ import { siteUrl } from "@/lib/seo";
 import { sendEmail } from "./server";
 import { renderEmail, marketingKinds, type EmailOrderItem } from "./templates";
 import { ozonTrackingHint } from "@/lib/delivery/tracking";
+import { getSiteContent } from "@/lib/site";
+import { reviewInvitation, reviewTelegramUrl, rewardExpiry } from "@/lib/review-copy";
 export async function processEmailQueue() {
   if (
     process.env.CUSTOMER_EMAILS_ENABLED !== "true" ||
@@ -61,6 +63,7 @@ export async function processEmailQueue() {
         product: m.payload?.product ?? "",
       };
       let orderItems: EmailOrderItem[] | undefined;
+      let secondaryAction: { url: string; label: string } | undefined;
       let parcels: CustomerParcel[] | undefined;
       let subscription = m.subscription_id
         ? (
@@ -75,12 +78,13 @@ export async function processEmailQueue() {
         const { data: o, error: oe } = await db
           .from("orders")
           .select(
-            "order_number,created_at,customer_name,total_amount,delivery_amount,insurance_amount,delivery_type,delivery_address,delivery_details,tracking_number,request_payload,order_items(product_id,product_name,quantity,price,purchase_mode,lead_time_days,configuration),payments(expires_at,status,paid_at),order_shipments(state,posting_number,carrier_status,status_history,request_payload)",
+            "order_number,created_at,customer_name,total_amount,discount_amount,delivery_amount,insurance_amount,delivery_type,delivery_address,delivery_details,tracking_number,request_payload,order_items(product_id,product_name,quantity,price,purchase_mode,lead_time_days,configuration),payments(expires_at,status,paid_at),order_shipments(state,posting_number,carrier_status,status_history,request_payload)",
           )
           .eq("id", m.order_id)
           .single();
         if (oe || !o) throw new Error("ORDER");
         values.number = o.order_number;
+        values.discount = Number(o.discount_amount)>0 ? `Скидка на изделия: −${money(Number(o.discount_amount))}` : "";
         values.legal_version = o.request_payload?.form?.legalVersion ?? "";
         values.total = new Intl.NumberFormat("ru-RU", {
           maximumFractionDigits: 2,
@@ -216,6 +220,10 @@ export async function processEmailQueue() {
           values.fulfillment = "";
         label = "Открыть заказ";
         if (m.kind === "review_invite") {
+          const copy = reviewInvitation(o.order_items);
+          values.review_subject = copy.subject;
+          values.review_body = copy.body;
+          secondaryAction = { url: reviewTelegramUrl((await getSiteContent()).telegram, o.order_number), label: "Написать отзыв в Telegram" };
           if (!subscription) {
             const { data: c, error: ce } = await db
               .from("email_subscriptions")
@@ -260,6 +268,18 @@ export async function processEmailQueue() {
           url = url.replace("/order/", "/review/");
           label = "Оставить отзыв";
         }
+        if (m.kind === "order_review_reward") {
+          const reward = (await getPool().query<{code: string; expires_at: Date; redeemed_at: Date | null; revoked_at: Date | null}>(
+            "select code,expires_at,redeemed_at,revoked_at from public.review_rewards where source_order_id=$1 and id=$2", [m.order_id, m.payload.reward_id],
+          )).rows[0];
+          if (!reward || reward.revoked_at || reward.redeemed_at || reward.expires_at.getTime()<=Date.now()) {
+            await db.from("email_messages").update({state:"cancelled",last_error:"Промокод уже недоступен"}).eq("id",m.id).eq("claim",m.claim);
+            continue;
+          }
+          values.promo_code=reward.code;
+          values.promo_expires=rewardExpiry(reward.expires_at);
+          url=siteUrl("/catalog"); label="Выбрать изделия";
+        }
       }
       if (m.kind === "restock") {
         url = siteUrl(`/product/${m.payload.slug}`);
@@ -296,9 +316,10 @@ export async function processEmailQueue() {
           url,
           label,
           unsubscribe,
-          m.kind.startsWith("order_"),
+          m.kind.startsWith("order_") && m.kind !== "order_review_reward",
           orderItems,
           parcels,
+          secondaryAction,
         ),
         metadata: { message_id: m.id },
       };

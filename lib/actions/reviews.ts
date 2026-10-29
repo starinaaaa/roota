@@ -5,6 +5,8 @@ import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
 import { createServerClient } from "@/lib/db";
 import { orderIdForToken } from "@/lib/order-access";
+import { after } from "next/server";
+import { processEmailQueue } from "@/lib/email/queue";
 export async function submitReview(form: FormData) {
   const token = String(form.get("token") ?? "");
   const orderId = await orderIdForToken(token);
@@ -65,5 +67,12 @@ export async function submitReview(form: FormData) {
     if (paths.length) await db.storage.from("review-photos").remove(paths);
     throw error;
   }
+  after(async () => {
+    try {
+      await processEmailQueue();
+    } catch {
+      console.error("review_reward_queue_failed");
+    }
+  });
   redirect(`/review/${token}?saved=1`);
 }

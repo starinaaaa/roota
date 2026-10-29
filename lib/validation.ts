@@ -19,6 +19,7 @@ export const phone = z
   });
 export const checkoutSchema = z
   .object({
+    promoCode: z.string().trim().toUpperCase().max(40).regex(/^(?:ROOTA-[A-F0-9]{12})?$/, "Проверьте промокод").optional().default(""),
     splitShipments: z.boolean().default(false),
     ...courierContactFields,
     name: z.string().trim().max(100).optional().default(""),

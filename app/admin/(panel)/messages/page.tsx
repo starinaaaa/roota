@@ -1,4 +1,3 @@
-import { deliveryEmailUpdate } from "@/lib/delivery/customer-parcels";
 import SubmitButton from "@/components/ui/SubmitButton";
 import { requireAdmin } from "@/lib/auth";
 import { createServerClient } from "@/lib/db";
@@ -10,14 +9,18 @@ import {
   retryRejectedEmail,
   testStudioNotification,
 } from "@/lib/actions/email-admin";
-import { renderEmail } from "@/lib/email/templates";
-import { LEGAL_VERSION } from "@/lib/legal";
-import { ozonTrackingHint } from "@/lib/delivery/tracking";
+import {
+  renderEmailPreview,
+  reviewPreviewVariants,
+  emailKindLabels,
+} from "@/lib/email/preview";
+import type { TemplateKind } from "@/lib/email/templates";
+import { getSiteContent } from "@/lib/site";
 export const dynamic = "force-dynamic";
 export default async function MessagesPage() {
   await requireAdmin();
   const db = createServerClient();
-  const [settings, templates, messages, blocks] = await Promise.all([
+  const [settings, templates, messages, blocks, site] = await Promise.all([
     db.from("email_settings").select("*").eq("id", 1).single(),
     db.from("email_templates").select("*").order("kind"),
     db
@@ -28,6 +31,7 @@ export default async function MessagesPage() {
       .order("created_at", { ascending: false })
       .limit(100),
     db.from("email_blocks").select("email,reason").limit(100),
+    getSiteContent(),
   ]);
   if (settings.error || templates.error || messages.error || blocks.error)
     throw new Error("Не удалось загрузить почту");
@@ -125,20 +129,21 @@ export default async function MessagesPage() {
       <p>
         Переменные:{" "}
         {
-          "{{number}}, {{items}}, {{total}}, {{reservation}}, {{product}}, {{purpose}}, {{delivery_subject}}, {{delivery_update}}"
+          "{{number}}, {{items}}, {{total}}, {{reservation}}, {{product}}, {{purpose}}, {{delivery_subject}}, {{delivery_update}}, {{review_subject}}, {{review_body}}, {{promo_code}}, {{promo_expires}}"
         }
         . Ссылка и отписка добавляются автоматически.
       </p>
       <p className="text-sm text-stone-600">
-        Здесь редактируются тема и основной текст письма. Оформление, состав
-        заказа и блок возврата задаются в коде. Предпросмотр показывает условия
-        новых заказов — 7 дней на возврат; для прежних заказов сохраняются
-        условия на момент покупки.
+        Раскройте сценарий ниже, чтобы увидеть письмо целиком. Для приглашения к
+        отзыву доступны четыре варианта состава заказа. Здесь редактируются тема
+        и основной текст письма. Оформление, состав заказа и блок возврата
+        задаются в коде. Предпросмотр показывает условия новых заказов — 7 дней
+        на возврат; для прежних заказов сохраняются условия на момент покупки.
       </p>
       {templates.data.map((t) => (
         <details key={t.kind} className="admin-card">
           <summary>
-            {t.kind} — {t.subject}
+            {emailKindLabels[t.kind as TemplateKind] ?? t.kind} · {t.kind}
           </summary>
           <form action={saveEmailTemplate} className="space-y-3 mt-4">
             <input type="hidden" name="kind" value={t.kind} />
@@ -176,48 +181,43 @@ export default async function MessagesPage() {
           </form>
           <form action={testEmailTemplate} className="mt-3">
             <input type="hidden" name="kind" value={t.kind} />
+            {t.kind === "review_invite" && (
+              <label className="block mb-3">
+                Вариант тестового письма
+                <select name="variant" className="admin-input">
+                  {reviewPreviewVariants.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
             <SubmitButton className="admin-secondary">
               Отправить тест в hello@roota.moscow
             </SubmitButton>
           </form>
-          <iframe
-            title={`Предпросмотр ${t.kind}`}
-            sandbox=""
-            className="w-full h-80 mt-4 border border-stone-200"
-            srcDoc={
-              renderEmail(
-                t,
-                {
-                  legal_version: LEGAL_VERSION,
-                  number: "GL-ТЕСТ",
-                  total: "3500",
-                  items: "Тарелочка × 1",
-                  reservation: "Резерв 30 минут",
-                  product: "Тарелочка",
-                  date: "14 октября 2026, 12:00 МСК",
-                  shipping: "350 ₽",
-                  payment: "Оплачено · пример",
-                  recipient: "Покупатель Roota",
-                  delivery: "Пункт выдачи Ozon",
-                  address: "Адрес выбранного пункта",
-                  tracking: "Появится после оформления отправления",
-                  delivery_subject: deliveryEmailUpdate(t.kind, "GL-ТЕСТ", [])
-                    .subject,
-                  delivery_update: deliveryEmailUpdate(t.kind, "GL-ТЕСТ", [])
-                    .message,
-                  tracking_hint: ozonTrackingHint(false),
-                  fulfillment:
-                    "Готовые изделия передаём в доставку в течение 1–3 рабочих дней после оплаты.",
-                  purpose: "уведомление",
-                },
-                "https://roota.moscow",
-                "Открыть Roota",
-                "https://roota.moscow",
-                t.kind.startsWith("order_"),
-                [{ name: "Тарелочка", quantity: 1, price: 3150 }],
-              ).html
-            }
-          />
+          {(t.kind === "review_invite"
+            ? reviewPreviewVariants
+            : [reviewPreviewVariants[0]]
+          ).map((variant) => (
+            <div key={variant.id} className="mt-6 space-y-2">
+              <h3 className="font-medium">
+                {t.kind === "review_invite"
+                  ? variant.label
+                  : "Внешний вид письма"}
+              </h3>
+              <p className="text-sm text-stone-600">
+                Тема: {renderEmailPreview(t, variant.id, site.telegram).subject}
+              </p>
+              <iframe
+                title={`Предпросмотр ${t.kind}: ${variant.label}`}
+                sandbox=""
+                className="w-full h-[640px] border border-stone-200"
+                srcDoc={renderEmailPreview(t, variant.id, site.telegram).html}
+              />
+            </div>
+          ))}
         </details>
       ))}
       <h2 className="text-xl">Очередь и доставка (последние 100)</h2>

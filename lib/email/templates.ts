@@ -12,6 +12,7 @@ export const templateKinds = [
   "order_pickup",
   "order_delivered",
   "review_invite",
+  "order_review_reward",
   "cart_reminder",
   "restock",
   "confirm",
@@ -50,6 +51,7 @@ export function renderEmail(
   orderMessage = false,
   orderItems?: EmailOrderItem[],
   parcels?: CustomerParcel[],
+  secondaryAction?: { url: string; label: string },
 ) {
   const returnInstructions = returnInstructionsForVersion(values.legal_version);
   const fill = (s: string) =>
@@ -76,6 +78,7 @@ export function renderEmail(
         `Заказ № ${values.number} · ${values.date}`,
         "Состав заказа",
         values.items,
+        ...(values.discount ? [values.discount] : []),
         `Доставка: ${values.shipping}`,
         `Итого: ${values.total} ₽`,
         values.payment,
@@ -153,9 +156,10 @@ export function renderEmail(
     <p style="font-size:13px;line-height:1.7">${text(returnInstructions)}</p>
   </div>`
     : "";
+  const discountHtml = orderMessage && values.discount ? `<p style="color:#526444">${escapeHtml(values.discount)}</p>` : "";
   const documentUrl =
     orderMessage && values.document_url ? values.document_url : undefined;
-  const plaintext = `ROOTA\n\n${body}${details ? `\n\n${details}` : ""}\n\n${label}: ${url}${documentUrl ? `\nПодтверждение покупки: ${documentUrl}\nФискальный чек направляет Robokassa отдельным письмом.` : ""}\n\nНужна помощь? Ответьте на письмо: hello@roota.moscow${unsubscribe ? `\nНастройки и отписка: ${unsubscribe}` : ""}`;
-  const html = `<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;background:#f8f6f1;color:#292724"><div style="max-width:600px;margin:32px auto;padding:28px 24px;background:#fff;font-family:Arial,sans-serif;line-height:1.6"><p style="letter-spacing:5px">ROOTA</p><h1 style="font-size:28px;line-height:1.25;font-weight:400;overflow-wrap:normal">${escapeHtml(subject)}</h1><p>${escapeHtml(body).replaceAll("\n", "<br>")}</p>${detailHtml}<p><a href="${escapeHtml(url)}" style="display:inline-block;padding:12px 20px;background:#292724;color:#fff;text-decoration:none">${escapeHtml(label)}</a></p>${documentUrl ? `<p style="font-size:13px"><a href="${text(documentUrl)}" style="color:#57534e">Сохранить подтверждение покупки</a></p><p style="font-size:12px;color:#78716c">Фискальный чек направляет Robokassa отдельным письмом.</p>` : ""}<p style="font-size:13px">Нужна помощь? <a href="mailto:hello@roota.moscow" style="color:#292724">hello@roota.moscow</a><br>Ответьте на это письмо — мы рядом.</p>${unsubscribe ? `<p style="font-size:12px"><a href="${escapeHtml(unsubscribe)}">Настройки и отписка</a></p>` : ""}</div></body></html>`;
+  const plaintext = `ROOTA\n\n${body}${details ? `\n\n${details}` : ""}\n\n${label}: ${url}${secondaryAction ? `\n${secondaryAction.label}: ${secondaryAction.url}` : ""}${documentUrl ? `\nПодтверждение покупки: ${documentUrl}\nФискальный чек направляет Robokassa отдельным письмом.` : ""}\n\nНужна помощь? Ответьте на письмо: hello@roota.moscow${unsubscribe ? `\nНастройки и отписка: ${unsubscribe}` : ""}`;
+  const html = `<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;background:#f8f6f1;color:#292724"><div style="max-width:600px;margin:32px auto;padding:28px 24px;background:#fff;font-family:Arial,sans-serif;line-height:1.6"><p style="letter-spacing:5px">ROOTA</p><h1 style="font-size:28px;line-height:1.25;font-weight:400;overflow-wrap:normal">${escapeHtml(subject)}</h1><p>${escapeHtml(body).replaceAll("\n", "<br>")}</p>${detailHtml}${discountHtml}<p><a href="${escapeHtml(url)}" style="display:inline-block;padding:12px 20px;background:#292724;color:#fff;text-decoration:none">${escapeHtml(label)}</a></p>${secondaryAction ? `<p><a href="${escapeHtml(secondaryAction.url)}" style="color:#292724">${escapeHtml(secondaryAction.label)}</a></p>` : ""}${documentUrl ? `<p style="font-size:13px"><a href="${text(documentUrl)}" style="color:#57534e">Сохранить подтверждение покупки</a></p><p style="font-size:12px;color:#78716c">Фискальный чек направляет Robokassa отдельным письмом.</p>` : ""}<p style="font-size:13px">Нужна помощь? <a href="mailto:hello@roota.moscow" style="color:#292724">hello@roota.moscow</a><br>Ответьте на это письмо — мы рядом.</p>${unsubscribe ? `<p style="font-size:12px"><a href="${escapeHtml(unsubscribe)}">Настройки и отписка</a></p>` : ""}</div></body></html>`;
   return { subject, html, plaintext };
 }

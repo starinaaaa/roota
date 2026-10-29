@@ -29,6 +29,8 @@ type OrderData = {
   customer_email: string | null;
   request_payload?: { form?: { telegram?: string } };
   total_amount: number;
+  discount_amount?: number;
+  promo_code?: string | null;
   status: string;
   payment_status: string;
   delivery_type: string;
@@ -217,6 +219,7 @@ export default function OrderEditor({ order }: { order: OrderData }) {
                   )}
             </p>
           )}
+          {Number(order.discount_amount)>0 && <p className="text-[#526444]">Скидка на изделия: −{formatPrice(Number(order.discount_amount))} · {order.promo_code}</p>}
           <strong>Итого: {formatPrice(order.total_amount)}</strong>
         </section>
       </div>

@@ -47,7 +47,8 @@
       "created_at",
       "purchase_mode",
       "lead_time_days",
-      "configuration"
+      "configuration",
+      "discount_amount"
     ],
     "carts": [
       "id",
@@ -92,7 +93,10 @@
       "delivery_amount",
       "insurance_amount",
       "delivery_details",
-      "delivery_stage"
+      "delivery_stage",
+      "discount_amount",
+      "promo_code",
+      "promo_checkout_payload"
     ],
     "site_drafts": [
       "id",
@@ -275,7 +279,8 @@
       "items",
       "delivery",
       "amount",
-      "created_at"
+      "created_at",
+      "promo_checkout_payload"
     ],
     "order_shipments": [
       "order_id",
@@ -512,6 +517,7 @@
     "cart_item_price",
     "garden_item_name",
     "cart_line_snapshot",
-    "guard_garden_cart"
+    "guard_garden_cart",
+    "checkout_reward_order"
   ]
 }

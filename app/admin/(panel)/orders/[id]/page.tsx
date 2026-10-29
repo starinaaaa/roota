@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { getOrder } from "@/lib/admin-data";
 import OrderCustomerHistory from "@/components/admin/OrderCustomerHistory";
 import OrderEditor from "@/components/admin/OrderEditor";
+import ReviewRewardCard from "@/components/admin/ReviewRewardCard";
 export default async function OrderPage({
   params,
 }: {
@@ -17,6 +18,7 @@ export default async function OrderPage({
   return (
     <div className="space-y-6">
       <OrderEditor order={order} />
+      <ReviewRewardCard orderId={id} available={order.payment_status==='paid' && order.delivery_stage==='delivered' && order.status!=='cancelled'} />
       <section className="admin-card space-y-3">
         <h2 className="text-lg">Возвраты</h2>
         <Link href="/admin/returns" className="underline">Заявки покупателей и контроль возвратных отправлений</Link>

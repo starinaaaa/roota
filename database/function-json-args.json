@@ -82,5 +82,8 @@
   ],
   "mutate_garden_cart": [
     "p_configuration"
+  ],
+  "checkout_reward_order": [
+    "p_form"
   ]
 }

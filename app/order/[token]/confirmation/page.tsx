@@ -43,7 +43,7 @@ export default async function ConfirmationPage({
   const { data: order, error } = await createServerClient()
     .from("orders")
     .select(
-      "order_number,created_at,customer_name,status,payment_status,delivery_stage,total_amount,delivery_amount,insurance_amount,delivery_type,delivery_address,delivery_details,tracking_number,request_payload,shipments:order_shipments(state,posting_number,status_history,carrier_status,request_payload),items:order_items(id,product_id,product_name,quantity,price,purchase_mode,lead_time_days)",
+      "order_number,created_at,customer_name,status,payment_status,delivery_stage,total_amount,discount_amount,delivery_amount,insurance_amount,delivery_type,delivery_address,delivery_details,tracking_number,request_payload,shipments:order_shipments(state,posting_number,status_history,carrier_status,request_payload),items:order_items(id,product_id,product_name,quantity,price,purchase_mode,lead_time_days)",
     )
     .eq("id", orderId)
     .single();
@@ -168,6 +168,7 @@ export default async function ConfirmationPage({
             ))}
           </tbody>
           <tfoot>
+            {Number(order.discount_amount)>0 && <tr className="text-[#526444]"><th scope="row" className="py-5 font-normal">Скидка на изделия · 10%</th><td className="text-right">−{formatPrice(Number(order.discount_amount))}</td></tr>}
             <tr className="border-t border-stone-200">
               <th scope="row" className="py-5 font-normal">
                 Доставка

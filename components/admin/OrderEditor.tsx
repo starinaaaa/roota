@@ -334,6 +334,7 @@ export default function OrderEditor({ order }: { order: OrderData }) {
               order.shipments?.[0],
             )}
           />
+          {order.delivery_details.packing.split_dispatch && <p className="text-sm text-stone-600">Раздельная отправка: сначала оформите готовые изделия, затем предзаказ после отметки готовности в разделе «Изготовление». Номера каждой посылки появятся отдельно.</p>}
           <p className="text-sm text-stone-500">
             Статусы активных отправлений проверяются автоматически каждые 15
             минут.
@@ -355,7 +356,7 @@ export default function OrderEditor({ order }: { order: OrderData }) {
             после упаковки.
           </p>
           <div className="flex flex-wrap gap-3">
-            {order.shipments?.[0]?.carrier_status === "canceled" &&
+            {!order.delivery_details?.packing.split_dispatch && order.shipments?.[0]?.carrier_status === "canceled" &&
               order.payment_status === "paid" &&
               ["new", "confirmed", "in_production"].includes(order.status) && (
                 <button
@@ -383,8 +384,8 @@ export default function OrderEditor({ order }: { order: OrderData }) {
               disabled={
                 pending ||
                 order.payment_status !== "paid" ||
-                order.status !== "confirmed" ||
-                order.shipments?.[0]?.state === "created"
+                !["confirmed", ...(order.delivery_details?.packing.split_dispatch ? ["shipped"] : [])].includes(order.status) ||
+                (order.shipments?.[0]?.state === "created" && !order.delivery_details?.packing.split_dispatch)
               }
               onClick={() =>
                 start(async () => {
@@ -398,7 +399,7 @@ export default function OrderEditor({ order }: { order: OrderData }) {
                 })
               }
             >
-              Создать отправление Ozon
+              {order.delivery_details?.packing.split_dispatch ? "Создать следующую готовую отправку Ozon" : "Создать отправление Ozon"}
             </button>
             <button
               type="button"

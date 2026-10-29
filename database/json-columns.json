@@ -72,5 +72,16 @@
   "customer_reviews": [],
   "garden_requests": [
     "configuration"
+  ],
+  "delivery_returns": [
+    "history"
+  ],
+  "delivery_return_sync": [],
+  "customer_return_requests": [
+    "photos"
+  ],
+  "delivery_dispatch_batches": [
+    "request_payload",
+    "result"
   ]
 }

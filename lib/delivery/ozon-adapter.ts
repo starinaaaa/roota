@@ -109,6 +109,7 @@ export function createOzonAdapter(
         };
       });
       return {
+        ...(context.packing.split_dispatch ? { parcelCosts: costs.map((cost,index)=>({request_id:index+1,deliveryCost:cost.deliveryCost,insuranceCost:cost.insuranceCost})) } : {}),
         deliveryCost:
           Math.round(
             costs.reduce((sum, cost) => sum + cost.deliveryCost, 0) * 100,

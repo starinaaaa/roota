@@ -6,7 +6,8 @@ import {
   aggregatePostingStatus,
   type CarrierPosting,
 } from "./parcel-status";
-import { postingInfoSchema, postingHistorySchema } from "./posting-status";
+import { postingInfoSchema } from "./posting-status";
+import { enrichPostingTracking } from "./posting-tracking";
 
 export async function syncOrderShipments() {
   const db = createServerClient();
@@ -45,6 +46,7 @@ export async function syncOrderShipments() {
       for (const posting of info.postings)
         byNumber.set(posting.posting_number, posting);
     }
+    const historyBudget = { remaining: 8 };
     const syncOne = async (row: (typeof rows)[number]) => {
       try {
         const expected = shipmentPostings(row);
@@ -58,19 +60,11 @@ export async function syncOrderShipments() {
           .select("carrier_status,status_history")
           .eq("order_id", row.order_id)
           .single();
-        let history = previous?.status_history;
-        if (previous?.carrier_status !== status || !history?.history) {
-          // History enriches the page but its outage must not block the current trusted status.
-          try {
-            history = postingHistorySchema.parse(
-              await transport.call("/v1/posting/status-history", {
-                posting_number: row.posting_number,
-              }),
-            );
-          } catch {
-            /* Retry when the status changes or on manual refresh. */
-          }
-        }
+        if (previous?.status_history?.replacement && previous.status_history.replacement.phase !== "done")
+          throw new Error("REPLACEMENT_IN_PROGRESS");
+        const enriched = await enrichPostingTracking(transport,
+          shipmentPostings({ ...row, status_history: previous?.status_history }),
+          postings as NonNullable<(typeof postings)[number]>[], historyBudget);
         const { data, error: saveError } = await db.rpc(
           "apply_order_shipment_status",
           {
@@ -83,11 +77,8 @@ export async function syncOrderShipments() {
               .at(-1),
             p_history: {
               ...previous?.status_history,
-              ...(history ?? {}),
-              postings: expected.map((p) => ({
-                ...p,
-                ...byNumber.get(p.posting_number),
-              })),
+              ...(enriched[0]?.history ? { history: enriched[0].history } : {}),
+              postings: enriched,
             },
             p_claim: row.sync_claim,
           },

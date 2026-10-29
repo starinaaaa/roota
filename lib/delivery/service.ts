@@ -1,4 +1,5 @@
 import "server-only";
+import { splitDispatchPacking } from "./split-dispatch";
 import { coordinates } from "./geo";
 import { cookies } from "next/headers";
 import { getCart } from "@/lib/actions/cart";
@@ -6,6 +7,8 @@ import { createServerClient } from "@/lib/db";
 import { phone, uuid } from "@/lib/validation";
 import {
   cartSnapshot,
+  packagingFeeFor,
+  PACKAGING_FEE_PER_PARCEL,
   pointInCity,
   packingForParcels,
   type DeliveryContext,
@@ -15,8 +18,7 @@ import {
 } from "./model";
 import { ozon, ozonConfigured, shipmentMethodId, pointInfo } from "./ozon";
 
-// Included in the single delivery price for new quotes only.
-const DELIVERY_PACKAGING_FEE = 250;
+// Charged for every physical parcel in new quotes; old paid snapshots keep their fee.
 export async function deliverySession() {
   const session = (await cookies()).get("cart_session")?.value;
   if (!uuid.safeParse(session).success)
@@ -25,6 +27,7 @@ export async function deliverySession() {
 }
 export async function deliveryContext(
   rawPhone: unknown,
+  splitShipments = false,
 ): Promise<DeliveryContext> {
   const parsed = phone.safeParse(rawPhone);
   if (!parsed.success)
@@ -57,7 +60,7 @@ export async function deliveryContext(
       .single();
   if (categoryError || !plateCategory)
     throw new Error("Не удалось проверить категорию упаковки.");
-  const packing = packingForParcels(
+  const packing = (splitShipments ? splitDispatchPacking : packingForParcels)(
     items,
     rules as PackingRule[],
     plateCategory.id,
@@ -73,6 +76,12 @@ export async function deliveryContext(
     Number.isInteger(days) && days >= 0 && process.env.OZON_HANDLING_DAYS
       ? new Date(Date.now() + (days + productionDays) * 86400000).toISOString()
       : undefined;
+  if (packing.split_dispatch) {
+    const handling = Number.isInteger(days) && days >= 0 ? days : 0;
+    packing.parcels = packing.parcels?.map(parcel=>({...parcel,
+      cutoff_at: new Date(Date.now() + (handling + (parcel.dispatch_group === "preorder" ? productionDays : 0))*86400000).toISOString(),
+    }));
+  }
   const context = {
     phone: parsed.data,
     items,
@@ -97,9 +106,10 @@ export async function quoteDelivery(
   city: string,
   pointId: number,
   existingId?: string,
+  splitShipments = false,
 ): Promise<DeliveryQuote> {
   const session = await deliverySession(),
-    context = await deliveryContext(rawPhone);
+    context = await deliveryContext(rawPhone, splitShipments);
   if (existingId) {
     const { data: old, error } = await createServerClient()
       .from("delivery_quotes")
@@ -109,6 +119,8 @@ export async function quoteDelivery(
       .single();
     if (error || !old)
       throw new Error("Расчёт доставки устарел. Рассчитайте доставку ещё раз.");
+    if (Boolean(old.packing?.split_dispatch) !== splitShipments)
+      throw new Error("Способ отправки изменился. Рассчитайте доставку заново.");
     if (
       JSON.stringify(cartSnapshot(old.cart_snapshot)) !==
       JSON.stringify(context.items)
@@ -150,8 +162,9 @@ export async function quoteDelivery(
   )
     throw new Error("Выберите доступный пункт в указанном городе.");
   const cost = await ozon.quote(pointId, context);
+  const packagingFee = packagingFeeFor(context.packing);
   const deliveryCost =
-    Math.round((cost.deliveryCost + DELIVERY_PACKAGING_FEE) * 100) / 100;
+    Math.round((cost.deliveryCost + packagingFee) * 100) / 100;
   const point = publicPoint(info),
     id = existingId ?? crypto.randomUUID(),
     expiresAt = new Date(Date.now() + 10 * 60000).toISOString();
@@ -167,7 +180,9 @@ export async function quoteDelivery(
     packing: {
       ...context.packing,
       // Frozen with the order; legacy orders have no fee and retain their price.
-      delivery_packaging_fee: DELIVERY_PACKAGING_FEE,
+      delivery_packaging_fee: packagingFee,
+      delivery_packaging_fee_per_parcel: PACKAGING_FEE_PER_PARCEL,
+      ...(cost.parcelCosts ? { dispatch_costs: cost.parcelCosts } : {}),
     },
     cart_snapshot: context.items,
     shipment_method_id: context.shipmentMethodId,
@@ -194,5 +209,5 @@ export async function quoteDelivery(
     : await db.from("delivery_quotes").insert(row).select("id").single();
   if (result.error)
     throw new Error("Не удалось сохранить расчёт доставки. Повторите попытку.");
-  return { id, ...cost, deliveryCost, totalCost, expiresAt, point };
+  return { id, ...cost, deliveryCost, totalCost, expiresAt, point, packagingFee, parcelCount: context.packing.parcels?.length ?? 1 };
 }

@@ -1,8 +1,11 @@
+import { createReadyDispatch } from "./split-shipments";
+import { getPool } from "@/lib/db/pool";
 import "server-only";
 import { createServerClient } from "@/lib/db";
 import { ozon, ozonTransport } from "./ozon";
-import { postingInfoSchema, postingHistorySchema } from "./posting-status";
+import { postingInfoSchema } from "./posting-status";
 import { type DeliveryContext, type PackingRule } from "./model";
+import { enrichPostingTracking } from "./posting-tracking";
 import { shipmentPayload } from "./shipment-payload";
 import { shipmentPostings, aggregatePostingStatus } from "./parcel-status";
 // Call this after a trusted payment callback and order confirmation, or from the checked admin action.
@@ -22,6 +25,7 @@ export async function createPaidShipment(orderId: string) {
     .eq("id", orderId)
     .single();
   if (error || !o) throw new Error("Заказ не найден.");
+  if (o.delivery_details?.packing?.split_dispatch) return createReadyDispatch(getPool(), ozonTransport(), orderId);
   if (
     o.payment_status !== "paid" ||
     o.status !== "confirmed" ||
@@ -202,16 +206,7 @@ export async function refreshShipmentStatus(orderId: string) {
     throw new Error(
       "Ozon не нашёл отправление. Проверьте его номер и аккаунт Ozon.",
     );
-  let history = {};
-  try {
-    history = postingHistorySchema.parse(
-      await transport.call("/v1/posting/status-history", {
-        posting_number: s.posting_number,
-      }),
-    );
-  } catch {
-    /* Current status remains useful when history is unavailable. */
-  }
+  const enriched = await enrichPostingTracking(transport, expected, result.postings);
   const { error: saveError } = await db.rpc("apply_order_shipment_status", {
     p_order: orderId,
     p_posting: s.posting_number,
@@ -222,11 +217,8 @@ export async function refreshShipmentStatus(orderId: string) {
       .at(-1),
     p_history: {
       ...s.status_history,
-      ...history,
-      postings: expected.map((p) => ({
-        ...p,
-        ...postings.find((r) => r!.posting_number === p.posting_number),
-      })),
+      ...(enriched[0]?.history ? { history: enriched[0].history } : {}),
+      postings: enriched,
     },
   });
   if (saveError) throw new Error("Статус не сохранён.");

@@ -17,6 +17,7 @@ export const maxDuration = 60;
 const requestSchema = z.object({
   action: z.enum(["points", "quote"]),
   phone: z.string().max(40),
+  splitShipments: z.boolean().default(false),
   city: z.string().trim().min(2, "Укажите город").max(100),
   pointId: z.number().int().positive().optional(),
   offset: z.number().int().min(0).max(50000).optional(),
@@ -36,11 +37,11 @@ export async function POST(request: NextRequest) {
     if (d.action === "quote") {
       if (!d.pointId) throw new Error("Выберите пункт выдачи.");
       return NextResponse.json(
-        { quote: await quoteDelivery(d.phone, d.city, d.pointId) },
+        { quote: await quoteDelivery(d.phone, d.city, d.pointId, undefined, d.splitShipments) },
         { headers: { "Cache-Control": "no-store" } },
       );
     }
-    const context = await deliveryContext(d.phone);
+    const context = await deliveryContext(d.phone, d.splitShipments);
     await ozon.checkRecipient(context.phone);
     const pattern = "%" + d.city.replace(/[\\%_]/g, "\\$&") + "%";
     const offset = d.offset ?? 0;

@@ -1,3 +1,4 @@
+import ReturnRequests from "@/components/order/ReturnRequests";
 import { productionEstimate } from "@/lib/preorder-copy";
 import { courierContactLabel } from "@/lib/courier-contact";
 import { orderProduction } from "@/lib/shop-operations";
@@ -93,6 +94,7 @@ export default async function CustomerOrderPage({
   const state = customerOrderState({
     readyOn,
     ...order,
+    splitDispatch: Boolean(order.delivery_details?.packing?.split_dispatch),
     parcelStatuses: parcels.map((parcel) => parcel.status),
     leadTimeDays: production?.has_unplanned ? 0 : leadTimeDays,
     hasPreorder,
@@ -322,6 +324,8 @@ export default async function CustomerOrderPage({
           >
             Написать по заказу ↗
           </a>
+          <ReturnRequests orderId={orderId} token={token}
+            eligible={order.payment_status === "paid" && (order.status === "delivered" || order.delivery_stage === "delivered" || parcels.some(parcel=>parcel.status === "delivered"))} />
           <p className="text-caption text-stone-500">
             Ответ — в течение рабочего дня.
           </p>

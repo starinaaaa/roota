@@ -115,6 +115,7 @@ async function createOrderInternal(
           stored.city,
           stored.point.id,
           form.data.deliveryQuoteId,
+          form.data.splitShipments ?? false,
         );
         // SQL verifies the current cart, packing rule, prices, and final total atomically.
         if (!Number.isFinite(fresh.totalCost))

@@ -13,6 +13,11 @@ export type CustomerParcel = {
   description: string;
   status: string | null;
   statusLabel: string;
+  deliveryAt?: string | null;
+  originalDeliveryAt?: string | null;
+  storageExpiresAt?: string | null;
+  history?: import("./posting-status").PostingEvent[];
+  historyPending?: boolean;
 };
 type Item = {
   product_id?: string | null;
@@ -82,7 +87,13 @@ export function customerParcels(
       number: posting?.posting_number ?? null,
       description,
       status,
-      statusLabel: carrierStatusLabel(status),
+      statusLabel: !posting && packing?.split_dispatch && packing.parcels?.[i]?.dispatch_group === "preorder" ? "Ожидает изготовления" : carrierStatusLabel(status),
+      deliveryAt: posting?.delivery_at,
+      originalDeliveryAt: posting?.original_delivery_at,
+      storageExpiresAt: posting?.storage_expires_at,
+      history: posting?.history,
+      historyPending: posting?.history_error,
+
     };
   });
 }

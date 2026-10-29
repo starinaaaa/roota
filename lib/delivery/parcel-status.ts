@@ -5,6 +5,14 @@ export type CarrierPosting = {
   posting_number: string;
   request_id: number;
   status?: string;
+  status_changed_at?: string;
+  original_delivery_at?: string | null;
+  delivery_at?: string | null;
+  storage_expires_at?: string | null;
+  estimated_delivery_days?: number | null;
+  history?: import("./posting-status").PostingEvent[];
+  history_for_status_changed_at?: string;
+  history_error?: boolean;
 };
 export function shipmentPostings(shipment: {
   posting_number?: string | null;

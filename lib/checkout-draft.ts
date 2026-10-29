@@ -39,6 +39,7 @@ const draftSchema = z.object({
     .enum(["ozon_point", "yandex_courier"])
     .default("ozon_point"),
   address: z.string().max(500).default(""),
+  splitShipments: z.boolean().default(false),
 });
 export function readCheckoutDraft(raw: string | null, now = Date.now()) {
   try {

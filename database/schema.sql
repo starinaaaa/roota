@@ -565,10 +565,21 @@ begin
  if not found or s.posting_number is distinct from p_posting then raise exception 'SHIPMENT_MISMATCH'; end if;
  if p_claim is not null and s.sync_claim is distinct from p_claim then return false; end if;
  if p_changed is null or p_changed>now()+interval '5 minutes' then raise exception 'INVALID_STATUS_DATE'; end if;
+ -- A concurrent second dispatch may have appended parcels while the API request was in flight.
+ if exists(select 1 from jsonb_array_elements(coalesce(s.status_history->'postings','[]'::jsonb)) current_parcel
+  where not exists(select 1 from jsonb_array_elements(coalesce(p_history->'postings','[]'::jsonb)) incoming
+    where incoming->>'posting_number'=current_parcel->>'posting_number')) then
+  update public.order_shipments set next_sync_at=now(),sync_claim=null where order_id=p_order;
+  return false;
+ end if; -- SPLIT_SNAPSHOT_GUARD
+
  if s.carrier_changed_at is not null and p_changed<s.carrier_changed_at then
   update public.order_shipments set next_sync_at=now()+interval '15 minutes',sync_claim=null where order_id=p_order;
   return false;
  end if;
+ if coalesce((o.delivery_details->'packing'->>'split_dispatch')::boolean,false)
+  and jsonb_array_length(coalesce(p_history->'postings','[]'::jsonb))<jsonb_array_length(coalesce(o.delivery_details->'packing'->'parcels','[]'::jsonb))
+  and p_status not in ('forming_failed','canceled') then p_status:='created'; end if; -- SPLIT_STATUS_GUARD
  stage:=case p_status
   when 'created' then 'preparing' when 'forming' then 'preparing' when 'ready_for_shipping' then 'preparing' when 'in_container' then 'preparing'
   when 'acceptance_in_progress' then 'preparing' when 'on_way' then 'in_transit' when 'in_courier_service' then 'in_transit'
@@ -594,11 +605,11 @@ begin
  -- PARCEL_EMAIL_MILESTONES: the saved snapshot and notification are committed together.
  if o.payment_status='paid' and o.status::text not in ('cancelled','delivered') and o.customer_email is not null
   and exists(select 1 from public.email_settings where id=1 and enabled)
-  and jsonb_array_length(coalesce(p_history->'postings','[]'::jsonb))>1 then
+  and greatest(jsonb_array_length(coalesce(p_history->'postings','[]'::jsonb)),jsonb_array_length(coalesce(o.delivery_details->'packing'->'parcels','[]'::jsonb)))>1 then -- SPLIT_EMAIL_COUNT
   insert into public.email_messages(event_key,kind,recipient,order_id,payload)
   select p_order||':parcel:'||(p->>'posting_number')||':'||milestone.kind,
    milestone.kind,lower(o.customer_email),p_order,
-   jsonb_build_object('posting_number',p->>'posting_number','parcel_index',(p->>'request_id')::int,'parcel_count',jsonb_array_length(p_history->'postings'))
+   jsonb_build_object('posting_number',p->>'posting_number','parcel_index',(p->>'request_id')::int,'parcel_count',greatest(jsonb_array_length(p_history->'postings'),jsonb_array_length(coalesce(o.delivery_details->'packing'->'parcels','[]'::jsonb))))
   from jsonb_array_elements(p_history->'postings') p
   left join lateral (
    select coalesce(prev->>'status',s.carrier_status) as status
@@ -678,6 +689,13 @@ begin
   if old_order.status='cancelled' and p_status<>'cancelled' then raise exception 'CANCELLED_FINAL'; end if;
   if old_order.status='delivered' and p_status<>'delivered' then raise exception 'COMPLETED_FINAL'; end if;
   if p_status='cancelled' and old_order.status='shipped' then raise exception 'RETURN_REQUIRED'; end if;
+  if coalesce((old_order.delivery_details->'packing'->>'split_dispatch')::boolean,false) then
+   if p_status='cancelled' and exists(select 1 from public.delivery_dispatch_batches b where b.order_id=p_id and b.state='created') then raise exception 'RETURN_REQUIRED'; end if;
+   if p_status in ('shipped','delivered') and exists(select 1 from public.order_shipments s where s.order_id=p_id
+    and jsonb_array_length(coalesce(s.status_history->'postings','[]'::jsonb))<jsonb_array_length(coalesce(old_order.delivery_details->'packing'->'parcels','[]'::jsonb))) then raise exception 'SPLIT_INCOMPLETE'; end if;
+   if p_status='delivered' and exists(select 1 from public.order_shipments s cross join lateral jsonb_array_elements(coalesce(s.status_history->'postings','[]'::jsonb)) p where s.order_id=p_id and p->>'status' is distinct from 'delivered') then raise exception 'SPLIT_INCOMPLETE'; end if;
+  end if; -- SPLIT_ADMIN_GUARD
+
   if p_payment is distinct from old_order.payment_status::text then
     if coalesce(length(trim(p_reason)),0)<5 then raise exception 'PAYMENT_REASON_REQUIRED'; end if;
     insert into public.order_events(order_id,kind,old_value,new_value,reason,actor_id) values(p_id,'payment',old_order.payment_status::text,p_payment,p_reason,p_actor);
@@ -729,6 +747,7 @@ begin
  if p_quote is null then raise exception 'INVALID_INPUT'; end if;
  select * into q from public.delivery_quotes where id=p_quote and cart_session=p_session for update;
  if not found or q.phone is distinct from p_form->>'phone' or q.expires_at<now() or q.checked_at<now()-interval '1 minute' then raise exception 'DELIVERY_EXPIRED'; end if;
+ if coalesce((q.packing->>'split_dispatch')::boolean,false)<>coalesce((p_form->>'splitShipments')::boolean,false) then raise exception 'DELIVERY_EXPIRED'; end if; -- SPLIT_QUOTE_GUARD
  perform 1 from public.delivery_packing_rules where id=q.packing_rule_id and active and updated_at=q.packing_updated_at for share;
  if not found then raise exception 'PACKING_CHANGED'; end if;
  perform 1 from public.cart_items where cart_id in(select id from public.carts where session_id=p_session) order by product_id for update;
@@ -829,6 +848,7 @@ begin
    if coalesce(p_form->>'deliveryMethod','ozon_point')<>'yandex_courier' then
    select * into q from public.delivery_quotes where id=p_quote and cart_session=p_session for share;
    if not found or q.phone is distinct from p_form->>'phone' or q.expires_at<now() or q.checked_at<now()-interval '1 minute' then raise exception 'DELIVERY_EXPIRED'; end if;
+ if coalesce((q.packing->>'split_dispatch')::boolean,false)<>coalesce((p_form->>'splitShipments')::boolean,false) then raise exception 'DELIVERY_EXPIRED'; end if; -- SPLIT_QUOTE_GUARD
    perform 1 from public.delivery_packing_rules where id=q.packing_rule_id and active and updated_at=q.packing_updated_at for share;
    if not found then raise exception 'PACKING_CHANGED'; end if;
    end if;
@@ -991,8 +1011,16 @@ AS $function$
  with candidates as (
   select s.order_id from public.order_shipments s join public.orders o on o.id=s.order_id
   where s.state='created' and s.posting_number is not null and s.next_sync_at<=now()
-   and o.status::text not in ('cancelled','delivered') and o.payment_status='paid'
-   and coalesce(s.carrier_status,'')<>'canceled'
+   and o.payment_status='paid'
+   and coalesce(s.status_history->'replacement'->>'phase','done')='done'
+   and ((o.status::text not in ('cancelled','delivered') and coalesce(s.carrier_status,'')<>'canceled'
+    and (not coalesce((o.delivery_details->'packing'->>'split_dispatch')::boolean,false)
+      or jsonb_array_length(coalesce(s.status_history->'postings','[]'::jsonb))>=jsonb_array_length(coalesce(o.delivery_details->'packing'->'parcels','[]'::jsonb))
+      or exists(select 1 from jsonb_array_elements(coalesce(s.status_history->'postings','[]'::jsonb)) p where coalesce(p->>'status','') not in ('delivered','canceled'))))
+    or exists(select 1 from jsonb_array_elements(coalesce(s.status_history->'postings','[]'::jsonb)) p
+      where p->>'status_changed_at' is not null and
+       (p->>'history_for_status_changed_at' is distinct from p->>'status_changed_at'
+        or coalesce((p->>'history_error')::boolean,false))))
   order by s.next_sync_at limit least(greatest(p_limit,1),100) for update of s skip locked
  ) update public.order_shipments s set next_sync_at=now()+interval '5 minutes',sync_claim=gen_random_uuid()
  from candidates c where s.order_id=c.order_id returning s.*;
@@ -1874,3 +1902,43 @@ REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM PUBLIC;
 REVOKE EXECUTE ON ALL FUNCTIONS IN SCHEMA public FROM PUBLIC;
 COMMIT;
 
+
+CREATE TABLE IF NOT EXISTS public.delivery_returns (
+ return_number text PRIMARY KEY, order_id uuid REFERENCES public.orders(id) ON DELETE SET NULL,
+ shipment_method_id bigint NOT NULL, status text NOT NULL, status_changed_at timestamptz NOT NULL,
+ created_at timestamptz, current_placement_name text, current_placement_address text,
+ cancellation_reason text, cancellation_responsible text,
+ history jsonb NOT NULL DEFAULT '[]'::jsonb CHECK(jsonb_typeof(history)='array'),
+ history_for_status_changed_at timestamptz, history_error boolean NOT NULL DEFAULT false,
+ synced_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS delivery_returns_order ON public.delivery_returns(order_id);
+CREATE INDEX IF NOT EXISTS delivery_returns_attention ON public.delivery_returns(status,status_changed_at);
+CREATE TABLE IF NOT EXISTS public.delivery_return_sync (
+ id boolean PRIMARY KEY DEFAULT true CHECK(id), cursor text,
+ lease_owner uuid, lease_until timestamptz, next_sync_at timestamptz NOT NULL DEFAULT now(),
+ synced_at timestamptz, last_error text
+);
+INSERT INTO public.delivery_return_sync(id) VALUES(true) ON CONFLICT DO NOTHING;
+CREATE TABLE IF NOT EXISTS public.customer_return_requests (
+ id uuid PRIMARY KEY DEFAULT gen_random_uuid(), order_id uuid NOT NULL REFERENCES public.orders(id),
+ reason text NOT NULL CHECK(reason IN ('damaged','wrong_item','other')),
+ description text NOT NULL CHECK(length(description) BETWEEN 10 AND 4000),
+ photos jsonb NOT NULL DEFAULT '[]'::jsonb CHECK(jsonb_typeof(photos)='array' AND jsonb_array_length(photos)<=3),
+ status text NOT NULL DEFAULT 'new' CHECK(status IN ('new','reviewing','agreed','closed')),
+ studio_reply text NOT NULL DEFAULT '' CHECK(length(studio_reply)<=4000),
+ created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS customer_return_requests_open ON public.customer_return_requests(order_id) WHERE status<>'closed';
+CREATE INDEX IF NOT EXISTS customer_return_requests_recent ON public.customer_return_requests(status,created_at DESC);
+REVOKE ALL ON public.delivery_returns, public.delivery_return_sync, public.customer_return_requests FROM PUBLIC;
+
+
+CREATE TABLE IF NOT EXISTS public.delivery_dispatch_batches (
+ order_id uuid NOT NULL REFERENCES public.orders(id), dispatch_group text NOT NULL CHECK(dispatch_group IN ('stock','preorder')),
+ idempotency_key uuid NOT NULL UNIQUE, request_payload jsonb NOT NULL,
+ state text NOT NULL CHECK(state IN ('creating','created')), claimed_at timestamptz NOT NULL,
+ result jsonb, request_sent_at timestamptz, last_error text,
+ PRIMARY KEY(order_id,dispatch_group)
+);
+REVOKE ALL ON public.delivery_dispatch_batches FROM PUBLIC;

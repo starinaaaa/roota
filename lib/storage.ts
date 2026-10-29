@@ -22,7 +22,7 @@ export function s3Client() {
 }
 
 export function objectKey(bucket: string, path: string) {
-  if (!["products", "product-drafts", "review-photos"].includes(bucket) ||
+  if (!["products", "product-drafts", "review-photos", "return-photos"].includes(bucket) ||
       !path || path.startsWith("/") || path.includes("\\") ||
       path.split("/").some((part) => !part || part === "." || part === ".."))
     throw new Error("INVALID_OBJECT_KEY");

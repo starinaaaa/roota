@@ -40,6 +40,8 @@ export async function recreatePaidShipment({
     const {
       rows: [order],
     } = await client.query("select * from orders where id=$1", [orderId]);
+    if (order?.delivery_details?.packing?.split_dispatch)
+      throw new Error("Для раздельной отправки используйте этапы в карточке заказа. Автоматическая замена всех этапов недоступна.");
     const {
       rows: [shipment],
     } = await client.query("select * from order_shipments where order_id=$1", [

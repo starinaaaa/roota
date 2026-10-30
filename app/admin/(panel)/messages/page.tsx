@@ -15,12 +15,11 @@ import {
   emailKindLabels,
 } from "@/lib/email/preview";
 import type { TemplateKind } from "@/lib/email/templates";
-import { getSiteContent } from "@/lib/site";
 export const dynamic = "force-dynamic";
 export default async function MessagesPage() {
   await requireAdmin();
   const db = createServerClient();
-  const [settings, templates, messages, blocks, site] = await Promise.all([
+  const [settings, templates, messages, blocks] = await Promise.all([
     db.from("email_settings").select("*").eq("id", 1).single(),
     db.from("email_templates").select("*").order("kind"),
     db
@@ -31,7 +30,6 @@ export default async function MessagesPage() {
       .order("created_at", { ascending: false })
       .limit(100),
     db.from("email_blocks").select("email,reason").limit(100),
-    getSiteContent(),
   ]);
   if (settings.error || templates.error || messages.error || blocks.error)
     throw new Error("Не удалось загрузить почту");
@@ -208,13 +206,13 @@ export default async function MessagesPage() {
                   : "Внешний вид письма"}
               </h3>
               <p className="text-sm text-stone-600">
-                Тема: {renderEmailPreview(t, variant.id, site.telegram).subject}
+                Тема: {renderEmailPreview(t, variant.id).subject}
               </p>
               <iframe
                 title={`Предпросмотр ${t.kind}: ${variant.label}`}
                 sandbox=""
                 className="w-full h-[640px] border border-stone-200"
-                srcDoc={renderEmailPreview(t, variant.id, site.telegram).html}
+                srcDoc={renderEmailPreview(t, variant.id).html}
               />
             </div>
           ))}

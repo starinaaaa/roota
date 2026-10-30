@@ -19,8 +19,7 @@ import { siteUrl } from "@/lib/seo";
 import { sendEmail } from "./server";
 import { renderEmail, marketingKinds, type EmailOrderItem } from "./templates";
 import { ozonTrackingHint } from "@/lib/delivery/tracking";
-import { getSiteContent } from "@/lib/site";
-import { reviewInvitation, reviewTelegramUrl, rewardExpiry } from "@/lib/review-copy";
+import { reviewInvitation, rewardExpiry } from "@/lib/review-copy";
 export async function processEmailQueue() {
   if (
     process.env.CUSTOMER_EMAILS_ENABLED !== "true" ||
@@ -63,7 +62,6 @@ export async function processEmailQueue() {
         product: m.payload?.product ?? "",
       };
       let orderItems: EmailOrderItem[] | undefined;
-      let secondaryAction: { url: string; label: string } | undefined;
       let parcels: CustomerParcel[] | undefined;
       let subscription = m.subscription_id
         ? (
@@ -223,7 +221,6 @@ export async function processEmailQueue() {
           const copy = reviewInvitation(o.order_items);
           values.review_subject = copy.subject;
           values.review_body = copy.body;
-          secondaryAction = { url: reviewTelegramUrl((await getSiteContent()).telegram, o.order_number), label: "Написать отзыв в Telegram" };
           if (!subscription) {
             const { data: c, error: ce } = await db
               .from("email_subscriptions")
@@ -319,7 +316,6 @@ export async function processEmailQueue() {
           m.kind.startsWith("order_") && m.kind !== "order_review_reward",
           orderItems,
           parcels,
-          secondaryAction,
         ),
         metadata: { message_id: m.id },
       };

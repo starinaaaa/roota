@@ -1,7 +1,7 @@
 import { deliveryEmailUpdate } from "@/lib/delivery/customer-parcels";
 import { ozonTrackingHint } from "@/lib/delivery/tracking";
 import { LEGAL_VERSION } from "@/lib/legal";
-import { reviewInvitation, reviewTelegramUrl } from "@/lib/review-copy";
+import { reviewInvitation } from "@/lib/review-copy";
 import {
   renderEmail,
   type TemplateKind,
@@ -33,7 +33,6 @@ export const emailKindLabels: Record<TemplateKind, string> = {
 export function renderEmailPreview(
   template: { kind: string; subject: string; body: string },
   variant: ReviewPreviewVariant = "plate",
-  telegram = "https://t.me/rav_no",
 ) {
   const plate = {
     name: "Тарелка «Солнышко»",
@@ -109,11 +108,5 @@ export function renderEmailPreview(
     orderMessage,
     items,
     undefined,
-    review
-      ? {
-          url: reviewTelegramUrl(telegram, number),
-          label: "Написать отзыв в Telegram",
-        }
-      : undefined,
   );
 }

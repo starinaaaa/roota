@@ -27,7 +27,10 @@ test("admin previews render every review variant and coupon terms without empty 
       v.id,
     );
     assert.match(preview.plaintext, /На доставку скидка не распространяется/);
-    assert.match(preview.html, /Написать отзыв в Telegram/);
+    assert.match(preview.html, /Оставить отзыв/);
+    assert.match(preview.plaintext, /без регистрации/);
+    assert.match(preview.plaintext, /до 5 фотографий/);
+    assert.doesNotMatch(preview.html, /Написать отзыв в Telegram/);
     assert.doesNotMatch(preview.html, /\{\{/);
     return preview.subject;
   });

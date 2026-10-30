@@ -43,8 +43,48 @@ export default async function ReviewsAdmin() {
       <h1 className="font-display text-page">Отзывы</h1>
       <p>
         Публикуйте отзывы любой оценки, если покупатель разрешил публикацию.
-        Контакты остаются в админке.
+        Контакты остаются в админке. Основная форма — на сайте по персональной ссылке из заказа. Приглашение отправляется на почту через 7 дней после получения всего заказа, если покупатель согласился на такое письмо.
       </p>
+      <h2 className="text-xl">Отзывы с сайта</h2>
+      {!reviews.data.length && <p>Пока нет отзывов с сайта.</p>}
+      {reviews.data.map((r) => (
+        <article key={r.id} className="admin-card space-y-3">
+          <p>
+            Заказ {r.orders?.order_number} · {r.rating}/5 · {r.state}
+          </p>
+          <p>Имя для публикации: {r.display_name || "Покупатель Roota"}</p>
+          <p className="whitespace-pre-wrap">{r.body}</p>
+          <p>
+            {r.publication_consent
+              ? "Публикация разрешена"
+              : "Только для студии"}
+          </p>
+          <div className="flex gap-2">
+            {r.photo_paths.map((_: string, i: number) => (
+              <a
+                key={i}
+                href={`/review-media/${r.id}/${i}`}
+                target="_blank"
+                rel="noreferrer"
+                className="underline"
+              >
+                Фото {i + 1}
+              </a>
+            ))}
+          </div>
+          <form action={moderateReview} className="flex gap-3">
+            <input type="hidden" name="id" value={r.id} />
+            <select name="state" defaultValue={r.state} className="admin-input">
+              <option value="pending">На проверке</option>
+              <option value="published" disabled={!r.publication_consent}>
+                Опубликовать
+              </option>
+              <option value="hidden">Скрыть</option>
+            </select>
+            <SubmitButton className="admin-button">Сохранить</SubmitButton>
+          </form>
+        </article>
+      ))}
       <section className="admin-card space-y-4">
         <h2 className="text-xl">Отзывы в Telegram и промокоды</h2>
         <p>
@@ -80,43 +120,6 @@ export default async function ReviewsAdmin() {
           </div>
         ))}
       </section>
-      {reviews.data.map((r) => (
-        <article key={r.id} className="admin-card space-y-3">
-          <p>
-            Заказ {r.orders?.order_number} · {r.rating}/5 · {r.state}
-          </p>
-          <p className="whitespace-pre-wrap">{r.body}</p>
-          <p>
-            {r.publication_consent
-              ? "Публикация разрешена"
-              : "Только для студии"}
-          </p>
-          <div className="flex gap-2">
-            {r.photo_paths.map((_: string, i: number) => (
-              <a
-                key={i}
-                href={`/review-media/${r.id}/${i}`}
-                target="_blank"
-                rel="noreferrer"
-                className="underline"
-              >
-                Фото {i + 1}
-              </a>
-            ))}
-          </div>
-          <form action={moderateReview} className="flex gap-3">
-            <input type="hidden" name="id" value={r.id} />
-            <select name="state" defaultValue={r.state} className="admin-input">
-              <option value="pending">На проверке</option>
-              <option value="published" disabled={!r.publication_consent}>
-                Опубликовать
-              </option>
-              <option value="hidden">Скрыть</option>
-            </select>
-            <SubmitButton className="admin-button">Сохранить</SubmitButton>
-          </form>
-        </article>
-      ))}
       <h2 className="text-xl">Приглашения</h2>
       {invites.data.map((i) => (
         <p key={i.id}>

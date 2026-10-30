@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import { createServerClient } from "@/lib/db";
 import { orderIdForToken } from "@/lib/order-access";
-import { submitReview } from "@/lib/actions/reviews";
+import Link from "next/link";
+import ReviewForm from "@/components/review/ReviewForm";
+import { canReviewOrder } from "@/lib/reviews";
 import { getPool } from "@/lib/db/pool";
 import { getSiteContent } from "@/lib/site";
 import {
@@ -29,19 +31,21 @@ export default async function ReviewPage({
     db
       .from("orders")
       .select(
-        "order_number,delivery_stage,payment_status,status,order_items(product_name,quantity,configuration)",
+        "order_number,customer_name,delivery_stage,payment_status,status,order_items(product_name,quantity,configuration)",
       )
       .eq("id", id)
       .single(),
-    db.from("customer_reviews").select("id").eq("order_id", id).maybeSingle(),
+    db
+      .from("customer_reviews")
+      .select("id,publication_consent")
+      .eq("order_id", id)
+      .maybeSingle(),
   ]);
-  if (
-    !order.data ||
-    order.data.delivery_stage !== "delivered" ||
-    order.data.payment_status !== "paid" ||
-    order.data.status === "cancelled"
-  )
-    notFound();
+  if (order.error || review.error)
+    throw new Error(
+      "Не удалось загрузить отзыв. Попробуйте обновить страницу.",
+    );
+  if (!order.data || !canReviewOrder(order.data)) notFound();
   const [site, rewardResult] = await Promise.all([
     getSiteContent(),
     getPool().query<{
@@ -59,16 +63,33 @@ export default async function ReviewPage({
   const reward = rewardResult.rows[0];
   const copy = reviewCopy(order.data.order_items);
   return (
-    <div className="max-w-xl mx-auto px-6 pt-32 pb-16 space-y-6">
-      <h1 className="font-display text-page">{copy.subject}</h1>
+    <div className="max-w-2xl mx-auto px-6 pt-28 pb-20 md:pt-36 space-y-6">
+      <Link
+        href={`/order/${token}`}
+        className="text-caption text-stone-600 underline underline-offset-4"
+      >
+        ← К заказу {order.data.order_number}
+      </Link>
+      <h1 className="font-display text-page">Ваш отзыв</h1>
       <p>
         Заказ {order.data.order_number}. Будем рады честному отзыву — любая
         оценка важна.
       </p>
-      <p>{copy.introduction}</p>
+      {!review.data && !reward && (
+        <p className="text-copy leading-relaxed text-stone-700">
+          {copy.introduction}
+        </p>
+      )}
       {review.data || reward ? (
         <div className="space-y-4" role="status">
-          <p>Спасибо, отзыв передан студии!</p>
+          <h2 className="font-display text-section">Спасибо за ваш отзыв!</h2>
+          <p>
+            {review.data
+              ? review.data.publication_consent
+                ? "Отзыв передан студии. Текст и фотографии появятся на сайте после проверки."
+                : "Отзыв и фотографии доступны только студии и не будут опубликованы."
+              : "Отзыв передан студии."}
+          </p>
           {reward &&
             (reward.revoked_at || reward.redeemed_at || reward.expired ? (
               <p>
@@ -102,64 +123,31 @@ export default async function ReviewPage({
         </div>
       ) : (
         <>
-          <p className="text-ui">{REVIEW_REWARD_TERMS}</p>
-          <a
-            href={reviewTelegramUrl(site.telegram, order.data.order_number)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block border border-stone-300 px-4 py-3 underline"
-          >
-            Написать отзыв в Telegram
-          </a>
-          <p className="text-caption">
-            За отзыв в Telegram пришлём код после подтверждения студией. На
-            сайте код появится сразу после отправки.
-          </p>
-          <form action={submitReview} className="space-y-4">
-            <input type="hidden" name="token" value={token} />
-            <label className="block">
-              Оценка
-              <select name="rating" className="admin-input" defaultValue="5">
-                {[5, 4, 3, 2, 1].map((n) => (
-                  <option key={n} value={n}>
-                    {n} из 5
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="block">
-              Ваш отзыв
-              <textarea
-                name="body"
-                className="admin-input"
-                rows={6}
-                maxLength={4000}
-                required
-              />
-            </label>
-            <label className="block">
-              Фото по желанию: до 3 фотографий, по 3 МБ
-              <input
-                type="file"
-                name="photos"
-                accept="image/jpeg,image/png,image/webp"
-                multiple
-                className="admin-input"
-              />
-            </label>
-            <label className="flex gap-2">
-              <input type="checkbox" name="publication_consent" />
-              Разрешаю публикацию текста, оценки и фотографий на сайте Roota.
-              Контакты и номер заказа не публикуются.
-            </label>
-            <p className="text-caption">
-              Без этого согласия отзыв останется доступен только студии.{" "}
-              <a href="/privacy" className="underline">
-                Политика конфиденциальности
-              </a>
+          <details className="border-y border-stone-200 py-4 text-ui">
+            <summary className="cursor-pointer">
+              В благодарность — 10% на следующий заказ
+            </summary>
+            <p className="mt-3 text-caption text-stone-600">
+              {REVIEW_REWARD_TERMS}
             </p>
-            <button className="admin-button">Отправить отзыв</button>
-          </form>
+          </details>
+          <ReviewForm
+            token={token}
+            defaultName={order.data.customer_name.trim().split(/\s+/)[0] ?? ""}
+          />
+          <p className="border-t border-stone-200 pt-5 text-caption text-stone-600">
+            Удобнее в переписке?{" "}
+            <a
+              href={reviewTelegramUrl(site.telegram, order.data.order_number)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline underline-offset-4"
+            >
+              Напишите отзыв в Telegram
+            </a>{" "}
+            и приложите фото в чат. Промокод пришлём после подтверждения
+            студией.
+          </p>
         </>
       )}
     </div>

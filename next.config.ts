@@ -32,7 +32,7 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  experimental: { serverActions: { bodySizeLimit: "12mb" } },
+  experimental: { serverActions: { bodySizeLimit: "17mb" } },
   images: {
     loader: "custom",
     loaderFile: "./lib/image-loader.ts",

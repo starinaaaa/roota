@@ -6,7 +6,6 @@ import { revalidatePath } from "next/cache";
 import { emailProviderKey } from "@/lib/email/provider-config";
 import { templateKinds } from "@/lib/email/templates";
 import { renderEmailPreview, reviewPreviewVariants } from "@/lib/email/preview";
-import { getSiteContent } from "@/lib/site";
 import { sendUnisenderEmail } from "@/lib/email/unisender-transport";
 import { randomUUID } from "node:crypto";
 import { studioEmailMessage } from "@/lib/email/studio-notifications";
@@ -140,7 +139,6 @@ export async function testEmailTemplate(form: FormData) {
       { ...t, kind },
       reviewPreviewVariants.find((v) => v.id === form.get("variant"))?.id ??
         "plate",
-      (await getSiteContent()).telegram,
     ),
   });
   const { error: saveError } = await db

@@ -41,7 +41,7 @@ export function reviewInvitation(items: ReviewItem[]) {
   const copy = reviewCopy(items);
   return {
     subject: copy.subject,
-    body: `${copy.introduction}\n\nОставьте отзыв на сайте или напишите нам в Telegram.\n\n${REVIEW_REWARD_TERMS}\n\nЗа отзыв на сайте код появится сразу и придёт на почту. За отзыв в Telegram пришлём его после подтверждения студией.`,
+    body: `${copy.introduction}\n\nОставьте отзыв на сайте — форма откроется по кнопке ниже, без регистрации. Можно добавить до 5 фотографий. Обычного снимка на телефон вполне достаточно.\n\n${REVIEW_REWARD_TERMS}\n\nПосле отправки отзыва промокод появится на сайте и придёт на почту.`,
   };
 }
 

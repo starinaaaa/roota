@@ -381,6 +381,7 @@
       "active"
     ],
     "customer_reviews": [
+      "display_name",
       "id",
       "order_id",
       "rating",

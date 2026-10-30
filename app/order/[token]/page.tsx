@@ -1,3 +1,4 @@
+import { canReviewOrder } from "@/lib/reviews";
 import ReturnRequests from "@/components/order/ReturnRequests";
 import { productionEstimate } from "@/lib/preorder-copy";
 import { courierContactLabel } from "@/lib/courier-contact";
@@ -334,6 +335,13 @@ export default async function CustomerOrderPage({
           >
             Написать по заказу ↗
           </a>
+          {canReviewOrder(order) && (
+            <section className="space-y-3 border-t border-stone-200 pt-6">
+              <h2 className="font-display text-xl">Как вам изделия Roota?</h2>
+              <p className="text-ui text-stone-600">Поделитесь впечатлениями и, если захочется, добавьте фото изделия у вас дома. За честный отзыв подарим промокод на 10% на следующий заказ.</p>
+              <Link href={`/review/${token}`} className="block border border-stone-900 px-6 py-4 text-center text-ui hover:bg-stone-900 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4">Оставить отзыв</Link>
+            </section>
+          )}
           <ReturnRequests orderId={orderId} token={token}
             eligible={order.payment_status === "paid" && (order.status === "delivered" || order.delivery_stage === "delivered" || parcels.some(parcel=>parcel.status === "delivered"))} />
           <p className="text-caption text-stone-500">

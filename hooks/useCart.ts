@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useCartUI } from "@/contexts/CartUIContext";
 import { addToCart, removeFromCart, updateCartItem } from "@/lib/actions/cart";
@@ -14,6 +14,7 @@ import type { GardenConfiguration } from "@/lib/garden";
 // shared state and then confirmed / corrected by router.refresh().
 export function useCart() {
   const [isPending, startTransition] = useTransition();
+  const [pendingAction, setPendingAction] = useState<"add" | "update" | "remove" | null>(null);
   const router = useRouter();
   const { isOpen, open, close, items, setItems, setError } = useCartUI();
 
@@ -27,6 +28,7 @@ export function useCart() {
     onError?: (msg: string) => void,
     product?: Product,
   ) {
+    setPendingAction("add");
     setError(null);
     // Optimistic: add / increment immediately so the drawer feels instant
     if (product) {
@@ -90,6 +92,7 @@ export function useCart() {
 
   // ── removeItem ─────────────────────────────────────────────────────────────
   function removeItem(productId: string) {
+    setPendingAction("remove");
     setError(null);
     const previous = items;
     setItems((prev) => prev.filter((i) => i.product_id !== productId));
@@ -110,6 +113,7 @@ export function useCart() {
 
   // ── updateQuantity ─────────────────────────────────────────────────────────
   function updateQuantity(productId: string, qty: number) {
+    setPendingAction(qty <= 0 ? "remove" : "update");
     setError(null);
     // Snapshot current state so we can revert if the server rejects the update
     const prevItems = items;
@@ -155,6 +159,7 @@ export function useCart() {
     saveGardenItem,
     items,
     isPending,
+    isAdding: isPending && pendingAction === "add",
     addItem,
     removeItem,
     updateQuantity,

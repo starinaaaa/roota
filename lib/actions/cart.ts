@@ -20,14 +20,19 @@ export async function getCart(): Promise<{ items: CartItem[] }> {
   try {
     const { data, error } = await createServerClient()
       .from("carts")
-      .select("id,cart_items(id,cart_id,product_id,quantity,purchase_mode,configuration)")
+      .select("id,cart_items(id,cart_id,product_id,quantity,purchase_mode,configuration,created_at)")
       .eq("session_id", session)
       .maybeSingle();
     if (error || !data) return { items: [] };
     const products = await getProductsByIds(
       data.cart_items.map((r) => r.product_id),
     );
-    const items = data.cart_items.flatMap((r) => {
+    // Database row order can change after an UPDATE. Keep the original add order,
+    // with a stable tie-breaker for lines created at the same time.
+    const orderedRows = [...data.cart_items].sort((a, b) =>
+      a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id),
+    );
+    const items = orderedRows.flatMap((r) => {
       const product = products.find((p) => p.id === r.product_id);
       if (!product) return [];
       if (product.configurator === "garden") {

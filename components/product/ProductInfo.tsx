@@ -16,6 +16,7 @@ type Props = {
   product: Product;
   cartQty: number;
   pending?: boolean;
+  adding?: boolean;
   onIncrement: () => void;
   onDecrement: () => void;
   onUnavailable: () => void;
@@ -26,6 +27,7 @@ export default function ProductInfo({
   product,
   cartQty,
   pending = false,
+  adding = false,
   onIncrement,
   onDecrement,
   onUnavailable,
@@ -144,7 +146,7 @@ export default function ProductInfo({
                   aria-busy={pending}
                   className="w-full bg-stone-900 text-stone-50 font-body text-ui tracking-[0.08em] uppercase py-4 px-8 hover:bg-stone-700 transition-colors duration-300"
                 >
-                  {pending ? "Добавляю…" : "Добавить в корзину"}
+                  {pending ? (adding ? "Добавляю…" : "Удаляю…") : "Добавить в корзину"}
                 </motion.button>
               )}
             </AnimatePresence>

@@ -29,7 +29,7 @@ export default function CardActions({
 }: Props) {
   const [modal, setModal] = useState(false);
   const [modalTab, setModalTab] = useState<"waitlist" | "preorder">("waitlist");
-  const { items, addItem, updateQuantity, isPending } = useCart();
+  const { items, addItem, updateQuantity, isPending, isAdding } = useCart();
 
   const cartItem = items.find((i) => i.product_id === productId);
   const cartQty = cartItem?.quantity ?? 0;
@@ -106,7 +106,7 @@ export default function CardActions({
               aria-busy={isPending}
               className={`${btnBase} bg-stone-900 text-stone-50 hover:bg-stone-700`}
             >
-              {isPending ? "Добавляю…" : "В корзину"}
+              {isPending ? (isAdding ? "Добавляю…" : "Удаляю…") : "В корзину"}
             </button>
           )}
 

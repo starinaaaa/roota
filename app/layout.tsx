@@ -1,17 +1,18 @@
 import { browserIconUrl } from "@/lib/browser-icon";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { Jost, Unbounded } from "next/font/google";
+import localFont from "next/font/local";
 import Header from "@/components/layout/Header";
 
-const unbounded = Unbounded({
-  subsets: ["latin", "cyrillic"],
-  weight: ["300", "400", "500"],
+const unbounded = localFont({
+  src: "./fonts/unbounded-variable.woff2",
+  weight: "200 900",
   variable: "--font-display",
   display: "swap",
 });
-const jost = Jost({
-  subsets: ["latin", "cyrillic"],
+const jost = localFont({
+  src: "./fonts/jost-variable.woff2",
+  weight: "100 900",
   variable: "--font-jost",
   display: "swap",
 });

@@ -84,6 +84,9 @@ export function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const wheel = path === "/wheel" || path.startsWith("/wheel/");
   const requestHeaders = new Headers(request.headers);
+  requestHeaders.delete("x-roota-market");
+  const market = path === "/market" || path.startsWith("/market/");
+  if (market) requestHeaders.set("x-roota-market", "1");
   // Always overwrite this internal signal; a public request cannot spoof it.
   requestHeaders.set("x-roota-surface", wheel ? "wheel" : "store");
   const response = NextResponse.next({ request: { headers: requestHeaders } });
@@ -92,7 +95,7 @@ export function proxy(request: NextRequest) {
     response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
     response.headers.set("Referrer-Policy", "no-referrer");
   }
-  if (wheel) {
+  if (wheel || market) {
     response.headers.set("Cache-Control", "private, no-store");
     response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
     response.headers.set("Referrer-Policy", "no-referrer");
@@ -114,6 +117,7 @@ export function proxy(request: NextRequest) {
     "/draft",
     "/selection",
     "/favorites",
+    "/api/market",
   ].some((prefix) => path === prefix || path.startsWith(prefix + "/"));
   if (privatePath) {
     response.headers.set("Cache-Control", "private, no-store");

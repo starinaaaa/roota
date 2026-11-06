@@ -62,6 +62,19 @@ export async function POST(request: NextRequest) {
 }
 
 async function processNotification(fields: Record<string, string>) {
+  if (fields.Shp_source === "market") {
+    try {
+      const { confirmMarketNotification } = await import("@/lib/market/server");
+      if (!await confirmMarketNotification(fields)) return reply("invalid notification", 400);
+      return reply(`OK${fields.InvId}`, 200);
+    } catch (error) {
+      const name = error instanceof Error ? error.name : "";
+      if (/Signature|Validation/.test(name) || (error instanceof Error && /MISMATCH|NOT_STARTED/.test(error.message)))
+        return reply("invalid notification", 400);
+      console.error("market_result_confirmation_failed");
+      return reply("retry later", 503);
+    }
+  }
   const db = createServerClient();
   const { data, error } = await db
     .from("payments")

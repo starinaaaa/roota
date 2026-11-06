@@ -25,6 +25,9 @@ import { getSiteContent } from "@/lib/site";
 import "./globals.css";
 
 export async function generateMetadata(): Promise<Metadata> {
+  if ((await headers()).get("x-roota-market") === "1") {
+    return { title: { default: "Roota · маркет", template: "%s · Roota" }, robots: { index: false, follow: false, noarchive: true }, icons: { icon: "/brand/icon.svg" } };
+  }
   if ((await headers()).get("x-roota-surface") === "wheel")
     return {
       title: { absolute: "Рулетка дел" },
@@ -73,6 +76,9 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  if ((await headers()).get("x-roota-market") === "1") {
+    return <html lang="ru" className={`${unbounded.variable} ${jost.variable}`}><body>{children}</body></html>;
+  }
   if ((await headers()).get("x-roota-surface") === "wheel")
     return (
       <html lang="ru">

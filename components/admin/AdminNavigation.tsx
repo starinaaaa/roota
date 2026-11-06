@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const sections = [
   ["", "Требует внимания"],
   ["orders", "Заказы"],
+  ["market", "Маркет · касса"],
   ["returns", "Возвраты"],
   ["production", "Изготовление"],
   ["customers", "Покупатели"],
@@ -32,7 +33,7 @@ export default function AdminNavigation() {
       aria-label="Админка"
     >
       {sections.map(([path, label]) => {
-        const href = path ? `/admin/${path}` : "/admin";
+        const href = path === "market" ? "/market/control" : path ? `/admin/${path}` : "/admin";
         const active = pathname === href || (Boolean(path) && pathname.startsWith(`${href}/`));
         return (
           <Link

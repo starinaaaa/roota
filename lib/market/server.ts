@@ -10,6 +10,7 @@ import { getSiteContent } from "@/lib/site";
 import type { MarketState, PublicSale, SocialLinks } from "./model";
 import {
   confirmSale,
+  savePaymentContact,
   expireSales,
   inventory,
   lockRegister,
@@ -217,7 +218,11 @@ export async function saleByToken(token: string) {
     return sale ?? null;
   });
 }
-export async function preparePayment(token: string, email: string) {
+export async function preparePayment(
+  token: string,
+  email: string,
+  marketingConsent = false,
+) {
   const mode = paymentMode();
   if (!mode)
     throw new Error("Оплата временно недоступна. Обратитесь к продавцу");
@@ -262,10 +267,7 @@ export async function preparePayment(token: string, email: string) {
       FailURL2: `${returnUrl}?return=fail`,
       FailURL2Method: "GET",
     });
-    await db.query(
-      "update public.market_sales set email=$2,receipt=$3::jsonb where id=$1",
-      [sale.id, email, JSON.stringify(receipt)],
-    );
+    await savePaymentContact(db, sale, email, receipt, marketingConsent);
     return form;
   });
 }

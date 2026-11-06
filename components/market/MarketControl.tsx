@@ -638,6 +638,19 @@ export default function MarketControl() {
                       </button>
                     </>
                   ) : null}
+                  {sale.status === "paid" &&
+                  sale.method !== "robokassa" &&
+                  !sale.receiptUrl ? (
+                    <div className="market-receipt-needed" role="status">
+                      <p>Продажа сохранена. Чек ФНС ещё не выдан.</p>
+                      <a
+                        className="market-primary"
+                        href="#market-receipt-tasks"
+                      >
+                        Выдать чек в «Моём налоге» ↓
+                      </a>
+                    </div>
+                  ) : null}
                   <ReceiptDownload sale={sale} />
                   {sale.status === "paid_review" ? (
                     <p className="market-error">

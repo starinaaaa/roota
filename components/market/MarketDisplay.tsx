@@ -118,7 +118,9 @@ export default function MarketDisplay() {
                 <p>Ваш чек ФНС · наведите камеру</p>
               </div>
             ) : sale.method !== "robokassa" ? (
-              <p className="market-small">Продавец готовит ваш чек.</p>
+              <p className="market-small">
+                Чек ФНС выдаст продавец. Пожалуйста, дождитесь его.
+              </p>
             ) : null}
             <a
               className="market-secondary"
@@ -130,7 +132,10 @@ export default function MarketDisplay() {
             </a>
           </section>
         ) : sale.status === "pending" && !expired ? (
-          <section className="market-pay-display" key={sale.id}>
+          <section
+            className={`market-pay-display is-${sale.method}`}
+            key={sale.id}
+          >
             <div className="market-pay-description">
               <p className="market-eyebrow">Ваша покупка · {sale.number}</p>
               <h1>Осталось оплатить.</h1>

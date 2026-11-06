@@ -22,6 +22,7 @@ export default function MarketPayment({
   );
   const [email, setEmail] = useState(""),
     [accepted, setAccepted] = useState(false),
+    [marketingConsent, setMarketingConsent] = useState(true),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
   const expired = useSaleExpired(sale);
@@ -32,7 +33,7 @@ export default function MarketPayment({
     try {
       const { form } = await marketFetch<{ form: PaymentForm }>(
         `/api/market/pay/${token}`,
-        { email, accepted },
+        { email, accepted, marketingConsent },
       );
       // POST directly to the official payment page. No browser return marks a sale paid.
       const target = new URL(form.action);
@@ -86,7 +87,7 @@ export default function MarketPayment({
           <p>
             Спасибо за встречу!
             <br />
-            Чек придёт на вашу почту.
+            Чек по оплате через Робокассу придёт на вашу почту.
           </p>
           <strong className="market-paid-amount">{money(sale.amount)}</strong>
         </section>
@@ -124,7 +125,7 @@ export default function MarketPayment({
           <div className="market-phone-title">
             <div>
               <p className="market-eyebrow">{sale.number}</p>
-              <h1>Забрать с собой</h1>
+              <h1>Ваша покупка</h1>
             </div>
             <Creature id={2912} />
           </div>
@@ -170,6 +171,29 @@ export default function MarketPayment({
                   rel="noreferrer"
                 >
                   политикой обработки данных
+                </a>
+                .
+              </span>
+            </label>
+            <label className="market-consent market-marketing-consent">
+              <input
+                type="checkbox"
+                name="marketingConsent"
+                checked={marketingConsent}
+                onChange={(e) => setMarketingConsent(e.target.checked)}
+              />
+              <span>
+                Хочу получать{" "}
+                <a href="/newsletter-consent" target="_blank" rel="noreferrer">
+                  информацию о новых коллекциях и распродажах
+                </a>{" "}
+                и даю{" "}
+                <a
+                  href="/newsletter-data-consent"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  согласие на обработку email
                 </a>
                 .
               </span>

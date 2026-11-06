@@ -22,7 +22,11 @@ export function Creature({
   );
 }
 export function MarketBrand() {
-  return <span className="market-brand">Roota</span>;
+  return (
+    <a className="market-brand" href="https://roota.moscow/" aria-label="Roota — на главную">
+      Roota
+    </a>
+  );
 }
 export function QrCode({ value }: { value: string }) {
   const [code, setCode] = useState<{ value: string; data: string } | null>(

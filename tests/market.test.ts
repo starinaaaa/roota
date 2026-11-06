@@ -13,6 +13,7 @@ import {
   createSale,
   cancelSale,
   confirmSale,
+  savePaymentContact,
   expireSales,
   inventory,
   lockRegister,
@@ -44,6 +45,12 @@ async function fixture() {
   await db.exec(
     await readFile(
       "database/migrations/20261106_market_manual_payments.sql",
+      "utf8",
+    ),
+  );
+  await db.exec(
+    await readFile(
+      "database/migrations/20261107_market_newsletter.sql",
       "utf8",
     ),
   );
@@ -458,6 +465,108 @@ test("market receipt matches total and signed notification rejects forged amount
     );
     assert.throws(() =>
       verifyPaymentNotification(pay, { ...fields, Shp_mode: "live" }, env),
+    );
+  } finally {
+    await db.close();
+  }
+});
+
+test("market newsletter records submitted choices once and isolates opt-out from other subscriptions", async () => {
+  const { db, run } = await fixture();
+  try {
+    const sale = await run((c) =>
+      createSale(c, request({ "plate-nevidimka": 1 }), "live"),
+    );
+    const email = "market-consent@example.test";
+    await db.query("select record_checkout_news_consent($1,$2,$3,$4)", [
+      email,
+      "store-checkout",
+      "a".repeat(64),
+      "checkout-email-2026-10-23",
+    ]);
+    await run((c) => savePaymentContact(c, sale, email, null, false));
+    assert.equal(
+      (
+        await db.query<{ n: number }>(
+          "select count(*)::int n from email_subscriptions where resource like 'market:%'",
+        )
+      ).rows[0].n,
+      0,
+    );
+    await run((c) => savePaymentContact(c, sale, email, null, true));
+    await run((c) => savePaymentContact(c, sale, email, null, true));
+    const saved = (
+      await db.query<{
+        marketing_consent: boolean;
+        marketing_consent_at: string | null;
+        marketing_consent_version: string | null;
+      }>(
+        "select marketing_consent,marketing_consent_at,marketing_consent_version from market_sales where id=$1",
+        [sale.id],
+      )
+    ).rows[0];
+    assert.equal(saved.marketing_consent, true);
+    assert.ok(saved.marketing_consent_at);
+    assert.equal(saved.marketing_consent_version, "market-email-2026-11-07");
+    assert.equal(
+      (
+        await db.query<{ n: number }>(
+          "select count(*)::int n from email_subscriptions where resource=$1 and revoked_at is null",
+          [`market:${sale.id}`],
+        )
+      ).rows[0].n,
+      1,
+    );
+    await run((c) => savePaymentContact(c, sale, email, null, false));
+    assert.equal(
+      (
+        await db.query<{ n: number }>(
+          "select count(*)::int n from email_subscriptions where resource=$1 and revoked_at is null",
+          [`market:${sale.id}`],
+        )
+      ).rows[0].n,
+      0,
+    );
+    assert.equal(
+      (
+        await db.query<{ n: number }>(
+          "select count(*)::int n from email_subscriptions where resource='store-checkout' and revoked_at is null",
+        )
+      ).rows[0].n,
+      1,
+    );
+  } finally {
+    await db.close();
+  }
+});
+test("test market purchases never create marketing subscriptions", async () => {
+  const { db, run } = await fixture();
+  try {
+    const sale = await run((c) =>
+      createSale(c, request({ "plate-nevidimka": 1 }), "test"),
+    );
+    await run((c) =>
+      savePaymentContact(c, sale, "test-choice@example.test", null, true),
+    );
+    assert.equal(
+      (
+        await db.query<{ n: number }>(
+          "select count(*)::int n from email_subscriptions",
+        )
+      ).rows[0].n,
+      0,
+    );
+    await assert.rejects(
+      run((c) =>
+        savePaymentContact(
+          c,
+          { ...sale, email: "other@example.test" },
+          "test-choice@example.test",
+          null,
+          true,
+        ),
+      ),
+      /EMAIL_MISMATCH/,
     );
   } finally {
     await db.close();

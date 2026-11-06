@@ -9,7 +9,9 @@
   background: var(--market-cream);
   color: var(--market-ink);
   font-family: var(--font-jost), sans-serif;
-  font-size: var(--text-ui, 16px);
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
   font-weight: 300;
   line-height: 1.6;
 }
@@ -87,6 +89,7 @@
   line-height: 1.3;
   letter-spacing: 0.22em;
   text-transform: uppercase;
+  text-decoration: none;
 }
 .market-primary,
 .market-secondary {
@@ -1160,46 +1163,137 @@
   height: 160px;
 }
 .market-hello {
-  max-width: 600px;
-  margin: auto;
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
   min-height: 100svh;
   padding: 0 24px 28px;
-  display: flex;
-  align-items: flex-start;
-  flex-direction: column;
-  gap: 20px;
 }
-.market-hello > .market-brand {
+.market-hello > header {
+  min-height: 80px;
   display: flex;
   align-items: center;
-  min-height: 80px;
-  width: 100%;
   border-bottom: 1px solid var(--market-line);
 }
-.market-hello > .market-creature {
-  height: 160px;
-  width: 150px;
-  align-self: flex-end;
-  margin: 8px 0 0;
+.market-hello-story {
+  padding: 28px 0;
 }
-.market-hello > h1 {
+.market-hello-intro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 20px;
+}
+.market-hello-intro .market-eyebrow {
+  max-width: 210px;
+  font-size: 12px;
+}
+.market-hello-intro .market-creature {
+  width: 100px;
+  height: 110px;
+  flex-shrink: 0;
+}
+.market-hello-story h1 {
   font-size: 36px;
-  line-height: 1.15;
+  line-height: 1.2;
+  margin-bottom: 20px;
 }
-.market-hello > p:not(.market-eyebrow) {
+.market-hello-story > p {
   font-size: 18px;
+  line-height: 1.6;
   color: #57534e;
-  max-width: 460px;
-  margin-bottom: 12px;
 }
-.market-hello > a {
+.market-hello-links {
+  display: grid;
+  gap: 12px;
+}
+.market-hello-links > a {
   width: 100%;
+  min-height: 52px;
+  font-size: 15px;
+  letter-spacing: 0.05em;
 }
 .market-hello > small {
-  margin-top: auto;
-  padding-top: 28px;
+  display: block;
+  padding-top: 36px;
   font-size: 14px;
   color: var(--market-muted);
+}
+.market-consent {
+  font-size: 15px;
+  line-height: 1.5;
+  margin: 20px 0;
+}
+.market-consent input {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border-radius: 3px;
+}
+.market-consent a {
+  text-underline-offset: 3px;
+}
+.market-phone-receipt form > input {
+  min-height: 50px;
+  font-size: 17px;
+}
+.market-phone-receipt form > .market-primary {
+  min-height: 52px;
+}
+.market-receipt-needed,
+.market-receipt-guide {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+}
+.market-receipt-needed {
+  padding-top: 20px;
+  border-top: 1px solid var(--market-line);
+}
+.market-receipt-guide p {
+  max-width: 720px;
+}
+.market-receipt-guide > a {
+  justify-self: start;
+}
+.market-display-content {
+  align-content: start;
+  padding: clamp(32px, 7vh, 64px) 0 36px;
+}
+.market-pay-display {
+  max-width: 1120px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr);
+  gap: 48px;
+  align-items: start;
+}
+.market-pay-description h1 {
+  font-size: clamp(32px, 3.4vw, 44px);
+  margin: 20px 0 28px;
+}
+.market-display-total {
+  font-size: 56px;
+  margin-top: 24px;
+}
+.market-qr-creature {
+  width: 110px;
+  height: 110px;
+  margin-top: 24px;
+}
+.market-transfer {
+  gap: 20px;
+}
+.market-transfer-phone {
+  font-size: clamp(26px, 3vw, 36px);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.market-code-card {
+  padding-left: 32px;
+}
+.market-pay-description .market-receipt-items {
+  max-height: 220px;
+  overflow-y: auto;
 }
 
 @media (min-width: 1280px) {
@@ -1655,4 +1749,127 @@
 }
 .market-product-info .market-counter {
   align-self: flex-start;
+}
+
+/* Phone content stays readable at the device width, with no oversized empty footer. */
+@media (max-width: 600px) {
+  .market-phone,
+  .market-hello {
+    width: 100%;
+    max-width: none;
+    padding-left: max(20px, env(safe-area-inset-left));
+    padding-right: max(20px, env(safe-area-inset-right));
+  }
+  .market-phone > header,
+  .market-hello > header {
+    min-height: 72px;
+    height: 72px;
+  }
+  .market-phone > header .market-eyebrow {
+    display: none;
+  }
+  .market-hello-story {
+    padding: 24px 0;
+  }
+  .market-hello-intro {
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .market-hello-intro .market-creature {
+    width: 88px;
+    height: 96px;
+  }
+  .market-hello-story h1 {
+    font-size: 30px;
+  }
+  .market-hello-story > p {
+    font-size: 17px;
+  }
+  .market-phone-title {
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .market-phone-title h1 {
+    font-size: 28px;
+    line-height: 1.2;
+    margin-top: 12px;
+  }
+  .market-phone-title > .market-creature {
+    width: 52px;
+    height: 74px;
+  }
+  .market-phone-receipt {
+    padding-top: 24px;
+  }
+  .market-phone .market-receipt-total {
+    margin: 20px 0 28px;
+  }
+  .market-phone > footer {
+    margin-top: 36px;
+    padding-top: 16px;
+  }
+  .market-consent {
+    font-size: 15px;
+  }
+  .market-pay-display {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+  .market-pay-description h1 {
+    font-size: 30px;
+  }
+  .market-display-total {
+    font-size: 44px;
+  }
+  .market-code-card {
+    border-left: 0;
+    border-top: 1px solid var(--market-line);
+    padding: 24px 0 0;
+  }
+  .market-qr-creature {
+    width: 80px;
+    height: 80px;
+  }
+}
+
+.market-phone .market-test {
+  padding: 8px 0;
+  margin-bottom: 16px;
+}
+.market-phone-receipt .market-receipt-items li {
+  padding: 14px 0;
+}
+.market-phone .market-receipt-total {
+  padding: 16px 0;
+  margin: 8px 0 20px;
+}
+.market-phone-receipt form > .market-small {
+  margin: 8px 0 16px;
+}
+.market-phone .market-consent {
+  margin: 16px 0;
+}
+@media (max-width: 600px) {
+  .market-phone-title h1 {
+    font-size: 26px;
+    margin: 8px 0 16px;
+  }
+  .market-phone-title > .market-creature {
+    width: 48px;
+    height: 64px;
+  }
+}
+
+@media (min-width: 601px) {
+  .market-display .market-transfer-phone {
+    font-size: 36px;
+  }
+  .market-display .market-transfer > p:not(.market-small):not(.market-eyebrow) {
+    font-size: 20px;
+  }
+}
+@media (min-width: 761px) and (orientation: portrait) {
+  .market-display-total {
+    font-size: 48px;
+  }
 }

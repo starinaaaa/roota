@@ -20,11 +20,19 @@ export async function POST(request: Request, context: Context) {
     if (!/^[a-f0-9]{64}$/.test(token))
       return json({ error: "Покупка не найдена" }, 404);
     const input = z
-      .object({ email: z.email().max(254), accepted: z.literal(true) })
+      .object({
+        email: z.email().max(254),
+        accepted: z.literal(true),
+        marketingConsent: z.boolean().default(false),
+      })
       .strict()
       .parse(await readMarketBody(request));
     return json({
-      form: await preparePayment(token, input.email.trim().toLowerCase()),
+      form: await preparePayment(
+        token,
+        input.email.trim().toLowerCase(),
+        input.marketingConsent,
+      ),
     });
   } catch (e) {
     return marketError(e);

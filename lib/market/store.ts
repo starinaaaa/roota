@@ -284,3 +284,51 @@ export async function attachReceipt(db: MarketDb, id: string, url: string) {
     [id, url],
   );
 }
+
+/** Record only a submitted newsletter choice; page views never subscribe anyone. */
+export async function savePaymentContact(
+  db: MarketDb,
+  sale: SaleRow,
+  email: string,
+  receipt: SaleRow["receipt"],
+  marketingConsent: boolean,
+) {
+  if (sale.status !== "pending" || sale.payment_method !== "robokassa")
+    throw new Error("MARKET_PAYMENT_NOT_PENDING");
+  if (sale.email && sale.email !== email)
+    throw new Error("MARKET_EMAIL_MISMATCH");
+  const version = "market-email-2026-11-07";
+  await db.query(
+    `update public.market_sales set email=$2,receipt=$3::jsonb,
+      marketing_consent=$4,
+      marketing_consent_at=case when $4 then coalesce(marketing_consent_at,now()) else null end,
+      marketing_consent_version=case when $4 then $5 else null end where id=$1`,
+    [sale.id, email, JSON.stringify(receipt), marketingConsent, version],
+  );
+  // A test purchase never creates a real marketing subscription.
+  if (sale.mode !== "live") return;
+  const resource = `market:${sale.id}`;
+  await db.query("select pg_advisory_xact_lock(hashtextextended($1,0))", [
+    email,
+  ]);
+  if (marketingConsent) {
+    await db.query("select public.record_checkout_news_consent($1,$2,$3,$4)", [
+      email,
+      resource,
+      randomBytes(32).toString("hex"),
+      version,
+    ]);
+  } else {
+    await db.query(
+      `update public.email_subscriptions set revoked_at=now()
+      where email=$1 and resource=$2 and purpose='news' and revoked_at is null`,
+      [email, resource],
+    );
+    await db.query(
+      `update public.email_messages m set state='cancelled',last_error='Настройки рассылки на маркете изменены'
+      from public.email_subscriptions s where m.subscription_id=s.id and s.resource=$1
+      and s.purpose='news' and s.revoked_at is not null and m.state='pending'`,
+      [resource],
+    );
+  }
+}

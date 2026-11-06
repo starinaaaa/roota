@@ -31,13 +31,13 @@ export function SocialScreen({
         </p>
         <nav aria-label="Ссылки Руты">
           <a href={links.telegram} target="_blank" rel="noreferrer">
-            Telegram ↗
+            Telegram ↗︎
           </a>
           <a href={links.site} target="_blank" rel="noreferrer">
-            Сайт ↗
+            Сайт ↗︎
           </a>
           <a href={links.instagram} target="_blank" rel="noreferrer">
-            Instagram ↗
+            Instagram ↗︎
           </a>
         </nav>
         <div className="market-social-creatures">
@@ -61,36 +61,44 @@ export function SocialScreen({
 export function HelloPage({ links }: { links: SocialLinks }) {
   return (
     <main className="market-hello">
-      <MarketBrand />
-      <Creature id={2891} />
-      <p className="market-eyebrow">Кажется, мы уже знакомы</p>
-      <h1>
-        Те самые чудики
-        <br />с Ceramania.
-      </h1>
-      <p>
-        Останемся на связи? Здесь можно посмотреть работы, заглянуть в
-        мастерскую и узнать о следующих встречах.
-      </p>
-      <a
-        className="market-primary"
-        href={links.telegram}
-        target="_blank"
-        rel="noreferrer"
-      >
-        Заглянуть в Telegram ↗
-      </a>
-      <a className="market-secondary" href={links.site}>
-        Посмотреть керамику ↗
-      </a>
-      <a
-        className="market-secondary"
-        href={links.instagram}
-        target="_blank"
-        rel="noreferrer"
-      >
-        Roota в Instagram ↗
-      </a>
+      <header>
+        <MarketBrand />
+      </header>
+      <section className="market-hello-story">
+        <div className="market-hello-intro">
+          <p className="market-eyebrow">Кажется, мы уже знакомы</p>
+          <Creature id={2891} />
+        </div>
+        <h1>
+          Те самые чудики
+          <br />с Ceramania.
+        </h1>
+        <p>
+          Останемся на связи? Здесь можно посмотреть работы, заглянуть в
+          мастерскую и узнать о следующих встречах.
+        </p>
+      </section>
+      <nav className="market-hello-links" aria-label="Roota после маркета">
+        <a
+          className="market-primary"
+          href={links.telegram}
+          target="_blank"
+          rel="noreferrer"
+        >
+          Заглянуть в Telegram ↗︎
+        </a>
+        <a className="market-secondary" href={links.site}>
+          Посмотреть керамику ↗︎
+        </a>
+        <a
+          className="market-secondary"
+          href={links.instagram}
+          target="_blank"
+          rel="noreferrer"
+        >
+          Roota в Instagram ↗︎
+        </a>
+      </nav>
       <small>Сделано руками. Выбрано сердцем.</small>
     </main>
   );
@@ -266,7 +274,7 @@ export function ReceiptTasks({
   const [urls, setUrls] = useState<Record<string, string>>({}),
     [copied, setCopied] = useState("");
   return (
-    <section className="market-receipt-tasks">
+    <section className="market-receipt-tasks" id="market-receipt-tasks">
       <div className="market-section-heading">
         <h2>Чеки за наличные и переводы</h2>
         <span>{state.receiptQueue.length} ожидают чека</span>
@@ -277,7 +285,7 @@ export function ReceiptTasks({
         Робокассой чек выдаёт подключённый сервис.
       </p>
       {state.receiptQueue.map((s) => (
-        <details key={s.id}>
+        <details key={s.id} open={state.sale?.id === s.id}>
           <summary>
             {s.number} · {money(s.amount)}
             {s.mode === "test" ? " · тест: не выдавайте реальный чек" : ""}
@@ -290,6 +298,28 @@ export function ReceiptTasks({
               })}
               . Покупатель — физическое лицо.
             </p>
+            <div className="market-receipt-guide">
+              <p>
+                <strong>Чек ФНС ещё не выдан.</strong> Деньги сохранены в кассе,
+                но регистрация дохода пока не подключена автоматически.
+              </p>
+              {s.mode === "live" ? (
+                <a
+                  className="market-primary"
+                  href="https://lknpd.nalog.ru/sales/create"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  1. Открыть «Мой налог» ↗︎
+                </a>
+              ) : (
+                <p>Тестовая покупка: реальный чек выдавать не нужно.</p>
+              )}
+              <p>
+                2. Добавьте продажу на дату оплаты: физическое лицо, позиции и
+                суммы ниже. После выдачи чека скопируйте его ссылку сюда.
+              </p>
+            </div>
             {s.items.map((item, index) => (
               <div className="market-copy-row" key={index}>
                 <span>
@@ -330,14 +360,6 @@ export function ReceiptTasks({
                 </button>
               </div>
             ))}
-            <a
-              className="market-primary"
-              href="https://lknpd.nalog.ru/sales/create"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Открыть «Мой налог» ↗
-            </a>
             <form
               onSubmit={async (e) => {
                 e.preventDefault();
@@ -361,7 +383,7 @@ export function ReceiptTasks({
                 />
               </label>
               <button className="market-secondary" disabled={busy}>
-                Сохранить и показать чек на iPad
+                3. Сохранить и показать чек на iPad
               </button>
             </form>
           </div>
@@ -421,7 +443,7 @@ export function ReceiptDownload({
         QR чека · 40×58 мм
       </button>
       <a href={sale.receiptUrl} target="_blank" rel="noreferrer">
-        Открыть чек ФНС ↗
+        Открыть чек ФНС ↗︎
       </a>
       {error ? (
         <p role="alert" className="market-error">

@@ -1,4 +1,5 @@
 "use client";
+import ReceiptHelper from "./ReceiptHelper";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
@@ -747,6 +748,7 @@ export default function MarketControl() {
               )}
             </aside>
           </div>
+          <ReceiptHelper state={data} />
           <ReceiptTasks state={data} busy={busy} action={action} />
           <section className="market-sales">
             <div className="market-section-heading">

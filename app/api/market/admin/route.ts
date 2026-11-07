@@ -1,3 +1,4 @@
+import { createHelper, revokeHelper } from "@/lib/market/helper-access";
 import { verifyReceipt } from "@/lib/market/verify-receipt";
 import { z } from "zod";
 import { transferSchema } from "@/lib/market/model";
@@ -40,6 +41,21 @@ export async function POST(request: Request) {
   try {
     const body = await readMarketBody(request);
     switch (body.action) {
+      case "helper-create": {
+        const name = z.string().trim().min(1).max(80).parse(body.name);
+        const extensionId = z
+          .string()
+          .regex(/^[a-p]{32}$/)
+          .parse(body.extensionId);
+        const credential = await transaction((db) =>
+          createHelper(db, name, extensionId, admin.id),
+        );
+        return json({ ...(await marketState()), helperCredential: credential });
+      }
+      case "helper-revoke":
+        await transaction((db) => revokeHelper(db, z.uuid().parse(body.id)));
+        break;
+
       case "show": {
         const method = z
           .enum(["robokassa", "cash", "transfer"])
@@ -52,6 +68,33 @@ export async function POST(request: Request) {
         await transaction((db) => createSale(db, body.basket, mode, method));
         break;
       }
+      case "show-receipt":
+        await transaction(async (db) => {
+          await lockRegister(db);
+          const id = z.uuid().parse(body.id);
+          const {
+            rows: [current],
+          } = await db.query(
+            "select s.status from public.market_register r join public.market_sales s on s.id=r.current_sale_id where r.id=1",
+          );
+          if (current?.status === "pending")
+            throw new Error("Сначала завершите или отмените текущую покупку");
+          const {
+            rows: [receipt],
+          } = await db.query(
+            "select s.id from public.market_sales s join public.market_receipt_jobs j on j.sale_id=s.id where s.id=$1 and s.status='paid' and s.receipt_url is not null and j.state='registered' and j.verified_at is not null",
+            [id],
+          );
+          if (!receipt)
+            throw new Error(
+              "Для покупки ещё нет подтверждённого оригинального чека",
+            );
+          await db.query(
+            "update public.market_register set current_sale_id=$1 where id=1",
+            [id],
+          );
+        });
+        break;
       case "cancel":
         await transaction((db) => cancelSale(db, z.uuid().parse(body.id)));
         break;

@@ -1938,3 +1938,59 @@
   overflow-wrap: anywhere;
   user-select: all;
 }
+
+/* Market phone pages use the available width and readable controls. */
+.market-phone {
+  max-width: 760px;
+  padding-inline: clamp(20px, 4vw, 36px);
+  font-size: 18px;
+}
+.market-phone .market-brand {
+  font-size: 27px;
+}
+.market-phone-title h1 {
+  font-size: clamp(30px, 4.5vw, 40px);
+}
+.market-phone-receipt .market-receipt-items li {
+  font-size: 18px;
+}
+.market-phone .market-consent {
+  font-size: 16px;
+  gap: 12px;
+  line-height: 1.5;
+}
+.market-phone .market-consent input {
+  width: 21px;
+  height: 21px;
+}
+.market-phone .market-small,
+.market-phone .market-secure {
+  font-size: 15px;
+}
+.market-phone-receipt form > input {
+  font-size: 18px;
+  min-height: 54px;
+}
+.market-phone-receipt form > .market-primary {
+  min-height: 56px;
+  font-size: 17px;
+}
+@media (max-width: 600px) {
+  .market-phone {
+    max-width: none;
+    padding-inline: max(20px, env(safe-area-inset-left));
+  }
+  .market-phone-title h1 {
+    font-size: 30px;
+  }
+  .market-phone-title > .market-creature {
+    width: 62px;
+    height: 78px;
+  }
+  .market-phone-receipt {
+    padding-top: 20px;
+  }
+  .market-phone .market-consent {
+    font-size: 16px;
+  }
+}

@@ -23,9 +23,8 @@ export default function MarketPayment({
     `/api/market/pay/${token}`,
   );
   const [email, setEmail] = useState(""),
-    [accepted, setAccepted] = useState(false),
+    [accepted, setAccepted] = useState(true),
     [marketingConsent, setMarketingConsent] = useState(true),
-    [reviewConsent, setReviewConsent] = useState(true),
     [contactSaved, setContactSaved] = useState(false),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
@@ -42,7 +41,7 @@ export default function MarketPayment({
         email,
         accepted,
         marketingConsent,
-        reviewConsent,
+        reviewConsent: marketingConsent,
       });
       if (saved) {
         setContactSaved(true);
@@ -75,7 +74,6 @@ export default function MarketPayment({
     <main className="market-phone">
       <header>
         <MarketBrand />
-        <span className="market-eyebrow">Маленькая находка</span>
       </header>
       {connectionError ? (
         <section className="market-message">
@@ -211,19 +209,6 @@ export default function MarketPayment({
                 .
               </span>
             </label>
-            <label className="market-consent">
-              <input
-                type="checkbox"
-                name="reviewConsent"
-                checked={reviewConsent}
-                onChange={(e) => setReviewConsent(e.target.checked)}
-              />
-              <span>
-                Хочу получить одно письмо через 3 дня с просьбой поделиться
-                впечатлениями о покупке. За честный отзыв — промокод 10% на
-                следующий заказ.
-              </span>
-            </label>
             <label className="market-consent market-marketing-consent">
               <input
                 type="checkbox"
@@ -234,7 +219,8 @@ export default function MarketPayment({
               <span>
                 Хочу получать{" "}
                 <a href="/newsletter-consent" target="_blank" rel="noreferrer">
-                  информацию о скидках, распродажах и новых коллекциях
+                  информацию о скидках, распродажах, новых коллекциях и
+                  приглашение поделиться впечатлениями о покупке
                 </a>{" "}
                 и даю{" "}
                 <a
@@ -278,12 +264,11 @@ export default function MarketPayment({
             </button>
           ) : null}
           <p className="market-small">
-            Галочки отзыва и рассылки можно снять. Получение чека и оплата от
-            подписки не зависят.
+            Галочку писем можно снять. Получение чека и оплата от подписки не
+            зависят.
           </p>
         </section>
       )}
-      <footer>Сделано руками. Выбрано сердцем.</footer>
     </main>
   );
 }

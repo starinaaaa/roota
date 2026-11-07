@@ -104,7 +104,11 @@ export async function marketState(): Promise<MarketState> {
     } = await db.query(
       "select count(*)::int count,coalesce(sum(amount),0)::float8 amount from public.market_sales where mode='live' and status='paid'",
     );
+    const { rows: helpers } = await db.query(
+      "select id,name,status,detail,last_seen_at,revoked_at,operation_mode,live_enabled from public.market_receipt_helpers order by created_at desc limit 20",
+    );
     return {
+      helpers,
       inventory: stock,
       sale: sale ? publicSale(sale) : null,
       history: history.map((s) => {

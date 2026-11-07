@@ -69,6 +69,12 @@ async function fixture() {
   await db.exec(
     await readFile("database/migrations/20261107_market_reviews.sql", "utf8"),
   );
+  await db.exec(
+    await readFile(
+      "database/migrations/20261107_market_receipt_helper.sql",
+      "utf8",
+    ),
+  );
   const adapter = db as unknown as MarketDb;
   const run = async <T>(fn: (client: MarketDb) => Promise<T>): Promise<T> => {
     await db.exec("BEGIN");
@@ -1011,6 +1017,72 @@ test("Robokassa receipt contact schedules feedback only after verified payment c
         ])
       ).rows.length,
       0,
+    );
+  } finally {
+    await db.close();
+  }
+});
+
+test("receipt helper access is origin bound, revocable, and a live trial claims only the explicitly approved sale", async () => {
+  const { createHelper, authenticateHelper, revokeHelper } =
+    await import("../lib/market/helper-access");
+  const { claimReceiptJob } = await import("../lib/market/receipt-jobs");
+  const { db, adapter, run } = await fixture();
+  try {
+    const credential = await run((c) =>
+      createHelper(c, "Test MacBook", "a".repeat(32), "fixture-admin"),
+    );
+    const auth = "Bearer " + credential.token;
+    assert.ok(
+      await authenticateHelper(
+        adapter,
+        auth,
+        "chrome-extension://" + "a".repeat(32),
+      ),
+    );
+    assert.equal(
+      await authenticateHelper(adapter, auth, "https://example.test"),
+      null,
+    );
+    const first = await run((c) =>
+      createSale(c, request({ postcard: 1 }), "live", "cash"),
+    );
+    await run((c) => confirmManualSale(c, first.id, "test"));
+    const approved = await run((c) =>
+      createSale(c, request({ postcard: 1 }), "live", "transfer"),
+    );
+    await run((c) => confirmManualSale(c, approved.id, "test"));
+    const job = await run((c) =>
+      claimReceiptJob(c, "Test MacBook", "live", {
+        helperId: credential.id,
+        safe: false,
+        allowedSaleId: approved.id,
+      }),
+    );
+    assert.equal(job!.sale_id, approved.id);
+    assert.equal(
+      (
+        await db.query<{ state: string }>(
+          "select state from market_receipt_jobs where sale_id=$1",
+          [first.id],
+        )
+      ).rows[0].state,
+      "queued",
+    );
+    await run((c) => revokeHelper(c, credential.id));
+    assert.equal(await authenticateHelper(adapter, auth, null), null);
+    assert.equal(
+      (
+        await db.query<{ state: string }>(
+          "select state from market_receipt_jobs where sale_id=$1",
+          [approved.id],
+        )
+      ).rows[0].state,
+      "queued",
+    );
+    assert.equal(
+      (await inventory(adapter)).find((i) => i.kind === "postcard")!.stock_qty,
+      98,
     );
   } finally {
     await db.close();

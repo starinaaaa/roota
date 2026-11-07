@@ -389,7 +389,8 @@
       "photo_paths",
       "publication_consent",
       "state",
-      "created_at"
+      "created_at",
+      "market_sale_id"
     ],
     "garden_requests": [
       "id",

@@ -1,9 +1,11 @@
 "use client";
 import { useState } from "react";
+import { ManualInstructions } from "./MarketExtras";
 import type { PaymentForm } from "@robokassa/sdk";
 import { money, type PublicSale } from "@/lib/market/model";
 import {
   Creature,
+  QrCode,
   MarketBrand,
   ReceiptItems,
   marketFetch,
@@ -23,6 +25,8 @@ export default function MarketPayment({
   const [email, setEmail] = useState(""),
     [accepted, setAccepted] = useState(false),
     [marketingConsent, setMarketingConsent] = useState(true),
+    [reviewConsent, setReviewConsent] = useState(true),
+    [contactSaved, setContactSaved] = useState(false),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
   const expired = useSaleExpired(sale);
@@ -31,10 +35,21 @@ export default function MarketPayment({
     setBusy(true);
     setError("");
     try {
-      const { form } = await marketFetch<{ form: PaymentForm }>(
-        `/api/market/pay/${token}`,
-        { email, accepted, marketingConsent },
-      );
+      const { form, saved } = await marketFetch<{
+        form?: PaymentForm;
+        saved?: boolean;
+      }>(`/api/market/pay/${token}`, {
+        email,
+        accepted,
+        marketingConsent,
+        reviewConsent,
+      });
+      if (saved) {
+        setContactSaved(true);
+        setBusy(false);
+        return;
+      }
+      if (!form) throw new Error("Не удалось подготовить оплату");
       // POST directly to the official payment page. No browser return marks a sale paid.
       const target = new URL(form.action);
       if (target.origin !== "https://auth.robokassa.ru")
@@ -77,7 +92,8 @@ export default function MarketPayment({
           <Creature />
           <h1>Готовим покупку…</h1>
         </section>
-      ) : sale.status === "paid" ? (
+      ) : sale.status === "paid" &&
+        (sale.method === "robokassa" || contactSaved) ? (
         <section className="market-message market-success">
           <Creature id={2891} />
           <span className="market-status-pill">
@@ -87,11 +103,19 @@ export default function MarketPayment({
           <p>
             Спасибо за встречу!
             <br />
-            Чек по оплате через Робокассу придёт на вашу почту.
+            {sale.method === "robokassa"
+              ? "Чек по оплате через Робокассу придёт на вашу почту."
+              : "Чек ФНС появится на экране продавца после регистрации. Его можно забрать по QR."}
           </p>
           <strong className="market-paid-amount">{money(sale.amount)}</strong>
+          {sale.receiptUrl ? (
+            <a href={sale.receiptUrl} target="_blank" rel="noreferrer">
+              <QrCode value={sale.receiptUrl} />
+              Открыть чек ФНС ↗
+            </a>
+          ) : null}
         </section>
-      ) : sale.status !== "pending" || expired ? (
+      ) : (sale.status !== "pending" && sale.status !== "paid") || expired ? (
         <section className="market-message">
           <Creature id={2905} />
           <h1>
@@ -106,7 +130,7 @@ export default function MarketPayment({
               : " Он подготовит новую покупку."}
           </p>
         </section>
-      ) : returning ? (
+      ) : returning && sale.method === "robokassa" ? (
         <section className="market-message">
           <Creature id={2899} />
           <h1>Проверяем оплату</h1>
@@ -115,10 +139,14 @@ export default function MarketPayment({
             платить не нужно — продавец проверит покупку.
           </p>
         </section>
-      ) : sale.method !== "robokassa" ? (
+      ) : sale.method !== "robokassa" && contactSaved ? (
         <section className="market-message">
-          <h1>Покупка у продавца</h1>
-          <p>Эта покупка оплачивается на месте. Обратитесь к продавцу.</p>
+          <h1>Всё готово к оплате</h1>
+          <ReceiptItems sale={sale} />
+          <ManualInstructions sale={sale} />
+          <p className="market-small">
+            Продавец подтвердит получение денег. Чек выдаётся отдельно.
+          </p>
         </section>
       ) : (
         <section className="market-phone-receipt">
@@ -134,11 +162,15 @@ export default function MarketPayment({
           ) : null}
           <ReceiptItems sale={sale} />
           <div className="market-receipt-total">
-            <span>К оплате</span>
+            <span>{sale.status === "paid" ? "Оплачено" : "К оплате"}</span>
             <strong>{money(sale.amount)}</strong>
           </div>
           <form onSubmit={pay}>
-            <label htmlFor="market-email">Email для чека</label>
+            <label htmlFor="market-email">
+              {sale.method === "robokassa"
+                ? "Email для чека"
+                : "Email для связи"}
+            </label>
             <input
               id="market-email"
               name="email"
@@ -151,7 +183,11 @@ export default function MarketPayment({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
-            <p className="market-small">Отправим чек на эту почту.</p>
+            <p className="market-small">
+              {sale.method === "robokassa"
+                ? "На эту почту придёт чек Робокассы."
+                : "Почта — по желанию. Чек ФНС можно забрать по QR у продавца."}
+            </p>
             <label className="market-consent">
               <input
                 type="checkbox"
@@ -175,6 +211,19 @@ export default function MarketPayment({
                 .
               </span>
             </label>
+            <label className="market-consent">
+              <input
+                type="checkbox"
+                name="reviewConsent"
+                checked={reviewConsent}
+                onChange={(e) => setReviewConsent(e.target.checked)}
+              />
+              <span>
+                Хочу получить одно письмо через 3 дня с просьбой поделиться
+                впечатлениями о покупке. За честный отзыв — промокод 10% на
+                следующий заказ.
+              </span>
+            </label>
             <label className="market-consent market-marketing-consent">
               <input
                 type="checkbox"
@@ -185,7 +234,7 @@ export default function MarketPayment({
               <span>
                 Хочу получать{" "}
                 <a href="/newsletter-consent" target="_blank" rel="noreferrer">
-                  информацию о новых коллекциях и распродажах
+                  информацию о скидках, распродажах и новых коллекциях
                 </a>{" "}
                 и даю{" "}
                 <a
@@ -204,12 +253,34 @@ export default function MarketPayment({
               </p>
             ) : null}
             <button className="market-primary" disabled={busy}>
-              {busy ? "Открываем оплату…" : `Оплатить ${money(sale.amount)}`}
+              {busy
+                ? "Сохраняем…"
+                : sale.method === "robokassa"
+                  ? `Перейти к оплате · ${money(sale.amount)}`
+                  : sale.status === "paid"
+                    ? "Сохранить почту"
+                    : "Сохранить почту и продолжить"}
             </button>
             <p className="market-secure">
-              Картой или другим доступным способом через Робокассу
+              {sale.method === "robokassa"
+                ? "Картой или другим доступным способом через Робокассу"
+                : "Оплату подтвердит продавец"}
             </p>
           </form>
+          {sale.method !== "robokassa" ? (
+            <button
+              type="button"
+              className="market-secondary"
+              disabled={busy}
+              onClick={() => setContactSaved(true)}
+            >
+              Продолжить без почты
+            </button>
+          ) : null}
+          <p className="market-small">
+            Галочки отзыва и рассылки можно снять. Получение чека и оплата от
+            подписки не зависят.
+          </p>
         </section>
       )}
       <footer>Сделано руками. Выбрано сердцем.</footer>

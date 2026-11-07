@@ -176,7 +176,14 @@ export default function MarketDisplay() {
                   <span className="market-secure">Оплата через Робокассу</span>
                 </>
               ) : (
-                <ManualInstructions sale={sale} />
+                <>
+                  <h2>Почта для связи</h2>
+                  <p>
+                    Наведите камеру, чтобы оставить почту и получить приглашение
+                    на отзыв. Это по желанию.
+                  </p>
+                  <ManualInstructions sale={sale} />
+                </>
               )}
             </div>
           </section>

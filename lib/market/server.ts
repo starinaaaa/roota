@@ -44,13 +44,7 @@ export function publicSale(sale: SaleRow): PublicSale {
     expiresAt: sale.expires_at.toISOString(),
     paidAt: sale.paid_at?.toISOString() ?? null,
     paymentUrl:
-      sale.status === "pending"
-        ? sale.payment_method === "robokassa"
-          ? siteUrl(`/market/pay/${sale.token}`)
-          : sale.payment_method === "transfer"
-            ? sale.transfer_details?.link || null
-            : null
-        : null,
+      sale.status === "pending" ? siteUrl(`/market/pay/${sale.token}`) : null,
     qr: null,
   };
 }
@@ -222,7 +216,7 @@ export async function saleByToken(token: string) {
     const {
       rows: [sale],
     } = await db.query<SaleRow>(
-      "select * from public.market_sales where token=$1",
+      "select s.*,j.state receipt_state,j.registered_at receipt_registered_at,j.verified_at receipt_verified_at from public.market_sales s left join public.market_receipt_jobs j on j.sale_id=s.id where s.token=$1",
       [token],
     );
     return sale ?? null;
@@ -232,6 +226,7 @@ export async function preparePayment(
   token: string,
   email: string,
   marketingConsent = false,
+  reviewConsent = false,
 ) {
   const mode = paymentMode();
   if (!mode)
@@ -277,7 +272,14 @@ export async function preparePayment(
       FailURL2: `${returnUrl}?return=fail`,
       FailURL2Method: "GET",
     });
-    await savePaymentContact(db, sale, email, receipt, marketingConsent);
+    await savePaymentContact(
+      db,
+      sale,
+      email,
+      receipt,
+      marketingConsent,
+      reviewConsent,
+    );
     return form;
   });
 }

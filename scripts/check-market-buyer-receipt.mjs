@@ -90,12 +90,6 @@ try {
       await page
         .getByRole("link", { name: "Открыть чек", exact: true })
         .getAttribute("href"),
-      receipt,
-    );
-    assert.equal(
-      await page
-        .getByRole("link", { name: "Скачать чек PDF", exact: true })
-        .getAttribute("href"),
       "/api/market/pay/" + token + "/receipt",
     );
     assert.ok(
@@ -187,7 +181,7 @@ try {
     await page.getByText(/Не удалось подтвердить доставку письма/).waitFor();
     assert.ok(
       await page
-        .getByRole("link", { name: "Скачать чек PDF", exact: true })
+        .getByRole("link", { name: "Открыть чек", exact: true })
         .isVisible(),
     );
     checks.push(device + ": email failure retains receipt access");

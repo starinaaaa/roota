@@ -40,18 +40,10 @@ export function BuyerReceipt({
         <>
           <a
             className="market-primary"
-            href={sale.receiptUrl!}
-            target="_blank"
-            rel="noreferrer"
-          >
-            Открыть чек
-          </a>
-          <a
-            className="market-secondary"
             href={`/api/market/pay/${token}/receipt`}
             download
           >
-            Скачать чек PDF
+            Открыть чек
           </a>
           <p className="market-small">
             {sale.mode === "test"
@@ -73,7 +65,7 @@ export function BuyerReceipt({
         <p>
           {problem
             ? "Деньги получены, но выдача чека пока не подтверждена. Получите чек у продавца; после подтверждения он также появится здесь."
-            : `Покупка оплачена. После выдачи чека здесь появятся кнопки «Открыть чек» и «Скачать чек».${emailSaved && sale.mode === "live" ? " Оригинальный чек отправим и на вашу почту." : ""}`}
+            : `Покупка оплачена. После выдачи чека здесь появится кнопка «Открыть чек».${emailSaved && sale.mode === "live" ? " Оригинальный чек отправим и на вашу почту." : ""}`}
         </p>
       )}
     </section>

@@ -129,7 +129,7 @@ export async function POST(request: Request) {
               helperId: helper.id,
               safe: body.safe,
               allowedSaleId:
-                !body.safe && !currentHelper.live_all_sales
+                body.safe || !currentHelper.live_all_sales
                   ? currentHelper.approved_sale_id
                   : null,
             }),

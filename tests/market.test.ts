@@ -1100,3 +1100,99 @@ test("receipt helper access is origin bound, revocable, and safe/live trials cla
     await db.close();
   }
 });
+
+test("verified manual receipts queue one service email with contact before or after receipt, without marketing consent", async () => {
+  const { saveManualContact } = await import("../lib/market/store");
+  const { db, adapter, run } = await fixture();
+  try {
+    await db.exec(
+      "insert into email_settings(id,enabled,test_mode) values(1,true,false) on conflict(id) do update set enabled=true,test_mode=false",
+    );
+    for (const contactFirst of [true, false]) {
+      const sale = await run((c) =>
+        createSale(
+          c,
+          request({ postcard: 1 }),
+          "live",
+          contactFirst ? "cash" : "transfer",
+        ),
+      );
+      await run((c) => confirmManualSale(c, sale.id, "fixture"));
+      const before = await inventory(adapter);
+      const proof = {
+        url: `https://lknpd.nalog.ru/api/v1/receipt/773212983545/fixture-${sale.id}/print`,
+        registeredAt: new Date().toISOString(),
+        verifiedAt: new Date().toISOString(),
+      };
+      if (contactFirst)
+        await run((c) =>
+          saveManualContact(c, sale.token, "buyer@example.test", false, false),
+        );
+      assert.equal(
+        (
+          await db.query(
+            "select id from email_messages where kind='market_receipt'",
+          )
+        ).rows.length,
+        contactFirst ? 0 : 1,
+      );
+      await run((c) => attachReceipt(c, sale.id, proof));
+      if (!contactFirst)
+        await run((c) =>
+          saveManualContact(c, sale.token, "buyer@example.test", false, false),
+        );
+      await run((c) =>
+        saveManualContact(c, sale.token, "buyer@example.test", false, false),
+      );
+      await run((c) => attachReceipt(c, sale.id, proof));
+      const messages = await db.query<{ recipient: string }>(
+        "select recipient from email_messages where event_key=$1",
+        [`market:${sale.id}:receipt`],
+      );
+      assert.equal(messages.rows.length, 1);
+      assert.equal(messages.rows[0].recipient, "buyer@example.test");
+      assert.deepEqual(await inventory(adapter), before);
+      assert.equal(
+        (
+          await db.query<{ status: string }>(
+            "select status from market_sales where id=$1",
+            [sale.id],
+          )
+        ).rows[0].status,
+        "paid",
+      );
+    }
+    assert.equal(
+      (
+        await db.query(
+          "select id from email_subscriptions where purpose='news'",
+        )
+      ).rows.length,
+      0,
+    );
+    const testSale = await run((c) =>
+      createSale(c, request({ postcard: 1 }), "test", "cash"),
+    );
+    await run((c) => confirmManualSale(c, testSale.id, "fixture"));
+    await run((c) =>
+      saveManualContact(c, testSale.token, "test@example.test", false, false),
+    );
+    await run((c) =>
+      attachReceipt(c, testSale.id, {
+        url: `https://lknpd.nalog.ru/api/v1/receipt/773212983545/fixture-test/print`,
+        registeredAt: new Date().toISOString(),
+        verifiedAt: new Date().toISOString(),
+      }),
+    );
+    assert.equal(
+      (
+        await db.query("select id from email_messages where event_key=$1", [
+          `market:${testSale.id}:receipt`,
+        ])
+      ).rows.length,
+      0,
+    );
+  } finally {
+    await db.close();
+  }
+});

@@ -435,19 +435,7 @@ export async function processEmailQueue() {
       }
       if (state === "accepted") {
         accepted++;
-        if (m.kind === "market_receipt") {
-        const {
-          rows: [receipt],
-        } = await getPool().query(
-          "select s.receipt_url from public.market_sales s join public.market_receipt_jobs j on j.sale_id=s.id where s.id::text=$1 and s.email=$2 and s.mode='live' and s.status='paid' and j.state='registered' and j.verified_at is not null",
-          [m.payload.market_sale_id, m.recipient],
-        );
-        if (!receipt?.receipt_url)
-          throw new Error("MARKET_RECEIPT_NOT_VERIFIED");
-        url = receipt.receipt_url;
-        label = "Открыть оригинальный чек ФНС";
-      }
-      if (m.kind === "restock")
+        if (m.kind === "restock")
           await db
             .from("waitlist")
             .update({ notified_at: new Date().toISOString() })

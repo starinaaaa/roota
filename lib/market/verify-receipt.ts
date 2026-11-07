@@ -13,6 +13,20 @@ export async function verifyReceipt(
   const time = new Date(registeredAt);
   if (!Number.isFinite(time.getTime()) || time.getTime() > Date.now() + 60000)
     throw new Error("Укажите время регистрации из чека");
+  await fetchReceiptPdf(url, fetcher);
+  return {
+    url,
+    registeredAt: time.toISOString(),
+    verifiedAt: new Date().toISOString(),
+  };
+}
+
+export async function fetchReceiptPdf(
+  url: string,
+  fetcher: typeof fetch = fetch,
+) {
+  if (!validReceiptUrl(url))
+    throw new Error("Нужна ссылка на оригинальный чек ФНС");
   const result = await fetcher(url, {
     redirect: "error",
     cache: "no-store",
@@ -35,13 +49,8 @@ export async function verifyReceipt(
     chunks.push(value);
   }
   if (!size) throw new Error("ФНС вернула пустой чек");
-  await officialReceiptPdf(
+  return officialReceiptPdf(
     Buffer.concat(chunks),
     result.headers.get("content-type") ?? "",
   );
-  return {
-    url,
-    registeredAt: time.toISOString(),
-    verifiedAt: new Date().toISOString(),
-  };
 }

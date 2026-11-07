@@ -7,7 +7,8 @@ import {
   marketHeaders,
 } from "@/lib/market/http";
 import { validReceiptUrl } from "@/lib/market/model";
-import { qrLabelPdf, officialReceiptPdf } from "@/lib/market/pdf";
+import { qrLabelPdf } from "@/lib/market/pdf";
+import { fetchReceiptPdf } from "@/lib/market/verify-receipt";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export async function GET(
@@ -38,32 +39,7 @@ export async function GET(
     let bytes: Buffer;
     if (label) bytes = await qrLabelPdf(sale.receipt_url, "receipt");
     else {
-      // Exact allowlisted public FNS URL. Never follow a redirect to another host.
-      const result = await fetch(sale.receipt_url, {
-        redirect: "error",
-        cache: "no-store",
-        signal: AbortSignal.timeout(12000),
-      });
-      if (!result.ok)
-        throw new Error("Не удалось скачать чек ФНС. Проверьте ссылку");
-      const reader = result.body?.getReader();
-      if (!reader) throw new Error("Чек ФНС пуст");
-      const chunks: Uint8Array[] = [];
-      let size = 0;
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        size += value.length;
-        if (size > 8 * 1024 * 1024) {
-          await reader.cancel();
-          throw new Error("Размер чека слишком большой");
-        }
-        chunks.push(value);
-      }
-      bytes = await officialReceiptPdf(
-        Buffer.concat(chunks),
-        result.headers.get("content-type") ?? "",
-      );
+      bytes = await fetchReceiptPdf(sale.receipt_url);
     }
     return new Response(new Uint8Array(bytes), {
       headers: {

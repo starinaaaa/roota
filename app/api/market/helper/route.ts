@@ -4,7 +4,7 @@ import { json, marketError } from "@/lib/market/http";
 import { authenticateHelper } from "@/lib/market/helper-access";
 import { claimReceiptJob, receiptJobAction } from "@/lib/market/receipt-jobs";
 import { lockRegister } from "@/lib/market/store";
-import { verifyReceipt } from "@/lib/market/verify-receipt";
+import { verifyReceiptImage } from "@/lib/market/receipt-image-proof";
 import { receiptPlan, planDigest } from "@/extensions/roota-npd/core.mjs";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,6 +19,8 @@ const schema = z
       "result",
       "error",
       "release",
+      "inspect",
+      "registered-status",
     ]),
     mode: z.enum(["test", "live"]).default("test"),
     safe: z.boolean().default(true),
@@ -44,6 +46,10 @@ const schema = z
       .optional(),
     url: z.string().max(2048).optional(),
     registeredAt: z.iso.datetime().optional(),
+    pixelHash: z
+      .string()
+      .regex(/^[a-f0-9]{64}$/)
+      .optional(),
   })
   .strict();
 export async function POST(request: Request) {
@@ -78,7 +84,11 @@ export async function POST(request: Request) {
     const liveAllowed =
       process.env.MARKET_RECEIPT_LIVE_ENABLED === "true" &&
       helper.live_enabled &&
-      !!(helper.approved_sale_id || helper.live_all_sales);
+      !!helper.result_verified_at &&
+      !!(
+        helper.approved_sale_id ||
+        (helper.live_all_sales && helper.live_from)
+      );
     if (body.action === "heartbeat") {
       await getPool().query(
         `update public.market_receipt_helpers set last_seen_at=now(),status=$2,detail=$3,operation_mode=$4 where id=$1 and revoked_at is null`,
@@ -86,12 +96,57 @@ export async function POST(request: Request) {
           helper.id,
           body.status ?? "connected",
           body.detail ?? null,
-          body.safe ? "safe" : "live",
+          body.safe || !liveAllowed ? "safe" : "live",
         ],
       );
       return json({ connected: true, liveAllowed });
     }
-    const ownedSql = `select j.*,s.items,s.amount,s.paid_at,s.mode,s.payment_method,s.receipt_url from public.market_receipt_jobs j join public.market_sales s on s.id=j.sale_id where j.helper_id=$1`;
+    if (body.action === "registered-status") {
+      const {
+        rows: [receipt],
+      } = await getPool().query(
+        "select s.receipt_url,j.registered_at from market_sales s join market_receipt_jobs j on j.sale_id=s.id where s.id=$1 and s.status='paid' and s.payment_method<>'robokassa' and j.state='registered' and j.verified_at is not null and s.receipt_url is not null",
+        [z.uuid().parse(body.id)],
+      );
+      return json({
+        registered: Boolean(receipt),
+        url: receipt?.receipt_url ?? null,
+        registeredAt: receipt?.registered_at ?? null,
+      });
+    }
+    if (body.action === "inspect") {
+      const {
+        rows: [sale],
+      } = await getPool().query(
+        "select s.*,j.state receipt_state from market_sales s join market_receipt_jobs j on j.sale_id=s.id where s.receipt_url=$1 and s.status='paid' and s.payment_method<>'robokassa' and j.state='registered' and j.verified_at is not null",
+        [body.url],
+      );
+      if (!sale)
+        return json(
+          {
+            error:
+              "Для проверки разрешён только сохранённый чек согласованной продажи",
+          },
+          409,
+        );
+      const proof = await verifyReceiptImage(
+        z.string().parse(body.url),
+        z.string().parse(body.pixelHash),
+        receiptPlan(sale),
+      );
+      const verified = await getPool().query(
+        "update market_receipt_helpers set result_verified_at=coalesce(result_verified_at,now()) where id=$1 and revoked_at is null returning id",
+        [helper.id],
+      );
+      if (!verified.rows.length) return json({ error: "Доступ отозван" }, 401);
+      return json({
+        confirmed: true,
+        saleNumber: `М-${String(sale.inv_id).slice(-6)}`,
+        total: proof.total,
+        registeredAt: proof.registeredAt,
+      });
+    }
+    const ownedSql = `select j.*,s.inv_id,s.items,s.amount,s.paid_at,s.mode,s.payment_method,s.receipt_url from public.market_receipt_jobs j join public.market_sales s on s.id=j.sale_id where j.helper_id=$1`;
     if (body.action === "claim" || body.action === "recover") {
       return json(
         await transaction(async (db) => {
@@ -99,7 +154,7 @@ export async function POST(request: Request) {
           const {
             rows: [currentHelper],
           } = await db.query(
-            "select revoked_at,live_enabled,approved_sale_id,live_all_sales from public.market_receipt_helpers where id=$1",
+            "select revoked_at,live_enabled,approved_sale_id,live_all_sales,live_from,result_verified_at from public.market_receipt_helpers where id=$1",
             [helper.id],
           );
           if (!currentHelper || currentHelper.revoked_at)
@@ -117,6 +172,8 @@ export async function POST(request: Request) {
             !body.safe &&
             (!liveAllowed ||
               !currentHelper.live_enabled ||
+              !currentHelper.result_verified_at ||
+              (currentHelper.live_all_sales && !currentHelper.live_from) ||
               (!currentHelper.live_all_sales &&
                 !currentHelper.approved_sale_id) ||
               body.mode !== "live")
@@ -131,6 +188,10 @@ export async function POST(request: Request) {
               allowedSaleId:
                 body.safe || !currentHelper.live_all_sales
                   ? currentHelper.approved_sale_id
+                  : null,
+              allowedSince:
+                !body.safe && currentHelper.live_all_sales
+                  ? currentHelper.live_from
                   : null,
             }),
             liveAllowed,
@@ -163,11 +224,25 @@ export async function POST(request: Request) {
         409,
       );
     // Verification performs only a public document GET; no FNS session data crosses this boundary.
+    if (
+      body.action === "result" &&
+      !["submitting", "uncertain"].includes(job.state)
+    )
+      return json({ error: "Нет зафиксированной отправки этой задачи" }, 409);
+    if (body.action === "result" && !job.lease_until)
+      return json(
+        { error: "Время исходной отправки неизвестно. Нужна сверка продавца" },
+        409,
+      );
     const proof =
       body.action === "result"
-        ? await verifyReceipt(
+        ? await verifyReceiptImage(
             z.string().parse(body.url),
-            z.iso.datetime().parse(body.registeredAt),
+            z.string().parse(body.pixelHash),
+            receiptPlan(job),
+            job.lease_until
+              ? new Date(new Date(job.lease_until).getTime() - 300000)
+              : null,
           )
         : undefined;
     return json(
@@ -176,7 +251,7 @@ export async function POST(request: Request) {
         const {
           rows: [currentHelper],
         } = await db.query(
-          "select revoked_at,live_enabled,approved_sale_id,live_all_sales from public.market_receipt_helpers where id=$1",
+          "select revoked_at,live_enabled,approved_sale_id,live_all_sales,live_from,result_verified_at from public.market_receipt_helpers where id=$1",
           [helper.id],
         );
         if (!currentHelper || currentHelper.revoked_at)
@@ -207,11 +282,16 @@ export async function POST(request: Request) {
           body.action === "submit" &&
           (!liveAllowed ||
             !currentHelper.live_enabled ||
+            !currentHelper.result_verified_at ||
             (!currentHelper.live_all_sales &&
               !currentHelper.approved_sale_id) ||
             current.operation_mode !== "live" ||
             (!currentHelper.live_all_sales &&
               currentHelper.approved_sale_id !== id) ||
+            (currentHelper.live_all_sales &&
+              (!currentHelper.live_from ||
+                new Date(current.created_at) <
+                  new Date(currentHelper.live_from))) ||
             job.mode !== "live")
         )
           throw new Error("Рабочая выдача не включена");

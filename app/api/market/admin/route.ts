@@ -1,4 +1,8 @@
-import { createHelper, revokeHelper } from "@/lib/market/helper-access";
+import {
+  createHelper,
+  revokeHelper,
+  configureHelperMode,
+} from "@/lib/market/helper-access";
 import { verifyReceipt } from "@/lib/market/verify-receipt";
 import { z } from "zod";
 import { transferSchema } from "@/lib/market/model";
@@ -55,6 +59,25 @@ export async function POST(request: Request) {
       case "helper-revoke":
         await transaction((db) => revokeHelper(db, z.uuid().parse(body.id)));
         break;
+      case "helper-mode": {
+        const scope = z.enum(["safe", "future", "trial"]).parse(body.scope);
+        if (scope !== "safe") {
+          z.literal(true).parse(body.acknowledged);
+          if (process.env.MARKET_RECEIPT_LIVE_ENABLED !== "true")
+            throw new Error(
+              "Рабочая выдача ещё не включена в настройках сайта",
+            );
+        }
+        await transaction((db) =>
+          configureHelperMode(
+            db,
+            z.uuid().parse(body.id),
+            scope,
+            scope === "trial" ? z.uuid().parse(body.saleId) : undefined,
+          ),
+        );
+        break;
+      }
 
       case "show": {
         const method = z

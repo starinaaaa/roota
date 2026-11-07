@@ -76,6 +76,12 @@ async function fixture() {
     ),
   );
   const adapter = db as unknown as MarketDb;
+  await db.exec(
+    await readFile(
+      "database/migrations/20261107_market_helper_activation.sql",
+      "utf8",
+    ),
+  );
   const run = async <T>(fn: (client: MarketDb) => Promise<T>): Promise<T> => {
     await db.exec("BEGIN");
     try {
@@ -1191,6 +1197,107 @@ test("verified manual receipts queue one service email with contact before or af
         ])
       ).rows.length,
       0,
+    );
+  } finally {
+    await db.close();
+  }
+});
+
+test("helper future mode excludes the backlog and trial mode never selects Robokassa or unknown submissions", async () => {
+  const { configureHelperMode, createHelper } =
+    await import("../lib/market/helper-access");
+  const { claimReceiptJob } = await import("../lib/market/receipt-jobs");
+  const { db, run } = await fixture();
+  try {
+    const helper = await run((c) =>
+      createHelper(c, "Future device", "b".repeat(32), "test"),
+    );
+    const old = await run((c) =>
+      createSale(c, request({ postcard: 1 }), "live", "cash"),
+    );
+    await run((c) => confirmManualSale(c, old.id, "test"));
+    await db.query(
+      "update market_receipt_jobs set created_at=now()-interval '1 hour' where sale_id=$1",
+      [old.id],
+    );
+    await assert.rejects(
+      run((c) => configureHelperMode(c, helper.id, "future")),
+      /Сначала проверьте/,
+    );
+    await db.query(
+      "update market_receipt_helpers set result_verified_at=now() where id=$1",
+      [helper.id],
+    );
+    await run((c) => configureHelperMode(c, helper.id, "future"));
+    const {
+      rows: [h],
+    } = await db.query<{ live_from: Date; live_all_sales: boolean }>(
+      "select live_from,live_all_sales from market_receipt_helpers where id=$1",
+      [helper.id],
+    );
+    assert.equal(h.live_all_sales, true);
+    assert.ok(h.live_from);
+    assert.equal(
+      await run((c) =>
+        claimReceiptJob(c, "future", "live", {
+          helperId: helper.id,
+          safe: false,
+          allowedSince: h.live_from,
+        }),
+      ),
+      null,
+    );
+    const fresh = await run((c) =>
+      createSale(c, request({ postcard: 1 }), "live", "transfer"),
+    );
+    await run((c) => confirmManualSale(c, fresh.id, "test"));
+    await db.query(
+      "update market_receipt_jobs set created_at=now()+interval '1 second' where sale_id=$1",
+      [fresh.id],
+    );
+    assert.equal(
+      (await run((c) =>
+        claimReceiptJob(c, "future", "live", {
+          helperId: helper.id,
+          safe: false,
+          allowedSince: h.live_from,
+        }),
+      ))!.sale_id,
+      fresh.id,
+    );
+    await db.query(
+      "update market_receipt_jobs set state='uncertain' where sale_id=$1",
+      [fresh.id],
+    );
+    await assert.rejects(
+      run((c) => configureHelperMode(c, helper.id, "trial", fresh.id)),
+      /неизвестной/,
+    );
+    const robo = await run((c) =>
+      createSale(c, request({ postcard: 1 }), "live", "robokassa"),
+    );
+    await assert.rejects(
+      run((c) => configureHelperMode(c, helper.id, "trial", robo.id)),
+      /испытания/,
+    );
+    await run((c) => configureHelperMode(c, helper.id, "trial", old.id));
+    const trial = (
+      await db.query<{ approved_sale_id: string; live_all_sales: boolean }>(
+        "select approved_sale_id,live_all_sales from market_receipt_helpers where id=$1",
+        [helper.id],
+      )
+    ).rows[0];
+    assert.equal(trial.approved_sale_id, old.id);
+    assert.equal(trial.live_all_sales, false);
+    await run((c) => configureHelperMode(c, helper.id, "safe"));
+    assert.equal(
+      (
+        await db.query<{ live_enabled: boolean }>(
+          "select live_enabled from market_receipt_helpers where id=$1",
+          [helper.id],
+        )
+      ).rows[0].live_enabled,
+      false,
     );
   } finally {
     await db.close();

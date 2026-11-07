@@ -126,6 +126,7 @@ function fixture({
         return {
           url: "https://lknpd.nalog.ru/api/v1/receipt/773212983545/fixture/print",
           registeredAt: "2026-11-07T10:00:00Z",
+          pixelHash: "b".repeat(64),
           total: 1200000,
         };
       },
@@ -216,4 +217,23 @@ test("an edited sum stops before any server fence or FNS registration", async ()
   assert.equal(f.fences, 0);
   assert.equal(f.clicks, 0);
   assert.equal(f.storage.active?.phase, "error");
+});
+
+test("recovery accepts a manually reconciled identical receipt without reading or submitting FNS again", async () => {
+  const f = fixture({ live: true, failFence: true });
+  const controller = createController(f.io);
+  await assert.rejects(controller.start({ safe: false, mode: "live" }));
+  const oldApi = f.io.api;
+  f.io.api = async (body) =>
+    body.action === "registered-status"
+      ? {
+          registered: true,
+          url: "https://lknpd.nalog.ru/api/v1/receipt/773212983545/fixture/print",
+          registeredAt: "2026-11-07T10:00:00Z",
+        }
+      : oldApi(body);
+  const before = f.clicks;
+  await controller.recover();
+  assert.equal(f.storage.active?.phase, "completed");
+  assert.equal(f.clicks, before);
 });

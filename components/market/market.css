@@ -2031,3 +2031,7 @@
 .market-paid-contact h2 {
   margin-bottom: 20px;
 }
+.market-helper-settings { margin: 16px 0 24px; }
+.market-helper-settings form { display: grid; gap: 14px; margin: 16px 0; max-width: 680px; }
+.market-helper-settings form > label:not(.market-consent) { display: grid; gap: 8px; }
+.market-helper-settings select { width: 100%; }

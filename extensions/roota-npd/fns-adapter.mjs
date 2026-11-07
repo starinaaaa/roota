@@ -56,52 +56,86 @@ export async function fnsTask(request) {
         "Войдите в Мой налог самостоятельно в Chrome",
         "LOGIN_REQUIRED",
       );
-    if (request.action === "result") {
-      // No history matching by amount alone. Ambiguous/absent evidence requires the seller.
-      const links = [
-        ...new Set(
-          Array.from(document.querySelectorAll("a[href]"))
-            .map((a) => a.href)
-            .filter((s) =>
-              /^https:\/\/lknpd\.nalog\.ru\/api\/v1\/receipt\/\d{12}\/[a-zA-Z0-9-]+\/print\/?$/.test(
-                s,
-              ),
-            ),
-        ),
-      ];
-      const confirmations = exact("h1,h2,[role=status]", "Чек зарегистрирован");
-      const times = Array.from(
-        document.querySelectorAll("time[datetime]"),
-      ).filter(visible);
-      const receiptTotal = document.querySelector(
-        '[aria-label="Сумма зарегистрированного чека"]',
-      );
+    if (["result", "inspect"].includes(request.action)) {
+      const marker = globalThis.__rootaNpdSubmission;
       if (
-        links.length !== 1 ||
-        confirmations.length !== 1 ||
-        times.length !== 1 ||
-        !receiptTotal
+        request.action === "result" &&
+        (!marker ||
+          marker.key !== request.submissionKey ||
+          marker.plan !== JSON.stringify(request.plan))
       )
         return fail(
-          "Нет однозначного подтверждения чека в этой вкладке",
+          "Нет подтверждения исходной отправки в этой вкладке. Требуется сверка продавца",
           "UNCERTAIN",
         );
-      const registeredAt = new Date(times[0].getAttribute("datetime"));
-      const total = cents(receiptTotal.textContent);
+      const images = Array.from(
+        document.querySelectorAll('img[alt="Чек"]'),
+      ).filter(visible);
+      const download = Array.from(document.querySelectorAll("a[href]")).filter(
+        (e) =>
+          visible(e) &&
+          clean(e.textContent) === "Скачать" &&
+          e.href.startsWith("blob:" + location.origin + "/"),
+      );
       if (
-        !Number.isFinite(registeredAt.getTime()) ||
-        total !== request.plan.total
+        exact("h2", "Чек").length !== 1 ||
+        exact("button", "Скопировать ссылку в буфер").length !== 1 ||
+        images.length !== 1 ||
+        download.length !== 1
       )
-        return fail("Подтверждение не совпадает с покупкой", "UNCERTAIN");
-      return {
-        ok: true,
-        url: links[0],
-        registeredAt: registeredAt.toISOString(),
-        total,
-      };
+        return fail(
+          "ФНС не показала однозначное изображение выданного чека",
+          "UNCERTAIN",
+        );
+      const img = images[0];
+      if (
+        !img.complete ||
+        !img.naturalWidth ||
+        img.naturalWidth * img.naturalHeight > 4000000 ||
+        !img.src.startsWith("blob:" + location.origin + "/")
+      )
+        return fail(
+          "Изображение чека ещё не готово или его формат изменился",
+          "UNCERTAIN",
+        );
+      if (typeof globalThis.jsQR !== "function")
+        return fail("Не загружен локальный декодер QR", "UNCERTAIN");
+      const canvas = document.createElement("canvas");
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+      const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      const qr = globalThis.jsQR(pixels, canvas.width, canvas.height, {
+        inversionAttempts: "dontInvert",
+      });
+      if (
+        !qr ||
+        !/^https:\/\/lknpd\.nalog\.ru\/api\/v1\/receipt\/\d{12}\/[a-zA-Z0-9-]+\/print\/?$/.test(
+          qr.data,
+        )
+      )
+        return fail(
+          "QR выданного чека не содержит оригинальную ссылку ФНС",
+          "UNCERTAIN",
+        );
+      const digest = await crypto.subtle.digest("SHA-256", pixels);
+      const pixelHash = Array.from(new Uint8Array(digest), (v) =>
+        v.toString(16).padStart(2, "0"),
+      ).join("");
+      return { ok: true, url: qr.data.replace(/\/$/, ""), pixelHash };
     }
     if (location.pathname !== "/sales/create")
       return fail("Откройте форму новой продажи Моего налога");
+    if (
+      exact("h2", "Чек").length ||
+      Array.from(document.querySelectorAll('img[alt="Чек"]')).some(visible)
+    )
+      return fail(
+        "Вкладка уже показывает выданный чек. Новая отправка запрещена",
+      );
     if (exact("h1,h2", "Новая продажа").length !== 1)
       return fail("Заголовок формы ФНС изменился; требуется обновить адаптер");
     const dates = inputsFor("Дата продажи"),
@@ -223,6 +257,16 @@ export async function fnsTask(request) {
           "Рабочий адаптер не сертифицирован; доступна только проверка",
         );
       if (submit[0].disabled) return fail("ФНС не разрешает выдачу чека");
+      if (!request.submissionKey || globalThis.__rootaNpdSubmission)
+        return fail(
+          "В этой вкладке отправка уже могла произойти. Повтор запрещён",
+          "UNCERTAIN",
+        );
+      globalThis.__rootaNpdSubmission = {
+        key: request.submissionKey,
+        plan: JSON.stringify(plan),
+        startedAt: Date.now(),
+      };
       submit[0].click();
     }
     return { ok: true, total };

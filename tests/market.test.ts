@@ -1023,7 +1023,7 @@ test("Robokassa receipt contact schedules feedback only after verified payment c
   }
 });
 
-test("receipt helper access is origin bound, revocable, and a live trial claims only the explicitly approved sale", async () => {
+test("receipt helper access is origin bound, revocable, and safe/live trials claim only the explicitly approved sale", async () => {
   const { createHelper, authenticateHelper, revokeHelper } =
     await import("../lib/market/helper-access");
   const { claimReceiptJob } = await import("../lib/market/receipt-jobs");
@@ -1052,6 +1052,18 @@ test("receipt helper access is origin bound, revocable, and a live trial claims 
       createSale(c, request({ postcard: 1 }), "live", "transfer"),
     );
     await run((c) => confirmManualSale(c, approved.id, "test"));
+    const preview = await run((c) =>
+      claimReceiptJob(c, "Test MacBook", "live", {
+        helperId: credential.id,
+        safe: true,
+        allowedSaleId: approved.id,
+      }),
+    );
+    assert.equal(preview!.sale_id, approved.id);
+    assert.equal(preview!.operation_mode, "safe");
+    await db.exec(
+      "update market_receipt_jobs set state='queued',claim_token=null,helper_id=null,lease_until=null where state='claimed'",
+    );
     const job = await run((c) =>
       claimReceiptJob(c, "Test MacBook", "live", {
         helperId: credential.id,

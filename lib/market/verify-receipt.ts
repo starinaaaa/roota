@@ -25,6 +25,14 @@ export async function fetchReceiptPdf(
   url: string,
   fetcher: typeof fetch = fetch,
 ) {
+  const { bytes, contentType } = await fetchReceiptDocument(url, fetcher);
+  return officialReceiptPdf(bytes, contentType);
+}
+
+export async function fetchReceiptDocument(
+  url: string,
+  fetcher: typeof fetch = fetch,
+) {
   if (!validReceiptUrl(url))
     throw new Error("Нужна ссылка на оригинальный чек ФНС");
   const result = await fetcher(url, {
@@ -49,8 +57,8 @@ export async function fetchReceiptPdf(
     chunks.push(value);
   }
   if (!size) throw new Error("ФНС вернула пустой чек");
-  return officialReceiptPdf(
-    Buffer.concat(chunks),
-    result.headers.get("content-type") ?? "",
-  );
+  return {
+    bytes: Buffer.concat(chunks),
+    contentType: result.headers.get("content-type") ?? "",
+  };
 }

@@ -1,3 +1,4 @@
+import { receiptLink } from "./core.mjs";
 const el = (id) => document.getElementById(id);
 const labels = {
   claimed: "Задача получена",
@@ -23,11 +24,22 @@ async function refresh() {
   const s = await send("state");
   el("extension-id").textContent = s.id;
   el("status").textContent = s.connected
-    ? "Подключён к Roota · " + (labels[s.active?.phase] ?? "безопасный режим")
+    ? "Подключён к Roota · " +
+      (s.armed && s.liveCertified
+        ? "рабочий режим включён"
+        : "безопасный режим") +
+      (s.active ? " · " + (labels[s.active.phase] ?? s.active.phase) : "")
     : "Не подключён";
-  el("task").textContent = s.active
-    ? `Продажа ${s.active.job.sale_id} · ${labels[s.active.phase] ?? s.active.phase}`
+  el("sales-mode").value = s.previewMode ?? "test";
+  el("inspection").textContent = s.lastInspection?.confirmed
+    ? `Результат ФНС проверен: ${s.lastInspection.saleNumber}, ${(s.lastInspection.total / 100).toFixed(2)} ₽. Нового дохода не создано.`
     : "";
+  el("task").textContent = s.active
+    ? `Покупка${s.active.job.inv_id ? " М-" + String(s.active.job.inv_id).slice(-6) : ""} · ${labels[s.active.phase] ?? s.active.phase}`
+    : "";
+  const found = s.active?.evidence?.url;
+  el("found-receipt").hidden = !receiptLink(found ?? "");
+  if (receiptLink(found ?? "")) el("found-receipt").href = found;
   el("error").textContent = s.lastError ?? "";
   el("arm").disabled = !s.liveCertified || !s.connected;
   el("preview").disabled = !s.connected;
@@ -57,6 +69,7 @@ bind("connect", "connect", () => ({
 bind("disconnect", "disconnect");
 bind("preview", "preview", () => ({ mode: el("sales-mode").value }));
 bind("recover", "recover");
+bind("inspect", "inspect");
 bind("clear", "clear");
 bind("arm", "arm");
 bind("pause", "pause");

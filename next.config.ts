@@ -1,18 +1,27 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: [
+    "tesseract.js",
+    "tesseract.js-core",
+    "@tesseract.js-data/rus",
+  ],
   async headers() {
     return [
-      ...["/email/:path*", "/review/:path*", "/cart/restore/:path*", "/draft/:path*", "/selection/:path*"].map(
-        (source) => ({
-          source,
-          headers: [
-            { key: "Referrer-Policy", value: "no-referrer" },
-            { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
-            { key: "Cache-Control", value: "private, no-store" },
-          ],
-        }),
-      ),
+      ...[
+        "/email/:path*",
+        "/review/:path*",
+        "/cart/restore/:path*",
+        "/draft/:path*",
+        "/selection/:path*",
+      ].map((source) => ({
+        source,
+        headers: [
+          { key: "Referrer-Policy", value: "no-referrer" },
+          { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
+          { key: "Cache-Control", value: "private, no-store" },
+        ],
+      })),
       {
         source: "/optimized/:path*",
         headers: [

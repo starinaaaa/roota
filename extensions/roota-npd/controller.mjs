@@ -28,7 +28,10 @@ export function createController(io) {
     await report("connected", "Чек подтверждён и сохранён в Roota", false);
   };
   async function deliver(active) {
-    if (!receiptLink(active.evidence.url))
+    if (
+      !receiptLink(active.evidence.url) ||
+      !/^[a-f0-9]{64}$/.test(active.evidence.pixelHash ?? "")
+    )
       throw new Error("Нет оригинальной ссылки ФНС");
     await io.api({
       action: "result",
@@ -151,9 +154,8 @@ export function createController(io) {
       const evidence = await io.ui.result(tabId, plan);
       if (
         !evidence ||
-        evidence.total !== plan.total ||
         !receiptLink(evidence.url) ||
-        !evidence.registeredAt
+        !/^[a-f0-9]{64}$/.test(evidence.pixelHash ?? "")
       )
         throw new Error(
           "ФНС не вернула однозначное подтверждение и оригинальный чек",
@@ -161,7 +163,7 @@ export function createController(io) {
       active = await save({
         ...active,
         phase: "result_pending",
-        evidence: { url: evidence.url, registeredAt: evidence.registeredAt },
+        evidence: { url: evidence.url, pixelHash: evidence.pixelHash },
       });
       return await deliver(active);
     } catch (error) {
@@ -207,6 +209,32 @@ export function createController(io) {
   }
   async function recover() {
     let { active } = await io.load();
+    if (active && active.phase !== "completed") {
+      const saved = await io.api({
+        action: "registered-status",
+        id: active.job.sale_id,
+      });
+      if (saved.registered === true && receiptLink(saved.url)) {
+        if (
+          active.evidence?.url &&
+          active.evidence.url.replace(/\/$/, "") !==
+            saved.url.replace(/\/$/, "")
+        )
+          return uncertain(
+            active,
+            "В Roota сохранён другой чек. Сверьте оба документа с продавцом",
+          );
+        await done({
+          ...active,
+          evidence: {
+            ...active.evidence,
+            url: saved.url,
+            registeredAt: saved.registeredAt,
+          },
+        });
+        return { state: "registered" };
+      }
+    }
     if (!active) {
       const r = await io.api({ action: "recover" });
       if (!r.job) return { state: "idle" };
@@ -230,14 +258,13 @@ export function createController(io) {
           : null;
         if (
           found &&
-          found.total === active.plan.total &&
           receiptLink(found.url) &&
-          found.registeredAt
+          /^[a-f0-9]{64}$/.test(found.pixelHash ?? "")
         ) {
           active = await save({
             ...active,
             phase: "result_pending",
-            evidence: { url: found.url, registeredAt: found.registeredAt },
+            evidence: { url: found.url, pixelHash: found.pixelHash },
           });
           return deliver(active);
         }

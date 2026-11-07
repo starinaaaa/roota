@@ -1,0 +1,25 @@
+{
+  "checks": [
+    "real MV3 worker: Roota paid job -> FNS fixture form -> verified preview; zero submit clicks and no issued status",
+    "parallel popup tabs share one in-flight task",
+    "credential is bound to the declared extension origin",
+    "server revocation blocks further helper requests",
+    "read-only MV3 QR/fingerprint/OCR inspection certifies the device without a submit click",
+    "simulated live: server one-time fence -> single DOM submit -> verified original link -> paid sale updated",
+    "repeated identical HTTP result returns the existing receipt without a new registration",
+    "actual MV3 service worker stop/restart and result replay do not submit again",
+    "original receipt can be explicitly restored to the current iPad screen",
+    "one transactional receipt email is queued, independent of marketing consent",
+    "same verified receipt downloads as a 40x58 label",
+    "missing FNS confirmation becomes uncertain; recovery never clicks submit again",
+    "uncertain receipt leaves money paid and exposes no fake receipt URL",
+    "changed FNS labels stop before registration",
+    "logged-out FNS stops with login-required status"
+  ],
+  "productionConfigLiveCertified": true,
+  "deviceResultVerificationRequired": true,
+  "realIncomesCreated": 0,
+  "realEmailsSent": 0,
+  "testExtensionId": "eoboopdhapgelbhncfbnnbcdfpppfiog",
+  "extensionTestPath": "/tmp/roota-npd-extension-OYAnCB"
+}

@@ -9,6 +9,8 @@ export type Helper = {
   live_enabled: boolean;
   approved_sale_id: string | null;
   live_all_sales: boolean;
+  live_from: Date | null;
+  result_verified_at: Date | null;
   operation_mode: "safe" | "live";
 };
 export async function createHelper(
@@ -68,5 +70,50 @@ export async function revokeHelper(db: MarketDb, id: string) {
   await db.query(
     "update public.market_receipt_jobs set state='uncertain',last_error='Доступ помощника отозван после начала отправки. Сверьте доход в ФНС.' where helper_id=$1 and state='submitting'",
     [id],
+  );
+}
+
+export async function configureHelperMode(
+  db: MarketDb,
+  id: string,
+  scope: "safe" | "future" | "trial",
+  saleId?: string,
+) {
+  await lockRegister(db);
+  const {
+    rows: [helper],
+  } = await db.query(
+    "select id,revoked_at,result_verified_at from market_receipt_helpers where id=$1 for update",
+    [id],
+  );
+  if (!helper || helper.revoked_at)
+    throw new Error("Помощник не найден или доступ отозван");
+  if (scope !== "safe" && !helper.result_verified_at)
+    throw new Error(
+      "Сначала проверьте помощником открытый сохранённый чек без выдачи нового дохода",
+    );
+  if (scope === "trial") {
+    const {
+      rows: [sale],
+    } = await db.query(
+      "select s.id from market_sales s join market_receipt_jobs j on j.sale_id=s.id where s.id=$1 and s.mode='live' and s.status='paid' and s.payment_method in ('cash','transfer') and s.receipt_url is null and j.state='queued' and j.verified_at is null",
+      [saleId],
+    );
+    if (!sale)
+      throw new Error(
+        "Для испытания нужна оплаченная наличными или переводом покупка без выданного чека и без неизвестной отправки",
+      );
+  }
+  await db.query(
+    `update market_receipt_helpers set live_enabled=$2,live_all_sales=$3,
+    live_from=case when $3 then now() else null end,
+    approved_sale_id=case when $4 then $5::uuid else null end where id=$1`,
+    [
+      id,
+      scope !== "safe",
+      scope === "future",
+      scope === "trial",
+      saleId ?? null,
+    ],
   );
 }

@@ -18,7 +18,12 @@ export async function claimReceiptJob(
   db: MarketDb,
   worker: string,
   mode: "test" | "live",
-  options?: { helperId: string; safe: boolean; allowedSaleId?: string | null },
+  options?: {
+    helperId: string;
+    safe: boolean;
+    allowedSaleId?: string | null;
+    allowedSince?: Date | string | null;
+  },
 ) {
   await lockRegister(db);
   await db.query(`update public.market_receipt_jobs set state='uncertain',last_error='Нет подтверждения результата. Сверьте доход в Моем налоге.',updated_at=now()
@@ -26,13 +31,19 @@ export async function claimReceiptJob(
   const {
     rows: [job],
   } = await db.query<Job>(
-    `select j.*,s.items,s.amount,s.paid_at,s.mode,s.payment_method from public.market_receipt_jobs j
+    `select j.*,s.inv_id,s.items,s.amount,s.paid_at,s.mode,s.payment_method from public.market_receipt_jobs j
     join public.market_sales s on s.id=j.sale_id where s.mode=$1 and s.status='paid' and s.payment_method<>'robokassa'
     and (j.state='queued' or (j.state='claimed' and j.lease_until<=now()))
     and (not $2::boolean or j.previewed_at is null)
     and ($3::uuid is null or s.id=$3)
+    and ($4::timestamptz is null or j.created_at >= $4::timestamptz)
     order by j.created_at,j.sale_id for update of j skip locked limit 1`,
-    [mode, options?.safe ?? false, options?.allowedSaleId ?? null],
+    [
+      mode,
+      options?.safe ?? false,
+      options?.allowedSaleId ?? null,
+      options?.allowedSince ?? null,
+    ],
   );
   if (!job) return null;
   const token = randomBytes(32).toString("hex");

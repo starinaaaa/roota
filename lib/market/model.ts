@@ -65,6 +65,10 @@ export type MarketState = {
     revoked_at: string | null;
     operation_mode: string;
     live_enabled: boolean;
+    live_all_sales: boolean;
+    approved_sale_id: string | null;
+    live_from: string | null;
+    result_verified_at: string | null;
   }[];
 };
 export const stockSchema = z

@@ -12,6 +12,7 @@ import {
   type TransferSettings,
   newItemSchema,
   validReceiptUrl,
+  type ReceiptStatus,
 } from "./model";
 import type { PaymentRow } from "../payments/model";
 
@@ -27,6 +28,9 @@ export type SaleRow = {
   payment_method: PaymentMethod;
   transfer_details: TransferSettings | null;
   receipt_url: string | null;
+  receipt_state?: ReceiptStatus;
+  receipt_registered_at?: Date | null;
+  receipt_verified_at?: Date | null;
   status: SaleStatus;
   amount: string;
   items: SaleItem[];
@@ -195,12 +199,19 @@ export async function saveInventory(db: MarketDb, raw: unknown) {
     if (!item) throw new Error("Товар не найден");
     if (
       item.stock_qty !== input.previousStock ||
-      item.price !== input.previousPrice
+      item.price !== input.previousPrice ||
+      (input.previousReceiptName !== undefined &&
+        item.receipt_name !== input.previousReceiptName)
     )
       throw new Error("Остатки или цены изменились. Откройте настройки заново");
     await db.query(
-      "update public.market_inventory set stock_qty=$2,price=$3 where key=$1",
-      [item.key, input.stock, input.price],
+      "update public.market_inventory set stock_qty=$2,price=$3,receipt_name=$4 where key=$1",
+      [
+        item.key,
+        input.stock,
+        input.price,
+        input.receiptName ?? item.receipt_name,
+      ],
     );
   }
 }
@@ -226,13 +237,14 @@ export async function addInventoryItem(db: MarketDb, raw: unknown) {
   } = await db.query("select count(*)::int n from public.market_inventory");
   if (count.n >= 30) throw new Error("На маркете может быть до 30 позиций");
   await db.query(
-    "insert into public.market_inventory(key,name,kind,price,stock_qty,sort_order) values($1,$2,$3,$4,$5,15)",
+    "insert into public.market_inventory(key,name,kind,price,stock_qty,sort_order,receipt_name) values($1,$2,$3,$4,$5,15,$6)",
     [
       "custom-" + randomBytes(12).toString("hex"),
       item.name,
       item.kind,
       item.price,
       item.stock,
+      item.receiptName,
     ],
   );
 }
@@ -258,8 +270,17 @@ export async function confirmManualSale(
     "update public.market_sales set status='paid',paid_at=now(),reserved=false,confirmed_by=$2 where id=$1",
     [id, actor],
   );
+  await db.query(
+    "insert into public.market_receipt_jobs(sale_id) values($1) on conflict do nothing",
+    [id],
+  );
 }
-export async function attachReceipt(db: MarketDb, id: string, url: string) {
+export async function attachReceipt(
+  db: MarketDb,
+  id: string,
+  proof: { url: string; registeredAt: string; verifiedAt: string },
+) {
+  const url = proof.url.replace(/\/$/, "");
   if (!validReceiptUrl(url))
     throw new Error(
       "Нужна ссылка на чек из Моего налога: lknpd.nalog.ru/api/v1/receipt/.../print",
@@ -275,13 +296,19 @@ export async function attachReceipt(db: MarketDb, id: string, url: string) {
     throw new Error(
       "Чек доступен только для подтверждённой оплаты наличными или переводом",
     );
-  if (sale.receipt_url && sale.receipt_url !== url)
+  if (sale.receipt_url && sale.receipt_url.replace(/\/$/, "") !== url)
     throw new Error(
       "К покупке уже привязан другой чек. Проверьте его перед изменением",
     );
   await db.query(
-    "update public.market_sales set receipt_url=$2,receipt_added_at=now() where id=$1",
+    "update public.market_sales set receipt_url=$2,receipt_added_at=coalesce(receipt_added_at,now()) where id=$1",
     [id, url],
+  );
+  await db.query(
+    `update public.market_receipt_jobs set state='registered',
+    registered_at=coalesce(registered_at,$2::timestamptz),verified_at=coalesce(verified_at,$3::timestamptz),
+    last_error=null,updated_at=now() where sale_id=$1`,
+    [id, proof.registeredAt, proof.verifiedAt],
   );
 }
 

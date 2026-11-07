@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Creature, MarketBrand, QrCode } from "./shared";
+import { Creature, MarketBrand, QrCode, marketFetch } from "./shared";
 import {
   money,
   type MarketState,
@@ -499,6 +499,24 @@ export function ReceiptDownload({
         onClick={() => download("label")}
       >
         QR чека · 40×58 мм
+      </button>
+      <button
+        className="market-secondary"
+        onClick={async () => {
+          setError("");
+          try {
+            await marketFetch("/api/market/admin", {
+              action: "show-receipt",
+              id: sale.id,
+            });
+          } catch (e) {
+            setError(
+              e instanceof Error ? e.message : "Не удалось показать чек",
+            );
+          }
+        }}
+      >
+        Показать на iPad
       </button>
       <a href={sale.receiptUrl} target="_blank" rel="noreferrer">
         Открыть чек ФНС ↗︎

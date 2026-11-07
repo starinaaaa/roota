@@ -56,6 +56,16 @@ export type MarketState = {
   manualMode: "test" | "live";
   transferSettings: TransferSettings;
   receiptQueue: PublicSale[];
+  helpers: {
+    id: string;
+    name: string;
+    status: string;
+    detail: string | null;
+    last_seen_at: string | null;
+    revoked_at: string | null;
+    operation_mode: string;
+    live_enabled: boolean;
+  }[];
 };
 export const stockSchema = z
   .object({

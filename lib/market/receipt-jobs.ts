@@ -18,6 +18,7 @@ export async function claimReceiptJob(
   db: MarketDb,
   worker: string,
   mode: "test" | "live",
+  options?: { helperId: string; safe: boolean; allowedSaleId?: string | null },
 ) {
   await lockRegister(db);
   await db.query(`update public.market_receipt_jobs set state='uncertain',last_error='Нет подтверждения результата. Сверьте доход в Моем налоге.',updated_at=now()
@@ -28,19 +29,29 @@ export async function claimReceiptJob(
     `select j.*,s.items,s.amount,s.paid_at,s.mode,s.payment_method from public.market_receipt_jobs j
     join public.market_sales s on s.id=j.sale_id where s.mode=$1 and s.status='paid' and s.payment_method<>'robokassa'
     and (j.state='queued' or (j.state='claimed' and j.lease_until<=now()))
+    and (not $2::boolean or j.previewed_at is null)
+    and ($3::uuid is null or s.id=$3)
     order by j.created_at,j.sale_id for update of j skip locked limit 1`,
-    [mode],
+    [mode, options?.safe ?? false, options?.allowedSaleId ?? null],
   );
   if (!job) return null;
   const token = randomBytes(32).toString("hex");
   await db.query(
     `update public.market_receipt_jobs set state='claimed',claim_token=$2,worker=$3,
-    lease_until=now()+interval '5 minutes',attempts=attempts+1,updated_at=now() where sale_id=$1`,
-    [job.sale_id, token, worker],
+    lease_until=now()+interval '5 minutes',attempts=attempts+1,updated_at=now(),helper_id=$4,operation_mode=$5 where sale_id=$1`,
+    [
+      job.sale_id,
+      token,
+      worker,
+      options?.helperId ?? null,
+      options?.safe === false ? "live" : "safe",
+    ],
   );
   return {
     ...job,
     state: "claimed",
+    operation_mode: options?.safe === false ? "live" : "safe",
+    helper_id: options?.helperId ?? null,
     claim_token: token,
     leaseSeconds: 300,
     idempotencyKey: `market:${job.sale_id}`,

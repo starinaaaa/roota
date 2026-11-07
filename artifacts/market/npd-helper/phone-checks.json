@@ -1,0 +1,9 @@
+{
+  "width": 390,
+  "scroll": 390,
+  "inputFont": 18,
+  "consentFont": 16,
+  "viewports": [
+    "width=device-width, initial-scale=1, viewport-fit=cover"
+  ]
+}

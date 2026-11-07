@@ -310,6 +310,14 @@ export async function attachReceipt(
     last_error=null,updated_at=now() where sale_id=$1`,
     [id, proof.registeredAt, proof.verifiedAt],
   );
+  await db.query(
+    `insert into public.email_messages(event_key,kind,recipient,payload)
+    select 'market:'||s.id||':receipt','market_receipt',s.email,jsonb_build_object('market_sale_id',s.id)
+    from public.market_sales s where s.id=$1 and s.mode='live' and s.email is not null
+    and exists(select 1 from public.email_settings where id=1 and enabled)
+    on conflict(event_key) do nothing`,
+    [id],
+  );
 }
 
 /** Record only a submitted newsletter choice; page views never subscribe anyone. */

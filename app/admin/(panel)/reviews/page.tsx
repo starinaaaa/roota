@@ -18,7 +18,7 @@ export default async function ReviewsAdmin() {
       .limit(100),
     db
       .from("email_messages")
-      .select("id,recipient,state,scheduled_at,orders(order_number)")
+      .select("id,recipient,state,scheduled_at,payload,orders(order_number)")
       .eq("kind", "review_invite")
       .order("created_at", { ascending: false })
       .limit(100),
@@ -50,7 +50,7 @@ export default async function ReviewsAdmin() {
       {reviews.data.map((r) => (
         <article key={r.id} className="admin-card space-y-3">
           <p>
-            Заказ {r.orders?.order_number} · {r.rating}/5 · {r.state}
+            {r.market_sale_id ? "Покупка на маркете" : `Заказ ${r.orders?.order_number}`} · {r.rating}/5 · {r.state}
           </p>
           <p>Имя для публикации: {r.display_name || "Покупатель Roota"}</p>
           <p className="whitespace-pre-wrap">{r.body}</p>
@@ -123,7 +123,7 @@ export default async function ReviewsAdmin() {
       <h2 className="text-xl">Приглашения</h2>
       {invites.data.map((i) => (
         <p key={i.id}>
-          Заказ {relationList(i.orders)[0]?.order_number} · {i.recipient} ·{" "}
+          {i.payload?.market_sale_id ? "Маркет" : `Заказ ${relationList(i.orders)[0]?.order_number}`} · {i.recipient} ·{" "}
           {i.state} ·{" "}
           {new Date(i.scheduled_at).toLocaleString("ru-RU", {
             timeZone: "Europe/Moscow",

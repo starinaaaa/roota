@@ -1916,3 +1916,25 @@
     font-size: clamp(32px, 4vw, 48px);
   }
 }
+
+.market-phone-receipt form > label:not(.market-consent) {
+  display: grid;
+  gap: 8px;
+}
+.market-phone-receipt form label input:not([type="checkbox"]),
+.market-phone-receipt form textarea,
+.market-phone-receipt form select {
+  width: 100%;
+  border: 1px solid var(--market-line);
+  border-radius: 4px;
+  padding: 12px;
+  font: inherit;
+  font-size: 16px;
+  background: white;
+}
+.market-promo-code {
+  font-size: 24px;
+  letter-spacing: 0.05em;
+  overflow-wrap: anywhere;
+  user-select: all;
+}

@@ -319,6 +319,7 @@ export async function savePaymentContact(
   email: string,
   receipt: SaleRow["receipt"],
   marketingConsent: boolean,
+  reviewConsent = false,
 ) {
   if (sale.status !== "pending" || sale.payment_method !== "robokassa")
     throw new Error("MARKET_PAYMENT_NOT_PENDING");
@@ -332,6 +333,7 @@ export async function savePaymentContact(
       marketing_consent_version=case when $4 then $5 else null end where id=$1`,
     [sale.id, email, JSON.stringify(receipt), marketingConsent, version],
   );
+  await saveReviewContact(db, sale, email, reviewConsent);
   // A test purchase never creates a real marketing subscription.
   if (sale.mode !== "live") return;
   const resource = `market:${sale.id}`;
@@ -357,5 +359,92 @@ export async function savePaymentContact(
       and s.purpose='news' and s.revoked_at is not null and m.state='pending'`,
       [resource],
     );
+  }
+}
+
+/** Receipt email and optional invitations are independent of fiscal registration. */
+export async function saveReviewContact(
+  db: MarketDb,
+  sale: SaleRow,
+  email: string,
+  consent: boolean,
+) {
+  const version = "market-review-email-2026-11-07";
+  await db.query(
+    `update public.market_sales set review_consent=$2,
+    review_consent_at=case when $2 then coalesce(review_consent_at,now()) else null end,
+    review_consent_version=case when $2 then $3 else null end where id=$1`,
+    [sale.id, consent, version],
+  );
+  if (sale.mode !== "live") return;
+  await db.query("select pg_advisory_xact_lock(hashtextextended($1,0))", [
+    email,
+  ]);
+  const resource = `market:${sale.id}`;
+  if (consent) {
+    await db.query(
+      `insert into public.email_subscriptions(email,purpose,resource,token,confirmed_at,direct_consent_at,consent_version)
+      values($1,'review',$2,$3,now(),now(),$4) on conflict(email,purpose,resource) do update
+      set revoked_at=null,confirmed_at=now(),direct_consent_at=now(),consent_version=excluded.consent_version`,
+      [email, resource, randomBytes(32).toString("hex"), version],
+    );
+  } else {
+    await db.query(
+      "update public.email_subscriptions set revoked_at=now() where email=$1 and purpose='review' and resource=$2 and revoked_at is null",
+      [email, resource],
+    );
+    await db.query(
+      "update public.email_messages set state='cancelled',last_error='Покупатель отказался от приглашения' where kind='review_invite' and payload->>'market_sale_id'=$1 and state='pending'",
+      [sale.id],
+    );
+  }
+}
+export async function saveManualContact(
+  db: MarketDb,
+  token: string,
+  email: string,
+  marketingConsent: boolean,
+  reviewConsent: boolean,
+) {
+  await lockRegister(db);
+  const {
+    rows: [sale],
+  } = await db.query<SaleRow>(
+    "select * from public.market_sales where token=$1 for update",
+    [token],
+  );
+  if (
+    !sale ||
+    sale.payment_method === "robokassa" ||
+    !["pending", "paid"].includes(sale.status)
+  )
+    throw new Error("Покупка уже закрыта. Обратитесь к продавцу");
+  if (sale.email && sale.email !== email)
+    throw new Error(
+      "Для этой покупки уже сохранена другая почта. Обратитесь к продавцу",
+    );
+  await db.query(
+    `update public.market_sales set email=$2,marketing_consent=$3,
+    marketing_consent_at=case when $3 then coalesce(marketing_consent_at,now()) else null end,
+    marketing_consent_version=case when $3 then 'market-email-2026-11-07' else null end where id=$1`,
+    [sale.id, email, marketingConsent],
+  );
+  await saveReviewContact(db, sale, email, reviewConsent);
+  if (sale.mode === "live") {
+    if (marketingConsent)
+      await db.query(
+        "select public.record_checkout_news_consent($1,$2,$3,$4)",
+        [
+          email,
+          `market:${sale.id}`,
+          randomBytes(32).toString("hex"),
+          "market-email-2026-11-07",
+        ],
+      );
+    else
+      await db.query(
+        "update public.email_subscriptions set revoked_at=now() where email=$1 and purpose='news' and resource=$2 and revoked_at is null",
+        [email, `market:${sale.id}`],
+      );
   }
 }

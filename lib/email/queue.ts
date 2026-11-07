@@ -1,3 +1,5 @@
+import { marketReviewInvitation } from "@/lib/market/review-copy";
+import type { SaleItem } from "@/lib/market/model";
 import { estimatedReadyLabel, productionEstimate } from "@/lib/preorder-copy";
 import { courierContactLabel } from "@/lib/courier-contact";
 import { orderProduction } from "@/lib/shop-operations";
@@ -32,6 +34,7 @@ export async function processEmailQueue() {
     return { disabled: true };
   const db = createServerClient();
   await getPool().query("select public.prepare_collection_campaigns()");
+  await getPool().query("select public.prepare_market_review_invites()");
   const prepared = await db.rpc("prepare_email_queue");
   if (prepared.error) throw new Error("Не удалось подготовить очередь");
   let accepted = 0,
@@ -276,6 +279,78 @@ export async function processEmailQueue() {
           values.promo_code=reward.code;
           values.promo_expires=rewardExpiry(reward.expires_at);
           url=siteUrl("/catalog"); label="Выбрать изделия";
+        }
+      }
+      if (
+        m.payload?.market_sale_id &&
+        ["review_invite", "order_review_reward"].includes(m.kind)
+      ) {
+        const sale = (
+          await getPool().query<{
+            id: string;
+            inv_id: string;
+            email: string;
+            review_token: string;
+            items: SaleItem[];
+            review_consent: boolean;
+          }>(
+            "select id,inv_id,email,review_token,items,review_consent from public.market_sales where id::text=$1 and mode='live' and status='paid'",
+            [m.payload.market_sale_id],
+          )
+        ).rows[0];
+        if (!sale || sale.email !== m.recipient)
+          throw new Error("MARKET_SALE_UNAVAILABLE");
+        values.number = `М-${String(sale.inv_id).slice(-6)}`;
+        if (m.kind === "review_invite") {
+          const existing = await getPool().query(
+            "select id from public.customer_reviews where market_sale_id=$1",
+            [sale.id],
+          );
+          if (
+            !sale.review_consent ||
+            !subscription ||
+            subscription.revoked_at ||
+            existing.rows.length
+          ) {
+            await db
+              .from("email_messages")
+              .update({
+                state: "cancelled",
+                last_error: "Приглашение больше не требуется",
+              })
+              .eq("id", m.id)
+              .eq("claim", m.claim);
+            continue;
+          }
+          const copy = marketReviewInvitation(sale.items);
+          values.review_subject = copy.subject;
+          values.review_body = copy.body;
+          url = siteUrl(`/market/review/${sale.review_token}`);
+          label = "Поделиться впечатлениями";
+        } else {
+          const reward = (
+            await getPool().query<{ code: string; expires_at: Date }>(
+              "select code,expires_at from public.review_rewards where id::text=$1 and source_market_sale_id=$2 and revoked_at is null and redeemed_at is null and expires_at>now()",
+              [m.payload.reward_id, sale.id],
+            )
+          ).rows[0];
+          if (!reward) {
+            await db
+              .from("email_messages")
+              .update({
+                state: "cancelled",
+                last_error: "Промокод уже недоступен",
+              })
+              .eq("id", m.id)
+              .eq("claim", m.claim);
+            continue;
+          }
+          values.promo_code = reward.code;
+          values.promo_expires = rewardExpiry(reward.expires_at);
+          template.body =
+            "Спасибо за ваш честный отзыв о покупке на маркете!\n\nВаш персональный промокод: {{promo_code}}\n10% на изделия в следующем заказе до {{promo_expires}}. Укажите при оформлении телефон, который оставили в форме отзыва. Код действует один раз, доставка оплачивается полностью.\n\nС теплом, Даша и чудики Roota";
+          url = siteUrl("/catalog");
+          label = "Выбрать изделия";
         }
       }
       if (m.kind === "restock") {

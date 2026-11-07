@@ -259,6 +259,16 @@ export function ManualInstructions({ sale }: { sale: PublicSale }) {
       ) : (
         <p className="market-small">Уточните банк у продавца</p>
       )}
+      {sale.transfer?.link ? (
+        <a
+          href={sale.transfer.link}
+          className="market-secondary"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Открыть банк ↗
+        </a>
+      ) : null}
       <p className="market-small">
         Проверьте имя получателя и сумму {money(sale.amount)} перед переводом.
       </p>

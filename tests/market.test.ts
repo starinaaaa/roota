@@ -60,6 +60,15 @@ async function fixture() {
       "utf8",
     ),
   );
+  await db.exec(
+    await readFile("database/migrations/20261029_review_rewards.sql", "utf8"),
+  );
+  await db.exec(
+    await readFile("database/migrations/20261030_website_reviews.sql", "utf8"),
+  );
+  await db.exec(
+    await readFile("database/migrations/20261107_market_reviews.sql", "utf8"),
+  );
   const adapter = db as unknown as MarketDb;
   const run = async <T>(fn: (client: MarketDb) => Promise<T>): Promise<T> => {
     await db.exec("BEGIN");
@@ -744,6 +753,264 @@ test("expired pre-submission claims are replaced; failures never undo paid stock
         )
       ).rows[0].n,
       1,
+    );
+  } finally {
+    await db.close();
+  }
+});
+
+test("market contact keeps receipt email, review consent and newsletter independent; invite is due after 3 paid days", async () => {
+  const { saveManualContact } = await import("../lib/market/store");
+  const { db, run } = await fixture();
+  try {
+    await db.query(
+      "insert into email_settings(id,enabled,test_mode) values(1,true,false) on conflict(id) do update set enabled=true,test_mode=false",
+    );
+    const sale = await run((c) =>
+      createSale(c, request({ postcard: 1 }), "live", "cash"),
+    );
+    await run((c) =>
+      saveManualContact(c, sale.token, "market@example.test", false, true),
+    );
+    await db.query("select prepare_market_review_invites()");
+    assert.equal(
+      (
+        await db.query<{ n: number }>(
+          "select count(*)::int n from email_messages where payload->>'market_sale_id'=$1",
+          [sale.id],
+        )
+      ).rows[0].n,
+      0,
+    );
+    await run((c) => confirmManualSale(c, sale.id, "test"));
+    await db.query("select prepare_market_review_invites()");
+    await db.query("select prepare_market_review_invites()");
+    const message = (
+      await db.query<{ delay: number; kind: string }>(
+        "select extract(epoch from m.scheduled_at-s.paid_at)::float8 delay,m.kind from email_messages m join market_sales s on s.id::text=m.payload->>'market_sale_id' where s.id=$1",
+        [sale.id],
+      )
+    ).rows;
+    assert.equal(message.length, 1);
+    assert.equal(message[0].delay, 72 * 3600);
+    assert.equal(
+      (
+        await db.query<{ n: number }>(
+          "select count(*)::int n from email_subscriptions where purpose='news'",
+        )
+      ).rows[0].n,
+      0,
+    );
+    await db.query(
+      "update email_messages set scheduled_at=now()-interval '1 minute'",
+    );
+    await run((c) =>
+      saveManualContact(c, sale.token, "market@example.test", true, false),
+    );
+    assert.equal(
+      (await db.query("select * from claim_email_messages(10)")).rows.length,
+      0,
+    );
+    assert.equal(
+      (
+        await db.query<{ n: number }>(
+          "select count(*)::int n from email_subscriptions where purpose='news' and revoked_at is null",
+        )
+      ).rows[0].n,
+      1,
+    );
+    await assert.rejects(
+      run((c) =>
+        saveManualContact(c, sale.token, "changed@example.test", true, true),
+      ),
+      /другая/,
+    );
+  } finally {
+    await db.close();
+  }
+});
+test("honest market reviews issue one existing checkout coupon for any rating, without requiring publication or newsletter", async () => {
+  const { saveManualContact } = await import("../lib/market/store");
+  const { submitMarketReview, marketReviewState } =
+    await import("../lib/market/reviews");
+  const { db, run, adapter } = await fixture();
+  try {
+    await db.query(
+      "insert into email_settings(id,enabled,test_mode) values(1,true,false) on conflict(id) do update set enabled=true,test_mode=false",
+    );
+    const sale = await run((c) =>
+      createSale(c, request({ "plate-nevidimka": 1 }), "live", "transfer"),
+    );
+    const token = (
+      await db.query<{ review_token: string }>(
+        "select review_token from market_sales where id=$1",
+        [sale.id],
+      )
+    ).rows[0].review_token;
+    const input = {
+      rating: 1,
+      body: "Впечатления о встрече и изделии",
+      displayName: "Анна",
+      phone: "89991234567",
+      accepted: true,
+      publicationConsent: false,
+    };
+    assert.equal(await marketReviewState(adapter, token), null);
+    await assert.rejects(
+      run((c) => submitMarketReview(c, token, input)),
+      /UNAVAILABLE/,
+    );
+    await run((c) =>
+      saveManualContact(c, sale.token, "review@example.test", false, true),
+    );
+    await run((c) => confirmManualSale(c, sale.id, "test"));
+    await db.query("select prepare_market_review_invites()");
+    const first = await run((c) => submitMarketReview(c, token, input));
+    const second = await run((c) =>
+      submitMarketReview(c, token, { ...input, rating: 5, body: "повтор" }),
+    );
+    assert.equal(first!.reward!.code, second!.reward!.code);
+    assert.equal(first!.publicationConsent, false);
+    const saved = (
+      await db.query<{ rating: number; body: string }>(
+        "select rating,body from customer_reviews where market_sale_id=$1",
+        [sale.id],
+      )
+    ).rows;
+    assert.equal(saved.length, 1);
+    assert.equal(saved[0].rating, 1);
+    assert.equal(saved[0].body, input.body);
+    const reward = (
+      await db.query<{ phone: string; percent: number; days: number }>(
+        "select phone,percent,extract(epoch from expires_at-issued_at)/86400 days from review_rewards where source_market_sale_id=$1",
+        [sale.id],
+      )
+    ).rows[0];
+    assert.equal(reward.phone, "+79991234567");
+    assert.equal(reward.percent, 10);
+    assert.equal(Number(reward.days), 30);
+    const messages = (
+      await db.query<{ kind: string; state: string }>(
+        "select kind,state from email_messages where payload->>'market_sale_id'=$1 order by kind",
+        [sale.id],
+      )
+    ).rows;
+    assert.equal(
+      messages.filter((m) => m.kind === "order_review_reward").length,
+      1,
+    );
+    assert.equal(
+      messages.find((m) => m.kind === "review_invite")!.state,
+      "cancelled",
+    );
+    assert.equal(
+      (await inventory(adapter)).find((i) => i.kind === "plate")!.stock_qty,
+      4,
+    );
+    assert.equal(
+      (
+        await db.query<{ status: string }>(
+          "select status from market_sales where id=$1",
+          [sale.id],
+        )
+      ).rows[0].status,
+      "paid",
+    );
+    assert.equal(await marketReviewState(adapter, "a".repeat(64)), null);
+  } finally {
+    await db.close();
+  }
+});
+test("test-market contacts never subscribe, send an invitation or issue a working coupon", async () => {
+  const { saveManualContact } = await import("../lib/market/store");
+  const { submitMarketReview } = await import("../lib/market/reviews");
+  const { db, run } = await fixture();
+  try {
+    const sale = await run((c) =>
+      createSale(c, request({ postcard: 1 }), "test", "cash"),
+    );
+    await run((c) =>
+      saveManualContact(c, sale.token, "test@example.test", true, true),
+    );
+    await run((c) => confirmManualSale(c, sale.id, "test"));
+    await db.query("select prepare_market_review_invites()");
+    assert.equal(
+      (await db.query("select * from email_subscriptions")).rows.length,
+      0,
+    );
+    assert.equal(
+      (
+        await db.query(
+          "select * from email_messages where payload ? 'market_sale_id'",
+        )
+      ).rows.length,
+      0,
+    );
+    const token = (
+      await db.query<{ review_token: string }>(
+        "select review_token from market_sales where id=$1",
+        [sale.id],
+      )
+    ).rows[0].review_token;
+    await assert.rejects(
+      run((c) =>
+        submitMarketReview(c, token, {
+          rating: 5,
+          body: "test",
+          displayName: "Test",
+          phone: "89991234567",
+          accepted: true,
+          publicationConsent: true,
+        }),
+      ),
+      /UNAVAILABLE/,
+    );
+  } finally {
+    await db.close();
+  }
+});
+
+test("Robokassa receipt contact schedules feedback only after verified payment confirmation", async () => {
+  const { db, run } = await fixture();
+  try {
+    await db.query(
+      "insert into email_settings(id,enabled,test_mode) values(1,true,false)",
+    );
+    const sale = await run((c) =>
+      createSale(c, request({ postcard: 1 }), "live"),
+    );
+    await run((c) =>
+      savePaymentContact(c, sale, "robo@example.test", null, true, true),
+    );
+    await db.query("select prepare_market_review_invites()");
+    assert.equal(
+      (
+        await db.query(
+          "select * from email_messages where payload ? 'market_sale_id'",
+        )
+      ).rows.length,
+      0,
+    );
+    await run((c) => confirmSale(c, sale.id));
+    await run((c) => confirmSale(c, sale.id));
+    await db.query("select prepare_market_review_invites()");
+    await db.query("select prepare_market_review_invites()");
+    assert.equal(
+      (
+        await db.query(
+          "select * from email_messages where payload->>'market_sale_id'=$1",
+          [sale.id],
+        )
+      ).rows.length,
+      1,
+    );
+    assert.equal(
+      (
+        await db.query("select * from market_receipt_jobs where sale_id=$1", [
+          sale.id,
+        ])
+      ).rows.length,
+      0,
     );
   } finally {
     await db.close();

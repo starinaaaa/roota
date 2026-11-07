@@ -19,7 +19,7 @@ export async function checkReviewPromo(code: string, customerPhone: string) {
   const normalized = phone.safeParse(customerPhone);
   if (!parsed.success || !normalized.success)
     return {
-      error: "Проверьте промокод и укажите телефон из предыдущего заказа.",
+      error: "Проверьте промокод и укажите телефон, к которому привязан промокод.",
     };
   const session = (await cookies()).get("cart_session")?.value;
   if (!uuid.safeParse(session).success)
@@ -41,7 +41,7 @@ export async function checkReviewPromo(code: string, customerPhone: string) {
   if (!rows[0])
     return {
       error:
-        "Промокод недоступен. Проверьте код, срок действия и телефон из предыдущего заказа. Возможно, код уже применён к другому заказу.",
+        "Промокод недоступен. Проверьте код, срок действия и телефон, к которому привязан промокод. Возможно, код уже применён к другому заказу.",
     };
   return {
     code: rows[0].code,

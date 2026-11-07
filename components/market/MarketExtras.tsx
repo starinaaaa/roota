@@ -160,6 +160,7 @@ export function NewMarketItem({
 }) {
   const [open, setOpen] = useState(false),
     [name, setName] = useState(""),
+    [receiptName, setReceiptName] = useState(""),
     [price, setPrice] = useState(""),
     [stock, setStock] = useState("1"),
     [kind, setKind] = useState("object");
@@ -178,6 +179,7 @@ export function NewMarketItem({
             e.preventDefault();
             await onSave({
               name,
+              receiptName,
               kind,
               price: Number(price),
               stock: Number(stock),
@@ -191,6 +193,16 @@ export function NewMarketItem({
               maxLength={120}
               value={name}
               onChange={(e) => setName(e.target.value)}
+            />
+          </label>
+          <label>
+            Наименование для чека
+            <input
+              required
+              maxLength={128}
+              value={receiptName}
+              onChange={(e) => setReceiptName(e.target.value)}
+              placeholder="Фактический вид изделия и название"
             />
           </label>
           <label>
@@ -272,6 +284,9 @@ export function ReceiptTasks({
   action: (body: unknown) => Promise<boolean>;
 }) {
   const [urls, setUrls] = useState<Record<string, string>>({}),
+    [registeredTimes, setRegisteredTimes] = useState<Record<string, string>>(
+      {},
+    ),
     [copied, setCopied] = useState("");
   return (
     <section className="market-receipt-tasks" id="market-receipt-tasks">
@@ -298,6 +313,20 @@ export function ReceiptTasks({
               })}
               . Покупатель — физическое лицо.
             </p>
+            {["uncertain", "submitting", "claimed"].includes(
+              s.receiptStatus,
+            ) ? (
+              <p role="status">
+                {s.receiptStatus === "uncertain"
+                  ? "Результат неизвестен. Сначала найдите доход в «Моём налоге». Не создавайте его повторно."
+                  : "Задача у помощника. Перед ручной выдачей остановите помощника и сверьте доход в «Моём налоге»."}
+              </p>
+            ) : s.receiptStatus === "failed" ? (
+              <p role="status">
+                Ошибка выдачи. Оплата сохранена. Проверьте доход перед ручной
+                выдачей.
+              </p>
+            ) : null}
             <div className="market-receipt-guide">
               <p>
                 <strong>Чек ФНС ещё не выдан.</strong> Деньги сохранены в кассе,
@@ -367,6 +396,7 @@ export function ReceiptTasks({
                   action: "receipt",
                   id: s.id,
                   url: urls[s.id] ?? "",
+                  registeredAt: new Date(registeredTimes[s.id]).toISOString(),
                 });
               }}
             >
@@ -382,6 +412,24 @@ export function ReceiptTasks({
                   }
                 />
               </label>
+              <label>
+                Время регистрации из чека (местное время устройства)
+                <input
+                  type="datetime-local"
+                  required
+                  value={registeredTimes[s.id] ?? ""}
+                  onChange={(e) =>
+                    setRegisteredTimes((v) => ({
+                      ...v,
+                      [s.id]: e.target.value,
+                    }))
+                  }
+                />
+              </label>
+              <p className="market-small">
+                Проверьте сумму, позиции и дату в оригинальном чеке перед
+                привязкой. Система проверит доступность документа ФНС.
+              </p>
               <button className="market-secondary" disabled={busy}>
                 3. Сохранить и показать чек на iPad
               </button>

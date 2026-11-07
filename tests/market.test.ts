@@ -54,6 +54,12 @@ async function fixture() {
       "utf8",
     ),
   );
+  await db.exec(
+    await readFile(
+      "database/migrations/20261107_market_receipt_jobs.sql",
+      "utf8",
+    ),
+  );
   const adapter = db as unknown as MarketDb;
   const run = async <T>(fn: (client: MarketDb) => Promise<T>): Promise<T> => {
     await db.exec("BEGIN");
@@ -318,6 +324,7 @@ test("independent market quantities can exceed website stock; stale settings are
     await run((client) =>
       addInventoryItem(client, {
         name: "Объект только для Ceramania",
+        receiptName: "Объект только для Ceramania",
         kind: "object",
         price: 1700,
         stock: 2,
@@ -352,11 +359,11 @@ test("cash and transfer require seller confirmation, preserve snapshots, and acc
     );
     await assert.rejects(
       run((client) =>
-        attachReceipt(
-          client,
-          sale.id,
-          "https://lknpd.nalog.ru/api/v1/receipt/773212983545/test123/print",
-        ),
+        attachReceipt(client, sale.id, {
+          url: "https://lknpd.nalog.ru/api/v1/receipt/773212983545/test123/print",
+          registeredAt: "2026-11-07T10:00:00Z",
+          verifiedAt: "2026-11-07T10:00:01Z",
+        }),
       ),
       /подтверждённой/,
     );
@@ -368,24 +375,28 @@ test("cash and transfer require seller confirmation, preserve snapshots, and acc
     );
     await assert.rejects(
       run((client) =>
-        attachReceipt(client, sale.id, "http://127.0.0.1/receipt"),
+        attachReceipt(client, sale.id, {
+          url: "http://127.0.0.1/receipt",
+          registeredAt: "2026-11-07T10:00:00Z",
+          verifiedAt: "2026-11-07T10:00:01Z",
+        }),
       ),
       /ссылка/,
     );
     await run((client) =>
-      attachReceipt(
-        client,
-        sale.id,
-        "https://lknpd.nalog.ru/api/v1/receipt/773212983545/test123/print",
-      ),
+      attachReceipt(client, sale.id, {
+        url: "https://lknpd.nalog.ru/api/v1/receipt/773212983545/test123/print",
+        registeredAt: "2026-11-07T10:00:00Z",
+        verifiedAt: "2026-11-07T10:00:01Z",
+      }),
     );
     await assert.rejects(
       run((client) =>
-        attachReceipt(
-          client,
-          sale.id,
-          "https://lknpd.nalog.ru/api/v1/receipt/773212983545/other/print",
-        ),
+        attachReceipt(client, sale.id, {
+          url: "https://lknpd.nalog.ru/api/v1/receipt/773212983545/other/print",
+          registeredAt: "2026-11-07T10:00:00Z",
+          verifiedAt: "2026-11-07T10:00:01Z",
+        }),
       ),
       /другой чек/,
     );
@@ -567,6 +578,172 @@ test("test market purchases never create marketing subscriptions", async () => {
         ),
       ),
       /EMAIL_MISMATCH/,
+    );
+  } finally {
+    await db.close();
+  }
+});
+
+test("receipt jobs fence parallel workers, unknown submission and repeated confirmed result", async () => {
+  const { claimReceiptJob, receiptJobAction } =
+    await import("../lib/market/receipt-jobs");
+  const { db, run, adapter } = await fixture();
+  try {
+    const sale = await run((c) =>
+      createSale(c, request({ "plate-nevidimka": 1 }), "live", "cash"),
+    );
+    assert.equal(sale.items[0].name, "Керамическая тарелка «Невидимка»");
+    assert.equal(sale.items[0].unitPrice, 6000);
+    await run((c) => confirmManualSale(c, sale.id, "test"));
+    await run((c) => confirmManualSale(c, sale.id, "test"));
+    assert.equal(
+      (
+        await db.query<{ registered_at: Date; state: string }>(
+          "select * from market_receipt_jobs",
+        )
+      ).rows.length,
+      1,
+    );
+    assert.equal(
+      await run((c) => claimReceiptJob(c, "test-only", "test")),
+      null,
+    );
+    const job = (await run((c) => claimReceiptJob(c, "worker-one", "live")))!;
+    assert.equal(
+      await run((c) => claimReceiptJob(c, "worker-two", "live")),
+      null,
+    );
+    await assert.rejects(
+      run((c) => receiptJobAction(c, sale.id, "wrong", "submit", {})),
+      /другим/,
+    );
+    await run((c) =>
+      receiptJobAction(c, sale.id, job.claim_token, "submit", {}),
+    );
+    await assert.rejects(
+      run((c) => receiptJobAction(c, sale.id, job.claim_token, "submit", {})),
+      /уже/,
+    );
+    await db.query(
+      "update market_receipt_jobs set lease_until=now()-interval '1 minute'",
+    );
+    assert.equal(
+      await run((c) => claimReceiptJob(c, "worker-two", "live")),
+      null,
+    );
+    assert.equal(
+      (
+        await db.query<{ state: string }>(
+          "select state from market_receipt_jobs",
+        )
+      ).rows[0].state,
+      "uncertain",
+    );
+    // The original executor may deliver a late result after a lost response. No second FNS submission.
+    const proof = {
+      url: "https://lknpd.nalog.ru/api/v1/receipt/773212983545/fixture-only/print",
+      registeredAt: "2026-11-07T10:00:00Z",
+      verifiedAt: "2026-11-07T10:01:00Z",
+    };
+    await run((c) =>
+      receiptJobAction(c, sale.id, job.claim_token, "result", { proof }),
+    );
+    const before = (
+      await db.query<{ registered_at: Date; state: string }>(
+        "select * from market_receipt_jobs",
+      )
+    ).rows[0];
+    await run((c) =>
+      receiptJobAction(c, sale.id, job.claim_token, "result", {
+        proof: { ...proof, registeredAt: "2026-11-07T10:05:00Z" },
+      }),
+    );
+    const after = (
+      await db.query<{ registered_at: Date; state: string }>(
+        "select * from market_receipt_jobs",
+      )
+    ).rows[0];
+    assert.equal(String(after.registered_at), String(before.registered_at));
+    assert.equal(after.state, "registered");
+    assert.equal(
+      (await inventory(adapter)).find((i) => i.kind === "plate")!.stock_qty,
+      4,
+    );
+    assert.equal(
+      (
+        await db.query<{ status: string }>(
+          "select status from market_sales where id=$1",
+          [sale.id],
+        )
+      ).rows[0].status,
+      "paid",
+    );
+    await db.query(
+      "update market_inventory set receipt_name='Другое название',price=7000 where kind='plate'",
+    );
+    const saved = (
+      await db.query<SaleRow>("select * from market_sales where id=$1", [
+        sale.id,
+      ])
+    ).rows[0];
+    assert.deepEqual(saved.items, sale.items);
+  } finally {
+    await db.close();
+  }
+});
+
+test("expired pre-submission claims are replaced; failures never undo paid stock", async () => {
+  const { claimReceiptJob, receiptJobAction } =
+    await import("../lib/market/receipt-jobs");
+  const { db, run, adapter } = await fixture();
+  try {
+    const sale = await run((c) =>
+      createSale(c, request({ postcard: 2 }), "live", "transfer"),
+    );
+    await run((c) => confirmManualSale(c, sale.id, "test"));
+    const first = (await run((c) => claimReceiptJob(c, "one", "live")))!;
+    await db.query(
+      "update market_receipt_jobs set lease_until=now()-interval '1 minute'",
+    );
+    const second = (await run((c) => claimReceiptJob(c, "two", "live")))!;
+    assert.notEqual(first.claim_token, second.claim_token);
+    await assert.rejects(
+      run((c) => receiptJobAction(c, sale.id, first.claim_token, "submit", {})),
+      /другим/,
+    );
+    await run((c) =>
+      receiptJobAction(c, sale.id, second.claim_token, "error", {
+        error: "Fixture failure before FNS",
+      }),
+    );
+    assert.equal(
+      (
+        await db.query<{ state: string }>(
+          "select state from market_receipt_jobs",
+        )
+      ).rows[0].state,
+      "failed",
+    );
+    assert.equal(
+      (await inventory(adapter)).find((i) => i.kind === "postcard")!.stock_qty,
+      98,
+    );
+    assert.equal(
+      (await db.query<{ status: string }>("select status from market_sales"))
+        .rows[0].status,
+      "paid",
+    );
+    const robo = await run((c) =>
+      createSale(c, request({ postcard: 1 }), "live"),
+    );
+    await run((c) => confirmSale(c, robo.id));
+    assert.equal(
+      (
+        await db.query<{ n: number }>(
+          "select count(*)::int n from market_receipt_jobs",
+        )
+      ).rows[0].n,
+      1,
     );
   } finally {
     await db.close();

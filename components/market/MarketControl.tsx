@@ -24,6 +24,7 @@ import {
   money,
   quoteBasket,
   statusLabel,
+  receiptStatusLabel,
   type InventoryItem,
   type MarketState,
   type PaymentMethod,
@@ -113,6 +114,8 @@ function StockSettings({
       stock: i.stock_qty,
       previousStock: i.stock_qty,
       previousPrice: i.price,
+      receiptName: i.receipt_name,
+      previousReceiptName: i.receipt_name,
     })),
   );
   const dialog = useRef<HTMLDialogElement>(null);
@@ -162,10 +165,26 @@ function StockSettings({
           </div>
           {inventory.map((i, index) => (
             <div className="market-stock-row" key={i.key}>
-              <label htmlFor={`stock-${i.key}`}>
-                {i.name}
-                <small>Отдельный запас маркета</small>
-              </label>
+              <div>
+                <label htmlFor={`stock-${i.key}`}>{i.name}</label>
+                <label>
+                  Наименование для чека
+                  <input
+                    required
+                    maxLength={128}
+                    value={items[index].receiptName}
+                    onChange={(e) =>
+                      setItems((current) =>
+                        current.map((v, n) =>
+                          n === index
+                            ? { ...v, receiptName: e.target.value }
+                            : v,
+                        ),
+                      )
+                    }
+                  />
+                </label>
+              </div>
               <input
                 aria-label={`Цена: ${i.name}`}
                 inputMode="numeric"
@@ -225,6 +244,11 @@ function StockSettings({
   );
 }
 export default function MarketControl() {
+  const [olderSales, setOlderSales] = useState<MarketState["history"]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyEnd, setHistoryEnd] = useState(false);
+  const [historyError, setHistoryError] = useState("");
+
   const {
     data,
     error: connectionError,
@@ -733,7 +757,12 @@ export default function MarketControl() {
             </div>
             {data.history.length ? (
               <div className="market-sales-list">
-                {data.history.map((s) => (
+                {[
+                  ...data.history,
+                  ...olderSales.filter(
+                    (s) => !data.history.some((recent) => recent.id === s.id),
+                  ),
+                ].map((s) => (
                   <details key={s.id}>
                     <summary>
                       <span>
@@ -749,6 +778,12 @@ export default function MarketControl() {
                       </span>
                       <strong>{money(s.amount)}</strong>
                     </summary>
+                    <p>
+                      {receiptStatusLabel(s.receiptStatus)}
+                      {s.receiptRegisteredAt
+                        ? ` · ${new Date(s.receiptRegisteredAt).toLocaleString("ru-RU", { timeZone: "Europe/Moscow" })}`
+                        : ""}
+                    </p>
                     <ReceiptItems sale={s} />
                     <ReceiptDownload sale={s} />
                   </details>
@@ -759,6 +794,36 @@ export default function MarketControl() {
                 Здесь появятся покупки. Первую историю ещё предстоит встретить.
               </p>
             )}
+
+            {data.history.length && !historyEnd ? (
+              <button
+                className="market-secondary"
+                disabled={historyLoading}
+                onClick={async () => {
+                  setHistoryLoading(true);
+                  setHistoryError("");
+                  try {
+                    const last = olderSales.at(-1) ?? data.history.at(-1)!;
+                    const result = await marketFetch<{
+                      history: MarketState["history"];
+                    }>(`/api/market/history?before=${last.id}`);
+                    setOlderSales((current) => [...current, ...result.history]);
+                    setHistoryEnd(result.history.length < 20);
+                  } catch (e) {
+                    setHistoryError(
+                      e instanceof Error
+                        ? e.message
+                        : "Не удалось загрузить историю",
+                    );
+                  } finally {
+                    setHistoryLoading(false);
+                  }
+                }}
+              >
+                {historyLoading ? "Загружаем…" : "Более ранние продажи"}
+              </button>
+            ) : null}
+            {historyError ? <p role="alert">{historyError}</p> : null}
           </section>
         </>
       )}

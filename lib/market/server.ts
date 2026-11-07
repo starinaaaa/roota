@@ -28,7 +28,17 @@ export function publicSale(sale: SaleRow): PublicSale {
     mode: sale.mode,
     method: sale.payment_method,
     transfer: sale.transfer_details,
-    receiptUrl: sale.receipt_url,
+    receiptUrl:
+      sale.receipt_verified_at && sale.receipt_state === "registered"
+        ? sale.receipt_url
+        : null,
+    receiptStatus:
+      sale.payment_method === "robokassa"
+        ? "provider"
+        : sale.status !== "paid"
+          ? "not_due"
+          : (sale.receipt_state ?? "queued"),
+    receiptRegisteredAt: sale.receipt_registered_at?.toISOString() ?? null,
     amount: Number(sale.amount),
     items: sale.items,
     expiresAt: sale.expires_at.toISOString(),
@@ -79,15 +89,15 @@ export async function marketState(): Promise<MarketState> {
       "select transfer_settings from public.market_register where id=1",
     );
     const { rows: receiptQueue } = await db.query<SaleRow>(
-      "select * from public.market_sales where status='paid' and payment_method<>'robokassa' and receipt_url is null order by paid_at asc limit 100",
+      "select s.*,case when j.state='submitting' and j.lease_until<=now() then 'uncertain' else j.state end receipt_state,j.registered_at receipt_registered_at,j.verified_at receipt_verified_at from public.market_sales s left join public.market_receipt_jobs j on j.sale_id=s.id where s.status='paid' and s.payment_method<>'robokassa' and (j.state is distinct from 'registered') order by paid_at asc limit 100",
     );
     const {
       rows: [sale],
     } = await db.query<SaleRow>(
-      "select s.* from public.market_sales s join public.market_register r on r.current_sale_id=s.id where r.id=1",
+      "select s.*,case when j.state='submitting' and j.lease_until<=now() then 'uncertain' else j.state end receipt_state,j.registered_at receipt_registered_at,j.verified_at receipt_verified_at from public.market_sales s left join public.market_receipt_jobs j on j.sale_id=s.id join public.market_register r on r.current_sale_id=s.id where r.id=1",
     );
     const { rows: history } = await db.query<SaleRow>(
-      "select * from public.market_sales order by created_at desc limit 20",
+      "select s.*,case when j.state='submitting' and j.lease_until<=now() then 'uncertain' else j.state end receipt_state,j.registered_at receipt_registered_at,j.verified_at receipt_verified_at from public.market_sales s left join public.market_receipt_jobs j on j.sale_id=s.id order by s.created_at desc,s.id desc limit 20",
     );
     const { rows: displays } = await db.query<{
       id: string;
@@ -194,7 +204,7 @@ export async function displayState() {
     const {
       rows: [sale],
     } = await db.query<SaleRow>(
-      "select s.* from public.market_sales s join public.market_register r on r.current_sale_id=s.id where r.id=1",
+      "select s.*,case when j.state='submitting' and j.lease_until<=now() then 'uncertain' else j.state end receipt_state,j.registered_at receipt_registered_at,j.verified_at receipt_verified_at from public.market_sales s left join public.market_receipt_jobs j on j.sale_id=s.id join public.market_register r on r.current_sale_id=s.id where r.id=1",
     );
     return {
       connected: true,

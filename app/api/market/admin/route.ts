@@ -1,3 +1,4 @@
+import { verifyReceipt } from "@/lib/market/verify-receipt";
 import { z } from "zod";
 import { transferSchema } from "@/lib/market/model";
 import { transaction } from "@/lib/db/pool";
@@ -65,15 +66,16 @@ export async function POST(request: Request) {
           confirmManualSale(db, z.uuid().parse(body.id), admin.id),
         );
         break;
-      case "receipt":
+      case "receipt": {
+        const proof = await verifyReceipt(
+          z.string().trim().max(2048).parse(body.url),
+          z.iso.datetime().parse(body.registeredAt),
+        );
         await transaction((db) =>
-          attachReceipt(
-            db,
-            z.uuid().parse(body.id),
-            z.string().trim().max(2048).parse(body.url),
-          ),
+          attachReceipt(db, z.uuid().parse(body.id), proof),
         );
         break;
+      }
       case "transfer-settings": {
         const settings = transferSchema.parse(body.data);
         await transaction(async (db) => {

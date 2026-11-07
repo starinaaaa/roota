@@ -21,7 +21,7 @@ export async function GET(
     const {
       rows: [sale],
     } = await getPool().query(
-      "select receipt_url,status from public.market_sales where id=$1",
+      "select s.receipt_url,s.status from public.market_sales s join public.market_receipt_jobs j on j.sale_id=s.id where s.id=$1 and j.state='registered' and j.verified_at is not null",
       [id],
     );
     if (

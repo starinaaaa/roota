@@ -46,7 +46,7 @@ export default function MarketDisplay() {
         </span>
       </header>
       <div className="market-display-content" aria-live="polite">
-        {error ? (
+        {error && !(sale?.status === "paid" && sale.receiptUrl) ? (
           <section className="market-message">
             <Creature id={2905} />
             <p className="market-eyebrow">Маленькая пауза</p>
@@ -105,7 +105,7 @@ export default function MarketDisplay() {
                 ? "Тест завершён · деньги не списаны"
                 : "Оплачено"}
             </span>
-            <h1>Теперь это ваше.</h1>
+            <h1>Оплачено. Спасибо!</h1>
             <p>
               Спасибо, что забираете
               <br />
@@ -114,12 +114,29 @@ export default function MarketDisplay() {
             <strong className="market-paid-amount">{money(sale.amount)}</strong>
             {sale.receiptUrl ? (
               <div className="market-receipt-qr">
-                <QrCode value={sale.receiptUrl} />
-                <p>Ваш чек ФНС · наведите камеру</p>
+                <a
+                  href={sale.receiptUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="Открыть оригинальный чек ФНС"
+                >
+                  <QrCode value={sale.receiptUrl} />
+                </a>
+                <p>Чек можно забрать по этому QR</p>
+                <a
+                  className="market-secondary"
+                  href={sale.receiptUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Открыть чек ↗
+                </a>
               </div>
             ) : sale.method !== "robokassa" ? (
               <p className="market-small">
-                Чек ФНС выдаст продавец. Пожалуйста, дождитесь его.
+                {["failed", "uncertain"].includes(sale.receiptStatus)
+                  ? "Не удалось подтвердить выдачу чека. Деньги получены. Получите чек у продавца."
+                  : "Чек формируется. Пожалуйста, подождите — он появится здесь. При необходимости обратитесь к продавцу."}
               </p>
             ) : null}
             <a

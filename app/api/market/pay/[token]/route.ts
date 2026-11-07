@@ -11,7 +11,13 @@ export async function GET(_request: Request, context: Context) {
     const { token } = await context.params;
     const sale = await saleByToken(token);
     if (!sale) return json({ error: "Покупка не найдена" }, 404);
-    return json({ ...publicSale(sale), paymentUrl: null, qr: null });
+    return json({
+      ...publicSale(sale),
+      paymentUrl: null,
+      qr: null,
+      emailSaved: Boolean(sale.email),
+      receiptEmailState: sale.receipt_email_state ?? null,
+    });
   } catch (e) {
     return marketError(e);
   }

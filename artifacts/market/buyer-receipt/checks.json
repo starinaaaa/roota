@@ -1,0 +1,20 @@
+{
+  "checks": [
+    "iPhone 13: paid state survives reload; pending receipt has no fake URL",
+    "iPhone 13: confirmed receipt appears by polling with original and PDF links",
+    "iPhone 13: temporary disconnect preserves paid state and verified receipt",
+    "iPhone 13: uncertain receipt gives seller guidance without false success",
+    "iPhone 13: email can be saved after issuance without news consent, and stays saved on reload",
+    "iPhone 13: email failure retains receipt access",
+    "iPhone 13: Robokassa stays with provider receipt flow",
+    "iPad Mini: paid state survives reload; pending receipt has no fake URL",
+    "iPad Mini: confirmed receipt appears by polling with original and PDF links",
+    "iPad Mini: temporary disconnect preserves paid state and verified receipt",
+    "iPad Mini: uncertain receipt gives seller guidance without false success",
+    "iPad Mini: email can be saved after issuance without news consent, and stays saved on reload",
+    "iPad Mini: email failure retains receipt access",
+    "iPad Mini: Robokassa stays with provider receipt flow"
+  ],
+  "realEmailsSent": 0,
+  "realIncomesCreated": 0
+}

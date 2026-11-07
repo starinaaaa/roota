@@ -31,6 +31,7 @@ export type SaleRow = {
   receipt_state?: ReceiptStatus;
   receipt_registered_at?: Date | null;
   receipt_verified_at?: Date | null;
+  receipt_email_state?: string | null;
   status: SaleStatus;
   amount: string;
   items: SaleItem[];
@@ -310,10 +311,17 @@ export async function attachReceipt(
     last_error=null,updated_at=now() where sale_id=$1`,
     [id, proof.registeredAt, proof.verifiedAt],
   );
+  await queueReceiptEmail(db, id);
+}
+
+/** Contact and receipt may arrive in either order. One sale has one service email. */
+export async function queueReceiptEmail(db: MarketDb, id: string) {
   await db.query(
     `insert into public.email_messages(event_key,kind,recipient,payload)
     select 'market:'||s.id||':receipt','market_receipt',s.email,jsonb_build_object('market_sale_id',s.id)
-    from public.market_sales s where s.id=$1 and s.mode='live' and s.email is not null
+    from public.market_sales s join public.market_receipt_jobs j on j.sale_id=s.id
+    where s.id=$1 and s.mode='live' and s.status='paid' and s.payment_method<>'robokassa'
+    and s.email is not null and s.receipt_url is not null and j.state='registered' and j.verified_at is not null
     and exists(select 1 from public.email_settings where id=1 and enabled)
     on conflict(event_key) do nothing`,
     [id],
@@ -455,4 +463,5 @@ export async function saveManualContact(
         [email, `market:${sale.id}`],
       );
   }
+  await queueReceiptEmail(db, sale.id);
 }

@@ -1994,3 +1994,40 @@
     font-size: 16px;
   }
 }
+
+.market-phone > .market-buyer-paid {
+  flex: 0;
+  justify-content: flex-start;
+  gap: 16px;
+  padding-top: 32px;
+}
+.market-phone .market-buyer-paid > .market-creature {
+  height: 120px;
+}
+.market-buyer-receipt {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border-top: 1px solid var(--market-line);
+  padding-top: 24px;
+  margin-top: 8px;
+}
+.market-buyer-receipt h2,
+.market-paid-contact h2 {
+  font-size: 26px;
+}
+.market-buyer-receipt p {
+  font-size: 17px;
+  line-height: 1.55;
+  color: var(--market-muted);
+}
+.market-paid-contact {
+  width: 100%;
+  text-align: left;
+  margin-top: 16px;
+  border-top: 1px solid var(--market-line);
+}
+.market-paid-contact h2 {
+  margin-bottom: 20px;
+}

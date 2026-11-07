@@ -1,11 +1,11 @@
 "use client";
 import { useState } from "react";
+import { BuyerReceipt } from "./BuyerReceipt";
 import { ManualInstructions } from "./MarketExtras";
 import type { PaymentForm } from "@robokassa/sdk";
 import { money, type PublicSale } from "@/lib/market/model";
 import {
   Creature,
-  QrCode,
   MarketBrand,
   ReceiptItems,
   marketFetch,
@@ -19,16 +19,18 @@ export default function MarketPayment({
   token: string;
   returning?: boolean;
 }) {
-  const { data: sale, error: connectionError } = useMarketPoll<PublicSale>(
-    `/api/market/pay/${token}`,
-  );
+  const { data: sale, error: connectionError } = useMarketPoll<
+    PublicSale & { emailSaved?: boolean; receiptEmailState?: string | null }
+  >(`/api/market/pay/${token}`);
   const [email, setEmail] = useState(""),
     [accepted, setAccepted] = useState(true),
     [marketingConsent, setMarketingConsent] = useState(true),
     [contactSaved, setContactSaved] = useState(false),
+    [skipContact, setSkipContact] = useState(false),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
   const expired = useSaleExpired(sale);
+  const emailSaved = Boolean(sale?.emailSaved || contactSaved);
   async function pay(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
@@ -70,12 +72,92 @@ export default function MarketPayment({
       setBusy(false);
     }
   }
+  const contactForm = sale ? (
+    <form onSubmit={pay}>
+      <label htmlFor="market-email">Email для чека</label>
+      <input
+        id="market-email"
+        name="email"
+        type="email"
+        inputMode="email"
+        autoComplete="email"
+        maxLength={254}
+        placeholder="you@example.com"
+        required
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+      />
+      <p className="market-small">
+        {sale.method === "robokassa"
+          ? "На эту почту придёт чек Робокассы."
+          : "После выдачи отправим оригинальный чек ФНС на эту почту."}
+      </p>
+      <label className="market-consent">
+        <input
+          type="checkbox"
+          required
+          checked={accepted}
+          onChange={(e) => setAccepted(e.target.checked)}
+        />
+        <span>
+          Принимаю{" "}
+          <a href="/terms" target="_blank" rel="noreferrer">
+            условия покупки
+          </a>{" "}
+          и ознакомлен(а) с{" "}
+          <a href="/personal-data-policy" target="_blank" rel="noreferrer">
+            политикой обработки данных
+          </a>
+          .
+        </span>
+      </label>
+      <label className="market-consent market-marketing-consent">
+        <input
+          type="checkbox"
+          name="marketingConsent"
+          checked={marketingConsent}
+          onChange={(e) => setMarketingConsent(e.target.checked)}
+        />
+        <span>
+          Хочу получать{" "}
+          <a href="/newsletter-consent" target="_blank" rel="noreferrer">
+            информацию о скидках, распродажах, новых коллекциях и приглашение
+            поделиться впечатлениями о покупке
+          </a>{" "}
+          и даю{" "}
+          <a href="/newsletter-data-consent" target="_blank" rel="noreferrer">
+            согласие на обработку email
+          </a>
+          .
+        </span>
+      </label>
+      {error ? (
+        <p role="alert" className="market-error">
+          {error}
+        </p>
+      ) : null}
+      <button className="market-primary" disabled={busy}>
+        {busy
+          ? "Сохраняем…"
+          : sale.method === "robokassa"
+            ? `Перейти к оплате · ${money(sale.amount)}`
+            : sale.status === "paid"
+              ? "Получить чек на почту"
+              : "Сохранить почту и продолжить"}
+      </button>
+      <p className="market-secure">
+        {sale.method === "robokassa"
+          ? "Картой или другим доступным способом через Робокассу"
+          : "Оплату подтвердит продавец"}
+      </p>
+    </form>
+  ) : null;
   return (
     <main className="market-phone">
       <header>
         <MarketBrand />
       </header>
-      {connectionError ? (
+      {connectionError && sale?.status !== "paid" ? (
         <section className="market-message">
           <Creature id={2905} />
           <h1>Проверяем покупку</h1>
@@ -90,30 +172,39 @@ export default function MarketPayment({
           <Creature />
           <h1>Готовим покупку…</h1>
         </section>
-      ) : sale.status === "paid" &&
-        (sale.method === "robokassa" || contactSaved) ? (
-        <section className="market-message market-success">
+      ) : sale.status === "paid" ? (
+        <section className="market-message market-success market-buyer-paid">
           <Creature id={2891} />
           <span className="market-status-pill">
             {sale.mode === "test" ? "Тест завершён" : "Оплачено"}
           </span>
           <h1>Теперь это ваше.</h1>
-          <p>
-            Спасибо за встречу!
-            <br />
-            {sale.method === "robokassa"
-              ? "Чек по оплате через Робокассу придёт на вашу почту."
-              : "Чек ФНС появится на экране продавца после регистрации. Его можно забрать по QR."}
-          </p>
+          <p className="market-eyebrow">{sale.number}</p>
+          <p>Спасибо за встречу!</p>
           <strong className="market-paid-amount">{money(sale.amount)}</strong>
-          {sale.receiptUrl ? (
-            <a href={sale.receiptUrl} target="_blank" rel="noreferrer">
-              <QrCode value={sale.receiptUrl} />
-              Открыть чек ФНС ↗
-            </a>
+          <BuyerReceipt
+            sale={sale}
+            token={token}
+            emailSaved={emailSaved}
+            emailState={sale.receiptEmailState ?? null}
+          />
+          {connectionError ? (
+            <p className="market-small">
+              Восстанавливаем связь. Покупка оплачена; обновим состояние чека
+              после подключения.
+            </p>
+          ) : null}
+          {sale.method !== "robokassa" && !emailSaved ? (
+            <section
+              className="market-phone-receipt market-paid-contact"
+              aria-label="Получить чек на почту"
+            >
+              <h2>Получить чек на почту</h2>
+              {contactForm}
+            </section>
           ) : null}
         </section>
-      ) : (sale.status !== "pending" && sale.status !== "paid") || expired ? (
+      ) : sale.status !== "pending" || expired ? (
         <section className="market-message">
           <Creature id={2905} />
           <h1>
@@ -137,7 +228,7 @@ export default function MarketPayment({
             платить не нужно — продавец проверит покупку.
           </p>
         </section>
-      ) : sale.method !== "robokassa" && contactSaved ? (
+      ) : sale.method !== "robokassa" && (emailSaved || skipContact) ? (
         <section className="market-message">
           <h1>Всё готово к оплате</h1>
           <ReceiptItems sale={sale} />
@@ -160,105 +251,16 @@ export default function MarketPayment({
           ) : null}
           <ReceiptItems sale={sale} />
           <div className="market-receipt-total">
-            <span>{sale.status === "paid" ? "Оплачено" : "К оплате"}</span>
+            <span>К оплате</span>
             <strong>{money(sale.amount)}</strong>
           </div>
-          <form onSubmit={pay}>
-            <label htmlFor="market-email">
-              {sale.method === "robokassa"
-                ? "Email для чека"
-                : "Email для связи"}
-            </label>
-            <input
-              id="market-email"
-              name="email"
-              type="email"
-              inputMode="email"
-              autoComplete="email"
-              maxLength={254}
-              placeholder="you@example.com"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-            <p className="market-small">
-              {sale.method === "robokassa"
-                ? "На эту почту придёт чек Робокассы."
-                : "Почта — по желанию. Чек ФНС можно забрать по QR у продавца."}
-            </p>
-            <label className="market-consent">
-              <input
-                type="checkbox"
-                required
-                checked={accepted}
-                onChange={(e) => setAccepted(e.target.checked)}
-              />
-              <span>
-                Принимаю{" "}
-                <a href="/terms" target="_blank" rel="noreferrer">
-                  условия покупки
-                </a>{" "}
-                и ознакомлен(а) с{" "}
-                <a
-                  href="/personal-data-policy"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  политикой обработки данных
-                </a>
-                .
-              </span>
-            </label>
-            <label className="market-consent market-marketing-consent">
-              <input
-                type="checkbox"
-                name="marketingConsent"
-                checked={marketingConsent}
-                onChange={(e) => setMarketingConsent(e.target.checked)}
-              />
-              <span>
-                Хочу получать{" "}
-                <a href="/newsletter-consent" target="_blank" rel="noreferrer">
-                  информацию о скидках, распродажах, новых коллекциях и
-                  приглашение поделиться впечатлениями о покупке
-                </a>{" "}
-                и даю{" "}
-                <a
-                  href="/newsletter-data-consent"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  согласие на обработку email
-                </a>
-                .
-              </span>
-            </label>
-            {error ? (
-              <p role="alert" className="market-error">
-                {error}
-              </p>
-            ) : null}
-            <button className="market-primary" disabled={busy}>
-              {busy
-                ? "Сохраняем…"
-                : sale.method === "robokassa"
-                  ? `Перейти к оплате · ${money(sale.amount)}`
-                  : sale.status === "paid"
-                    ? "Сохранить почту"
-                    : "Сохранить почту и продолжить"}
-            </button>
-            <p className="market-secure">
-              {sale.method === "robokassa"
-                ? "Картой или другим доступным способом через Робокассу"
-                : "Оплату подтвердит продавец"}
-            </p>
-          </form>
+          {contactForm}
           {sale.method !== "robokassa" ? (
             <button
               type="button"
               className="market-secondary"
               disabled={busy}
-              onClick={() => setContactSaved(true)}
+              onClick={() => setSkipContact(true)}
             >
               Продолжить без почты
             </button>

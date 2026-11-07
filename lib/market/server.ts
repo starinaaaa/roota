@@ -220,7 +220,7 @@ export async function saleByToken(token: string) {
     const {
       rows: [sale],
     } = await db.query<SaleRow>(
-      "select s.*,j.state receipt_state,j.registered_at receipt_registered_at,j.verified_at receipt_verified_at from public.market_sales s left join public.market_receipt_jobs j on j.sale_id=s.id where s.token=$1",
+      "select s.*,j.state receipt_state,j.registered_at receipt_registered_at,j.verified_at receipt_verified_at,e.state receipt_email_state from public.market_sales s left join public.market_receipt_jobs j on j.sale_id=s.id left join public.email_messages e on e.event_key='market:'||s.id||':receipt' and e.recipient=s.email where s.token=$1",
       [token],
     );
     return sale ?? null;

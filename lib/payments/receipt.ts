@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { Receipt } from "@robokassa/sdk";
 import { amountInKopecks, type PaymentMode, type PaymentRow } from "./model";
+import { plateReceiptName } from "./receipt-names";
 
 const tax = z.enum([
   "none",
@@ -133,4 +134,22 @@ export function buildReceipt(
     })),
   };
   return validateReceipt(receipt, payment.amount);
+}
+
+// The website catalog contains plates; market receipts also contain other goods.
+export function buildPlateReceipt(
+  payment: Pick<PaymentRow, "items" | "amount">,
+  profile: ReceiptProfile,
+): Receipt {
+  return buildReceipt(
+    {
+      ...payment,
+      items: payment.items.map((item) =>
+        item.kind === "goods"
+          ? { ...item, name: plateReceiptName(item.name) }
+          : item,
+      ),
+    },
+    profile,
+  );
 }

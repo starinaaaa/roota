@@ -3,16 +3,54 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import {
   buildReceipt,
+  buildPlateReceipt,
   parseReceiptProfile,
   validateReceipt,
 } from "../lib/payments/receipt";
 import { sdkFor } from "../lib/payments/model";
+import { plateReceiptName } from "../lib/payments/receipt-names";
 const raw = JSON.stringify({
   goods: { tax: "none" },
   delivery: { tax: "none" },
   insurance: { tax: "none" },
 });
 const profile = parseReceiptProfile(raw, "live")!;
+test("website receipt describes plates and preserves amounts and service lines", () => {
+  const receipt = buildPlateReceipt(
+    {
+      amount: "12055.03",
+      items: [
+        { name: "Колыбельный", quantity: 1, sum: 6000, kind: "goods" },
+        { name: "Солнышко", quantity: 1, sum: 6000, kind: "goods" },
+        { name: "Доставка", quantity: 1, sum: 55.03, kind: "delivery" },
+      ],
+    },
+    profile,
+  );
+  assert.deepEqual(
+    receipt.items.map((item) => item.name),
+    [
+      "Керамическая тарелка «Колыбельный»",
+      "Керамическая тарелка «Солнышко»",
+      "Доставка",
+    ],
+  );
+  assert.deepEqual(
+    receipt.items.map((item) => item.sum),
+    [6000, 6000, 55.03],
+  );
+  for (const name of [
+    "Поцелуй",
+    "Тарелка «Поцелуй»",
+    "Керамическая тарелка «Поцелуй»",
+    '  Тарелка  "Поцелуй"  ',
+  ]) {
+    assert.equal(plateReceiptName(name), "Керамическая тарелка «Поцелуй»");
+  }
+  const longName = plateReceiptName("я".repeat(200));
+  assert.equal(longName.length, 128);
+  assert.ok(longName.endsWith("»"));
+});
 test("SMZ receipt names, quantities, delivery and insurance exactly match payment including copecks", () => {
   const receipt = buildReceipt(
     {
@@ -71,7 +109,7 @@ test("SMZ receipt names, quantities, delivery and insurance exactly match paymen
   );
 });
 test("live POST contains signed URL-encoded receipt and uses production rather than test credentials", () => {
-  const receipt = buildReceipt(
+  const receipt = buildPlateReceipt(
     {
       amount: "6000",
       items: [
@@ -102,6 +140,7 @@ test("live POST contains signed URL-encoded receipt and uses production rather t
   assert.equal(form.method, "POST");
   assert.notEqual(f.IsTest, "1");
   assert.deepEqual(JSON.parse(decodeURIComponent(String(f.Receipt))), receipt);
+  assert.equal(receipt.items[0].name, "Керамическая тарелка «Поцелуй»");
   assert.equal(
     f.SignatureValue,
     createHash("md5")

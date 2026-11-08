@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { plateReceiptName } from "../payments/receipt-names";
 
 export type InventoryItem = {
   key: string;
@@ -132,7 +133,9 @@ export function quoteBasket(input: Basket, inventory: InventoryItem[]) {
       );
     } else {
       items.push({
-        name: item.receipt_name || item.name,
+        name: item.kind === "plate"
+          ? plateReceiptName(item.receipt_name || item.name)
+          : item.receipt_name || item.name,
         quantity,
         unitPrice: item.price,
         sum: item.price * quantity,

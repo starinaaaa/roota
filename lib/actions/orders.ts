@@ -11,7 +11,7 @@ import { cookies } from "next/headers";
 import { sendOrderNotification } from "@/lib/notifications";
 import { quoteDelivery } from "@/lib/delivery/service";
 import type { CreateOrderResult } from "@/types";
-import { buildReceipt } from "@/lib/payments/receipt";
+import { buildPlateReceipt } from "@/lib/payments/receipt";
 import {
   paymentMode,
   receiptProfile,
@@ -157,7 +157,7 @@ async function createOrderInternal(
     revalidateTag("catalog", { expire: 0 });
     if (mode && data?.id) {
       if (fiscal && !data.receipt) {
-        const receipt = buildReceipt(data, fiscal);
+        const receipt = buildPlateReceipt(data, fiscal);
         const { error: receiptError } = await db
           .from("payments")
           .update({ receipt })

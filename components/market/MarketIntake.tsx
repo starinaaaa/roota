@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Creature, MarketBrand, marketFetch, useMarketPoll } from "./shared";
 import { ManualInstructions } from "./MarketExtras";
 import {
@@ -7,7 +8,7 @@ import {
   type PublicSale,
   type TransferSettings,
 } from "@/lib/market/model";
-type RequestView = {
+export type RequestView = {
   number: string;
   amount: number;
   method: PublicSale["method"];
@@ -17,10 +18,19 @@ type RequestView = {
   transfer: TransferSettings | null;
   redirectUrl: string | null;
 };
-export default function MarketIntake({ token }: { token?: string }) {
-  const { data, error: connectionError } = useMarketPoll<
-    RequestView & { enabled: boolean; robokassa: boolean }
-  >(token ? `/api/market/intake/${token}` : "/api/market/intake");
+export type IntakeView = RequestView & { enabled: boolean; robokassa: boolean };
+export default function MarketIntake({
+  token,
+  preview,
+}: {
+  token?: string;
+  preview?: IntakeView;
+}) {
+  const router = useRouter();
+  const { data, error: connectionError } = useMarketPoll<IntakeView>(
+    token ? `/api/market/intake/${token}` : "/api/market/intake",
+    preview,
+  );
   const [amount, setAmount] = useState(""),
     [email, setEmail] = useState(""),
     [method, setMethod] = useState("transfer"),
@@ -34,6 +44,10 @@ export default function MarketIntake({ token }: { token?: string }) {
   }, [data?.redirectUrl]);
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (preview) {
+      router.push("/market/preview/transfer");
+      return;
+    }
     setBusy(true);
     setError("");
     key.current ??= crypto.randomUUID();
@@ -61,8 +75,10 @@ export default function MarketIntake({ token }: { token?: string }) {
         <MarketBrand />
       </header>
       <section className="market-phone-receipt">
-        <Creature id={2912} />
-        <h1>{token ? "Ваша покупка" : "Покупка на маркете"}</h1>
+        <div className="market-phone-title">
+          <h1>{token ? "Ваша покупка" : "Покупка на маркете"}</h1>
+          <Creature id={2912} />
+        </div>
         {connectionError ? (
           <p role="alert">
             Не удалось обновить покупку. Не платите повторно, обратитесь к
@@ -145,6 +161,9 @@ export default function MarketIntake({ token }: { token?: string }) {
                 type="email"
                 inputMode="email"
                 autoComplete="email"
+                autoCapitalize="none"
+                spellCheck={false}
+                enterKeyHint="next"
                 maxLength={254}
                 value={email}
                 onChange={(e) => {

@@ -12,20 +12,24 @@ import {
   useMarketPoll,
   useSaleExpired,
 } from "./shared";
+export type BuyerSale = PublicSale & {
+  emailSaved?: boolean;
+  receiptEmailState?: string | null;
+  marketingConsent?: boolean;
+};
 export default function MarketPayment({
   token,
   returning = false,
+  preview,
 }: {
   token: string;
   returning?: boolean;
+  preview?: BuyerSale;
 }) {
-  const { data: sale, error: connectionError } = useMarketPoll<
-    PublicSale & {
-      emailSaved?: boolean;
-      receiptEmailState?: string | null;
-      marketingConsent?: boolean;
-    }
-  >(`/api/market/pay/${token}`);
+  const { data: sale, error: connectionError } = useMarketPoll<BuyerSale>(
+    `/api/market/pay/${token}`,
+    preview,
+  );
   const [email, setEmail] = useState(""),
     [accepted, setAccepted] = useState(true),
     [marketingChoice, setMarketingConsent] = useState<boolean | null>(null),
@@ -38,6 +42,15 @@ export default function MarketPayment({
     marketingChoice ?? (sale?.emailSaved ? !!sale.marketingConsent : true);
   async function pay(e: React.FormEvent) {
     e.preventDefault();
+    if (preview) {
+      setContactSaved(true);
+      setError(
+        preview.method === "robokassa"
+          ? "Демо: здесь откроется защищённая страница Робокассы."
+          : "",
+      );
+      return;
+    }
     setBusy(true);
     setError("");
     try {
@@ -87,6 +100,9 @@ export default function MarketPayment({
             type="email"
             inputMode="email"
             autoComplete="email"
+            autoCapitalize="none"
+            spellCheck={false}
+            enterKeyHint="go"
             maxLength={254}
             placeholder="you@example.com"
             required
@@ -191,6 +207,7 @@ export default function MarketPayment({
             token={token}
             emailSaved={emailSaved}
             emailState={sale.receiptEmailState ?? null}
+            preview={!!preview}
           />
           {connectionError ? (
             <p className="market-small">

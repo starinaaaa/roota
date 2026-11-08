@@ -25,21 +25,10 @@ export function SocialScreen({
           не потеряемся.
         </h1>
         <p>
-          Керамика, чудики и жизнь мастерской.
+          Авторская керамика и чудики Руты.
           <br />
-          Заберите Руту с собой.
+          Сохраните нас в своём телефоне.
         </p>
-        <nav aria-label="Ссылки Руты">
-          <a href={links.telegram} target="_blank" rel="noreferrer">
-            Telegram ↗︎
-          </a>
-          <a href={links.site} target="_blank" rel="noreferrer">
-            Сайт ↗︎
-          </a>
-          <a href={links.instagram} target="_blank" rel="noreferrer">
-            Instagram ↗︎
-          </a>
-        </nav>
         <div className="market-social-creatures">
           <Creature id={2899} />
           <Creature id={2907} />
@@ -47,11 +36,13 @@ export function SocialScreen({
       </div>
       <div className="market-social-qr">
         <QrCode value={links.hello} />
-        <h2>Сохраним знакомство?</h2>
-        <p>
-          Наведите камеру — все ссылки
+        <h2>
+          Наведите камеру
           <br />
-          откроются на вашем телефоне.
+          на QR-код
+        </h2>
+        <p>
+          Откроются наш сайт и Instagram: работы, новинки и жизнь мастерской.
         </p>
         <span>roota.moscow</span>
       </div>
@@ -79,15 +70,7 @@ export function HelloPage({ links }: { links: SocialLinks }) {
         </p>
       </section>
       <nav className="market-hello-links" aria-label="Roota после маркета">
-        <a
-          className="market-primary"
-          href={links.telegram}
-          target="_blank"
-          rel="noreferrer"
-        >
-          Заглянуть в Telegram ↗︎
-        </a>
-        <a className="market-secondary" href={links.site}>
+        <a className="market-primary" href={links.site}>
           Посмотреть керамику ↗︎
         </a>
         <a
@@ -243,7 +226,13 @@ export function NewMarketItem({
     </section>
   );
 }
-export function ManualInstructions({ sale }: { sale: PublicSale }) {
+export function ManualInstructions({
+  sale,
+  interactive = true,
+}: {
+  sale: PublicSale;
+  interactive?: boolean;
+}) {
   return sale.method === "transfer" ? (
     <div className="market-transfer">
       <p className="market-eyebrow">Перевод по телефону</p>
@@ -259,7 +248,7 @@ export function ManualInstructions({ sale }: { sale: PublicSale }) {
       ) : (
         <p className="market-small">Уточните банк у продавца</p>
       )}
-      {sale.transfer?.link ? (
+      {interactive && sale.transfer?.link ? (
         <a
           href={sale.transfer.link}
           className="market-secondary"

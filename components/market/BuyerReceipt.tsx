@@ -5,11 +5,13 @@ export function BuyerReceipt({
   token,
   emailSaved,
   emailState,
+  preview = false,
 }: {
   sale: PublicSale;
   token: string;
   emailSaved: boolean;
   emailState: string | null;
+  preview?: boolean;
 }) {
   if (sale.method === "robokassa")
     return <p>Чек по оплате через Робокассу придёт на вашу почту.</p>;
@@ -40,8 +42,12 @@ export function BuyerReceipt({
         <>
           <a
             className="market-primary"
-            href={`/api/market/pay/${token}/receipt`}
-            download
+            href={
+              preview
+                ? "/market/preview/receipt-document"
+                : `/api/market/pay/${token}/receipt`
+            }
+            download={!preview}
           >
             Открыть чек
           </a>

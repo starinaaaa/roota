@@ -1,3 +1,4 @@
+import { plateReceiptName } from "../payments/receipt-names";
 import { createHash, randomBytes } from "node:crypto";
 import type { PoolClient } from "pg";
 import {
@@ -53,7 +54,15 @@ export async function inventory(db: MarketDb): Promise<InventoryItem[]> {
   const { rows } = await db.query<InventoryItem>(`select m.*,
     (select '/media/'||p.id||'/'||i.id from public.product_images i where i.product_id=p.id order by i.is_primary desc,i.sort_order limit 1) image
     from public.market_inventory m left join public.products p on p.id=m.product_id order by m.sort_order,m.key`);
-  return rows;
+  return rows.map((item) =>
+    item.kind === "plate"
+      ? {
+          ...item,
+          name: plateReceiptName(item.name),
+          receipt_name: plateReceiptName(item.receipt_name || item.name),
+        }
+      : item,
+  );
 }
 async function release(
   db: MarketDb,
@@ -214,7 +223,9 @@ export async function saveInventory(db: MarketDb, raw: unknown) {
         item.key,
         input.stock,
         input.price,
-        input.receiptName ?? item.receipt_name,
+        item.kind === "plate"
+          ? plateReceiptName(input.receiptName ?? item.receipt_name)
+          : (input.receiptName ?? item.receipt_name),
       ],
     );
   }
@@ -244,11 +255,13 @@ export async function addInventoryItem(db: MarketDb, raw: unknown) {
     "insert into public.market_inventory(key,name,kind,price,stock_qty,sort_order,receipt_name) values($1,$2,$3,$4,$5,15,$6)",
     [
       "custom-" + randomBytes(12).toString("hex"),
-      item.name,
+      item.kind === "plate" ? plateReceiptName(item.name) : item.name,
       item.kind,
       item.price,
       item.stock,
-      item.receiptName,
+      item.kind === "plate"
+        ? plateReceiptName(item.receiptName)
+        : item.receiptName,
     ],
   );
 }

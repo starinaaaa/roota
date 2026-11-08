@@ -2,19 +2,25 @@
 import { useState } from "react";
 import { Creature, MarketBrand, marketFetch, useMarketPoll } from "./shared";
 import { MARKET_REVIEW_TERMS } from "@/lib/market/review-copy";
-type State = {
+export type MarketReviewState = {
   number: string;
   items: { name: string; quantity: number }[];
   saved: boolean;
   publicationConsent: boolean;
   reward: { code: string; expiresAt: string; available: boolean } | null;
 };
-export default function MarketReview({ token }: { token: string }) {
+export default function MarketReview({
+  token,
+  preview,
+}: {
+  token: string;
+  preview?: MarketReviewState;
+}) {
   const {
     data,
     error: loadError,
     setData,
-  } = useMarketPoll<State>(`/api/market/review/${token}`);
+  } = useMarketPoll<MarketReviewState>(`/api/market/review/${token}`, preview);
   const [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
   return (
@@ -79,18 +85,30 @@ export default function MarketReview({ token }: { token: string }) {
               onSubmit={async (e) => {
                 e.preventDefault();
                 const f = new FormData(e.currentTarget);
+                if (preview) {
+                  setData({
+                    ...preview,
+                    saved: true,
+                    publicationConsent: f.get("publicationConsent") === "on",
+                  });
+                  return;
+                }
                 setBusy(true);
                 setError("");
                 try {
                   setData(
-                    await marketFetch<State>(`/api/market/review/${token}`, {
-                      displayName: f.get("name"),
-                      phone: f.get("phone"),
-                      rating: Number(f.get("rating")),
-                      body: f.get("body"),
-                      publicationConsent: f.get("publicationConsent") === "on",
-                      accepted: f.get("accepted") === "on",
-                    }),
+                    await marketFetch<MarketReviewState>(
+                      `/api/market/review/${token}`,
+                      {
+                        displayName: f.get("name"),
+                        phone: f.get("phone"),
+                        rating: Number(f.get("rating")),
+                        body: f.get("body"),
+                        publicationConsent:
+                          f.get("publicationConsent") === "on",
+                        accepted: f.get("accepted") === "on",
+                      },
+                    ),
                   );
                 } catch (e) {
                   setError(
@@ -114,7 +132,12 @@ export default function MarketReview({ token }: { token: string }) {
               </label>
               <label>
                 Ваша оценка
-                <select name="rating" aria-label="Ваша оценка" required defaultValue="">
+                <select
+                  name="rating"
+                  aria-label="Ваша оценка"
+                  required
+                  defaultValue=""
+                >
                   <option value="" disabled>
                     Выберите оценку
                   </option>

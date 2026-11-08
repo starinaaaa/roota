@@ -21,9 +21,14 @@ export function Creature({
     />
   );
 }
-export function MarketBrand() {
+export function MarketBrand({ linked = true }: { linked?: boolean }) {
+  if (!linked) return <span className="market-brand">Roota</span>;
   return (
-    <a className="market-brand" href="https://roota.moscow/" aria-label="Roota — на главную">
+    <a
+      className="market-brand"
+      href="https://roota.moscow/"
+      aria-label="Roota — на главную"
+    >
       Roota
     </a>
   );
@@ -41,7 +46,7 @@ export function QrCode({ value }: { value: string }) {
           width: 600,
           margin: 4,
           errorCorrectionLevel: "M",
-          color: { dark: "#222322", light: "#ffffff" },
+          color: { dark: "#222322", light: "#ffffff00" },
         }),
       )
       .then((data) => {
@@ -110,10 +115,11 @@ export async function marketFetch<T>(
   if (!res.ok) throw new Error(data.error ?? "Не удалось связаться со студией");
   return data as T;
 }
-export function useMarketPoll<T>(url: string) {
-  const [data, setData] = useState<T | null>(null),
+export function useMarketPoll<T>(url: string, preview?: T) {
+  const [data, setData] = useState<T | null>(preview ?? null),
     [error, setError] = useState("");
   useEffect(() => {
+    if (preview !== undefined) return;
     let active = true,
       timeout: ReturnType<typeof setTimeout>;
     let controller: AbortController | null = null;
@@ -140,7 +146,7 @@ export function useMarketPoll<T>(url: string) {
       clearTimeout(timeout);
       controller?.abort();
     };
-  }, [url]);
+  }, [url, preview]);
   return { data, error, setData };
 }
 export function useSaleExpired(sale: PublicSale | null) {

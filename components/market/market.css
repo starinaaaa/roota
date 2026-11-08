@@ -2031,10 +2031,339 @@
 .market-paid-contact h2 {
   margin-bottom: 20px;
 }
-.market-helper-settings { margin: 16px 0 24px; }
-.market-helper-settings form { display: grid; gap: 14px; margin: 16px 0; max-width: 680px; }
-.market-helper-settings form > label:not(.market-consent) { display: grid; gap: 8px; }
-.market-helper-settings select { width: 100%; }
+.market-helper-settings {
+  margin: 16px 0 24px;
+}
+.market-helper-settings form {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+  max-width: 680px;
+}
+.market-helper-settings form > label:not(.market-consent) {
+  display: grid;
+  gap: 8px;
+}
+.market-helper-settings select {
+  width: 100%;
+}
 
-.market-intake-queue{margin:3rem 0;padding:2rem 0;border-top:1px solid var(--market-line,#dedbd5)}
-.market-intake-queue>details{margin:1rem 0}.market-intake-order{border:1px solid #dedbd5;padding:1rem}.market-intake-order summary{display:flex;flex-wrap:wrap;gap:1rem;cursor:pointer}.market-intake-order h3{margin-top:1.5rem}.market-intake-items{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:.8rem}.market-intake-items label{display:flex;align-items:center;justify-content:space-between;gap:1rem}.market-intake-items input{width:5rem;min-height:44px}.market-intake-exact{font-weight:600}.market-intake-order button{margin:.5rem .5rem .5rem 0}.market-intake-queue .market-qr{max-width:280px}.market-intake-queue .market-consent{margin:1rem 0}.market-phone-receipt> .market-creature{max-width:100px;float:right}
+.market-intake-queue {
+  margin: 3rem 0;
+  padding: 2rem 0;
+  border-top: 1px solid var(--market-line, #dedbd5);
+}
+.market-intake-queue > details {
+  margin: 1rem 0;
+}
+.market-intake-order {
+  border: 1px solid #dedbd5;
+  padding: 1rem;
+}
+.market-intake-order summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  cursor: pointer;
+}
+.market-intake-order h3 {
+  margin-top: 1.5rem;
+}
+.market-intake-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 0.8rem;
+}
+.market-intake-items label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.market-intake-items input {
+  width: 5rem;
+  min-height: 44px;
+}
+.market-intake-exact {
+  font-weight: 600;
+}
+.market-intake-order button {
+  margin: 0.5rem 0.5rem 0.5rem 0;
+}
+.market-intake-queue .market-qr {
+  max-width: 280px;
+}
+.market-intake-queue .market-consent {
+  margin: 1rem 0;
+}
+.market-phone-receipt > .market-creature {
+  max-width: 100px;
+  float: right;
+}
+
+/* Buyer pages: comfortable one-handed entry, including narrow phones and Safari. */
+.market-phone,
+.market-hello {
+  padding-left: max(20px, env(safe-area-inset-left));
+  padding-right: max(20px, env(safe-area-inset-right));
+  padding-bottom: max(32px, env(safe-area-inset-bottom));
+  overflow-wrap: anywhere;
+}
+.market-phone > *,
+.market-phone-title > div,
+.market-phone .market-receipt-items li > span {
+  min-width: 0;
+}
+.market-phone h1,
+.market-hello h1 {
+  font-size: clamp(26px, 7.5vw, 36px);
+  line-height: 1.22;
+  overflow-wrap: anywhere;
+}
+.market-phone h2 {
+  font-size: clamp(23px, 6vw, 28px);
+  line-height: 1.3;
+}
+.market-phone .market-receipt-items li {
+  align-items: start;
+  gap: 16px;
+}
+.market-phone .market-receipt-items li strong {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.market-phone .market-receipt-total strong {
+  font-size: clamp(26px, 7vw, 36px);
+}
+.market-phone-receipt form :is(input:not([type="checkbox"]), select, textarea) {
+  min-height: 56px;
+  font-size: 18px;
+  line-height: 1.5;
+  scroll-margin-block: 24px;
+}
+.market-phone-receipt form textarea {
+  min-height: 160px;
+}
+.market-phone .market-consent {
+  min-height: 48px;
+  padding-block: 10px;
+  margin-block: 8px;
+  cursor: pointer;
+}
+.market-phone .market-consent input {
+  width: 24px;
+  height: 24px;
+  margin-top: 1px;
+}
+.market-phone :is(.market-primary, .market-secondary),
+.market-hello-links > a {
+  min-height: 56px;
+  padding: 14px 16px;
+  font-size: 17px;
+  letter-spacing: 0.035em;
+  touch-action: manipulation;
+}
+.market-phone .market-brand,
+.market-hello .market-brand {
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+}
+.market-phone .market-error {
+  font-size: 16px;
+}
+.market-phone-receipt > h1 {
+  margin-bottom: 24px;
+}
+.market-phone-receipt > h2 {
+  margin-block: 24px 16px;
+}
+.market-phone .market-transfer-phone {
+  font-size: clamp(25px, 7vw, 36px);
+  overflow-wrap: anywhere;
+}
+.market-hello-intro .market-eyebrow {
+  font-size: 14px;
+}
+.market-hello > small {
+  font-size: 16px;
+}
+
+/* The QR keeps its four-module quiet zone, with the screen showing through. */
+.market-qr,
+.market-qr-placeholder {
+  background: transparent;
+}
+
+/* iPad Pro 11 (2018): 1194 × 834 / 834 × 1194 CSS pixels. */
+.market-display .market-display-header {
+  height: 72px;
+  flex-shrink: 0;
+}
+.market-display .market-display-content {
+  padding-block: 24px;
+  align-content: center;
+}
+.market-display .market-social {
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 36px;
+}
+.market-display .market-social h1 {
+  font-size: clamp(40px, 4.4vw, 64px);
+  line-height: 1.18;
+  margin-block: 22px;
+}
+.market-display .market-social p {
+  font-size: 24px;
+  line-height: 1.5;
+}
+.market-display .market-social .market-eyebrow {
+  font-size: 17px;
+}
+.market-display .market-social-creatures {
+  margin-top: 28px;
+  gap: 28px;
+}
+.market-display .market-social-creatures .market-creature {
+  width: 130px;
+  height: 150px;
+}
+.market-display .market-social-creatures .market-creature:nth-child(2) {
+  width: 115px;
+  height: 125px;
+}
+.market-display .market-social-qr {
+  padding-left: 28px;
+}
+.market-display .market-social-qr .market-qr {
+  max-width: 360px;
+}
+.market-display .market-social-qr h2 {
+  font-size: 28px;
+  line-height: 1.3;
+  margin-block: 16px 12px;
+}
+.market-display .market-social-qr p {
+  font-size: 21px;
+}
+.market-display .market-social-qr > span {
+  font-size: 18px;
+  margin-top: 16px;
+}
+@media (min-width: 761px) and (orientation: portrait) {
+  .market-display .market-social {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  .market-display .market-social h1 {
+    font-size: 54px;
+  }
+  .market-display .market-social > div:first-child {
+    position: relative;
+  }
+  .market-display .market-social-creatures {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    gap: 12px;
+  }
+  .market-display .market-social-creatures .market-creature {
+    width: 72px;
+    height: 90px;
+  }
+  .market-display .market-social-creatures .market-creature:nth-child(2) {
+    width: 65px;
+    height: 75px;
+  }
+  .market-display .market-social-qr {
+    grid-template-columns: 350px minmax(0, 1fr);
+    gap: 0 28px;
+    padding: 28px 0 0;
+    border-left: 0;
+  }
+  .market-display .market-social-qr h2 {
+    font-size: 26px;
+  }
+}
+@media (max-width: 760px) {
+  .market-display .market-social {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .market-display .market-social h1 {
+    font-size: clamp(28px, 7.5vw, 48px);
+  }
+  .market-display .market-social p {
+    font-size: 20px;
+  }
+  .market-display .market-social-qr {
+    padding: 24px 0 0;
+    border-left: 0;
+  }
+}
+.market-preview-notice {
+  padding: 10px 20px;
+  background: #eeeae3;
+  color: #44403c;
+  font-size: 16px;
+  line-height: 1.5;
+  text-align: center;
+}
+.market-preview-index {
+  max-width: 720px;
+  margin: auto;
+  padding: 32px 20px;
+}
+.market-preview-index h1 {
+  font-size: 30px;
+  margin-bottom: 24px;
+}
+.market-preview-index a {
+  display: flex;
+  align-items: center;
+  min-height: 56px;
+  padding-block: 12px;
+}
+
+@media (min-width: 761px) and (orientation: landscape) and (max-height: 800px) {
+  .market-display .market-social-qr .market-qr {
+    width: clamp(240px, calc(100svh - 450px), 340px);
+  }
+  .market-display .market-social h1 {
+    font-size: 48px;
+  }
+  .market-display .market-social-creatures .market-creature {
+    height: 120px;
+  }
+  .market-display .market-social-creatures .market-creature:nth-child(2) {
+    height: 105px;
+  }
+}
+.market-preview-notice + .market-display {
+  min-height: calc(100svh - 44px);
+}
+.market-display .market-code-card > p {
+  font-size: 22px;
+  line-height: 1.5;
+}
+@media (min-width: 761px) and (orientation: landscape) {
+  .market-display .market-code-card .market-qr {
+    width: clamp(210px, calc(100svh - 510px), 330px);
+  }
+  .market-display .market-code-card h2 {
+    font-size: 28px;
+    margin-block: 16px 12px;
+  }
+  .market-display .market-code-card .market-secure {
+    margin-top: 16px;
+  }
+}
+@media (min-width: 761px) and (orientation: portrait) {
+  .market-display .market-code-card .market-qr {
+    max-width: 280px;
+  }
+}
+
+.market-display .market-code-card .market-test {
+  margin-bottom: 16px;
+}

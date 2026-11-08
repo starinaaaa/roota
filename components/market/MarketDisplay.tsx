@@ -11,14 +11,17 @@ import {
 } from "./shared";
 import { money, type PublicSale, type SocialLinks } from "@/lib/market/model";
 import { SocialScreen, ManualInstructions } from "./MarketExtras";
-type DisplayState = {
+export type DisplayState = {
   links: SocialLinks;
   connected: boolean;
   needsPairing: boolean;
   sale: PublicSale | null;
 };
-export default function MarketDisplay() {
-  const { data, error } = useMarketPoll<DisplayState>("/api/market/display");
+export default function MarketDisplay({ preview }: { preview?: DisplayState }) {
+  const { data, error } = useMarketPoll<DisplayState>(
+    "/api/market/display",
+    preview,
+  );
   const [code, setCode] = useState(""),
     [pairError, setPairError] = useState(""),
     [busy, setBusy] = useState(false);
@@ -40,7 +43,7 @@ export default function MarketDisplay() {
   return (
     <main className="market-display">
       <header className="market-display-header">
-        <MarketBrand />
+        <MarketBrand linked={false} />
         <span className="market-eyebrow">
           Авторская керамика · ручная работа
         </span>
@@ -114,23 +117,8 @@ export default function MarketDisplay() {
             <strong className="market-paid-amount">{money(sale.amount)}</strong>
             {sale.receiptUrl ? (
               <div className="market-receipt-qr">
-                <a
-                  href={sale.receiptUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label="Открыть оригинальный чек ФНС"
-                >
-                  <QrCode value={sale.receiptUrl} />
-                </a>
+                <QrCode value={sale.receiptUrl} />
                 <p>Чек можно забрать по этому QR</p>
-                <a
-                  className="market-secondary"
-                  href={sale.receiptUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Открыть чек ↗
-                </a>
               </div>
             ) : sale.method !== "robokassa" ? (
               <p className="market-small">
@@ -139,14 +127,6 @@ export default function MarketDisplay() {
                   : "Чек формируется. Пожалуйста, подождите — он появится здесь. При необходимости обратитесь к продавцу."}
               </p>
             ) : null}
-            <a
-              className="market-secondary"
-              href={data.links.hello}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Останемся на связи ↗
-            </a>
           </section>
         ) : sale.status === "pending" && !expired ? (
           <section
@@ -182,7 +162,7 @@ export default function MarketDisplay() {
                     Наведите камеру, чтобы оставить почту и получить приглашение
                     на отзыв. Это по желанию.
                   </p>
-                  <ManualInstructions sale={sale} />
+                  <ManualInstructions sale={sale} interactive={false} />
                 </>
               )}
             </div>

@@ -65,13 +65,19 @@ export function HelloPage({ links }: { links: SocialLinks }) {
           <br />с Ceramania.
         </h1>
         <p>
-          Останемся на связи? Здесь можно посмотреть работы, заглянуть в
-          мастерскую и узнать о следующих встречах.
+          Привет! Я Даша, создательница Roota — маленькой мастерской керамики в
+          Москве. Я пришла из иллюстрации, поэтому каждая моя тарелка —
+          маленькая история.
+        </p>
+        <p>
+          Всё делаю вручную: у каждого изделия свой характер. Хочу, чтобы с моей
+          посудой дома становилось чуть уютнее, а в обычном дне было больше
+          красоты.
         </p>
       </section>
       <nav className="market-hello-links" aria-label="Roota после маркета">
         <a className="market-primary" href={links.site}>
-          Посмотреть керамику ↗︎
+          Перейти на сайт
         </a>
         <a
           className="market-secondary"
@@ -79,10 +85,13 @@ export function HelloPage({ links }: { links: SocialLinks }) {
           target="_blank"
           rel="noreferrer"
         >
-          Roota в Instagram ↗︎
+          Посмотреть Instagram*
         </a>
       </nav>
-      <small>Сделано руками. Выбрано сердцем.</small>
+      <p className="market-hello-footnote">
+        * Принадлежит Meta Platforms Inc., признанной экстремистской
+        организацией, деятельность которой запрещена в РФ.
+      </p>
     </main>
   );
 }

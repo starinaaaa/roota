@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
-import { Creature, MarketBrand, marketFetch, useMarketPoll } from "./shared";
+import { Creature, MarketBrand, useMarketPoll } from "./shared";
+import ReviewPhotos from "./ReviewPhotos";
 import { MARKET_REVIEW_TERMS } from "@/lib/market/review-copy";
 export type MarketReviewState = {
   number: string;
@@ -21,6 +22,7 @@ export default function MarketReview({
     error: loadError,
     setData,
   } = useMarketPoll<MarketReviewState>(`/api/market/review/${token}`, preview);
+  const [photos, setPhotos] = useState<File[]>([]);
   const [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
   return (
@@ -82,8 +84,10 @@ export default function MarketReview({
                 .join(", ")}
             </p>
             <form
+              aria-busy={busy}
               onSubmit={async (e) => {
                 e.preventDefault();
+                if (busy) return;
                 const f = new FormData(e.currentTarget);
                 if (preview) {
                   setData({
@@ -96,20 +100,31 @@ export default function MarketReview({
                 setBusy(true);
                 setError("");
                 try {
-                  setData(
-                    await marketFetch<MarketReviewState>(
-                      `/api/market/review/${token}`,
-                      {
-                        displayName: f.get("name"),
-                        phone: f.get("phone"),
-                        rating: Number(f.get("rating")),
-                        body: f.get("body"),
-                        publicationConsent:
-                          f.get("publicationConsent") === "on",
-                        accepted: f.get("accepted") === "on",
-                      },
-                    ),
+                  const submission = new FormData();
+                  submission.set("displayName", String(f.get("name") ?? ""));
+                  submission.set("phone", String(f.get("phone") ?? ""));
+                  submission.set("rating", String(f.get("rating") ?? ""));
+                  submission.set("body", String(f.get("body") ?? ""));
+                  submission.set(
+                    "publicationConsent",
+                    String(f.get("publicationConsent") === "on"),
                   );
+                  submission.set(
+                    "accepted",
+                    String(f.get("accepted") === "on"),
+                  );
+                  photos.forEach((file) => submission.append("photos", file));
+                  const response = await fetch(`/api/market/review/${token}`, {
+                    method: "POST",
+                    body: submission,
+                    signal: AbortSignal.timeout(90000),
+                  });
+                  const result = await response.json();
+                  if (!response.ok)
+                    throw new Error(
+                      result.error ?? "Не удалось сохранить отзыв",
+                    );
+                  setData(result as MarketReviewState);
                 } catch (e) {
                   setError(
                     e instanceof Error
@@ -152,6 +167,7 @@ export default function MarketReview({
                 Впечатления о встрече и изделии
                 <textarea name="body" required maxLength={4000} rows={5} />
               </label>
+              <ReviewPhotos onChange={setPhotos} disabled={busy} />
               <label>
                 Телефон для персонального промокода
                 <input
@@ -182,13 +198,16 @@ export default function MarketReview({
               <label className="market-consent">
                 <input name="publicationConsent" type="checkbox" />
                 <span>
-                  Разрешаю опубликовать отзыв и имя на сайте. Без галочки отзыв
-                  увидит только студия; промокод всё равно получите.
+                  Разрешаю опубликовать отзыв, имя и приложенные фотографии на
+                  сайте. Без галочки отзыв и фото увидит только студия; промокод
+                  всё равно получите.
                 </span>
               </label>
               {error ? <p role="alert">{error}</p> : null}
               <button className="market-primary" disabled={busy}>
-                {busy ? "Сохраняем…" : "Отправить отзыв и получить 10%"}
+                {busy
+                  ? "Сохраняем отзыв и фото…"
+                  : "Отправить отзыв и получить 10%"}
               </button>
             </form>
           </>

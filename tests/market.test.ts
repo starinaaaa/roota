@@ -1563,3 +1563,164 @@ test("Robokassa amount purchases require exact snapshot before payment and never
     await db.close();
   }
 });
+
+test("market review photos persist privately once, clean failed uploads and preserve committed images after lost responses", async () => {
+  const sharp = (await import("sharp")).default;
+  const { saveMarketReviewPhotos, prepareMarketReviewPhotos } =
+    await import("../lib/market/review-photos");
+  const { submitMarketReview } = await import("../lib/market/reviews");
+  const { db, adapter, run } = await fixture();
+  const files = new Map<string, Buffer>();
+  const store = {
+    upload: async (path: string, bytes: Buffer) => {
+      files.set(path, bytes);
+      return { error: null };
+    },
+    remove: async (paths: string[]) => {
+      paths.forEach((path) => files.delete(path));
+    },
+  };
+  const deps = { db: adapter, transaction: run, store };
+  const input = {
+    rating: 5,
+    body: "Фото изделия дома",
+    displayName: "Анна",
+    phone: "89991234567",
+    accepted: true,
+    publicationConsent: false,
+  };
+  const jpeg = await sharp({
+    create: { width: 1800, height: 900, channels: 3, background: "red" },
+  })
+    .withMetadata()
+    .jpeg()
+    .toBuffer();
+  const photo = new File([new Uint8Array(jpeg)], "plate.jpg", {
+    type: "image/jpeg",
+  });
+  const paidSale = async () => {
+    const sale = await run((c) =>
+      createSale(c, request({ postcard: 1 }), "live", "cash"),
+    );
+    await run((c) => confirmManualSale(c, sale.id, "test"));
+    const {
+      rows: [row],
+    } = await db.query<{ review_token: string }>(
+      "select review_token from market_sales where id=$1",
+      [sale.id],
+    );
+    return { ...sale, reviewToken: row.review_token };
+  };
+  try {
+    await assert.rejects(
+      prepareMarketReviewPhotos([
+        new File(["<svg/>"], "pretend.jpg", { type: "image/jpeg" }),
+      ]),
+      /прочитать/,
+    );
+    await assert.rejects(
+      prepareMarketReviewPhotos(Array(6).fill(photo)),
+      /больше 5/,
+    );
+    await assert.rejects(
+      saveMarketReviewPhotos("a".repeat(64), input, [photo], deps),
+      /персональной/,
+    );
+    assert.equal(files.size, 0);
+    const first = await paidSale();
+    const result = await saveMarketReviewPhotos(
+      first.reviewToken,
+      input,
+      [photo],
+      deps,
+    );
+    assert.equal(result!.saved, true);
+    const {
+      rows: [review],
+    } = await db.query<{
+      photo_paths: string[];
+      state: string;
+      publication_consent: boolean;
+    }>(
+      "select photo_paths,state,publication_consent from customer_reviews where market_sale_id=$1",
+      [first.id],
+    );
+    assert.equal(review.state, "pending");
+    assert.equal(review.publication_consent, false);
+    assert.equal(review.photo_paths.length, 1);
+    assert(files.has(review.photo_paths[0]));
+    const metadata = await sharp(files.get(review.photo_paths[0])!).metadata();
+    assert.equal(metadata.width, 1600);
+    assert.equal(metadata.exif, undefined);
+    assert.equal(metadata.format, "jpeg");
+    const retry = await saveMarketReviewPhotos(
+      first.reviewToken,
+      { ...input, body: "retry" },
+      [photo],
+      deps,
+    );
+    assert.equal(retry!.reward!.code, result!.reward!.code);
+    assert.equal(files.size, 1);
+    const failed = await paidSale();
+    let uploads = 0;
+    await assert.rejects(
+      saveMarketReviewPhotos(failed.reviewToken, input, [photo, photo], {
+        ...deps,
+        store: {
+          ...store,
+          upload: async (path, bytes) =>
+            ++uploads === 2 ? { error: "network" } : store.upload(path, bytes),
+        },
+      }),
+      /загрузить/,
+    );
+    assert.equal(files.size, 1);
+    assert.equal(
+      (
+        await db.query(
+          "select id from customer_reviews where market_sale_id=$1",
+          [failed.id],
+        )
+      ).rows.length,
+      0,
+    );
+    const competing = await paidSale();
+    await saveMarketReviewPhotos(competing.reviewToken, input, [photo], {
+      ...deps,
+      transaction: async (work) => {
+        await run((c) =>
+          submitMarketReview(c, competing.reviewToken, {
+            ...input,
+            body: "first submission without photos",
+          }),
+        );
+        return run(work);
+      },
+    });
+    assert.equal(files.size, 1);
+    const committed = await paidSale();
+    await assert.rejects(
+      saveMarketReviewPhotos(committed.reviewToken, input, [photo], {
+        ...deps,
+        transaction: async (work) => {
+          await run(work);
+          throw new Error("lost COMMIT response");
+        },
+      }),
+      /COMMIT/,
+    );
+    assert.equal(files.size, 2);
+    assert.equal(
+      (await saveMarketReviewPhotos(
+        committed.reviewToken,
+        input,
+        [photo],
+        deps,
+      ))!.saved,
+      true,
+    );
+    assert.equal(files.size, 2);
+  } finally {
+    await db.close();
+  }
+});

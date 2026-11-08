@@ -20,17 +20,22 @@ export default function MarketPayment({
   returning?: boolean;
 }) {
   const { data: sale, error: connectionError } = useMarketPoll<
-    PublicSale & { emailSaved?: boolean; receiptEmailState?: string | null }
+    PublicSale & {
+      emailSaved?: boolean;
+      receiptEmailState?: string | null;
+      marketingConsent?: boolean;
+    }
   >(`/api/market/pay/${token}`);
   const [email, setEmail] = useState(""),
     [accepted, setAccepted] = useState(true),
-    [marketingConsent, setMarketingConsent] = useState(true),
+    [marketingChoice, setMarketingConsent] = useState<boolean | null>(null),
     [contactSaved, setContactSaved] = useState(false),
-    [skipContact, setSkipContact] = useState(false),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
   const expired = useSaleExpired(sale);
   const emailSaved = Boolean(sale?.emailSaved || contactSaved);
+  const marketingConsent =
+    marketingChoice ?? (sale?.emailSaved ? !!sale.marketingConsent : true);
   async function pay(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
@@ -40,10 +45,9 @@ export default function MarketPayment({
         form?: PaymentForm;
         saved?: boolean;
       }>(`/api/market/pay/${token}`, {
-        email,
+        email: email || undefined,
         accepted,
         marketingConsent,
-        reviewConsent: marketingConsent,
       });
       if (saved) {
         setContactSaved(true);
@@ -74,24 +78,30 @@ export default function MarketPayment({
   }
   const contactForm = sale ? (
     <form onSubmit={pay}>
-      <label htmlFor="market-email">Email для чека</label>
-      <input
-        id="market-email"
-        name="email"
-        type="email"
-        inputMode="email"
-        autoComplete="email"
-        maxLength={254}
-        placeholder="you@example.com"
-        required
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
-      <p className="market-small">
-        {sale.method === "robokassa"
-          ? "На эту почту придёт чек Робокассы."
-          : "После выдачи отправим оригинальный чек ФНС на эту почту."}
-      </p>
+      {!emailSaved ? (
+        <>
+          <label htmlFor="market-email">Email для чека</label>
+          <input
+            id="market-email"
+            name="email"
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            maxLength={254}
+            placeholder="you@example.com"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <p className="market-small">
+            {sale.method === "robokassa"
+              ? "На эту почту придёт чек Робокассы."
+              : "После выдачи отправим оригинальный чек ФНС на эту почту."}
+          </p>
+        </>
+      ) : (
+        <p className="market-small">Почта для чека сохранена.</p>
+      )}
       <label className="market-consent">
         <input
           type="checkbox"
@@ -121,8 +131,7 @@ export default function MarketPayment({
         <span>
           Хочу получать{" "}
           <a href="/newsletter-consent" target="_blank" rel="noreferrer">
-            информацию о скидках, распродажах, новых коллекциях и приглашение
-            поделиться впечатлениями о покупке
+            информацию о скидках, распродажах и новых коллекциях
           </a>{" "}
           и даю{" "}
           <a href="/newsletter-data-consent" target="_blank" rel="noreferrer">
@@ -145,11 +154,6 @@ export default function MarketPayment({
               ? "Получить чек на почту"
               : "Сохранить почту и продолжить"}
       </button>
-      <p className="market-secure">
-        {sale.method === "robokassa"
-          ? "Картой или другим доступным способом через Робокассу"
-          : "Оплату подтвердит продавец"}
-      </p>
     </form>
   ) : null;
   return (
@@ -228,7 +232,7 @@ export default function MarketPayment({
             платить не нужно — продавец проверит покупку.
           </p>
         </section>
-      ) : sale.method !== "robokassa" && (emailSaved || skipContact) ? (
+      ) : sale.method !== "robokassa" && emailSaved ? (
         <section className="market-message">
           <h1>Всё готово к оплате</h1>
           <ReceiptItems sale={sale} />
@@ -255,20 +259,6 @@ export default function MarketPayment({
             <strong>{money(sale.amount)}</strong>
           </div>
           {contactForm}
-          {sale.method !== "robokassa" ? (
-            <button
-              type="button"
-              className="market-secondary"
-              disabled={busy}
-              onClick={() => setSkipContact(true)}
-            >
-              Продолжить без почты
-            </button>
-          ) : null}
-          <p className="market-small">
-            Галочку писем можно снять. Получение чека и оплата от подписки не
-            зависят.
-          </p>
         </section>
       )}
     </main>

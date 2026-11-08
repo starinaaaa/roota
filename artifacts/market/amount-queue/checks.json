@@ -1,0 +1,19 @@
+{
+  "checks": [
+    "phone: amount, email, method and purchase terms saved without occupying iPad; review invitation independent of news",
+    "five concurrent buyers on the same network receive distinct purchases and tokens",
+    "public buyer token exposes no email, other orders or seller actions; foreign origin rejected",
+    "money confirmation alone creates no receipt job; 6000/12000 is rejected both by UI and server without stock changes",
+    "exact composition creates one immutable sale/job and one stock deduction; concurrent replay and repeated money confirmation are idempotent; iPad unchanged",
+    "paid amount remains separate from receipt state and is counted once after composition",
+    "buyer automatically reaches their own paid page; pending receipt exposes no fake success/link",
+    "phone and iPad intake layouts have no horizontal overflow",
+    "permanent payment QR downloads as a 40x58 mm PDF",
+    "purchase invitation is scheduled once at payment+3 days without news consent; explicit review unsubscribe survives contact replay",
+    "Robokassa waits for exact composition, then prepares its existing provider form using saved email; no duplicate NPD job or actual payment",
+    "seller can close new intake without breaking saved buyer links"
+  ],
+  "realIncomesCreated": 0,
+  "realPaymentsMade": 0,
+  "realEmailsSent": 0
+}

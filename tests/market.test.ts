@@ -1,3 +1,10 @@
+import {
+  amountInKopecks,
+  createIntake,
+  confirmIntake,
+  finalizeIntake,
+  cancelIntake,
+} from "../lib/market/intake";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
@@ -74,6 +81,9 @@ async function fixture() {
       "database/migrations/20261107_market_receipt_helper.sql",
       "utf8",
     ),
+  );
+  await db.exec(
+    await readFile("database/migrations/20261108_market_intake.sql", "utf8"),
   );
   const adapter = db as unknown as MarketDb;
   await db.exec(
@@ -1298,6 +1308,256 @@ test("helper future mode excludes the backlog and trial mode never selects Robok
         )
       ).rows[0].live_enabled,
       false,
+    );
+  } finally {
+    await db.close();
+  }
+});
+
+type IntakeTestRow = {
+  n: number;
+  stock_qty: number;
+  paid_at: Date;
+  confirmed_by: string;
+  status: string;
+  current_sale_id: string;
+};
+const intakeInput = (method = "cash", amount = "12000") => ({
+  requestKey: randomUUID(),
+  amount,
+  email: "buyer@example.test",
+  method,
+  accepted: true,
+  marketingConsent: false,
+  reviewConsent: false,
+});
+test("amount-only input uses integer kopecks and rejects ambiguous values", () => {
+  assert.equal(amountInKopecks("12 000,50"), 1200050);
+  assert.equal(amountInKopecks("1.01"), 101);
+  for (const s of ["-10", "1e4", "0", "1.001", "NaN", "1000001", "12,00.00"])
+    assert.throws(() => amountInKopecks(s));
+});
+test("parallel amount purchases leave iPad and stock untouched until exact composition", async () => {
+  const { db, run } = await fixture();
+  try {
+    await db.query<IntakeTestRow>(
+      "update market_register set intake_enabled=true",
+    );
+    const current = await run((d) =>
+      createSale(d, request({ postcard: 1 }), "test", "cash"),
+    );
+    const a = await run((d) =>
+      createIntake(d, intakeInput(), "live", "device-a"),
+    );
+    const b = await run((d) =>
+      createIntake(d, intakeInput("transfer"), "live", "device-b"),
+    );
+    assert.notEqual(a.token, b.token);
+    assert.equal(
+      (
+        await db.query<IntakeTestRow>(
+          "select count(*)::int n from market_receipt_jobs",
+        )
+      ).rows[0].n,
+      0,
+    );
+    await assert.rejects(
+      run((d) =>
+        finalizeIntake(d, a.id, request({ "plate-nevidimka": 2 }), "seller"),
+      ),
+      /подтвердите/,
+    );
+    await run((d) => confirmIntake(d, a.id, "seller"));
+    await run((d) => confirmIntake(d, a.id, "other"));
+    const paidAt = "2026-11-07T20:55:00.000Z";
+    await db.query<IntakeTestRow>(
+      "update market_intakes set paid_at=$2 where id=$1",
+      [a.id, paidAt],
+    );
+    for (const n of [1, 3])
+      await assert.rejects(
+        run((d) =>
+          finalizeIntake(d, a.id, request({ "plate-nevidimka": n }), "seller"),
+        ),
+        /точно совпадать/,
+      );
+    assert.equal(
+      (
+        await db.query<IntakeTestRow>(
+          "select stock_qty from market_inventory where key='plate-nevidimka'",
+        )
+      ).rows[0].stock_qty,
+      5,
+    );
+    assert.equal(
+      (
+        await db.query<IntakeTestRow>(
+          "select count(*)::int n from market_receipt_jobs",
+        )
+      ).rows[0].n,
+      0,
+    );
+    const sale = await run((d) =>
+      finalizeIntake(d, a.id, request({ "plate-nevidimka": 2 }), "seller"),
+    );
+    const saved = (
+      await db.query<IntakeTestRow>("select * from market_sales where id=$1", [
+        sale.id,
+      ])
+    ).rows[0];
+    assert.equal(saved.status, "paid");
+    assert.equal(new Date(saved.paid_at).toISOString(), paidAt);
+    assert.equal(saved.confirmed_by, "seller");
+    assert.equal(
+      (
+        await db.query<IntakeTestRow>(
+          "select current_sale_id from market_register",
+        )
+      ).rows[0].current_sale_id,
+      current.id,
+    );
+    assert.equal(
+      (
+        await db.query<IntakeTestRow>(
+          "select stock_qty from market_inventory where key='plate-nevidimka'",
+        )
+      ).rows[0].stock_qty,
+      3,
+    );
+    assert.equal(
+      (
+        await db.query<IntakeTestRow>(
+          "select count(*)::int n from market_receipt_jobs where sale_id=$1",
+          [sale.id],
+        )
+      ).rows[0].n,
+      1,
+    );
+    const again = await run((d) =>
+      finalizeIntake(d, a.id, request({ "plate-nevidimka": 2 }), "seller"),
+    );
+    assert.equal(again.id, sale.id);
+    await assert.rejects(
+      run((d) =>
+        finalizeIntake(d, a.id, request({ "plate-nevidimka": 1 }), "seller"),
+      ),
+      /Состав уже сохранён/,
+    );
+    await assert.rejects(
+      run((d) => cancelIntake(d, a.id)),
+      /неоплаченную/,
+    );
+    assert.equal(
+      (
+        await db.query<IntakeTestRow>(
+          "select stock_qty from market_inventory where key='plate-nevidimka'",
+        )
+      ).rows[0].stock_qty,
+      3,
+    );
+  } finally {
+    await db.close();
+  }
+});
+test("amount purchase retry, closure and rate limits do not invent paid sales", async () => {
+  const { db, run } = await fixture();
+  try {
+    const input = intakeInput();
+    await assert.rejects(
+      run((d) => createIntake(d, input, "test", "client")),
+      /закрыт/,
+    );
+    await db.query<IntakeTestRow>(
+      "update market_register set intake_enabled=true",
+    );
+    const first = await run((d) => createIntake(d, input, "test", "client"));
+    assert.equal(
+      (await run((d) => createIntake(d, input, "test", "client"))).id,
+      first.id,
+    );
+    await assert.rejects(
+      run((d) =>
+        createIntake(d, { ...input, amount: "6000" }, "test", "client"),
+      ),
+      /другими/,
+    );
+    for (let i = 1; i < 10; i++)
+      await run((d) => createIntake(d, intakeInput(), "test", "client"));
+    await assert.rejects(
+      run((d) => createIntake(d, intakeInput(), "test", "client")),
+      /Слишком много/,
+    );
+    await run((d) => cancelIntake(d, first.id));
+    await assert.rejects(
+      run((d) => confirmIntake(d, first.id, "seller")),
+      /нельзя/,
+    );
+    assert.equal(
+      (
+        await db.query<IntakeTestRow>(
+          "select count(*)::int n from market_sales",
+        )
+      ).rows[0].n,
+      0,
+    );
+  } finally {
+    await db.close();
+  }
+});
+test("Robokassa amount purchases require exact snapshot before payment and never enqueue NPD", async () => {
+  const { db, run } = await fixture();
+  try {
+    await db.query<IntakeTestRow>(
+      "update market_register set intake_enabled=true",
+    );
+    const a = await run((d) =>
+      createIntake(d, intakeInput("robokassa"), "live", "a"),
+    );
+    const b = await run((d) =>
+      createIntake(d, intakeInput("robokassa"), "live", "b"),
+    );
+    await assert.rejects(
+      run((d) => confirmIntake(d, a.id, "seller")),
+      /нельзя/,
+    );
+    await assert.rejects(
+      run((d) =>
+        finalizeIntake(d, a.id, request({ "plate-nevidimka": 1 }), "seller"),
+      ),
+      /точно/,
+    );
+    const sa = await run((d) =>
+      finalizeIntake(d, a.id, request({ "plate-nevidimka": 2 }), "seller"),
+    );
+    const sb = await run((d) =>
+      finalizeIntake(d, b.id, request({ "plate-nevidimka": 2 }), "seller"),
+    );
+    assert.notEqual(sa.id, sb.id);
+    assert.equal(
+      (
+        await db.query<IntakeTestRow>(
+          "select count(*)::int n from market_receipt_jobs",
+        )
+      ).rows[0].n,
+      0,
+    );
+    await run((d) => confirmSale(d, sa.id));
+    await run((d) => confirmSale(d, sa.id));
+    assert.equal(
+      (
+        await db.query<IntakeTestRow>(
+          "select stock_qty from market_inventory where key='plate-nevidimka'",
+        )
+      ).rows[0].stock_qty,
+      1,
+    );
+    assert.equal(
+      (
+        await db.query<IntakeTestRow>(
+          "select count(*)::int n from market_receipt_jobs",
+        )
+      ).rows[0].n,
+      0,
     );
   } finally {
     await db.close();

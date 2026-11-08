@@ -22,6 +22,9 @@ import {
 export const DISPLAY_COOKIE = "roota_market_display";
 export function publicSale(sale: SaleRow): PublicSale {
   return {
+    intakeNumber: sale.intake_number
+      ? `П-${String(sale.intake_number).padStart(6, "0")}`
+      : null,
     id: sale.id,
     number: `М-${String(sale.inv_id).slice(-6)}`,
     status: sale.status,
@@ -80,18 +83,18 @@ export async function marketState(): Promise<MarketState> {
     const {
       rows: [register],
     } = await db.query(
-      "select transfer_settings from public.market_register where id=1",
+      "select transfer_settings,intake_enabled from public.market_register where id=1",
     );
     const { rows: receiptQueue } = await db.query<SaleRow>(
-      "select s.*,case when j.state='submitting' and j.lease_until<=now() then 'uncertain' else j.state end receipt_state,j.registered_at receipt_registered_at,j.verified_at receipt_verified_at from public.market_sales s left join public.market_receipt_jobs j on j.sale_id=s.id where s.status='paid' and s.payment_method<>'robokassa' and (j.state is distinct from 'registered') order by paid_at asc limit 100",
+      "select s.*,(select number from market_intakes i where i.sale_id=s.id) intake_number,case when j.state='submitting' and j.lease_until<=now() then 'uncertain' else j.state end receipt_state,j.registered_at receipt_registered_at,j.verified_at receipt_verified_at from public.market_sales s left join public.market_receipt_jobs j on j.sale_id=s.id where s.status='paid' and s.payment_method<>'robokassa' and (j.state is distinct from 'registered') order by paid_at asc limit 100",
     );
     const {
       rows: [sale],
     } = await db.query<SaleRow>(
-      "select s.*,case when j.state='submitting' and j.lease_until<=now() then 'uncertain' else j.state end receipt_state,j.registered_at receipt_registered_at,j.verified_at receipt_verified_at from public.market_sales s left join public.market_receipt_jobs j on j.sale_id=s.id join public.market_register r on r.current_sale_id=s.id where r.id=1",
+      "select s.*,(select number from market_intakes i where i.sale_id=s.id) intake_number,case when j.state='submitting' and j.lease_until<=now() then 'uncertain' else j.state end receipt_state,j.registered_at receipt_registered_at,j.verified_at receipt_verified_at from public.market_sales s left join public.market_receipt_jobs j on j.sale_id=s.id join public.market_register r on r.current_sale_id=s.id where r.id=1",
     );
     const { rows: history } = await db.query<SaleRow>(
-      "select s.*,case when j.state='submitting' and j.lease_until<=now() then 'uncertain' else j.state end receipt_state,j.registered_at receipt_registered_at,j.verified_at receipt_verified_at from public.market_sales s left join public.market_receipt_jobs j on j.sale_id=s.id order by s.created_at desc,s.id desc limit 20",
+      "select s.*,(select number from market_intakes i where i.sale_id=s.id) intake_number,case when j.state='submitting' and j.lease_until<=now() then 'uncertain' else j.state end receipt_state,j.registered_at receipt_registered_at,j.verified_at receipt_verified_at from public.market_sales s left join public.market_receipt_jobs j on j.sale_id=s.id order by s.created_at desc,s.id desc limit 20",
     );
     const { rows: displays } = await db.query<{
       id: string;
@@ -107,7 +110,37 @@ export async function marketState(): Promise<MarketState> {
     const { rows: helpers } = await db.query(
       "select id,name,status,detail,last_seen_at,revoked_at,operation_mode,live_enabled,live_all_sales,approved_sale_id,live_from,result_verified_at from public.market_receipt_helpers order by created_at desc limit 20",
     );
+    const { rows: intakes } = await db.query(
+      "select i.*,s.inv_id sale_number,s.token sale_token,s.status payment_status,s.items from market_intakes i left join market_sales s on s.id=i.sale_id where i.cancelled_at is null and (i.sale_id is null or s.status='pending') order by i.created_at asc limit 200",
+    );
+    const {
+      rows: [uncomposed],
+    } = await db.query(
+      "select count(*)::int count,coalesce(sum(amount_kopecks),0)::float8/100 amount from market_intakes where mode='live' and paid_at is not null and sale_id is null",
+    );
+    totals.count += uncomposed.count;
+    totals.amount += uncomposed.amount;
     return {
+      intakeEnabled: register.intake_enabled,
+      intakes: intakes.map((r) => ({
+        id: r.id,
+        number: `П-${String(r.number).padStart(6, "0")}`,
+        amount: r.amount_kopecks / 100,
+        method: r.method,
+        mode: r.mode,
+        email: r.email,
+        paidAt: r.paid_at?.toISOString() ?? null,
+        createdAt: r.created_at.toISOString(),
+        saleId: r.sale_id,
+        saleNumber: r.sale_number
+          ? `М-${String(r.sale_number).slice(-6)}`
+          : null,
+        paymentStatus: r.payment_status,
+        paymentUrl: r.sale_token
+          ? siteUrl(`/market/pay/${r.sale_token}`)
+          : siteUrl(`/market/request/${r.token}`),
+        items: r.items ?? [],
+      })),
       helpers,
       inventory: stock,
       sale: sale ? publicSale(sale) : null,
@@ -202,7 +235,7 @@ export async function displayState() {
     const {
       rows: [sale],
     } = await db.query<SaleRow>(
-      "select s.*,case when j.state='submitting' and j.lease_until<=now() then 'uncertain' else j.state end receipt_state,j.registered_at receipt_registered_at,j.verified_at receipt_verified_at from public.market_sales s left join public.market_receipt_jobs j on j.sale_id=s.id join public.market_register r on r.current_sale_id=s.id where r.id=1",
+      "select s.*,(select number from market_intakes i where i.sale_id=s.id) intake_number,case when j.state='submitting' and j.lease_until<=now() then 'uncertain' else j.state end receipt_state,j.registered_at receipt_registered_at,j.verified_at receipt_verified_at from public.market_sales s left join public.market_receipt_jobs j on j.sale_id=s.id join public.market_register r on r.current_sale_id=s.id where r.id=1",
     );
     return {
       connected: true,
@@ -220,7 +253,7 @@ export async function saleByToken(token: string) {
     const {
       rows: [sale],
     } = await db.query<SaleRow>(
-      "select s.*,j.state receipt_state,j.registered_at receipt_registered_at,j.verified_at receipt_verified_at,e.state receipt_email_state from public.market_sales s left join public.market_receipt_jobs j on j.sale_id=s.id left join public.email_messages e on e.event_key='market:'||s.id||':receipt' and e.recipient=s.email where s.token=$1",
+      "select s.*,(select number from market_intakes i where i.sale_id=s.id) intake_number,j.state receipt_state,j.registered_at receipt_registered_at,j.verified_at receipt_verified_at,e.state receipt_email_state from public.market_sales s left join public.market_receipt_jobs j on j.sale_id=s.id left join public.email_messages e on e.event_key='market:'||s.id||':receipt' and e.recipient=s.email where s.token=$1",
       [token],
     );
     return sale ?? null;

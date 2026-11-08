@@ -1,4 +1,9 @@
 import {
+  confirmIntake,
+  finalizeIntake,
+  cancelIntake,
+} from "@/lib/market/intake";
+import {
   createHelper,
   revokeHelper,
   configureHelperMode,
@@ -45,6 +50,28 @@ export async function POST(request: Request) {
   try {
     const body = await readMarketBody(request);
     switch (body.action) {
+      case "intake-open":
+        await transaction(async (db) => {
+          await lockRegister(db);
+          await db.query(
+            "update market_register set intake_enabled=$1 where id=1",
+            [z.boolean().parse(body.enabled)],
+          );
+        });
+        break;
+      case "intake-confirm":
+        await transaction((db) =>
+          confirmIntake(db, z.uuid().parse(body.id), admin.id),
+        );
+        break;
+      case "intake-finalize":
+        await transaction((db) =>
+          finalizeIntake(db, z.uuid().parse(body.id), body.basket, admin.id),
+        );
+        break;
+      case "intake-cancel":
+        await transaction((db) => cancelIntake(db, z.uuid().parse(body.id)));
+        break;
       case "helper-create": {
         const name = z.string().trim().min(1).max(80).parse(body.name);
         const extensionId = z

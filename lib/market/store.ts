@@ -19,6 +19,7 @@ import type { PaymentRow } from "../payments/model";
 // All mutating calls run inside transaction(), taking the register lock first.
 export type MarketDb = Pick<PoolClient, "query">;
 export type SaleRow = {
+  intake_number?: string | null;
   id: string;
   inv_id: string;
   request_key: string;
@@ -82,6 +83,7 @@ export async function createSale(
   raw: unknown,
   mode: "test" | "live",
   method: PaymentMethod = "robokassa",
+  options: { independent?: boolean } = {},
 ) {
   const input = basketSchema.parse(raw);
   await lockRegister(db);
@@ -113,7 +115,7 @@ export async function createSale(
   } = await db.query(
     "select s.status from public.market_register r join public.market_sales s on s.id=r.current_sale_id where r.id=1",
   );
-  if (active?.status === "pending")
+  if (!options.independent && active?.status === "pending")
     throw new Error("Сначала дождитесь оплаты или отмените текущую покупку");
   const priced = quoteBasket(input, await inventory(db));
   const {
@@ -142,10 +144,11 @@ export async function createSale(
       if (!result.rows.length)
         throw new Error("Остаток изменился. Проверьте покупку");
     }
-  await db.query(
-    "update public.market_register set current_sale_id=$1 where id=1",
-    [sale.id],
-  );
+  if (!options.independent)
+    await db.query(
+      "update public.market_register set current_sale_id=$1 where id=1",
+      [sale.id],
+    );
   return sale;
 }
 export async function cancelSale(db: MarketDb, id: string) {
@@ -385,6 +388,14 @@ export async function saveReviewContact(
   email: string,
   consent: boolean,
 ) {
+  // Purchase invitation must not silently re-enable an explicit unsubscribe on a retry.
+  if (consent) {
+    const { rows } = await db.query(
+      "select id from public.email_subscriptions where email=$1 and purpose='review' and resource=$2 and revoked_at is not null",
+      [email, `market:${sale.id}`],
+    );
+    if (rows.length) consent = false;
+  }
   const version = "market-review-email-2026-11-07";
   await db.query(
     `update public.market_sales set review_consent=$2,

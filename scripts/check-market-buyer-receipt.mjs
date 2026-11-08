@@ -164,7 +164,7 @@ try {
     assert.equal(posted.email, "buyer@example.test");
     assert.equal(posted.accepted, true);
     assert.equal(posted.marketingConsent, false);
-    assert.equal(posted.reviewConsent, false);
+    assert.equal(posted.reviewConsent, undefined);
     await page.reload();
     await page
       .getByRole("link", { name: "Открыть чек", exact: true })

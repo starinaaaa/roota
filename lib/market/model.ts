@@ -30,6 +30,7 @@ export type Allocation = { key: string; quantity: number };
 export type SaleStatus =
   "pending" | "paid" | "cancelled" | "expired" | "paid_review";
 export type PublicSale = {
+  intakeNumber?: string | null;
   id: string;
   number: string;
   status: SaleStatus;
@@ -46,7 +47,24 @@ export type PublicSale = {
   receiptRegisteredAt: string | null;
   qr: string | null;
 };
+export type MarketIntakeRow = {
+  id: string;
+  number: string;
+  amount: number;
+  method: PaymentMethod;
+  mode: "test" | "live";
+  email: string;
+  paidAt: string | null;
+  createdAt: string;
+  saleId: string | null;
+  saleNumber: string | null;
+  paymentStatus: string | null;
+  paymentUrl: string | null;
+  items: SaleItem[];
+};
 export type MarketState = {
+  intakeEnabled: boolean;
+  intakes: MarketIntakeRow[];
   inventory: InventoryItem[];
   sale: PublicSale | null;
   history: Omit<PublicSale, "paymentUrl" | "qr">[];

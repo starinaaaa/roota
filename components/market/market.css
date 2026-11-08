@@ -2035,3 +2035,6 @@
 .market-helper-settings form { display: grid; gap: 14px; margin: 16px 0; max-width: 680px; }
 .market-helper-settings form > label:not(.market-consent) { display: grid; gap: 8px; }
 .market-helper-settings select { width: 100%; }
+
+.market-intake-queue{margin:3rem 0;padding:2rem 0;border-top:1px solid var(--market-line,#dedbd5)}
+.market-intake-queue>details{margin:1rem 0}.market-intake-order{border:1px solid #dedbd5;padding:1rem}.market-intake-order summary{display:flex;flex-wrap:wrap;gap:1rem;cursor:pointer}.market-intake-order h3{margin-top:1.5rem}.market-intake-items{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:.8rem}.market-intake-items label{display:flex;align-items:center;justify-content:space-between;gap:1rem}.market-intake-items input{width:5rem;min-height:44px}.market-intake-exact{font-weight:600}.market-intake-order button{margin:.5rem .5rem .5rem 0}.market-intake-queue .market-qr{max-width:280px}.market-intake-queue .market-consent{margin:1rem 0}.market-phone-receipt> .market-creature{max-width:100px;float:right}

@@ -1,4 +1,5 @@
 "use client";
+import MarketIntakeQueue from "./MarketIntakeQueue";
 import ReceiptHelper from "./ReceiptHelper";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -348,6 +349,9 @@ export default function MarketControl() {
           <h1>Маркет</h1>
         </div>
         <div className="market-toolbar">
+          <a className="market-secondary" href="#market-intake-queue">
+            Покупки по QR · {data?.intakes?.length ?? 0}
+          </a>
           <button
             className="market-secondary"
             onClick={() => setPairOpen((v) => !v)}
@@ -748,6 +752,7 @@ export default function MarketControl() {
               )}
             </aside>
           </div>
+          <MarketIntakeQueue state={data} />
           <ReceiptHelper state={data} />
           <ReceiptTasks state={data} busy={busy} action={action} />
           <section className="market-sales">
@@ -769,6 +774,7 @@ export default function MarketControl() {
                     <summary>
                       <span>
                         {s.number}
+                        {s.intakeNumber ? ` · ${s.intakeNumber}` : ""}
                         {s.mode === "test" ? " · тест" : ""}
                       </span>
                       <span

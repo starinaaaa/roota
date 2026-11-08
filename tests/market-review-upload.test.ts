@@ -4,7 +4,7 @@ import { readMarketReviewMultipart } from "../lib/market/review-photos";
 const url = "http://localhost:3167/api/market/review/" + "a".repeat(64);
 const request = (form: FormData, origin = "http://localhost:3167") =>
   new Request(url, { method: "POST", body: form, headers: { origin } });
-test("market multipart review keeps explicit choices and blocks cross-origin and oversized bodies", async () => {
+test("market multipart review keeps explicit choices and blocks cross-origin while accepting many large photos", async () => {
   const original = process.env.NEXT_PUBLIC_SITE_URL;
   process.env.NEXT_PUBLIC_SITE_URL = "http://localhost:3167";
   try {
@@ -24,22 +24,23 @@ test("market multipart review keeps explicit choices and blocks cross-origin and
       readMarketReviewMultipart(request(form, "https://other.example")),
       /Недопустимый/,
     );
-    const large = new Request(url, {
-      method: "POST",
-      body: new Uint8Array(16 * 1024 * 1024),
-      headers: {
-        origin: "http://localhost:3167",
-        "content-type": "multipart/form-data; boundary=test",
-      },
-    });
-    await assert.rejects(readMarketReviewMultipart(large), /Слишком большой/);
-    const six = new FormData();
-    for (let i = 0; i < 6; i++)
-      six.append(
+    const many = new FormData();
+    for (let i = 0; i < 12; i++)
+      many.append(
         "photos",
-        new File(["fixture"], "plate.jpg", { type: "image/jpeg" }),
+        new File([new Uint8Array(2 * 1024 * 1024)], `plate-${i}.jpg`, {
+          type: "image/jpeg",
+        }),
       );
-    await assert.rejects(readMarketReviewMultipart(request(six)), /больше 5/);
+    many.append(
+      "photos",
+      new File([new Uint8Array(4 * 1024 * 1024)], "large.jpg", {
+        type: "image/jpeg",
+      }),
+    );
+    const large = await readMarketReviewMultipart(request(many));
+    assert.equal(large.photos.length, 13);
+    assert.equal(large.photos[12].size, 4 * 1024 * 1024);
   } finally {
     if (original === undefined) delete process.env.NEXT_PUBLIC_SITE_URL;
     else process.env.NEXT_PUBLIC_SITE_URL = original;

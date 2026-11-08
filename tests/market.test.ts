@@ -1618,10 +1618,16 @@ test("market review photos persist privately once, clean failed uploads and pres
       ]),
       /прочитать/,
     );
-    await assert.rejects(
-      prepareMarketReviewPhotos(Array(6).fill(photo)),
-      /больше 5/,
+    assert.equal(
+      (await prepareMarketReviewPhotos(Array(12).fill(photo))).length,
+      12,
     );
+    const largePhoto = new File(
+      [new Uint8Array(jpeg), new Uint8Array(4 * 1024 * 1024)],
+      "large.jpg",
+      { type: "image/jpeg" },
+    );
+    assert.equal((await prepareMarketReviewPhotos([largePhoto])).length, 1);
     await assert.rejects(
       saveMarketReviewPhotos("a".repeat(64), input, [photo], deps),
       /персональной/,

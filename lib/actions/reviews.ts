@@ -12,10 +12,7 @@ import { canReviewOrder, reviewPhotoError, reviewSchema } from "@/lib/reviews";
 
 export type ReviewFormState = { error?: string };
 
-export async function submitReview(
-  _previous: ReviewFormState,
-  form: FormData,
-): Promise<ReviewFormState> {
+export async function saveReview(form: FormData): Promise<ReviewFormState> {
   const token = String(form.get("token") ?? "");
   const parsed = reviewSchema.safeParse({
     rating: form.get("rating"),
@@ -58,7 +55,7 @@ export async function submitReview(
         let buffer: Buffer;
         try {
           buffer = await sharp(Buffer.from(await photo.arrayBuffer()), {
-            limitInputPixels: 25000000,
+            limitInputPixels: false,
           })
             .rotate()
             .resize(1600, 1600, { fit: "inside", withoutEnlargement: true })
@@ -122,5 +119,14 @@ export async function submitReview(
       console.error("review_reward_queue_failed");
     }
   });
-  redirect(`/review/${token}?saved=1`);
+  return {};
+}
+
+export async function submitReview(
+  _previous: ReviewFormState,
+  form: FormData,
+): Promise<ReviewFormState> {
+  const state = await saveReview(form);
+  if (state.error) return state;
+  redirect(`/review/${String(form.get("token") ?? "")}?saved=1`);
 }

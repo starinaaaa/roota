@@ -114,11 +114,14 @@ export default function MarketReview({
                     String(f.get("accepted") === "on"),
                   );
                   photos.forEach((file) => submission.append("photos", file));
-                  const response = await fetch(`/api/market/review/${token}`, {
-                    method: "POST",
-                    body: submission,
-                    signal: AbortSignal.timeout(90000),
-                  });
+                  const response = await fetch(
+                    `/api/market/review-upload/${token}`,
+                    {
+                      method: "POST",
+                      body: submission,
+                      signal: AbortSignal.timeout(90000),
+                    },
+                  );
                   const result = await response.json();
                   if (!response.ok)
                     throw new Error(

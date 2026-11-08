@@ -2,12 +2,9 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { submitReview, type ReviewFormState } from "@/lib/actions/reviews";
-import {
-  REVIEW_PHOTO_HELP,
-  REVIEW_PHOTO_LIMIT,
-  reviewPhotoError,
-} from "@/lib/reviews";
+import { useRouter } from "next/navigation";
+type ReviewFormState = { error?: string };
+import { REVIEW_PHOTO_HELP, reviewPhotoError } from "@/lib/reviews";
 
 const inputClass =
   "mt-2 block w-full rounded-none border border-stone-300 bg-transparent px-4 py-3 text-base focus:border-stone-900 focus:outline-none focus:ring-1 focus:ring-stone-900";
@@ -19,6 +16,7 @@ export default function ReviewForm({
   token: string;
   defaultName: string;
 }) {
+  const router = useRouter();
   const [photos, setPhotos] = useState<{ file: File; url: string }[]>([]);
   const previewUrls = useRef<string[]>([]);
   useEffect(
@@ -34,16 +32,35 @@ export default function ReviewForm({
   const [consent, setConsent] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const [state, action, pending] = useActionState<ReviewFormState, FormData>(
-    async (previous, form) => {
+    async (_previous, form) => {
       form.delete("photos");
       photos.forEach((photo) => form.append("photos", photo.file));
-      return submitReview(previous, form);
+      try {
+        const response = await fetch(`/api/reviews/${token}`, {
+          method: "POST",
+          body: form,
+        });
+        const result = await response.json();
+        if (!response.ok || result.error)
+          return { error: result.error ?? "Не удалось сохранить отзыв" };
+        router.push(`/review/${token}?saved=1`);
+        return {};
+      } catch {
+        return {
+          error:
+            "Не удалось сохранить отзыв. Ваш текст и фото остались в форме. Повторите отправку.",
+        };
+      }
     },
     {},
   );
 
   return (
-    <form action={action} onReset={(event) => event.preventDefault()} className="space-y-7">
+    <form
+      action={action}
+      onReset={(event) => event.preventDefault()}
+      className="space-y-7"
+    >
       <input type="hidden" name="token" value={token} />
       <fieldset disabled={pending} className="space-y-7 disabled:opacity-70">
         <label className="block text-ui">
@@ -136,7 +153,6 @@ export default function ReviewForm({
           />
           <button
             type="button"
-            disabled={photos.length >= REVIEW_PHOTO_LIMIT}
             onClick={() => fileInput.current?.click()}
             className="border border-stone-400 px-5 py-3 text-ui hover:border-stone-900 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-4"
           >
@@ -148,7 +164,7 @@ export default function ReviewForm({
             className="text-caption text-stone-600"
           >
             {photos.length
-              ? `Добавлено фото: ${photos.length} из ${REVIEW_PHOTO_LIMIT}`
+              ? `Добавлено фото: ${photos.length}`
               : "Можно отправить отзыв без фотографий."}
           </p>
           {photoError && (

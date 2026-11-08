@@ -1,11 +1,7 @@
 "use client";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import {
-  REVIEW_PHOTO_HELP,
-  REVIEW_PHOTO_LIMIT,
-  reviewPhotoError,
-} from "@/lib/reviews";
+import { REVIEW_PHOTO_HELP, reviewPhotoError } from "@/lib/reviews";
 
 export default function ReviewPhotos({
   onChange,
@@ -58,7 +54,6 @@ export default function ReviewPhotos({
       <button
         type="button"
         className="market-secondary"
-        disabled={photos.length >= REVIEW_PHOTO_LIMIT}
         onClick={() => input.current?.click()}
         aria-describedby="market-photo-help market-photo-status"
       >
@@ -66,7 +61,7 @@ export default function ReviewPhotos({
       </button>
       <p id="market-photo-status" className="market-small" aria-live="polite">
         {photos.length
-          ? `Добавлено фото: ${photos.length} из ${REVIEW_PHOTO_LIMIT}`
+          ? `Добавлено фото: ${photos.length}`
           : "Можно отправить отзыв без фотографий."}
       </p>
       {error ? (

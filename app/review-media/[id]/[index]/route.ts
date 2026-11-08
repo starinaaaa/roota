@@ -5,7 +5,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string; index: string }> },
 ) {
   const { id, index } = await params;
-  if (!/^[a-f0-9-]{36}$/.test(id) || !/^\d$/.test(index))
+  if (!/^[a-f0-9-]{36}$/.test(id) || !/^\d+$/.test(index))
     return new Response(null, { status: 404 });
   const db = createServerClient();
   const { data: r } = await db

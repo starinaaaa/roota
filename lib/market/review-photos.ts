@@ -1,11 +1,7 @@
 import { randomUUID } from "node:crypto";
 import sharp from "sharp";
 import { isTrustedRequestOrigin } from "../request-origin";
-import {
-  REVIEW_PHOTO_LIMIT,
-  REVIEW_PHOTO_MAX_BYTES,
-  reviewPhotoError,
-} from "../reviews";
+import { reviewPhotoError } from "../reviews";
 import {
   marketReviewSchema,
   marketReviewState,
@@ -13,36 +9,13 @@ import {
 } from "./reviews";
 import type { MarketDb } from "./store";
 
-const MAX_REQUEST_BYTES =
-  REVIEW_PHOTO_LIMIT * REVIEW_PHOTO_MAX_BYTES + 64 * 1024;
 export async function readMarketReviewMultipart(request: Request) {
   if (
     !isTrustedRequestOrigin(request) ||
     !request.headers.get("content-type")?.startsWith("multipart/form-data;")
   )
     throw new Error("Недопустимый запрос");
-  const reader = request.body?.getReader();
-  if (!reader) throw new Error("Пустой запрос");
-  const chunks: Uint8Array[] = [];
-  let bytes = 0;
-  while (true) {
-    const { value, done } = await reader.read();
-    if (done) break;
-    bytes += value.length;
-    if (bytes > MAX_REQUEST_BYTES) {
-      await reader.cancel();
-      throw new Error(
-        "Слишком большой запрос. Добавьте до 5 фото размером до 3 МБ каждое.",
-      );
-    }
-    chunks.push(value);
-  }
-  const bounded = new Request(request.url, {
-    method: "POST",
-    headers: request.headers,
-    body: new Uint8Array(Buffer.concat(chunks)),
-  });
-  const form = await bounded.formData();
+  const form = await request.formData();
   const photos = form
     .getAll("photos")
     .filter((value): value is File => value instanceof File && value.size > 0);
@@ -83,7 +56,7 @@ export async function prepareMarketReviewPhotos(photos: File[]) {
   for (const photo of photos) {
     try {
       const image = sharp(Buffer.from(await photo.arrayBuffer()), {
-        limitInputPixels: 25000000,
+        limitInputPixels: false,
       });
       const metadata = await image.metadata();
       if (!["jpeg", "png", "webp"].includes(metadata.format ?? ""))
@@ -125,7 +98,8 @@ export async function saveMarketReviewPhotos(
   );
   if (!sale)
     throw new Error("Отзыв доступен по персональной ссылке после покупки");
-  const images = await prepareMarketReviewPhotos(photos);
+  const photoError = reviewPhotoError(photos);
+  if (photoError) throw new Error(photoError);
   const paths: string[] = [];
   let persistenceStarted = false;
   const remove = async (unused: string[]) => {
@@ -138,7 +112,8 @@ export async function saveMarketReviewPhotos(
     }
   };
   try {
-    for (const image of images) {
+    for (const photo of photos) {
+      const [image] = await prepareMarketReviewPhotos([photo]);
       const path = `market/${sale.id}/${randomUUID()}.jpg`;
       const { error } = await deps.store.upload(path, image, {
         contentType: "image/jpeg",

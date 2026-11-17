@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import {
   buildReceipt,
-  buildPlateReceipt,
+  buildWebsiteReceipt,
   parseReceiptProfile,
   validateReceipt,
 } from "../lib/payments/receipt";
@@ -16,7 +16,7 @@ const raw = JSON.stringify({
 });
 const profile = parseReceiptProfile(raw, "live")!;
 test("website receipt describes plates and preserves amounts and service lines", () => {
-  const receipt = buildPlateReceipt(
+  const receipt = buildWebsiteReceipt(
     {
       amount: "12055.03",
       items: [
@@ -74,7 +74,7 @@ test("SMZ receipt names, quantities, delivery and insurance exactly match paymen
   assert.doesNotMatch(JSON.stringify(receipt), /страхова/i);
   assert.equal(receipt.items[0].quantity, 2);
   assert.equal(receipt.items[0].sum, 12000);
-  assert.equal(receipt.items[0].name, "Тарелка «Поцелуй»");
+  assert.equal(receipt.items[0].name, "Керамическая тарелка «Поцелуй»");
   assert.ok(receipt.items.every((item) => item.tax === "none"));
   assert.equal(receipt.sno, undefined);
   assert.equal(receipt.items[0].payment_method, undefined);
@@ -109,7 +109,7 @@ test("SMZ receipt names, quantities, delivery and insurance exactly match paymen
   );
 });
 test("live POST contains signed URL-encoded receipt and uses production rather than test credentials", () => {
-  const receipt = buildPlateReceipt(
+  const receipt = buildWebsiteReceipt(
     {
       amount: "6000",
       items: [

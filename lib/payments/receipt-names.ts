@@ -2,7 +2,7 @@ export function plateReceiptName(name: string): string {
   const title = name
     .trim()
     .replace(/\s+/g, " ")
-    .replace(/^(?:керамическая\s+)?тарелка(?:\s+|$)/i, "")
+    .replace(/^(?:керамическая\s+)?тарелка(?:\s+керамическая)?(?:\s+|$)/i, "")
     .replace(/^[«„“"']|[»“”"']$/g, "")
     .trim();
   const prefix = "Керамическая тарелка";

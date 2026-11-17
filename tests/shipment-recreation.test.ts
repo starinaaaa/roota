@@ -32,7 +32,7 @@ test("category names use singular ceramic forms and the correct grammatical gend
       { product_name: "Туман", quantity: 2, category: { slug: "stakany" } },
       { product_name: "Луна", quantity: 1, category: { name: "Вазы" } },
     ]),
-    "Тарелка керамическая «Невидимка» × 1; Стакан керамический «Туман» × 2; Ваза керамическая «Луна» × 1",
+    "Керамическая тарелка «Невидимка» × 1; Стакан керамический «Туман» × 2; Ваза керамическая «Луна» × 1",
   );
   assert.equal(carrierStatusLabel("canceled"), "Отменено");
 });
@@ -205,7 +205,7 @@ test("a canceled legacy one-plate shipment is recreated at 600g without changing
     assert.equal(body.order_external_id, "GL-TEST");
     assert.equal(
       body.postings[0].description,
-      "Тарелка керамическая «Невидимка» × 1",
+      "Керамическая тарелка «Невидимка» × 1",
     );
     assert.equal(body.postings[0].dimensions.weight_g, 600);
     assert.equal(body.postings[0].declared_value.amount, "6000.00");
@@ -322,6 +322,6 @@ test("a cancellation failure cannot create a new parcel; the frozen operation re
   }
 });
 
-test("carrier descriptions identify garden constructors and retain the purchased bundle name", () => {
-  assert.equal(shipmentDescription([{ product_name: "Сад — Палисадник (стебли: 6, цветочки: 3, листочки: 3)", quantity: 1, configuration: { size: 12, stems: 6, flowers: 3, leaves: 3 }, category: { slug: "objects" } }]), "Керамический конструктор «Сад» — Палисадник (стебли: 6, цветочки: 3, листочки: 3) × 1");
+test("carrier descriptions identify garden constructors by their purchased composition", () => {
+  assert.equal(shipmentDescription([{ product_name: "Сад — Палисадник (стебли: 6, цветочки: 3, листочки: 3)", quantity: 1, configuration: { size: 12, stems: 6, flowers: 3, leaves: 3 }, category: { slug: "objects" } }]), "Керамический конструктор «Сад» — 12 деталей (6 стеблей, 3 цветочка, 3 листочка) × 1");
 });

@@ -1,4 +1,5 @@
-import { gardenProductTitle } from "@/lib/garden-title";
+import { gardenDocumentName } from "@/lib/product-document-name";
+import { plateReceiptName } from "@/lib/payments/receipt-names";
 import type { GardenConfiguration } from "@/lib/garden";
 export type ShipmentCategory = { name?: string | null; slug?: string | null };
 
@@ -48,8 +49,10 @@ export function shipmentDescription(
   }[],
 ) {
   const parts = items.map((item) => {
-    if (item.configuration)
-      return `${gardenProductTitle(item.product_name)} × ${item.quantity}`;
+    const garden = gardenDocumentName(item.product_name, item.configuration);
+    if (garden) return `${garden} × ${item.quantity}`;
+    if (ceramicCategoryName(item.category) === "Тарелка керамическая")
+      return `${plateReceiptName(item.product_name)} × ${item.quantity}`;
     const type = ceramicCategoryName(item.category);
     const noun = type.split(" ")[0];
     // Product titles sometimes already include their type; do not repeat it.

@@ -134,7 +134,7 @@ test("legacy orders keep one frozen parcel and shipment descriptions name plates
     shipmentDescription([
       { product_name: "Невидимка", quantity: 2, category: { slug: "plates" } },
     ]),
-    "Тарелка керамическая «Невидимка» × 2",
+    "Керамическая тарелка «Невидимка» × 2",
   );
   assert.equal(
     shipmentDescription([
@@ -144,7 +144,7 @@ test("legacy orders keep one frozen parcel and shipment descriptions name plates
         category: { slug: "plates" },
       },
     ]),
-    "Тарелка керамическая «Невидимка» × 1",
+    "Керамическая тарелка «Невидимка» × 1",
   );
   assert.equal(
     shipmentDescription([

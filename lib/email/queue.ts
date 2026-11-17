@@ -1,3 +1,4 @@
+import { productDocumentName } from "@/lib/product-document-name";
 import { marketReviewInvitation } from "@/lib/market/review-copy";
 import type { SaleItem } from "@/lib/market/model";
 import { estimatedReadyLabel, productionEstimate } from "@/lib/preorder-copy";
@@ -171,7 +172,7 @@ export async function processEmailQueue() {
         orderItems = o.order_items.map((i) => {
           const detail = details.get(i.product_id ?? "");
           return {
-            name: detail?.title(i.product_name) ?? i.product_name,
+            name: productDocumentName(detail?.title(i.product_name) ?? i.product_name, i.configuration),
             quantity: i.quantity,
             price: Number(i.price),
             imageUrl: detail?.image

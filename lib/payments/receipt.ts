@@ -2,6 +2,10 @@ import { z } from "zod";
 import type { Receipt } from "@robokassa/sdk";
 import { amountInKopecks, type PaymentMode, type PaymentRow } from "./model";
 import { plateReceiptName } from "./receipt-names";
+import {
+  gardenDocumentName,
+  productDocumentName,
+} from "../product-document-name";
 
 const tax = z.enum([
   "none",
@@ -126,7 +130,7 @@ export function buildReceipt(
     items: items.map((item) => ({
       name:
         item.kind === "goods"
-          ? item.name.trim().replace(/\s+/g, " ").slice(0, 128)
+          ? productDocumentName(item.name).slice(0, 128)
           : "Доставка",
       quantity: item.quantity,
       sum: Number(item.sum),
@@ -136,8 +140,8 @@ export function buildReceipt(
   return validateReceipt(receipt, payment.amount);
 }
 
-// The website catalog contains plates; market receipts also contain other goods.
-export function buildPlateReceipt(
+// Website goods include both plates and configured gardens.
+export function buildWebsiteReceipt(
   payment: Pick<PaymentRow, "items" | "amount">,
   profile: ReceiptProfile,
 ): Receipt {
@@ -146,7 +150,11 @@ export function buildPlateReceipt(
       ...payment,
       items: payment.items.map((item) =>
         item.kind === "goods"
-          ? { ...item, name: plateReceiptName(item.name) }
+          ? {
+              ...item,
+              name:
+                gardenDocumentName(item.name) ?? plateReceiptName(item.name),
+            }
           : item,
       ),
     },

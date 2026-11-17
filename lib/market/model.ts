@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { gardenDocumentName } from "../product-document-name";
 import { plateReceiptName } from "../payments/receipt-names";
 
 export type InventoryItem = {
@@ -116,7 +117,7 @@ export function quoteBasket(input: Basket, inventory: InventoryItem[]) {
     items: SaleItem[] = [];
   let gardenSubtotal = 0,
     gardenCount = 0;
-  const gardenNames: string[] = [];
+  const gardenParts = { stems: 0, flowers: 0, leaves: 0 };
   for (const [key, quantity] of Object.entries(input.quantities).sort()) {
     if (!quantity) continue;
     const item = inventory.find((i) => i.key === key);
@@ -128,14 +129,13 @@ export function quoteBasket(input: Basket, inventory: InventoryItem[]) {
     if (["stems", "flowers", "leaves"].includes(item.kind)) {
       gardenCount += quantity;
       gardenSubtotal += item.price * quantity;
-      gardenNames.push(
-        `${(item.receipt_name || item.name).toLowerCase()} × ${quantity}`,
-      );
+      gardenParts[item.kind as keyof typeof gardenParts] += quantity;
     } else {
       items.push({
-        name: item.kind === "plate"
-          ? plateReceiptName(item.receipt_name || item.name)
-          : item.receipt_name || item.name,
+        name:
+          item.kind === "plate"
+            ? plateReceiptName(item.receipt_name || item.name)
+            : item.receipt_name || item.name,
         quantity,
         unitPrice: item.price,
         sum: item.price * quantity,
@@ -154,10 +154,7 @@ export function quoteBasket(input: Basket, inventory: InventoryItem[]) {
     : 0;
   if (gardenCount)
     items.push({
-      name: `Сад${input.gardenBundle ? " — набор" : " — детали"}: ${gardenNames.join(", ")}`.slice(
-        0,
-        128,
-      ),
+      name: gardenDocumentName("", gardenParts)!,
       quantity: 1,
       sum: Math.round((gardenSubtotal * (100 - discount)) / 100),
       kind: "goods",

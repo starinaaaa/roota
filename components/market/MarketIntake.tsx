@@ -114,9 +114,8 @@ export default function MarketIntake({
                 <h2>{data.paid ? "Деньги получены" : "Способ оплаты"}</h2>
                 {data.paid ? (
                   <p>
-                    Продавец уточнит состав покупки и выдаст чек. Он придёт на
-                    вашу почту и появится на этой странице. Можно закрыть
-                    страницу, ожидать у iPad не нужно.
+                    Всё оплачено, покупку можно забирать. Чек появится здесь и
+                    придёт на вашу почту.
                   </p>
                 ) : data.method === "robokassa" ? (
                   <p>
@@ -168,6 +167,7 @@ export default function MarketIntake({
               <input
                 required
                 name="email"
+                aria-describedby="intake-email-hint"
                 type="email"
                 inputMode="email"
                 autoComplete="email"
@@ -182,23 +182,33 @@ export default function MarketIntake({
                 }}
               />
             </label>
-            <label>
-              Как оплатить
-              <select
-                name="method"
-                value={method}
-                onChange={(e) => {
-                  edit();
-                  setMethod(e.target.value);
-                }}
-              >
-                <option value="transfer">Прямой перевод</option>
-                <option value="cash">Наличные</option>
-                {data.robokassa ? (
-                  <option value="robokassa">Робокасса</option>
-                ) : null}
-              </select>
-            </label>
+            <p className="market-small" id="intake-email-hint">
+              Сюда придёт чек
+            </p>
+            <fieldset className="market-methods">
+              <legend>Как оплатить</legend>
+              {[
+                ...(data.robokassa
+                  ? [["robokassa", "Онлайн через Робокассу"]]
+                  : []),
+                ["transfer", "Перевод по номеру"],
+                ["cash", "Наличные"],
+              ].map(([value, label]) => (
+                <label key={value}>
+                  <input
+                    type="radio"
+                    name="method"
+                    value={value}
+                    checked={method === value}
+                    onChange={() => {
+                      edit();
+                      setMethod(value);
+                    }}
+                  />
+                  {label}
+                </label>
+              ))}
+            </fieldset>
             <label className="market-consent">
               <input
                 type="checkbox"
@@ -231,22 +241,21 @@ export default function MarketIntake({
                   setNews(e.target.checked);
                 }}
               />
-              <span>
-                Хочу получать{" "}
-                <a href="/newsletter-consent" target="_blank" rel="noreferrer">
-                  информацию о скидках, распродажах и новых коллекциях
-                </a>{" "}
-                и даю{" "}
-                <a
-                  href="/newsletter-data-consent"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  согласие на обработку email
-                </a>
-                .
-              </span>
+              <span>Хочу получать новости Roota</span>
             </label>
+            <details className="market-news-terms">
+              <summary>Условия подписки</summary>
+              <a href="/newsletter-consent" target="_blank" rel="noreferrer">
+                Согласие на рассылку
+              </a>
+              <a
+                href="/newsletter-data-consent"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Обработка email
+              </a>
+            </details>
             {error ? (
               <p role="alert" className="market-error">
                 {error}

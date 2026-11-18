@@ -17,6 +17,13 @@ export function BuyerReceipt({
     return <p>Чек по оплате через Робокассу придёт на вашу почту.</p>;
   const ready = sale.receiptStatus === "registered" && sale.receiptUrl;
   const problem = ["failed", "uncertain"].includes(sale.receiptStatus);
+  if (!ready && !problem)
+    return (
+      <p className="market-collect-note">
+        Всё оплачено, покупку можно забирать. Чек появится здесь.
+        {emailSaved && sale.mode === "live" && " Копию отправим на вашу почту."}
+      </p>
+    );
   const emailProblem = [
     "failed",
     "unknown",
@@ -31,13 +38,7 @@ export function BuyerReceipt({
       aria-label="Чек за покупку"
       aria-live="polite"
     >
-      <h2>
-        {ready
-          ? "Ваш чек"
-          : problem
-            ? "Проверяем выдачу чека"
-            : "Ожидаем чек ФНС"}
-      </h2>
+      <h2>{ready ? "Ваш чек" : "Проверяем выдачу чека"}</h2>
       {ready ? (
         <>
           <a
@@ -69,9 +70,8 @@ export function BuyerReceipt({
         </>
       ) : (
         <p>
-          {problem
-            ? "Деньги получены, но выдача чека пока не подтверждена. Получите чек у продавца; после подтверждения он также появится здесь."
-            : `Покупка оплачена. После выдачи чека здесь появится кнопка «Открыть чек».${emailSaved && sale.mode === "live" ? " Оригинальный чек отправим и на вашу почту." : ""}`}
+          Деньги получены. Уточните у продавца, готов ли чек. После
+          подтверждения он появится здесь.
         </p>
       )}
     </section>

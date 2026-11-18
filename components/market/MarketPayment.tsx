@@ -96,11 +96,7 @@ export default function MarketPayment({
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
-          <p className="market-small">
-            {sale.method === "robokassa"
-              ? "На эту почту придёт чек Робокассы."
-              : "После выдачи отправим оригинальный чек ФНС на эту почту."}
-          </p>
+          <p className="market-small">Сюда придёт чек</p>
         </>
       ) : (
         <p className="market-small">Почта для чека сохранена.</p>
@@ -131,18 +127,17 @@ export default function MarketPayment({
           checked={marketingConsent}
           onChange={(e) => setMarketingConsent(e.target.checked)}
         />
-        <span>
-          Хочу получать{" "}
-          <a href="/newsletter-consent" target="_blank" rel="noreferrer">
-            информацию о скидках, распродажах и новых коллекциях
-          </a>{" "}
-          и даю{" "}
-          <a href="/newsletter-data-consent" target="_blank" rel="noreferrer">
-            согласие на обработку email
-          </a>
-          .
-        </span>
+        <span>Хочу получать новости Roota</span>
       </label>
+      <details className="market-news-terms">
+        <summary>Условия подписки</summary>
+        <a href="/newsletter-consent" target="_blank" rel="noreferrer">
+          Согласие на рассылку
+        </a>
+        <a href="/newsletter-data-consent" target="_blank" rel="noreferrer">
+          Обработка email
+        </a>
+      </details>
       {error ? (
         <p role="alert" className="market-error">
           {error}
@@ -186,9 +181,9 @@ export default function MarketPayment({
             {sale.mode === "test" ? "Тест завершён" : "Оплачено"}
           </span>
           <h1>Теперь это ваше.</h1>
-          <p className="market-eyebrow">{sale.number}</p>
-          <p>Спасибо за встречу!</p>
-          <strong className="market-paid-amount">{money(sale.amount)}</strong>
+          <p className="market-purchase-reference">
+            Покупка {sale.number} · <strong>{money(sale.amount)}</strong>
+          </p>
           <BuyerReceipt
             sale={sale}
             token={token}
@@ -203,13 +198,15 @@ export default function MarketPayment({
             </p>
           ) : null}
           {sale.method !== "robokassa" && !emailSaved ? (
-            <section
+            <details
               className="market-phone-receipt market-paid-contact"
               aria-label="Получить чек на почту"
             >
-              <h2>Получить чек на почту</h2>
+              <summary className="market-secondary">
+                Получить чек на почту
+              </summary>
               {contactForm}
-            </section>
+            </details>
           ) : null}
         </section>
       ) : sale.status !== "pending" || expired ? (
@@ -220,6 +217,11 @@ export default function MarketPayment({
               ? "Проверяем оплату"
               : "Этот код уже закрыт"}
           </h1>
+          {sale.status === "paid_review" && (
+            <p className="market-purchase-reference">
+              Покупка {sale.number} · {money(sale.amount)}
+            </p>
+          )}
           <p>
             Обратитесь к продавцу.
             {sale.status === "paid_review"
@@ -231,6 +233,9 @@ export default function MarketPayment({
         <section className="market-message">
           <Creature id={2899} />
           <h1>Проверяем оплату</h1>
+          <p className="market-purchase-reference">
+            Покупка {sale.number} · {money(sale.amount)}
+          </p>
           <p>
             Ждём подтверждение от Робокассы. Если деньги списались, повторно
             платить не нужно — продавец проверит покупку.

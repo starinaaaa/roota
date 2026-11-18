@@ -40,6 +40,8 @@ export default function MarketDisplay({ preview }: { preview?: DisplayState }) {
       setBusy(false);
     }
   }
+  if (data?.connected && !sale && !error)
+    return <SocialScreen links={data.links} />;
   return (
     <main className="market-display">
       <header className="market-display-header">
@@ -98,9 +100,7 @@ export default function MarketDisplay({ preview }: { preview?: DisplayState }) {
               </p>
             ) : null}
           </section>
-        ) : !sale ? (
-          <SocialScreen links={data.links} />
-        ) : sale.status === "paid" ? (
+        ) : !sale ? null : sale.status === "paid" ? (
           <section className="market-message market-success">
             <Creature id={2891} />
             <span className="market-status-pill">

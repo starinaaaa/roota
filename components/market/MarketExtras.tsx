@@ -9,44 +9,24 @@ import {
   type TransferSettings,
 } from "@/lib/market/model";
 
-export function SocialScreen({
-  links,
-  compact = false,
-}: {
-  links: SocialLinks;
-  compact?: boolean;
-}) {
+export function SocialScreen({ links }: { links: SocialLinks }) {
   return (
-    <section className={`market-social ${compact ? "is-compact" : ""}`}>
-      <div>
-        <p className="market-eyebrow">Мы встретились на Ceramania</p>
+    <main className="market-poster">
+      <section className="market-poster-photo">
+        <MarketBrand linked={false} />
         <h1>
-          Давайте <br />
-          не потеряемся.
+          Керамика
+          <br />с характером.
         </h1>
-        <p>
-          Авторская керамика и чудики Руты.
-          <br />
-          Сохраните нас в своём телефоне.
-        </p>
-        <div className="market-social-creatures">
-          <Creature id={2899} />
-          <Creature id={2907} />
-        </div>
-      </div>
-      <div className="market-social-qr">
+      </section>
+      <section className="market-poster-invite">
+        <Creature id={2899} />
+        <h2>Давайте не потеряемся.</h2>
         <QrCode value={links.hello} />
-        <h2>
-          Наведите камеру
-          <br />
-          на QR-код
-        </h2>
-        <p>
-          Откроются наш сайт и Instagram: работы, новинки и жизнь мастерской.
-        </p>
+        <p>Наведите камеру — здесь наш сайт и Instagram.</p>
         <span>roota.moscow</span>
-      </div>
-    </section>
+      </section>
+    </main>
   );
 }
 export function HelloPage({ links }: { links: SocialLinks }) {

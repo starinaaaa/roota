@@ -2417,3 +2417,159 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+.market-methods {
+  border: 0;
+  padding: 0;
+  margin: 16px 0;
+}
+.market-methods legend {
+  margin-bottom: 6px;
+}
+.market-phone-receipt form .market-methods label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 4px 0;
+  padding: 9px 14px;
+  min-height: 46px;
+  cursor: pointer;
+  border: 1px solid var(--market-line);
+  border-radius: 4px;
+}
+.market-phone-receipt form .market-methods label:has(:checked) {
+  background: #eeeae3;
+  border-color: var(--market-ink);
+}
+.market-phone .market-phone-receipt form .market-methods input[type="radio"] {
+  appearance: auto;
+  accent-color: var(--market-ink);
+  padding: 0;
+  margin: 0;
+  width: 20px;
+  height: 20px;
+  min-height: 0;
+}
+.market-phone .market-purchase-reference {
+  color: var(--market-ink);
+  font-size: 20px;
+}
+.market-phone .market-paid-contact {
+  padding-top: 0;
+  border: 0;
+}
+.market-paid-contact summary {
+  cursor: pointer;
+}
+.market-phone .market-buyer-paid {
+  gap: 14px;
+}
+.market-phone .market-buyer-paid > .market-creature {
+  height: 82px;
+}
+.market-poster {
+  display: grid;
+  grid-template-columns: 1.45fr 1fr;
+  min-height: 100svh;
+  background: #f7f3ec;
+  color: #211d19;
+}
+.market-preview-notice + .market-poster {
+  min-height: calc(100svh - 48px);
+}
+.market-poster-photo {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: white;
+  padding: clamp(22px, 3.5vw, 64px);
+  background:
+    linear-gradient(
+      180deg,
+      #140d0859,
+      transparent 26%,
+      transparent 54%,
+      #140d08b8
+    ),
+    url("/images/market/plate-potseluy.webp") center / cover;
+}
+.market-poster-photo .market-brand {
+  font-size: clamp(28px, 4vw, 66px);
+  color: white;
+}
+.market-poster-photo h1 {
+  font-size: clamp(34px, 5.6vw, 104px);
+  line-height: 1.06;
+  letter-spacing: -0.04em;
+}
+.market-poster-invite {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: clamp(8px, 1.6vh, 24px);
+  padding: 4vw 2.5vw;
+}
+.market-poster-invite h2 {
+  font-size: clamp(29px, 3.5vw, 62px);
+  line-height: 1.1;
+  max-width: 11em;
+}
+.market-poster-invite .market-creature {
+  width: 70px;
+  height: 76px;
+  object-fit: contain;
+}
+.market-poster-invite :is(.market-qr, .market-qr-placeholder) {
+  width: min(31vw, 42vh, 460px);
+  max-width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  background: white;
+}
+.market-poster-invite p {
+  font-size: clamp(20px, 2.2vw, 36px);
+  line-height: 1.25;
+  max-width: 16em;
+}
+.market-poster-invite > span {
+  font-size: 18px;
+}
+@media (orientation: portrait) {
+  .market-poster {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(38svh, 1fr) auto;
+  }
+  .market-poster-photo {
+    background-position: center 45%;
+  }
+  .market-poster-photo h1 {
+    font-size: clamp(36px, 8vw, 88px);
+  }
+  .market-poster-invite {
+    padding: 2vh 5vw;
+    gap: 1vh;
+  }
+  .market-poster-invite .market-creature {
+    display: none;
+  }
+  .market-poster-invite h2 {
+    font-size: clamp(24px, 4.6vw, 52px);
+    max-width: none;
+  }
+  .market-poster-invite :is(.market-qr, .market-qr-placeholder) {
+    width: min(52vw, 34svh);
+  }
+}
+
+.market-news-terms {
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+.market-news-terms summary {
+  cursor: pointer;
+}
+.market-news-terms a {
+  display: block;
+  text-decoration: underline;
+}

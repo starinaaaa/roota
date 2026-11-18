@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { BuyerReceipt } from "./BuyerReceipt";
 import { ManualInstructions } from "./MarketExtras";
+import { openBank } from "./openBank";
 import type { PaymentForm } from "@robokassa/sdk";
 import { money, type PublicSale } from "@/lib/market/model";
 import {
@@ -69,21 +70,7 @@ export default function MarketPayment({
       }
       if (!form) throw new Error("Не удалось подготовить оплату");
       // POST directly to the official payment page. No browser return marks a sale paid.
-      const target = new URL(form.action);
-      if (target.origin !== "https://auth.robokassa.ru")
-        throw new Error("Не удалось открыть оплату");
-      const element = document.createElement("form");
-      element.method = "POST";
-      element.action = form.action;
-      for (const [name, value] of Object.entries(form.fields)) {
-        const input = document.createElement("input");
-        input.type = "hidden";
-        input.name = name;
-        input.value = String(value);
-        element.appendChild(input);
-      }
-      document.body.appendChild(element);
-      element.submit();
+      openBank(form);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Не удалось начать оплату");
       setBusy(false);

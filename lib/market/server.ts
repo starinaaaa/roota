@@ -47,7 +47,10 @@ export function publicSale(sale: SaleRow): PublicSale {
     expiresAt: sale.expires_at.toISOString(),
     paidAt: sale.paid_at?.toISOString() ?? null,
     paymentUrl:
-      sale.status === "pending" ? siteUrl(`/market/pay/${sale.token}`) : null,
+      sale.status === "pending" ||
+      (sale.status === "paid" && sale.payment_method !== "robokassa")
+        ? siteUrl(`/market/pay/${sale.token}`)
+        : null,
     qr: null,
   };
 }

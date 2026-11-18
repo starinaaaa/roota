@@ -25,6 +25,7 @@ import {
 import {
   money,
   quoteBasket,
+  marketGoodsName,
   statusLabel,
   receiptStatusLabel,
   type InventoryItem,
@@ -782,7 +783,10 @@ export default function MarketControl() {
                           s.status === "paid_review" ? "market-error" : ""
                         }
                       >
-                        {statusLabel(s.status)}
+                        {statusLabel(s.status)}{" "}
+                        {s.items.some((i) => i.name === marketGoodsName) && (
+                          <small>⚠ Без разбивки по изделиям</small>
+                        )}
                       </span>
                       <strong>{money(s.amount)}</strong>
                     </summary>

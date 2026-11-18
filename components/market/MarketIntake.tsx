@@ -1,5 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import type { PaymentForm } from "@robokassa/sdk";
+import { openBank } from "./openBank";
 import { useRouter } from "next/navigation";
 import { Creature, MarketBrand, marketFetch, useMarketPoll } from "./shared";
 import { ManualInstructions } from "./MarketExtras";
@@ -39,28 +41,37 @@ export default function MarketIntake({
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   const key = useRef<string | null>(null);
+  const normalizedAmount = amount.replace(/\s/g, "").replace(",", ".");
   useEffect(() => {
     if (data?.redirectUrl) window.location.replace(data.redirectUrl);
   }, [data?.redirectUrl]);
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (preview) {
-      router.push("/market/preview/transfer");
+      router.push(
+        "/market/preview/" + (method === "robokassa" ? "email" : method),
+      );
       return;
     }
     setBusy(true);
     setError("");
     key.current ??= crypto.randomUUID();
     try {
-      const r = await marketFetch<{ url: string }>("/api/market/intake", {
-        requestKey: key.current,
-        amount,
-        email,
-        method,
-        accepted,
-        marketingConsent: news,
-      });
-      window.location.assign(r.url);
+      const r = await marketFetch<{ url: string; form?: PaymentForm }>(
+        "/api/market/intake",
+        {
+          requestKey: key.current,
+          amount,
+          email,
+          method,
+          accepted,
+          marketingConsent: news,
+        },
+      );
+      if (r.form) {
+        window.history.replaceState(null, "", r.url);
+        openBank(r.form);
+      } else window.location.assign(r.url);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Не удалось сохранить покупку");
       setBusy(false);
@@ -139,13 +150,12 @@ export default function MarketIntake({
         ) : (
           <form onSubmit={submit}>
             <label>
-              Сумма покупки, ₽
+              Сумма, которую назвал продавец
               <input
                 required
                 name="amount"
                 inputMode="decimal"
                 autoComplete="off"
-                placeholder="12000"
                 value={amount}
                 onChange={(e) => {
                   edit();
@@ -185,9 +195,7 @@ export default function MarketIntake({
                 <option value="transfer">Прямой перевод</option>
                 <option value="cash">Наличные</option>
                 {data.robokassa ? (
-                  <option value="robokassa">
-                    Робокасса · после уточнения состава
-                  </option>
+                  <option value="robokassa">Робокасса</option>
                 ) : null}
               </select>
             </label>
@@ -245,7 +253,11 @@ export default function MarketIntake({
               </p>
             ) : null}
             <button className="market-primary" disabled={busy}>
-              {busy ? "Сохраняем…" : "Сохранить почту и продолжить"}
+              {busy
+                ? "Сохраняем…"
+                : /^\d+(?:\.\d{1,2})?$/.test(normalizedAmount)
+                  ? "Продолжить с суммой " + money(Number(normalizedAmount))
+                  : "Продолжить"}
             </button>
           </form>
         )}

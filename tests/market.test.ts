@@ -1,6 +1,7 @@
 import {
   amountInKopecks,
   createIntake,
+  createReceiptCheck,
   confirmIntake,
   finalizeIntake,
   cancelIntake,
@@ -1726,6 +1727,76 @@ test("market review photos persist privately once, clean failed uploads and pres
       true,
     );
     assert.equal(files.size, 2);
+  } finally {
+    await db.close();
+  }
+});
+
+test("amount-only market receipts preserve kopecks without stock movements; cash and transfer wait for seller", async () => {
+  const { db, run, adapter } = await fixture();
+  try {
+    await db.query("update market_register set intake_enabled=true");
+    const before = await inventory(adapter);
+    for (const method of ["cash", "transfer", "robokassa"]) {
+      const r = await run((d) =>
+        createIntake(d, intakeInput(method, "1,25"), "live", method),
+      );
+      const finish = () =>
+        run((d) => finalizeIntake(d, r.id, { generic: true }, "seller"));
+      if (method !== "robokassa") {
+        await assert.rejects(finish(), /подтвердите/);
+        await run((d) => confirmIntake(d, r.id, "seller"));
+      }
+      const sale = await finish();
+      assert.equal((await finish()).id, sale.id);
+      assert.deepEqual(sale.items, [
+        {
+          name: "Оплата товара на маркете",
+          quantity: 1,
+          sum: 1.25,
+          kind: "goods",
+        },
+      ]);
+      assert.deepEqual(sale.allocations, []);
+      if (method === "robokassa") await run((d) => confirmSale(d, sale.id));
+    }
+    assert.deepEqual(await inventory(adapter), before);
+    assert.equal(
+      (
+        await db.query<{ n: number }>(
+          "select count(*)::int n from market_receipt_jobs",
+        )
+      ).rows[0].n,
+      2,
+    );
+  } finally {
+    await db.close();
+  }
+});
+test("live receipt check uses one task and admin mailbox on retry", async () => {
+  const { db, run } = await fixture();
+  try {
+    const actor = { id: "fixture-admin", email: "owner@example.test" },
+      key = randomUUID();
+    const create = () => run((d) => createReceiptCheck(d, key, actor));
+    await assert.rejects(create(), /рабочий режим/);
+    const { createHelper } = await import("../lib/market/helper-access");
+    const h = await run((d) =>
+      createHelper(d, "Fixture", "a".repeat(32), actor.id),
+    );
+    await db.query(
+      "update market_receipt_helpers set live_enabled=true,live_all_sales=true,live_from=now(),result_verified_at=now(),operation_mode='live',status='connected',last_seen_at=now() where id=$1",
+      [h.id],
+    );
+    const sale = await create();
+    await create();
+    const row = (
+      await db.query<{ n: number; email: string }>(
+        "select count(*)::int n,max(s.email) email from market_receipt_jobs j join market_sales s on s.id=j.sale_id where s.id=$1 and s.status='paid' and s.amount=1",
+        [sale.id],
+      )
+    ).rows[0];
+    assert.deepEqual(row, { n: 1, email: actor.email });
   } finally {
     await db.close();
   }

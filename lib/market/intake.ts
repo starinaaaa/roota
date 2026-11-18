@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { z } from "zod";
-import { basketSchema, quoteBasket } from "./model";
+import { basketSchema, quoteBasket, marketGoodsName } from "./model";
 import {
   createSale,
   inventory,
@@ -139,7 +139,11 @@ export async function finalizeIntake(
   raw: unknown,
   actor: string,
 ) {
-  const basket = basketSchema.parse(raw);
+  const generic = z
+    .object({ generic: z.literal(true) })
+    .strict()
+    .safeParse(raw).success;
+  const basket = generic ? null : basketSchema.parse(raw);
   await lockRegister(db);
   const {
     rows: [r],
@@ -154,7 +158,12 @@ export async function finalizeIntake(
     } = await db.query<SaleRow>("select * from market_sales where id=$1", [
       r.sale_id,
     ]);
-    const canonical = (b: typeof basket) =>
+    if (!basket) {
+      if (sale.allocations.length)
+        throw Error("У покупки уже сохранён другой состав");
+      return sale;
+    }
+    const canonical = (b: NonNullable<typeof basket>) =>
       JSON.stringify([
         b.gardenBundle,
         Object.entries(b.quantities)
@@ -169,16 +178,29 @@ export async function finalizeIntake(
   }
   if (r.method !== "robokassa" && !r.paid_at)
     throw Error("Сначала подтвердите получение денег");
-  const quote = quoteBasket(basket, await inventory(db));
-  if (Math.round(quote.amount * 100) !== r.amount_kopecks)
-    throw Error("Сумма изделий должна точно совпадать с суммой покупки");
-  const sale = await createSale(
-    db,
-    { ...basket, requestKey: r.request_key },
-    r.mode,
-    r.method,
-    { independent: true },
-  );
+  let sale: SaleRow;
+  if (basket) {
+    const quote = quoteBasket(basket, await inventory(db));
+    if (Math.round(quote.amount * 100) !== r.amount_kopecks)
+      throw Error("Сумма изделий должна точно совпадать с суммой покупки");
+    sale = await createSale(
+      db,
+      { ...basket, requestKey: r.request_key },
+      r.mode,
+      r.method,
+      { independent: true },
+    );
+  } else {
+    sale = await insertAmountSale(
+      db,
+      r.request_key,
+      r.mode,
+      r.method,
+      r.amount_kopecks / 100,
+      marketGoodsName,
+      r.transfer_details,
+    );
+  }
   if (r.method === "robokassa") {
     // The provider still creates its own receipt. Never enqueue a second NPD receipt.
     await db.query(
@@ -219,4 +241,64 @@ export async function cancelIntake(db: MarketDb, id: string) {
     throw Error(
       "Можно отменить только неоплаченную покупку без сохранённого состава",
     );
+}
+
+async function insertAmountSale(
+  db: MarketDb,
+  key: string,
+  mode: IntakeRow["mode"],
+  method: IntakeRow["method"],
+  amount: number,
+  name: string,
+  transfer: unknown,
+) {
+  const items = [{ name, quantity: 1, sum: amount, kind: "goods" }];
+  const {
+    rows: [sale],
+  } = await db.query<SaleRow>(
+    `insert into market_sales(request_key,request_payload,token,mode,amount,items,allocations,reserved,payment_method,transfer_details)
+     values($1,$2,$3,$4,$5,$6,'[]',false,$7,$8) returning *`,
+    [
+      key,
+      JSON.stringify({ requestKey: key, quantities: {}, gardenBundle: false }),
+      randomBytes(32).toString("hex"),
+      mode,
+      amount,
+      JSON.stringify(items),
+      method,
+      transfer == null ? null : JSON.stringify(transfer),
+    ],
+  );
+  return sale;
+}
+
+export async function createReceiptCheck(
+  db: MarketDb,
+  key: string,
+  actor: { id: string; email: string },
+) {
+  await lockRegister(db);
+  const name = "Контрольная покупка на маркете";
+  const {
+    rows: [previous],
+  } = await db.query<SaleRow>(
+    "select * from market_sales where request_key=$1",
+    [key],
+  );
+  if (previous) {
+    if (previous.email !== actor.email || previous.items[0]?.name !== name)
+      throw Error("Ключ проверки уже использован");
+    return previous;
+  }
+  const { rows: readyHelpers } = await db.query(
+    `select 1 from market_receipt_helpers where revoked_at is null and live_enabled and live_all_sales and result_verified_at is not null and operation_mode='live' and status='connected' and last_seen_at > now()-interval '2 minutes'`,
+  );
+  if (!readyHelpers.length)
+    throw Error(
+      "Для проверки включите рабочий режим расширения для новых продаж и откройте ФНС.",
+    );
+  const sale = await insertAmountSale(db, key, "live", "cash", 1, name, null);
+  await saveManualContact(db, sale.token, actor.email, false, false);
+  await confirmManualSale(db, sale.id, actor.id);
+  return sale;
 }

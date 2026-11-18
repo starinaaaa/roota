@@ -48,7 +48,7 @@ function RequestEditor({
           {r.saleId
             ? "Состав сохранён · ожидает оплаты"
             : r.paidAt
-              ? "Оплачено · нужен состав"
+              ? "⚠ Оплачено · выберите позицию для чека"
               : "Ожидает подтверждения денег"}
         </span>
       </summary>
@@ -166,6 +166,27 @@ function RequestEditor({
               ? "Сохранить состав и разрешить оплату"
               : "Сформировать чек"}
           </button>
+          {r.paidAt && r.method !== "robokassa" && (
+            <button
+              type="button"
+              className="market-secondary"
+              disabled={busy}
+              onClick={() => {
+                if (
+                  window.confirm(
+                    "Выдать чек с позицией «Оплата товара на маркете»? Остатки конкретных изделий не изменятся.",
+                  )
+                )
+                  void run({
+                    action: "intake-finalize",
+                    id: r.id,
+                    basket: { generic: true },
+                  });
+              }}
+            >
+              Оплата товара на маркете · без выбора изделий
+            </button>
+          )}
           {!r.paidAt ? (
             <button
               className="market-secondary"
@@ -198,9 +219,8 @@ export default function MarketIntakeQueue({ state }: { state: MarketState }) {
     <section className="market-intake-queue" id="market-intake-queue">
       <h2>Покупки по постоянному QR</h2>
       <p>
-        Покупатели вводят сумму и почту на своих телефонах. Вы подтверждаете
-        деньги, добавляете изделия на точную сумму и формируете чек. iPad
-        остаётся свободным.
+        По Робокассе покупатель оплачивает введённую сумму сразу. Для наличных и
+        переводов подтвердите деньги, а затем выберите позиции чека.
       </p>
       <details>
         <summary>Постоянный QR для печати и приём покупок</summary>

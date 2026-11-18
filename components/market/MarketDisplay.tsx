@@ -115,6 +115,14 @@ export default function MarketDisplay({ preview }: { preview?: DisplayState }) {
               частичку Руты с собой.
             </p>
             <strong className="market-paid-amount">{money(sale.amount)}</strong>
+            {sale.method !== "robokassa" &&
+              !sale.receiptUrl &&
+              sale.paymentUrl && (
+                <div className="market-receipt-qr">
+                  <QrCode value={sale.paymentUrl} />
+                  <p>Сохраните страницу покупки на телефоне</p>
+                </div>
+              )}
             {sale.receiptUrl ? (
               <div className="market-receipt-qr">
                 <QrCode value={sale.receiptUrl} />
@@ -124,7 +132,7 @@ export default function MarketDisplay({ preview }: { preview?: DisplayState }) {
               <p className="market-small">
                 {["failed", "uncertain"].includes(sale.receiptStatus)
                   ? "Не удалось подтвердить выдачу чека. Деньги получены. Получите чек у продавца."
-                  : "Чек формируется. Пожалуйста, подождите — он появится здесь. При необходимости обратитесь к продавцу."}
+                  : "Деньги получили. Чек появится на странице вашей покупки."}
               </p>
             ) : null}
           </section>
@@ -157,11 +165,8 @@ export default function MarketDisplay({ preview }: { preview?: DisplayState }) {
                 </>
               ) : (
                 <>
-                  <h2>Почта для связи</h2>
-                  <p>
-                    Наведите камеру, чтобы оставить почту и получить приглашение
-                    на отзыв. Это по желанию.
-                  </p>
+                  <h2>Сохраните покупку на телефоне</h2>
+                  <p>Наведите камеру — на этой странице появится чек.</p>
                   <ManualInstructions sale={sale} interactive={false} />
                 </>
               )}

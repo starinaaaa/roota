@@ -242,6 +242,15 @@ export function ManualInstructions({
   sale: PublicSale;
   interactive?: boolean;
 }) {
+  const [copyStatus, setCopyStatus] = useState("");
+  async function copy(value: string, label: string) {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopyStatus(label);
+    } catch {
+      setCopyStatus("Выделите значение и скопируйте вручную.");
+    }
+  }
   return sale.method === "transfer" ? (
     <div className="market-transfer">
       <p className="market-eyebrow">Перевод по телефону</p>
@@ -251,6 +260,29 @@ export function ManualInstructions({
           "$1 $2 $3-$4-$5",
         )}
       </strong>
+      {interactive && (
+        <div className="market-copy-row">
+          {sale.transfer?.phone && (
+            <button
+              type="button"
+              className="market-secondary"
+              onClick={() => copy(sale.transfer!.phone, "Номер скопирован")}
+            >
+              Скопировать номер
+            </button>
+          )}
+          <button
+            type="button"
+            className="market-secondary"
+            onClick={() =>
+              copy(String(sale.amount).replace(".", ","), "Сумма скопирована")
+            }
+          >
+            Скопировать сумму
+          </button>
+          <span role="status">{copyStatus}</span>
+        </div>
+      )}
       <p>{sale.transfer?.recipient}</p>
       {sale.transfer?.bank ? (
         <p>Банк: {sale.transfer.bank}</p>

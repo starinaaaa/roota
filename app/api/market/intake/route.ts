@@ -1,7 +1,11 @@
 import { createHmac, randomBytes } from "node:crypto";
 import { getPool, transaction } from "@/lib/db/pool";
-import { createIntake } from "@/lib/market/intake";
-import { manualMode, configuredMode } from "@/lib/market/server";
+import { createIntake, finalizeIntake } from "@/lib/market/intake";
+import {
+  manualMode,
+  configuredMode,
+  preparePayment,
+} from "@/lib/market/server";
 import { json, marketError, readMarketBody } from "@/lib/market/http";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -44,8 +48,26 @@ export async function POST(request: Request) {
     const hash = createHmac("sha256", secret)
       .update(new Date().toISOString().slice(0, 10) + ":" + session)
       .digest("hex");
-    const r = await transaction((db) => createIntake(db, body, mode, hash));
-    return json({ url: `/market/request/${r.token}` });
+    const { intake, sale } = await transaction(async (db) => {
+      const intake = await createIntake(db, body, mode, hash);
+      // Previously composed requests keep their original items and payment link.
+      const sale =
+        intake.method === "robokassa" && !intake.sale_id
+          ? await finalizeIntake(db, intake.id, { generic: true }, "")
+          : null;
+      return { intake, sale };
+    });
+    if (sale)
+      return json({
+        url: `/market/pay/${sale.token}`,
+        form: await preparePayment(
+          sale.token,
+          intake.email,
+          intake.marketing_consent,
+          intake.review_consent,
+        ),
+      });
+    return json({ url: `/market/request/${intake.token}` });
   } catch (e) {
     return marketError(e);
   }

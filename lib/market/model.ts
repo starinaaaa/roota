@@ -21,6 +21,7 @@ export const basketSchema = z
   .strict()
   .refine((v) => Object.keys(v.quantities).length <= 30);
 export type Basket = z.infer<typeof basketSchema>;
+export const marketGoodsName = "Оплата товара на маркете";
 export type SaleItem = {
   name: string;
   quantity: number;
@@ -177,7 +178,8 @@ export function money(amount: number) {
   return new Intl.NumberFormat("ru-RU", {
     style: "currency",
     currency: "RUB",
-    maximumFractionDigits: 0,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
   }).format(amount);
 }
 export function statusLabel(status: SaleStatus) {

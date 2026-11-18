@@ -1,4 +1,5 @@
 import {
+  createReceiptCheck,
   confirmIntake,
   finalizeIntake,
   cancelIntake,
@@ -50,6 +51,19 @@ export async function POST(request: Request) {
   try {
     const body = await readMarketBody(request);
     switch (body.action) {
+      case "receipt-check": {
+        if (
+          manualMode() !== "live" ||
+          process.env.MARKET_RECEIPT_LIVE_ENABLED !== "true" ||
+          process.env.CUSTOMER_EMAILS_ENABLED !== "true"
+        )
+          throw Error("Включите рабочую выдачу чеков и отправку почты");
+        z.literal(true).parse(body.confirmed);
+        const sale = await transaction((db) =>
+          createReceiptCheck(db, z.uuid().parse(body.key), admin),
+        );
+        return json({ url: `/market/pay/${sale.token}`, email: admin.email });
+      }
       case "intake-open":
         await transaction(async (db) => {
           await lockRegister(db);

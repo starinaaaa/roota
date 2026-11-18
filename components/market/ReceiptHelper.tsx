@@ -117,6 +117,34 @@ function HelperActivation({
   );
 }
 export default function ReceiptHelper({ state }: { state: MarketState }) {
+  const [check, setCheck] = useState<{ url: string; email: string } | null>(
+    null,
+  );
+  async function checkReceipt() {
+    if (
+      !window.confirm(
+        "Создать рабочую контрольную продажу на 1 ₽? Помощник зарегистрирует доход в ФНС, оригинал придёт на почту вашей учётной записи.",
+      )
+    )
+      return;
+    setBusy(true);
+    setError("");
+    try {
+      const key =
+        sessionStorage.getItem("market-receipt-check") || crypto.randomUUID();
+      sessionStorage.setItem("market-receipt-check", key);
+      const result = await marketFetch<{ url: string; email: string }>(
+        "/api/market/admin",
+        { action: "receipt-check", key, confirmed: true },
+      );
+      setCheck(result);
+      sessionStorage.removeItem("market-receipt-check");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Не удалось проверить чеки");
+    } finally {
+      setBusy(false);
+    }
+  }
   const [token, setToken] = useState(""),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
@@ -139,6 +167,22 @@ export default function ReceiptHelper({ state }: { state: MarketState }) {
         заполняет форму. Для автоматической выдачи разрешите покупки ниже и
         включите рабочий режим в расширении.
       </p>
+      <button
+        type="button"
+        className="market-secondary"
+        disabled={busy}
+        onClick={checkReceipt}
+      >
+        Проверить расширение и почту · рабочий чек 1 ₽
+      </button>
+      {check && (
+        <p role="status">
+          Проверка создана. Адрес оригинала: {check.email}.{" "}
+          <a href={check.url} target="_blank" rel="noreferrer">
+            Открыть статус чека и письма
+          </a>
+        </p>
+      )}
       {state.helpers.map((h) => (
         <div key={h.id}>
           <div className="market-copy-row">

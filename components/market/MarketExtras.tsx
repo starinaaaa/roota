@@ -12,20 +12,28 @@ import {
 export function SocialScreen({ links }: { links: SocialLinks }) {
   return (
     <main className="market-poster">
-      <section className="market-poster-photo">
+      <header className="market-poster-header">
         <MarketBrand linked={false} />
-        <h1>
-          Керамика
-          <br />с характером.
-        </h1>
-      </section>
-      <section className="market-poster-invite">
-        <Creature id={2899} />
-        <h2>Давайте не потеряемся.</h2>
-        <QrCode value={links.hello} />
-        <p>Наведите камеру — здесь наш сайт и Instagram.</p>
-        <span>roota.moscow</span>
-      </section>
+        <span>Авторская керамика · Москва</span>
+      </header>
+      <div className="market-poster-body">
+        <section className="market-poster-greeting">
+          <p className="market-eyebrow">Мы встретились на Ceramania</p>
+          <h1>Давайте<br />не потеряемся.</h1>
+          <p>Авторская керамика и чудики Руты.<br />Сохраните нас в своём телефоне.</p>
+          <div className="market-poster-drawings" aria-hidden="true">
+            <Creature id={2899} />
+            <span className="market-poster-garden" />
+            <Creature id={2907} />
+          </div>
+        </section>
+        <section className="market-poster-invite">
+          <QrCode value={links.hello} />
+          <h2>Наведите камеру</h2>
+          <p>Откроются сайт и Instagram студии.</p>
+        </section>
+      </div>
+      <footer className="market-poster-footer"><span>Roota ceramics</span><span>roota.moscow</span></footer>
     </main>
   );
 }

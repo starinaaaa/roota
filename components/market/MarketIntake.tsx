@@ -83,7 +83,7 @@ export default function MarketIntake({
         },
       );
       if (r.form) {
-        openBank(r.form, r.url);
+        await openBank(r.form, r.url);
       } else window.location.assign(r.url);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Не удалось сохранить покупку");
@@ -203,7 +203,7 @@ export default function MarketIntake({
             <p className="market-small" id="intake-email-hint">
               {method === "robokassa"
                 ? "Сюда придёт чек Робокассы"
-                : "По желанию. Чек также можно открыть здесь после выдачи."}
+                : "Почта нужна для выдачи чека."}
             </p>
             <fieldset className="market-methods">
               <legend>Как оплатить</legend>

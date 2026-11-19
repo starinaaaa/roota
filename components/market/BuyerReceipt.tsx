@@ -4,24 +4,26 @@ export function BuyerReceipt({
   sale,
   token,
   emailSaved,
+  receiptEmail,
   emailState,
   preview = false,
 }: {
   sale: PublicSale;
   token: string;
   emailSaved: boolean;
+  receiptEmail?: string | null;
   emailState: string | null;
   preview?: boolean;
 }) {
   if (sale.method === "robokassa")
-    return <p>Чек по оплате через Робокассу придёт на вашу почту.</p>;
+    return <p>Робокасса пришлёт ссылку на чек{receiptEmail ? <> на <strong>{receiptEmail}</strong></> : " на вашу почту"}. В письме «Заказ оплачен» нажмите «Посмотреть чек».</p>;
   const ready = sale.receiptStatus === "registered" && sale.receiptUrl;
   const problem = ["failed", "uncertain"].includes(sale.receiptStatus);
   if (!ready && !problem)
     return (
       <p className="market-collect-note">
         Всё оплачено, покупку можно забирать. Чек появится здесь.
-        {emailSaved && sale.mode === "live" && " Копию отправим на вашу почту."}
+        {emailSaved && sale.mode === "live" && <> Копию отправим на <strong>{receiptEmail || "вашу почту"}</strong>.</>}
       </p>
     );
   const emailProblem = [
@@ -39,6 +41,7 @@ export function BuyerReceipt({
       aria-live="polite"
     >
       <h2>{ready ? "Ваш чек" : "Проверяем выдачу чека"}</h2>
+      {ready && receiptEmail && <p>Почта для чека: <strong>{receiptEmail}</strong></p>}
       {ready ? (
         <>
           <a

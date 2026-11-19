@@ -1,4 +1,6 @@
 import { notFound } from "next/navigation";
+import { getSiteContent } from "@/lib/site";
+import { defaultSite } from "@/lib/site-schema";
 import MarketPayment from "@/components/market/MarketPayment";
 export default async function MarketPayPage({
   params,
@@ -10,5 +12,6 @@ export default async function MarketPayPage({
   const { token } = await params;
   if (!/^[a-f0-9]{64}$/.test(token)) notFound();
   const result = (await searchParams).return;
-  return <MarketPayment token={token} returning={result === "success"} />;
+  const { telegram } = await getSiteContent().catch(() => defaultSite);
+  return <MarketPayment telegram={telegram} token={token} returning={result === "success"} />;
 }

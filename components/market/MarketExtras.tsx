@@ -12,28 +12,15 @@ import {
 export function SocialScreen({ links }: { links: SocialLinks }) {
   return (
     <main className="market-poster">
-      <header className="market-poster-header">
-        <MarketBrand linked={false} />
-        <span>Авторская керамика · Москва</span>
-      </header>
+      <div className="market-poster-drawings" aria-hidden="true">
+        {[2899, 2902, 2912, 2903, 2907, 2905].map((id) => (
+          <Creature key={id} id={id} />
+        ))}
+      </div>
       <div className="market-poster-body">
         <section className="market-poster-greeting">
           <p className="market-eyebrow">Мы встретились на Ceramania</p>
-          <h1>
-            Давайте
-            <br />
-            не потеряемся.
-          </h1>
-          <p>
-            Авторская керамика и чудики Руты.
-            <br />
-            Сохраните нас в своём телефоне.
-          </p>
-          <div className="market-poster-drawings" aria-hidden="true">
-            <Creature id={2899} />
-            <span className="market-poster-garden" />
-            <Creature id={2907} />
-          </div>
+          <h1>ROOTA ceramics</h1>
         </section>
         <section className="market-poster-invite">
           <QrCode value={links.hello} />
@@ -41,10 +28,6 @@ export function SocialScreen({ links }: { links: SocialLinks }) {
           <p>Откроются сайт и Instagram студии.</p>
         </section>
       </div>
-      <footer className="market-poster-footer">
-        <span>Roota ceramics</span>
-        <span>roota.moscow</span>
-      </footer>
     </main>
   );
 }

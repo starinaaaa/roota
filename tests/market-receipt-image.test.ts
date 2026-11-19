@@ -37,7 +37,7 @@ test("receipt image text requires exact rows, price, total and settlement date",
   const plate = "Керамическая тарелка «Поцелуй»";
   const wrapped = text.replace(
     "1. Открытка 10,00",
-    "1. Керамическая тарелка 10,00\n„Поцелуй“",
+    "1. Керамическая тарелка 10,00 Р\n„Поцелуй“",
   );
   assert.equal(
     parseReceiptText(wrapped, {

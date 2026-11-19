@@ -81,10 +81,12 @@ export function parseReceiptText(text: string, plan: ImageReceiptPlan) {
     const amounts = [...row.matchAll(/\d[\d\s]*[,.]\d{2}/g)];
     if (amounts.length !== 1 || cents(amounts[0][0]) !== plan.rows[i].kopecks)
       throw new Error("Цена позиции чека не совпадает с покупкой");
-    const name = row
-      .replace(amounts[0][0], "")
-      .replace(/\s*[₽РВB]\s*$/u, "")
-      .trim();
+    // The price column can end before the item name wraps to its next line.
+    const amount = amounts[0];
+    const before = row.slice(0, amount.index);
+    const after = row.slice(amount.index! + amount[0].length)
+      .replace(/^\s*[₽РВB](?=\s|$)/u, "");
+    const name = before + after;
     if (normalized(name) !== normalized(plan.rows[i].name))
       throw new Error(
         "Наименование в выданном чеке не совпадает со снимком продажи",

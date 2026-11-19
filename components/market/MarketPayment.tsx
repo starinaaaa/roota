@@ -15,6 +15,7 @@ import {
 } from "./shared";
 export type BuyerSale = PublicSale & {
   emailSaved?: boolean;
+  receiptEmail?: string | null;
   receiptEmailState?: string | null;
   marketingConsent?: boolean;
 };
@@ -77,8 +78,7 @@ export default function MarketPayment({
         return;
       }
       if (!form) throw new Error("Не удалось подготовить оплату");
-      // POST directly to the official payment page. No browser return marks a sale paid.
-      openBank(form, `/market/pay/${token}`);
+      await openBank(form, `/market/pay/${token}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Не удалось начать оплату");
       setBusy(false);
@@ -195,6 +195,7 @@ export default function MarketPayment({
           <BuyerReceipt
             sale={sale}
             token={token}
+            receiptEmail={sale.receiptEmail || (contactSaved ? email : null)}
             emailSaved={emailSaved}
             emailState={sale.receiptEmailState ?? null}
             preview={!!preview}

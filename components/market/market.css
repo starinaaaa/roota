@@ -2467,6 +2467,27 @@
   height: 82px;
 }
 
+@media (max-width: 600px) {
+  .market-phone > .market-buyer-paid {
+    padding-top: clamp(36px, 7svh, 68px);
+    gap: 20px;
+  }
+  .market-phone .market-buyer-paid > .market-creature {
+    width: 144px;
+    height: 132px;
+  }
+  .market-phone .market-buyer-paid > h1 {
+    font-size: clamp(34px, 9vw, 46px);
+    line-height: 1.1;
+  }
+  .market-phone .market-buyer-paid > p:not(.market-eyebrow) {
+    font-size: 20px;
+    line-height: 1.45;
+  }
+  .market-buyer-paid .market-status-pill { font-size: 16px; }
+  .market-phone .market-buyer-paid > a.market-secondary { width: 100%; }
+}
+
 .market-poster {
   min-height: 100svh;
   display: flex;

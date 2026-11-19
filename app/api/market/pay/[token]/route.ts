@@ -16,6 +16,7 @@ export async function GET(_request: Request, context: Context) {
       paymentUrl: null,
       qr: null,
       emailSaved: Boolean(sale.email),
+      receiptEmail: sale.status === "paid" ? sale.email : null,
       marketingConsent: !!(sale as typeof sale & { marketing_consent: boolean })
         .marketing_consent,
       receiptEmailState: sale.receipt_email_state ?? null,

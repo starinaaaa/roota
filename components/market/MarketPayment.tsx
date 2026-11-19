@@ -21,12 +21,10 @@ export type BuyerSale = PublicSale & {
 };
 export default function MarketPayment({
   token,
-  telegram,
   returning = false,
   preview,
 }: {
   token: string;
-  telegram: string;
   returning?: boolean;
   preview?: BuyerSale;
 }) {
@@ -208,9 +206,6 @@ export default function MarketPayment({
           />
           <a className="market-secondary" href="/">
             В магазин Roota
-          </a>
-          <a className="market-secondary" href={telegram} target="_blank" rel="noopener noreferrer">
-            Roota в Telegram
           </a>
           {connectionError ? (
             <p className="market-small">

@@ -122,7 +122,6 @@ export default function MarketPreview({
       ) : (
         <MarketPayment
           token="demo"
-          telegram={links.telegram}
           preview={sale}
           returning={screen === "returning"}
         />

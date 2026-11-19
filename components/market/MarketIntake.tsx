@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import type { PaymentForm } from "@robokassa/sdk";
-import { openBank, recentMarketPayment } from "./openBank";
+import { openPaymentTab, openBank, recentMarketPayment } from "./openBank";
 import { useRouter } from "next/navigation";
 import { Creature, MarketBrand, marketFetch, useMarketPoll } from "./shared";
 import { ManualInstructions } from "./MarketExtras";
@@ -70,6 +70,7 @@ export default function MarketIntake({
     setBusy(true);
     setError("");
     key.current ??= crypto.randomUUID();
+    const paymentTab = method === "robokassa" ? openPaymentTab() : null;
     try {
       const r = await marketFetch<{ url: string; form?: PaymentForm }>(
         "/api/market/intake",
@@ -83,9 +84,13 @@ export default function MarketIntake({
         },
       );
       if (r.form) {
-        await openBank(r.form, r.url);
-      } else window.location.assign(r.url);
+        openBank(r.form, r.url, paymentTab);
+      } else {
+        paymentTab?.close();
+        window.location.assign(r.url);
+      }
     } catch (e) {
+      paymentTab?.close();
       setError(e instanceof Error ? e.message : "Не удалось сохранить покупку");
       setBusy(false);
     }

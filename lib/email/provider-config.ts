@@ -10,7 +10,7 @@ export function emailProviderKey(
     env.UNISENDER_GO_SERVICE_API_KEY === env.UNISENDER_GO_MARKETING_API_KEY
   )
     return undefined;
-  const projectKey = kind.startsWith("order_")
+  const projectKey = (kind.startsWith("order_") || kind === "market_receipt" || kind === "market_payment_thanks")
     ? env.UNISENDER_GO_SERVICE_API_KEY
     : env.UNISENDER_GO_MARKETING_API_KEY;
   return env.UNISENDER_GO_SERVICE_API_KEY || env.UNISENDER_GO_MARKETING_API_KEY

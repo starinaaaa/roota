@@ -111,7 +111,8 @@ test("provider projects separate order messages from subscription letters and re
     UNISENDER_GO_SERVICE_API_KEY: "orders",
     UNISENDER_GO_MARKETING_API_KEY: "subscriptions",
   };
-  assert.equal(emailProviderKey("order_paid", env), "orders");
+  for (const kind of ["order_paid", "market_receipt", "market_payment_thanks"])
+    assert.equal(emailProviderKey(kind, env), "orders");
   for (const kind of [
     "confirm",
     "restock",

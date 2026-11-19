@@ -122,6 +122,7 @@ export default function MarketPreview({
       ) : (
         <MarketPayment
           token="demo"
+          instagram={links.instagram}
           preview={sale}
           returning={screen === "returning"}
         />

@@ -16,33 +16,17 @@ export function recentMarketPayment(id?: string): string | null {
   }
   return null;
 }
-type BankWidget = {
-  StartPayment(fields: PaymentForm["fields"], callbacks: {
-    onComplete(result: { status: string; paymentStarted?: boolean }): void;
-  }): void;
-};
-let widgetPromise: Promise<BankWidget> | undefined;
-function loadWidget() {
-  if (!widgetPromise) {
-    widgetPromise = new Promise<BankWidget>((resolve, reject) => {
-      const script = document.createElement("script");
-      script.src = "https://auth.robokassa.ru/Merchant/bundle/robokassa_iframe.js";
-      script.onload = () => {
-        const widget = (window as Window & { Robokassa?: BankWidget }).Robokassa;
-        if (widget?.StartPayment) resolve(widget);
-        else reject(new Error("Не удалось открыть форму Робокассы"));
-      };
-      script.onerror = () => reject(new Error("Не удалось загрузить Робокассу"));
-      document.head.appendChild(script);
-    }).catch((error) => {
-      widgetPromise = undefined;
-      throw error;
-    });
+// Reserve the tab during the buyer's tap, before waiting for the signed form.
+export function openPaymentTab() {
+  const tab = window.open("about:blank", "_blank");
+  if (tab) {
+    tab.document.title = "Оплата Roota";
+    tab.document.body.textContent = "Открываем Робокассу…";
   }
-  return widgetPromise;
+  return tab;
 }
 
-export async function openBank(form: PaymentForm, path: string) {
+export function openBank(form: PaymentForm, path: string, tab: Window | null) {
   const target = new URL(form.action);
   if (target.origin !== "https://auth.robokassa.ru")
     throw new Error("Не удалось открыть оплату");
@@ -60,51 +44,61 @@ export async function openBank(form: PaymentForm, path: string) {
   } catch {
     /* The provider still has the explicit return URL. */
   }
-  window.history.replaceState(null, "", path + "?return=success");
-  let widget: BankWidget | undefined;
-  try {
-    widget = await loadWidget();
-  } catch {
-    // Keep the hosted checkout available when the widget script is blocked.
-  }
-  if (widget) {
-    let finished = false;
-    let timer: number;
-    function finish(returning: boolean) {
-      if (finished) return;
-      finished = true;
-      window.clearTimeout(timer);
-      window.location.replace(returning ? path + "?return=success" : path);
-    }
-    async function checkPayment() {
-      try {
-        const response = await fetch("/api" + path, { cache: "no-store" });
-        if (response.ok && (await response.json()).status === "paid") {
-          finish(true);
-          return;
-        }
-      } catch {
-        // A bank app can suspend Safari or temporarily interrupt its connection.
-      }
-      if (!finished) timer = window.setTimeout(checkPayment, 2500);
-    }
-    widget.StartPayment({ ...form.fields }, {
-      onComplete: ({ status, paymentStarted }) =>
-        finish(status === "success" || (status === "close" && !!paymentStarted)),
-    });
-    if (!finished) timer = window.setTimeout(checkPayment, 2500);
-    return;
-  }
-  const element = document.createElement("form");
+  if (!tab) window.history.replaceState(null, "", path + "?return=success");
+  if (tab?.closed) throw new Error("Окно оплаты закрыто. Попробуйте ещё раз.");
+  const page = tab ? tab.document : document;
+  const element = page.createElement("form");
   element.method = "POST";
   element.action = form.action;
   for (const [name, value] of Object.entries(form.fields)) {
-    const input = document.createElement("input");
+    const input = page.createElement("input");
     input.type = "hidden";
     input.name = name;
     input.value = String(value);
     element.appendChild(input);
   }
-  document.body.appendChild(element);
+  page.body.appendChild(element);
   element.submit();
+  if (!tab) return;
+
+  let timer: number;
+  let checking = false;
+  let finished = false;
+  function stop() {
+    finished = true;
+    window.clearTimeout(timer);
+    window.removeEventListener("focus", check);
+    document.removeEventListener("visibilitychange", check);
+  }
+  async function check() {
+    if (finished || checking) return;
+    checking = true;
+    window.clearTimeout(timer);
+    try {
+      const response = await fetch("/api" + path, { cache: "no-store", signal: AbortSignal.timeout(8000) });
+      if (response.ok && (await response.json()).status === "paid") {
+        stop();
+        const success = path + "?return=success";
+        try {
+          if (tab && !tab.closed) tab.close();
+        } finally {
+          window.location.replace(success);
+        }
+        return;
+      }
+      if (tab?.closed) {
+        stop();
+        window.location.replace(path);
+        return;
+      }
+    } catch {
+      // Check again when the connection to the shop resumes.
+    } finally {
+      checking = false;
+      if (!finished) timer = window.setTimeout(check, 1500);
+    }
+  }
+  window.addEventListener("focus", check);
+  document.addEventListener("visibilitychange", check);
+  void check();
 }

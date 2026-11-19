@@ -5,6 +5,7 @@ import { estimatedReadyLabel, productionEstimate } from "@/lib/preorder-copy";
 import { courierContactLabel } from "@/lib/courier-contact";
 import { orderProduction } from "@/lib/shop-operations";
 import { plannedReadyDate } from "@/lib/production";
+import { getSiteContent } from "@/lib/site";
 import { getPool } from "@/lib/db/pool";
 import { cdnImageUrl } from "@/lib/image-cdn";
 import { orderProductDetails } from "@/lib/order-product-details";
@@ -354,6 +355,25 @@ export async function processEmailQueue() {
           label = "Выбрать изделия";
         }
       }
+      let marketLinks: { label: string; url: string }[] | undefined;
+      if (m.kind === "market_receipt" || m.kind === "market_payment_thanks") {
+        const studio = await getSiteContent();
+        marketLinks = [
+          { label: "Посмотреть керамику на сайте", url: siteUrl("/catalog") },
+          { label: "Подписаться в Instagram", url: studio.instagram },
+        ];
+      }
+      if (m.kind === "market_payment_thanks") {
+        const { rows: [sale] } = await getPool().query(
+          "select inv_id,amount,token from market_sales where id=$1 and email=$2 and mode='live' and status='paid' and payment_method='robokassa'",
+          [m.payload.market_sale_id, m.recipient],
+        );
+        if (!sale) throw new Error("MARKET_SALE_UNAVAILABLE");
+        values.number = `М-${String(sale.inv_id).slice(-6)}`;
+        values.total = Number(sale.amount).toLocaleString("ru-RU");
+        url = siteUrl(`/market/pay/${sale.token}`);
+        label = "Открыть покупку";
+      }
       if (m.kind === "market_receipt") {
         const {
           rows: [receipt],
@@ -404,6 +424,8 @@ export async function processEmailQueue() {
           m.kind.startsWith("order_") && m.kind !== "order_review_reward",
           orderItems,
           parcels,
+          undefined,
+          marketLinks,
         ),
         metadata: { message_id: m.id },
       };

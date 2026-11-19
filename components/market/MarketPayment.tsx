@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { BuyerReceipt } from "./BuyerReceipt";
 import { ManualInstructions } from "./MarketExtras";
-import { openBank } from "./openBank";
+import { openPaymentTab, openBank } from "./openBank";
 import type { PaymentForm } from "@robokassa/sdk";
 import { money, type PublicSale } from "@/lib/market/model";
 import {
@@ -63,6 +63,7 @@ export default function MarketPayment({
     }
     setBusy(true);
     setError("");
+    const paymentTab = sale?.method === "robokassa" ? openPaymentTab() : null;
     try {
       const { form, saved } = await marketFetch<{
         form?: PaymentForm;
@@ -73,13 +74,15 @@ export default function MarketPayment({
         marketingConsent,
       });
       if (saved) {
+        paymentTab?.close();
         setContactSaved(true);
         setBusy(false);
         return;
       }
       if (!form) throw new Error("Не удалось подготовить оплату");
-      await openBank(form, `/market/pay/${token}`);
+      openBank(form, `/market/pay/${token}`, paymentTab);
     } catch (e) {
+      paymentTab?.close();
       setError(e instanceof Error ? e.message : "Не удалось начать оплату");
       setBusy(false);
     }

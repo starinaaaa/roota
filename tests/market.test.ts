@@ -86,6 +86,7 @@ async function fixture() {
   await db.exec(
     await readFile("database/migrations/20261108_market_intake.sql", "utf8"),
   );
+  await db.exec(await readFile("database/migrations/20261120_market_thanks.sql", "utf8"));
   const adapter = db as unknown as MarketDb;
   await db.exec(
     await readFile(
@@ -1018,15 +1019,11 @@ test("Robokassa receipt contact schedules feedback only after verified payment c
     await run((c) => confirmSale(c, sale.id));
     await db.query("select prepare_market_review_invites()");
     await db.query("select prepare_market_review_invites()");
-    assert.equal(
-      (
-        await db.query(
-          "select * from email_messages where payload->>'market_sale_id'=$1",
-          [sale.id],
-        )
-      ).rows.length,
-      1,
+    const messages = await db.query<{ kind: string }>(
+      "select kind from email_messages where payload->>'market_sale_id'=$1 order by kind",
+      [sale.id],
     );
+    assert.deepEqual(messages.rows.map(row => row.kind), ["market_payment_thanks", "review_invite"]);
     assert.equal(
       (
         await db.query("select * from market_receipt_jobs where sale_id=$1", [

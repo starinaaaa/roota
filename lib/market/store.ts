@@ -201,6 +201,14 @@ export async function confirmSale(db: MarketDb, id: string) {
     "update public.market_sales set status=$2,paid_at=now(),reserved=false where id=$1",
     [id, sale.status === "pending" ? "paid" : "paid_review"],
   );
+  await db.query(
+    `insert into public.email_messages(event_key,kind,recipient,payload)
+     select 'market:'||id||':thanks','market_payment_thanks',email,jsonb_build_object('market_sale_id',id)
+     from public.market_sales where id=$1 and status='paid' and mode='live' and email is not null
+     and exists(select 1 from public.email_settings where id=1 and enabled)
+     on conflict(event_key) do nothing`,
+    [id],
+  );
 }
 export async function saveInventory(db: MarketDb, raw: unknown) {
   const { items } = stockSchema.parse(raw);

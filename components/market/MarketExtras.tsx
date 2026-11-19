@@ -19,8 +19,16 @@ export function SocialScreen({ links }: { links: SocialLinks }) {
       <div className="market-poster-body">
         <section className="market-poster-greeting">
           <p className="market-eyebrow">Мы встретились на Ceramania</p>
-          <h1>Давайте<br />не потеряемся.</h1>
-          <p>Авторская керамика и чудики Руты.<br />Сохраните нас в своём телефоне.</p>
+          <h1>
+            Давайте
+            <br />
+            не потеряемся.
+          </h1>
+          <p>
+            Авторская керамика и чудики Руты.
+            <br />
+            Сохраните нас в своём телефоне.
+          </p>
           <div className="market-poster-drawings" aria-hidden="true">
             <Creature id={2899} />
             <span className="market-poster-garden" />
@@ -33,7 +41,10 @@ export function SocialScreen({ links }: { links: SocialLinks }) {
           <p>Откроются сайт и Instagram студии.</p>
         </section>
       </div>
-      <footer className="market-poster-footer"><span>Roota ceramics</span><span>roota.moscow</span></footer>
+      <footer className="market-poster-footer">
+        <span>Roota ceramics</span>
+        <span>roota.moscow</span>
+      </footer>
     </main>
   );
 }
@@ -101,10 +112,11 @@ export function TransferPreferences({
         await onSave(value);
       }}
     >
-      <h2>Перевод по номеру телефона</h2>
+      <h2>Реквизиты для перевода</h2>
       <p>
-        Укажите банк, в котором покупатель должен проверить получателя.
-        Банковскую ссылку для QR можно добавить позже.
+        Укажите банк, в котором покупатель должен проверить получателя. Вставьте
+        постоянную ссылку для приёма денег из приложения банка. Покупатель
+        сможет открыть её кнопкой на телефоне.
       </p>
       {(
         [
@@ -241,7 +253,17 @@ export function ManualInstructions({
   }
   return sale.method === "transfer" ? (
     <div className="market-transfer">
-      <p className="market-eyebrow">Перевод по телефону</p>
+      <p className="market-eyebrow">Банковский перевод</p>
+      {interactive && sale.transfer?.link && (
+        <a
+          href={sale.transfer.link}
+          className="market-primary"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Перевести {money(sale.amount)} по ссылке ↗
+        </a>
+      )}
       <strong className="market-transfer-phone">
         {sale.transfer?.phone.replace(
           /^(\+7)(\d{3})(\d{3})(\d{2})(\d{2})$/,
@@ -277,16 +299,6 @@ export function ManualInstructions({
       ) : (
         <p className="market-small">Уточните банк у продавца</p>
       )}
-      {interactive && sale.transfer?.link ? (
-        <a
-          href={sale.transfer.link}
-          className="market-secondary"
-          target="_blank"
-          rel="noreferrer"
-        >
-          Открыть банк ↗
-        </a>
-      ) : null}
       <p className="market-small">
         Проверьте имя получателя и сумму {money(sale.amount)} перед переводом.
       </p>

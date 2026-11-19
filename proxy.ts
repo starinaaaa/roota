@@ -82,6 +82,12 @@ export function proxy(request: NextRequest) {
     });
   }
   const path = request.nextUrl.pathname;
+  if (request.method === "POST" && ["/payment/success", "/payment/fail"].includes(path)) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/api/payments/robokassa/return";
+    url.search = path.endsWith("/fail") ? "?failed=1" : "";
+    return NextResponse.rewrite(url);
+  }
   const wheel = path === "/wheel" || path.startsWith("/wheel/");
   const requestHeaders = new Headers(request.headers);
   requestHeaders.delete("x-roota-market");

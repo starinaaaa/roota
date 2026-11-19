@@ -25,6 +25,7 @@ import {
 import {
   money,
   quoteBasket,
+  quoteAmount,
   marketGoodsName,
   statusLabel,
   receiptStatusLabel,
@@ -259,6 +260,8 @@ export default function MarketControl() {
   } = useMarketPoll<MarketState>("/api/market/admin");
   const [quantities, setQuantities] = useState<Record<string, number>>({}),
     [gardenBundle, setGardenBundle] = useState(true);
+  const [byAmount, setByAmount] = useState(false);
+  const [amount, setAmount] = useState("");
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [settings, setSettings] = useState<InventoryItem[] | null>(null);
@@ -273,7 +276,8 @@ export default function MarketControl() {
   let quote: ReturnType<typeof quoteBasket> | null = null,
     quoteError = "";
   try {
-    if (data && Object.values(quantities).some(Boolean))
+    if (byAmount && amount) quote = quoteAmount(amount);
+    else if (!byAmount && data && Object.values(quantities).some(Boolean))
       quote = quoteBasket(
         {
           requestKey: "00000000-0000-4000-8000-000000000000",
@@ -312,13 +316,16 @@ export default function MarketControl() {
     await action({
       action: "show",
       method,
-      basket: { requestKey: key.current, quantities, gardenBundle },
+      basket: byAmount
+        ? { requestKey: key.current, amount }
+        : { requestKey: key.current, quantities, gardenBundle },
     });
   }
   async function clear() {
     if (await action({ action: "clear" })) {
       key.current = null;
       setQuantities({});
+      setAmount("");
     }
   }
   const displaysOnline =
@@ -449,6 +456,23 @@ export default function MarketControl() {
           ))}
         </section>
       ) : null}
+      {data?.helpers
+        .filter(
+          (h) =>
+            !h.revoked_at &&
+            ["error", "uncertain", "login_required"].includes(h.status),
+        )
+        .map((h) => (
+          <div className="market-helper-alert" role="alert" key={h.id}>
+            <strong>
+              {h.status === "login_required"
+                ? "Помощнику нужен вход в Мой налог"
+                : "Выдача чеков требует проверки"}
+            </strong>
+            <span>{h.detail}</span>
+            <a href="#market-helper">Открыть помощник чеков ↓</a>
+          </div>
+        ))}
       {connectionError || error ? (
         <p className="market-alert" role="alert">
           {error || `Нет связи с кассой. ${connectionError}`}
@@ -473,56 +497,153 @@ export default function MarketControl() {
         <>
           <div className="market-workspace">
             <div className="market-products">
-              <section>
-                <div className="market-section-heading">
-                  <h2>Изделия</h2>
-                  <span>Каталог маркета</span>
-                </div>
-                <div className="market-product-grid">
-                  {data.inventory
-                    .filter((i) =>
-                      ["plate", "postcard", "object"].includes(i.kind),
-                    )
-                    .map((i, index) => (
-                      <article
-                        className={`market-product-card ${(quantities[i.key] ?? 0) > 0 ? "is-selected" : ""}`}
-                        key={i.key}
-                      >
-                        <div
-                          className={`market-product-image market-tone-${index % 4}`}
+              <div
+                className="market-segmented"
+                aria-label="Как оформить покупку"
+              >
+                {[false, true].map((value) => (
+                  <button
+                    key={String(value)}
+                    disabled={locked}
+                    aria-pressed={byAmount === value}
+                    onClick={() => {
+                      setByAmount(value);
+                      key.current = null;
+                    }}
+                  >
+                    {value ? "По сумме" : "По изделиям"}
+                  </button>
+                ))}
+              </div>
+              {byAmount ? (
+                <section className="market-counter-amount">
+                  <label htmlFor="counter-amount">Сумма покупки, ₽</label>
+                  <input
+                    id="counter-amount"
+                    inputMode="decimal"
+                    autoComplete="off"
+                    maxLength={30}
+                    value={amount}
+                    disabled={locked}
+                    onChange={(event) => {
+                      setAmount(event.target.value);
+                      key.current = null;
+                    }}
+                  />
+                  <p className="market-small">
+                    В чеке — «{marketGoodsName}». Остатки изделий сохраняются.
+                  </p>
+                </section>
+              ) : (
+                <>
+                  <section>
+                    <div className="market-section-heading">
+                      <h2>Изделия</h2>
+                      <span>Каталог маркета</span>
+                    </div>
+                    <div className="market-product-grid">
+                      {data.inventory
+                        .filter((i) =>
+                          ["plate", "postcard", "object"].includes(i.kind),
+                        )
+                        .map((i, index) => (
+                          <article
+                            className={`market-product-card ${(quantities[i.key] ?? 0) > 0 ? "is-selected" : ""}`}
+                            key={i.key}
+                          >
+                            <div
+                              className={`market-product-image market-tone-${index % 4}`}
+                            >
+                              {i.image || marketPhotos[i.key] ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={i.image || marketPhotos[i.key]}
+                                  alt={i.name}
+                                  loading="lazy"
+                                />
+                              ) : (
+                                <Creature
+                                  id={
+                                    i.kind === "postcard"
+                                      ? 2912
+                                      : [2891, 2895, 2907, 2903][index % 4]
+                                  }
+                                />
+                              )}
+                              {(quantities[i.key] ?? 0) > 0 ? (
+                                <span className="market-selected-mark">
+                                  <Check size={16} />
+                                </span>
+                              ) : null}
+                            </div>
+                            <div className="market-product-info">
+                              <h3>{i.name}</h3>
+                              <p>
+                                {i.price ? money(i.price) : "Укажите цену"}
+                                <span>
+                                  {i.stock_qty
+                                    ? `${i.stock_qty} шт. на столе`
+                                    : "Пока нет на столе"}
+                                </span>
+                              </p>
+                              <Counter
+                                name={i.name}
+                                value={quantities[i.key] ?? 0}
+                                max={i.stock_qty}
+                                disabled={
+                                  locked || !i.price || Boolean(connectionError)
+                                }
+                                onChange={(n) => change(i.key, n)}
+                              />
+                            </div>
+                          </article>
+                        ))}
+                    </div>
+                  </section>
+                  <section className="market-garden">
+                    <div className="market-section-heading">
+                      <div>
+                        <p className="market-eyebrow">
+                          Керамический конструктор
+                        </p>
+                        <h2>Сад</h2>
+                      </div>
+                      <Creature id={2909} />
+                    </div>
+                    <div
+                      className="market-segmented"
+                      aria-label="Способ покупки Сада"
+                    >
+                      {[
+                        [true, "Собрать набор"],
+                        [false, "Детали поштучно"],
+                      ].map(([bundle, label]) => (
+                        <button
+                          key={String(bundle)}
+                          aria-pressed={gardenBundle === bundle}
+                          disabled={locked}
+                          onClick={() => {
+                            key.current = null;
+                            setGardenBundle(Boolean(bundle));
+                          }}
                         >
-                          {i.image || marketPhotos[i.key] ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={i.image || marketPhotos[i.key]}
-                              alt={i.name}
-                              loading="lazy"
-                            />
-                          ) : (
-                            <Creature
-                              id={
-                                i.kind === "postcard"
-                                  ? 2912
-                                  : [2891, 2895, 2907, 2903][index % 4]
-                              }
-                            />
-                          )}
-                          {(quantities[i.key] ?? 0) > 0 ? (
-                            <span className="market-selected-mark">
-                              <Check size={16} />
-                            </span>
-                          ) : null}
-                        </div>
-                        <div className="market-product-info">
-                          <h3>{i.name}</h3>
-                          <p>
-                            {i.price ? money(i.price) : "Укажите цену"}
-                            <span>
-                              {i.stock_qty
-                                ? `${i.stock_qty} шт. на столе`
-                                : "Пока нет на столе"}
-                            </span>
-                          </p>
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                    {data.inventory
+                      .filter((i) =>
+                        ["stems", "flowers", "leaves"].includes(i.kind),
+                      )
+                      .map((i) => (
+                        <div className="market-garden-row" key={i.key}>
+                          <div>
+                            <h3>{i.name}</h3>
+                            <p>
+                              {money(i.price ?? 0)} / шт. · осталось{" "}
+                              {i.stock_qty}
+                            </p>
+                          </div>
                           <Counter
                             name={i.name}
                             value={quantities[i.key] ?? 0}
@@ -533,67 +654,14 @@ export default function MarketControl() {
                             onChange={(n) => change(i.key, n)}
                           />
                         </div>
-                      </article>
-                    ))}
-                </div>
-              </section>
-              <section className="market-garden">
-                <div className="market-section-heading">
-                  <div>
-                    <p className="market-eyebrow">Керамический конструктор</p>
-                    <h2>Сад</h2>
-                  </div>
-                  <Creature id={2909} />
-                </div>
-                <div
-                  className="market-segmented"
-                  aria-label="Способ покупки Сада"
-                >
-                  {[
-                    [true, "Собрать набор"],
-                    [false, "Детали поштучно"],
-                  ].map(([bundle, label]) => (
-                    <button
-                      key={String(bundle)}
-                      aria-pressed={gardenBundle === bundle}
-                      disabled={locked}
-                      onClick={() => {
-                        key.current = null;
-                        setGardenBundle(Boolean(bundle));
-                      }}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-                {data.inventory
-                  .filter((i) =>
-                    ["stems", "flowers", "leaves"].includes(i.kind),
-                  )
-                  .map((i) => (
-                    <div className="market-garden-row" key={i.key}>
-                      <div>
-                        <h3>{i.name}</h3>
-                        <p>
-                          {money(i.price ?? 0)} / шт. · осталось {i.stock_qty}
-                        </p>
-                      </div>
-                      <Counter
-                        name={i.name}
-                        value={quantities[i.key] ?? 0}
-                        max={i.stock_qty}
-                        disabled={
-                          locked || !i.price || Boolean(connectionError)
-                        }
-                        onChange={(n) => change(i.key, n)}
-                      />
-                    </div>
-                  ))}
-                <p className="market-small">
-                  В наборе 16–23 детали — скидка 5%, от 24 — 10%. В поштучном
-                  режиме скидки нет.
-                </p>
-              </section>
+                      ))}
+                    <p className="market-small">
+                      В наборе 16–23 детали — скидка 5%, от 24 — 10%. В
+                      поштучном режиме скидки нет.
+                    </p>
+                  </section>
+                </>
+              )}
             </div>
             <aside className="market-receipt">
               <div className="market-receipt-top">
@@ -617,8 +685,9 @@ export default function MarketControl() {
               ) : (
                 <div className="market-empty-receipt">
                   <Creature id={2907} />
-                  <p>Выберите изделия</p>
-                  <small>Добавьте изделия слева</small>
+                  <p>
+                    {byAmount ? "Введите сумму покупки" : "Выберите изделия"}
+                  </p>
                 </div>
               )}
               {sale ? (
@@ -857,6 +926,7 @@ export default function MarketControl() {
               setSettings(null);
               key.current = null;
               setQuantities({});
+              setAmount("");
             }
           }}
         />

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import type { PaymentForm } from "@robokassa/sdk";
-import { openBank } from "./openBank";
+import { openBank, recentMarketPayment } from "./openBank";
 import { useRouter } from "next/navigation";
 import { Creature, MarketBrand, marketFetch, useMarketPoll } from "./shared";
 import { ManualInstructions } from "./MarketExtras";
@@ -41,6 +41,20 @@ export default function MarketIntake({
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   const key = useRef<string | null>(null);
+  const [recent, setRecent] = useState<string | null>(null);
+  useEffect(() => {
+    if (preview || token) return;
+    setRecent(recentMarketPayment());
+    const resume = (event: PageTransitionEvent) => {
+      if (
+        event.persisted &&
+        window.location.pathname.startsWith("/market/pay/")
+      )
+        window.location.reload();
+    };
+    window.addEventListener("pageshow", resume);
+    return () => window.removeEventListener("pageshow", resume);
+  }, [preview, token]);
   const normalizedAmount = amount.replace(/\s/g, "").replace(",", ".");
   useEffect(() => {
     if (data?.redirectUrl) window.location.replace(data.redirectUrl);
@@ -69,8 +83,7 @@ export default function MarketIntake({
         },
       );
       if (r.form) {
-        window.history.replaceState(null, "", r.url);
-        openBank(r.form);
+        openBank(r.form, r.url);
       } else window.location.assign(r.url);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Не удалось сохранить покупку");
@@ -114,8 +127,8 @@ export default function MarketIntake({
                 <h2>{data.paid ? "Деньги получены" : "Способ оплаты"}</h2>
                 {data.paid ? (
                   <p>
-                    Всё оплачено, покупку можно забирать. Чек появится здесь и
-                    придёт на вашу почту.
+                    Всё оплачено, покупку можно забирать. Чек появится здесь
+                    после выдачи.
                   </p>
                 ) : data.method === "robokassa" ? (
                   <p>
@@ -136,8 +149,8 @@ export default function MarketIntake({
                     />
                     <p>
                       Назовите продавцу номер {data.number}. После проверки
-                      денег продавец подтвердит оплату. Чек отправим на
-                      сохранённую почту после уточнения состава.
+                      денег продавец подтвердит оплату. После выдачи на этой
+                      странице появится чек.
                     </p>
                   </>
                 )}
@@ -148,6 +161,11 @@ export default function MarketIntake({
           <p>Приём покупок по QR сейчас закрыт. Обратитесь к продавцу.</p>
         ) : (
           <form onSubmit={submit}>
+            {recent && (
+              <a className="market-secondary" href={recent + "?return=success"}>
+                Вернуться к последней оплате
+              </a>
+            )}
             <label>
               Сумма, которую назвал продавец
               <input
@@ -165,7 +183,7 @@ export default function MarketIntake({
             <label>
               Email для чека
               <input
-                required
+                required={method === "robokassa"}
                 name="email"
                 aria-describedby="intake-email-hint"
                 type="email"
@@ -183,7 +201,9 @@ export default function MarketIntake({
               />
             </label>
             <p className="market-small" id="intake-email-hint">
-              Сюда придёт чек
+              {method === "robokassa"
+                ? "Сюда придёт чек Робокассы"
+                : "По желанию. Чек также можно открыть здесь после выдачи."}
             </p>
             <fieldset className="market-methods">
               <legend>Как оплатить</legend>
@@ -191,7 +211,7 @@ export default function MarketIntake({
                 ...(data.robokassa
                   ? [["robokassa", "Онлайн через Робокассу"]]
                   : []),
-                ["transfer", "Перевод по номеру"],
+                ["transfer", "Банковский перевод"],
                 ["cash", "Наличные"],
               ].map(([value, label]) => (
                 <label key={value}>
@@ -235,7 +255,8 @@ export default function MarketIntake({
             <label className="market-consent">
               <input
                 type="checkbox"
-                checked={news}
+                disabled={!email}
+                checked={!!email && news}
                 onChange={(e) => {
                   edit();
                   setNews(e.target.checked);

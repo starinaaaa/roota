@@ -20,7 +20,7 @@ export function createController(io) {
   const report = async (status, detail, safe = true) =>
     io.api({ action: "heartbeat", status, detail, safe });
   const save = async (active) => {
-    await io.save({ active });
+    await io.save({ active, ...(["claimed","completed","cleared"].includes(active.phase) ? {lastError:null} : {}) });
     return active;
   };
   const done = async (active) => {
@@ -214,6 +214,11 @@ export function createController(io) {
         action: "registered-status",
         id: active.job.sale_id,
       });
+      if (saved.removed === true) {
+        await io.save({ active: { ...active, phase: "cleared" }, armed: false, lastError: null });
+        await report("connected", "Покупка удалена из кассы. Рабочая выдача приостановлена", true);
+        return { state: "cleared" };
+      }
       if (saved.registered === true && receiptLink(saved.url)) {
         if (
           active.evidence?.url &&

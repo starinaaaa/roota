@@ -1,6 +1,11 @@
 import { randomBytes } from "node:crypto";
 import { z } from "zod";
-import { basketSchema, quoteBasket, marketGoodsName } from "./model";
+import {
+  amountInKopecks,
+  basketSchema,
+  quoteBasket,
+  marketGoodsName,
+} from "./model";
 import {
   createSale,
   inventory,
@@ -11,21 +16,12 @@ import {
   type SaleRow,
 } from "./store";
 
-export function amountInKopecks(value: string) {
-  const s = value.trim().replace(/\s/g, "").replace(",", ".");
-  if (!/^\d{1,7}(\.\d{1,2})?$/.test(s))
-    throw Error("Введите сумму в рублях, например 12000 или 12000,50");
-  const [r, k = ""] = s.split(".");
-  const n = Number(r) * 100 + Number(k.padEnd(2, "0"));
-  if (!Number.isSafeInteger(n) || n < 100 || n > 100000000)
-    throw Error("Сумма должна быть от 1 до 1 000 000 ₽");
-  return n;
-}
+export { amountInKopecks } from "./model";
 export const intakeSchema = z
   .object({
     requestKey: z.uuid(),
     amount: z.string().max(30),
-    email: z.email().max(254),
+    email: z.union([z.email().max(254), z.literal("")]).default(""),
     method: z.enum(["cash", "transfer", "robokassa"]),
     accepted: z.literal(true),
     marketingConsent: z.boolean().default(false),
@@ -61,6 +57,10 @@ export async function createIntake(
   const input = intakeSchema.parse(raw),
     amount = amountInKopecks(input.amount),
     email = input.email.trim().toLowerCase();
+  if (!email && input.method === "robokassa")
+    throw Error("Для электронного чека Робокассы укажите почту");
+  const news = !!email && input.marketingConsent;
+  const review = !!email && (input.reviewConsent ?? true);
   await lockRegister(db);
   const {
     rows: [previous],
@@ -74,8 +74,8 @@ export async function createIntake(
       previous.email !== email ||
       previous.method !== input.method ||
       previous.mode !== mode ||
-      previous.marketing_consent !== input.marketingConsent ||
-      previous.review_consent !== (input.reviewConsent ?? true)
+      previous.marketing_consent !== news ||
+      previous.review_consent !== review
     )
       throw Error("Эта покупка уже создана с другими данными");
     return previous;
@@ -106,8 +106,8 @@ export async function createIntake(
       amount,
       input.method,
       email,
-      input.marketingConsent,
-      input.reviewConsent ?? true,
+      news,
+      review,
       clientHash,
       input.method === "transfer"
         ? JSON.stringify(register.transfer_settings)
@@ -208,13 +208,14 @@ export async function finalizeIntake(
       [sale.id, r.email, r.marketing_consent, r.review_consent],
     );
   } else {
-    await saveManualContact(
-      db,
-      sale.token,
-      r.email,
-      r.marketing_consent,
-      r.review_consent,
-    );
+    if (r.email)
+      await saveManualContact(
+        db,
+        sale.token,
+        r.email,
+        r.marketing_consent,
+        r.review_consent,
+      );
     await confirmManualSale(db, sale.id, actor);
     await db.query(
       "update market_sales set paid_at=$2,confirmed_by=$3 where id=$1",

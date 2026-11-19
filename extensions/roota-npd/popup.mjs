@@ -20,6 +20,8 @@ async function send(action, extra = {}) {
   if (!r?.ok) throw Error(r?.error ?? "Служебный процесс недоступен");
   return r.result;
 }
+let connectionState;
+let working = false;
 async function refresh() {
   const s = await send("state");
   el("extension-id").textContent = s.id;
@@ -40,12 +42,22 @@ async function refresh() {
   const found = s.active?.evidence?.url;
   el("found-receipt").hidden = !receiptLink(found ?? "");
   if (receiptLink(found ?? "")) el("found-receipt").href = found;
-  el("error").textContent = s.lastError ?? "";
+  el("error").textContent = s.active?.phase === "uncertain"
+    ? (s.active.detail || "Результат выдачи неизвестен.") + " Проверьте историю в Моем налоге перед новой выдачей."
+    : s.lastError || (s.active?.phase === "error" && s.active.detail) || "";
+  if (connectionState !== s.connected) {
+    el("connection").open = !s.connected;
+    connectionState = s.connected;
+  }
+  el("arm").hidden = !s.connected || s.armed;
+  el("pause").hidden = !s.armed;
+  el("recover").hidden = !s.active || ["completed","cleared"].includes(s.active.phase);
   el("arm").disabled = !s.liveCertified || !s.connected;
   el("preview").disabled = !s.connected;
 }
 function bind(id, action, args = () => ({})) {
   el(id).addEventListener("click", async () => {
+    working = true;
     el("error").textContent = "";
     for (const b of document.querySelectorAll("button")) b.disabled = true;
     try {
@@ -55,11 +67,15 @@ function bind(id, action, args = () => ({})) {
       if (id === "connect") el("credential").value = "";
       await refresh();
     } catch (e) {
+      await refresh().catch(() => {});
       el("error").textContent = e.message;
+      el("error").focus();
     } finally {
       for (const b of document.querySelectorAll("button")) b.disabled = false;
-      const s = await send("state");
-      el("arm").disabled = !s.liveCertified || !s.connected;
+      working = false;
+      const s = await send("state").catch(() => null);
+      el("arm").disabled = !s?.liveCertified || !s?.connected;
+      el("preview").disabled = !s?.connected;
     }
   });
 }
@@ -73,4 +89,9 @@ bind("inspect", "inspect");
 bind("clear", "clear");
 bind("arm", "arm");
 bind("pause", "pause");
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (!working && area === "local" && ["active","armed","lastError","reportedStatus"].some(key => key in changes)) {
+    refresh().catch(e => { el("error").textContent = e.message; });
+  }
+});
 refresh().catch((e) => (el("error").textContent = e.message));

@@ -109,6 +109,14 @@ export async function POST(request: Request) {
         [z.uuid().parse(body.id)],
       );
       return json({
+        removed:
+          !receipt &&
+          !(
+            await getPool().query(
+              "select 1 from public.market_sales where id=$1",
+              [body.id],
+            )
+          ).rowCount,
         registered: Boolean(receipt),
         url: receipt?.receipt_url ?? null,
         registeredAt: receipt?.registered_at ?? null,

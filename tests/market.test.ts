@@ -1801,3 +1801,88 @@ test("live receipt check uses one task and admin mailbox on retry", async () => 
     await db.close();
   }
 });
+
+test("counter amount works with cash without a scan, permanent QR without email, and a bank link", async () => {
+  const { db, run } = await fixture();
+  try {
+    await db.query(
+      "update market_register set intake_enabled=true,transfer_settings=transfer_settings || jsonb_build_object('link','https://qr.nspk.ru/example'::text)",
+    );
+    const stock = (
+      await db.query("select key,stock_qty from market_inventory order by key")
+    ).rows;
+    for (const method of ["cash", "transfer", "robokassa"] as const) {
+      const input = { requestKey: randomUUID(), amount: "12,50" };
+      const sale = await run((c) => createSale(c, input, "live", method));
+      assert.equal(sale.items[0].name, "Оплата товара на маркете");
+      assert.equal(Number(sale.amount), 12.5);
+      assert.deepEqual(sale.allocations, []);
+      assert.equal(sale.reserved, false);
+      assert.equal(
+        (await run((c) => createSale(c, input, "live", method))).id,
+        sale.id,
+      );
+      await assert.rejects(
+        run((c) => createSale(c, { ...input, amount: "13" }, "live", method)),
+      );
+      if (method === "robokassa") await run((c) => cancelSale(c, sale.id));
+      else {
+        if (method === "transfer")
+          assert.equal(
+            sale.transfer_details?.link,
+            "https://qr.nspk.ru/example",
+          );
+        await run((c) => confirmManualSale(c, sale.id, "seller"));
+        await run((c) => confirmManualSale(c, sale.id, "seller"));
+        assert.equal(
+          (
+            await db.query(
+              "select * from market_receipt_jobs where sale_id=$1",
+              [sale.id],
+            )
+          ).rows.length,
+          1,
+        );
+      }
+    }
+    for (const method of ["cash", "transfer"] as const) {
+      const intake = await run((c) =>
+        createIntake(
+          c,
+          {
+            ...intakeInput(method, "12,50"),
+            email: "",
+            marketingConsent: true,
+          },
+          "live",
+          method,
+        ),
+      );
+      await run((c) => confirmIntake(c, intake.id, "seller"));
+      const sale = await run((c) =>
+        finalizeIntake(c, intake.id, { generic: true }, "seller"),
+      );
+      assert.equal(sale.email, null);
+      assert.equal(intake.review_consent, false);
+      assert.equal(intake.marketing_consent, false);
+      assert.equal(
+        (
+          await db.query("select * from market_receipt_jobs where sale_id=$1", [
+            sale.id,
+          ])
+        ).rows.length,
+        1,
+      );
+    }
+    assert.deepEqual(
+      (
+        await db.query(
+          "select key,stock_qty from market_inventory order by key",
+        )
+      ).rows,
+      stock,
+    );
+  } finally {
+    await db.close();
+  }
+});

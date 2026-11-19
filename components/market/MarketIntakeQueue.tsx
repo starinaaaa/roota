@@ -58,7 +58,7 @@ function RequestEditor({
           : r.method === "transfer"
             ? "Прямой перевод"
             : "Робокасса"}{" "}
-        · {r.email}
+        · {r.email || "Без почты"}
       </p>
       <p className="market-small">
         Создана{" "}

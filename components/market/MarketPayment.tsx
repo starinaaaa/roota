@@ -21,10 +21,12 @@ export type BuyerSale = PublicSale & {
 };
 export default function MarketPayment({
   token,
+  instagram,
   returning = false,
   preview,
 }: {
   token: string;
+  instagram: string;
   returning?: boolean;
   preview?: BuyerSale;
 }) {
@@ -206,6 +208,9 @@ export default function MarketPayment({
           />
           <a className="market-secondary" href="/">
             В магазин Roota
+          </a>
+          <a className="market-secondary" href={instagram} target="_blank" rel="noopener noreferrer">
+            Roota в Instagram
           </a>
           {connectionError ? (
             <p className="market-small">

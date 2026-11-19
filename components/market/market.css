@@ -2512,3 +2512,9 @@
   display: block;
   text-decoration: underline;
 }
+
+.market-counter-amount { display: grid; gap: .7rem; padding: 1.25rem; }
+.market-counter-amount label { font-weight: 600; }
+.market-counter-amount input { font: inherit; font-size: 1.6rem; width: 100%; border: 1px solid currentColor; padding: .6rem; }
+.market-helper-alert { position: sticky; top: .4rem; z-index: 5; background: #fff1ed; color: #782316; border: 2px solid #ac402b; border-radius: 8px; padding: .7rem 1rem; display: grid; gap: .25rem; margin: .75rem 0; }
+.market-helper-alert a { text-decoration: underline; }

@@ -160,8 +160,8 @@ export default function ReceiptHelper({ state }: { state: MarketState }) {
     }
   }
   return (
-    <section className="market-receipt-tasks">
-      <h2>Локальный помощник чеков</h2>
+    <section className="market-receipt-tasks" id="market-helper">
+      <h2>Помощник чеков</h2>
       <p className="market-small">
         Помощник работает в Chrome продавца. В безопасном режиме он только
         заполняет форму. Для автоматической выдачи разрешите покупки ниже и

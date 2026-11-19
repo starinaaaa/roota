@@ -3,6 +3,8 @@ import { createHash, randomBytes } from "node:crypto";
 import type { PoolClient } from "pg";
 import {
   basketSchema,
+  counterAmountSchema,
+  quoteAmount,
   quoteBasket,
   stockSchema,
   type Basket,
@@ -94,7 +96,10 @@ export async function createSale(
   method: PaymentMethod = "robokassa",
   options: { independent?: boolean } = {},
 ) {
-  const input = basketSchema.parse(raw);
+  const amountInput = counterAmountSchema.safeParse(raw);
+  const input = amountInput.success
+    ? amountInput.data
+    : basketSchema.parse(raw);
   await lockRegister(db);
   await expireSales(db);
   const {
@@ -112,7 +117,11 @@ export async function createSale(
           .sort(),
       ]);
     if (
-      canonical(existing.request_payload) !== canonical(input) ||
+      ("amount" in input
+        ? !("amount" in existing.request_payload) ||
+          Number(existing.amount) !== quoteAmount(input.amount).amount
+        : "amount" in existing.request_payload ||
+          canonical(existing.request_payload) !== canonical(input)) ||
       mode !== existing.mode ||
       method !== existing.payment_method
     )
@@ -126,7 +135,10 @@ export async function createSale(
   );
   if (!options.independent && active?.status === "pending")
     throw new Error("Сначала дождитесь оплаты или отмените текущую покупку");
-  const priced = quoteBasket(input, await inventory(db));
+  const priced =
+    "amount" in input
+      ? quoteAmount(input.amount)
+      : quoteBasket(input, await inventory(db));
   const {
     rows: [sale],
   } = await db.query<SaleRow>(
@@ -140,7 +152,7 @@ export async function createSale(
       priced.amount,
       JSON.stringify(priced.items),
       JSON.stringify(priced.allocations),
-      mode === "live",
+      mode === "live" && priced.allocations.length > 0,
       method,
     ],
   );

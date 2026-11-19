@@ -103,6 +103,7 @@ try {
   const concurrent = await context.newPage();
   await concurrent.goto(`chrome-extension://${id}/popup.html`);
   await concurrent.getByText("Подключён к Roota", { exact: false }).waitFor();
+  for (const page of [popup, concurrent]) await page.getByText("Проверка без выдачи чека", {exact:true}).click();
   await Promise.all([
     popup.locator("#preview").click(),
     concurrent.locator("#preview").click(),
@@ -167,6 +168,7 @@ try {
   assert.equal(revoked.status(), 401);
   ok("server revocation blocks further helper requests");
   // Live issuance is simulated ONLY on the local test UI. Production config remains liveCertified:false.
+  await popup.getByText("Подключение к кассе",{exact:true}).click();
   await popup.locator("#disconnect").click();
   const second = await connect();
   const previewPlan = (

@@ -113,6 +113,37 @@ export const stockSchema = z
   })
   .strict();
 
+export function amountInKopecks(value: string) {
+  const s = value.trim().replace(/\s/g, "").replace(",", ".");
+  if (!/^\d{1,7}(\.\d{1,2})?$/.test(s))
+    throw Error("Введите сумму в рублях, например 12000 или 12000,50");
+  const [r, k = ""] = s.split(".");
+  const n = Number(r) * 100 + Number(k.padEnd(2, "0"));
+  if (!Number.isSafeInteger(n) || n < 100 || n > 100000000)
+    throw Error("Сумма должна быть от 1 до 1 000 000 ₽");
+  return n;
+}
+export const counterAmountSchema = z
+  .object({ requestKey: z.uuid(), amount: z.string().max(30) })
+  .strict();
+export function quoteAmount(value: string) {
+  const amount = amountInKopecks(value) / 100;
+  return {
+    amount,
+    items: [
+      {
+        name: marketGoodsName,
+        quantity: 1,
+        sum: amount,
+        unitPrice: amount,
+        kind: "goods" as const,
+      },
+    ],
+    allocations: [],
+    discount: 0,
+  };
+}
+
 export function quoteBasket(input: Basket, inventory: InventoryItem[]) {
   const allocations: Allocation[] = [],
     items: SaleItem[] = [];

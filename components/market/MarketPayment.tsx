@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BuyerReceipt } from "./BuyerReceipt";
 import { ManualInstructions } from "./MarketExtras";
 import { openBank } from "./openBank";
@@ -37,6 +37,14 @@ export default function MarketPayment({
     [contactSaved, setContactSaved] = useState(false),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
+  useEffect(() => {
+    const resume = (event: PageTransitionEvent) => {
+      if (event.persisted && window.location.search.includes("return=success"))
+        window.location.reload();
+    };
+    window.addEventListener("pageshow", resume);
+    return () => window.removeEventListener("pageshow", resume);
+  }, []);
   const expired = useSaleExpired(sale);
   const emailSaved = Boolean(sale?.emailSaved || contactSaved);
   const marketingConsent =
@@ -70,7 +78,7 @@ export default function MarketPayment({
       }
       if (!form) throw new Error("Не удалось подготовить оплату");
       // POST directly to the official payment page. No browser return marks a sale paid.
-      openBank(form);
+      openBank(form, `/market/pay/${token}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Не удалось начать оплату");
       setBusy(false);
@@ -191,6 +199,9 @@ export default function MarketPayment({
             emailState={sale.receiptEmailState ?? null}
             preview={!!preview}
           />
+          <a className="market-secondary" href="/">
+            В магазин Roota
+          </a>
           {connectionError ? (
             <p className="market-small">
               Восстанавливаем связь. Покупка оплачена; обновим состояние чека
@@ -241,11 +252,17 @@ export default function MarketPayment({
             платить не нужно — продавец проверит покупку.
           </p>
         </section>
-      ) : sale.method !== "robokassa" && emailSaved ? (
+      ) : sale.method !== "robokassa" ? (
         <section className="market-message">
           <h1>Всё готово к оплате</h1>
           <ReceiptItems sale={sale} />
           <ManualInstructions sale={sale} />
+          {!emailSaved && (
+            <details className="market-paid-contact">
+              <summary>Получить чек на почту</summary>
+              {contactForm}
+            </details>
+          )}
           <p className="market-small">
             Продавец подтвердит получение денег. Чек выдаётся отдельно.
           </p>

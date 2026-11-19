@@ -3,6 +3,17 @@ import { createController } from "./controller.mjs";
 import { fnsTask } from "./fns-adapter.mjs";
 const local = chrome.storage.local;
 const load = () => local.get(null);
+async function updateBadge() {
+  const s = await load();
+  const warning = s.lastError || ["error","uncertain","login_required"].includes(s.reportedStatus) || ["uncertain","error"].includes(s.active?.phase);
+  await chrome.action.setBadgeBackgroundColor({ color: "#aa301c" });
+  await chrome.action.setBadgeText({ text: warning ? "!" : "" });
+  await chrome.action.setTitle({ title: warning ? "Roota · требуется проверка чека" : "Roota · чеки маркета" });
+}
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === "local" && ["active","lastError","reportedStatus"].some(key => key in changes)) void updateBadge();
+});
+void updateBadge();
 async function api(body, credentialOverride) {
   if (body.action === "heartbeat")
     await local.set({
@@ -134,7 +145,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
             ? "error"
             : "busy",
         detail:
-          "Задача сохранена локально; при остановке нажмите «Восстановить»",
+          s.active.detail || s.lastError || "Откройте расширение и нажмите «Сверить результат с Roota».",
         safe: s.active.safe,
       });
     } else if (s.armed && config.liveCertified)

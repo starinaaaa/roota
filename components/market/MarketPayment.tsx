@@ -21,10 +21,12 @@ export type BuyerSale = PublicSale & {
 };
 export default function MarketPayment({
   token,
+  telegram,
   returning = false,
   preview,
 }: {
   token: string;
+  telegram: string;
   returning?: boolean;
   preview?: BuyerSale;
 }) {
@@ -192,6 +194,7 @@ export default function MarketPayment({
             {sale.mode === "test" ? "Тест завершён" : "Оплачено"}
           </span>
           <h1>Теперь это ваше.</h1>
+          <p>Спасибо за покупку!</p>
           <p className="market-purchase-reference">
             Покупка {sale.number} · <strong>{money(sale.amount)}</strong>
           </p>
@@ -205,6 +208,9 @@ export default function MarketPayment({
           />
           <a className="market-secondary" href="/">
             В магазин Roota
+          </a>
+          <a className="market-secondary" href={telegram} target="_blank" rel="noopener noreferrer">
+            Roota в Telegram
           </a>
           {connectionError ? (
             <p className="market-small">

@@ -51,16 +51,12 @@ export function HelloPage({ links }: { links: SocialLinks }) {
       </header>
       <section className="market-hello-story">
         <div className="market-hello-intro">
-          <p className="market-eyebrow">Кажется, мы уже знакомы</p>
           <Creature id={2891} />
         </div>
-        <h1>
-          Те самые чудики
-          <br />с Ceramania.
-        </h1>
+        <h1>Кажется, мы уже знакомы</h1>
         <p>
           Привет! Я Даша, создательница Roota — маленькой мастерской керамики в
-          Москве. Я пришла из иллюстрации, поэтому каждая моя тарелка —
+          Москве. Я пришла из иллюстрации, поэтому каждое мое изделие —
           маленькая история.
         </p>
         <p>

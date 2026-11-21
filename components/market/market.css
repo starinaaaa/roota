@@ -2087,6 +2087,20 @@
 .market-intake-exact {
   font-weight: 600;
 }
+.market-intake-receipt-name {
+  max-width: 680px;
+  margin: 1rem 0;
+}
+.market-intake-receipt-name label {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+.market-intake-receipt-name input {
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  box-sizing: border-box;
+}
 .market-intake-order button {
   margin: 0.5rem 0.5rem 0.5rem 0;
 }

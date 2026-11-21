@@ -5,6 +5,7 @@ import {
   basketSchema,
   quoteBasket,
   marketGoodsName,
+  receiptNameSchema,
 } from "./model";
 import {
   createSale,
@@ -139,11 +140,20 @@ export async function finalizeIntake(
   raw: unknown,
   actor: string,
 ) {
-  const generic = z
-    .object({ generic: z.literal(true) })
-    .strict()
-    .safeParse(raw).success;
-  const basket = generic ? null : basketSchema.parse(raw);
+  const selection = z
+    .union([
+      z
+        .object({
+          generic: z.literal(true),
+          name: receiptNameSchema.optional(),
+        })
+        .strict(),
+      basketSchema,
+    ])
+    .parse(raw);
+  const basket = "generic" in selection ? null : selection;
+  const receiptName =
+    "generic" in selection ? (selection.name ?? marketGoodsName) : null;
   await lockRegister(db);
   const {
     rows: [r],
@@ -152,6 +162,10 @@ export async function finalizeIntake(
     [id],
   );
   if (!r || r.cancelled_at) throw Error("Покупка не найдена или отменена");
+  if ("generic" in selection && selection.name && r.method === "robokassa")
+    throw Error(
+      "Название для помощника доступно только для наличных и прямых переводов",
+    );
   if (r.sale_id) {
     const {
       rows: [sale],
@@ -159,7 +173,12 @@ export async function finalizeIntake(
       r.sale_id,
     ]);
     if (!basket) {
-      if (sale.allocations.length)
+      if (
+        !sale ||
+        sale.allocations.length ||
+        sale.items.length !== 1 ||
+        sale.items[0].name !== receiptName
+      )
         throw Error("У покупки уже сохранён другой состав");
       return sale;
     }
@@ -197,7 +216,7 @@ export async function finalizeIntake(
       r.mode,
       r.method,
       r.amount_kopecks / 100,
-      marketGoodsName,
+      receiptName!,
       r.transfer_details,
     );
   }

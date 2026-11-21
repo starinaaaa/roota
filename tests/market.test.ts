@@ -1883,3 +1883,130 @@ test("counter amount works with cash without a scan, permanent QR without email,
     await db.close();
   }
 });
+
+test("a seller-entered receipt name reaches the helper plan with the exact paid amount", async () => {
+  const { db, run, adapter } = await fixture();
+  const { receiptPlan } = await import("../extensions/roota-npd/core.mjs");
+  const { claimReceiptJob } = await import("../lib/market/receipt-jobs");
+  try {
+    await db.query("update market_register set intake_enabled=true");
+    const before = await inventory(adapter);
+    for (const method of ["cash", "transfer"]) {
+      const intake = await run((d) =>
+        createIntake(d, intakeInput(method, "5500,25"), "live", method),
+      );
+      const name = "Пара керамических стаканов Roota";
+      const finish = (value = name) =>
+        run((d) =>
+          finalizeIntake(
+            d,
+            intake.id,
+            { generic: true, name: value },
+            "seller",
+          ),
+        );
+      await assert.rejects(finish(), /подтвердите/);
+      await run((d) => confirmIntake(d, intake.id, "seller"));
+      const sale = await finish(`  ${name}  `);
+      assert.deepEqual(sale.items, [
+        { name, quantity: 1, sum: 5500.25, kind: "goods" },
+      ]);
+      assert.deepEqual(sale.allocations, []);
+      assert.equal((await finish()).id, sale.id);
+      await assert.rejects(finish("Ваза Roota"), /другой состав/);
+      await assert.rejects(
+        run((d) => finalizeIntake(d, intake.id, { generic: true }, "seller")),
+        /другой состав/,
+      );
+      const task = (await run((d) =>
+        claimReceiptJob(d, "fixture-worker", "live"),
+      ))!;
+      assert.equal(task.sale_id, sale.id);
+      const plan = receiptPlan(task);
+      assert.deepEqual(plan.rows, [{ name, kopecks: 550025 }]);
+      assert.equal(plan.total, 550025);
+    }
+    assert.deepEqual(await inventory(adapter), before);
+    assert.equal(
+      (
+        await db.query<{ n: number }>(
+          "select count(*)::int n from market_receipt_jobs",
+        )
+      ).rows[0].n,
+      2,
+    );
+  } finally {
+    await db.close();
+  }
+});
+
+test("invalid or changed receipt names never create a replacement task", async () => {
+  const { db, run } = await fixture();
+  try {
+    await db.query("update market_register set intake_enabled=true");
+    const intake = await run((d) =>
+      createIntake(d, intakeInput("cash", "8000"), "live", "fixture"),
+    );
+    await run((d) => confirmIntake(d, intake.id, "seller"));
+    for (const name of [
+      "",
+      "   ",
+      "a".repeat(129),
+      "Ваза\nRoota",
+      "Ваза\u0000Roota",
+    ]) {
+      await assert.rejects(
+        run((d) =>
+          finalizeIntake(d, intake.id, { generic: true, name }, "seller"),
+        ),
+      );
+    }
+    assert.equal(
+      (
+        await db.query<{ n: number }>(
+          "select count(*)::int n from market_sales",
+        )
+      ).rows[0].n,
+      0,
+    );
+    const sale = await run((d) =>
+      finalizeIntake(d, intake.id, { generic: true }, "seller"),
+    );
+    await assert.rejects(
+      run((d) =>
+        finalizeIntake(
+          d,
+          intake.id,
+          { generic: true, name: "Ваза Roota" },
+          "seller",
+        ),
+      ),
+      /другой состав/,
+    );
+    assert.equal(
+      (
+        await db.query<{ n: number }>(
+          "select count(*)::int n from market_receipt_jobs where sale_id=$1",
+          [sale.id],
+        )
+      ).rows[0].n,
+      1,
+    );
+    const provider = await run((d) =>
+      createIntake(d, intakeInput("robokassa", "3500"), "live", "provider"),
+    );
+    await assert.rejects(
+      run((d) =>
+        finalizeIntake(
+          d,
+          provider.id,
+          { generic: true, name: "Тарелка Roota" },
+          "seller",
+        ),
+      ),
+      /наличных и прямых переводов/,
+    );
+  } finally {
+    await db.close();
+  }
+});

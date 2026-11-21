@@ -1,7 +1,7 @@
 "use client";
 import MarketIntakeQueue from "./MarketIntakeQueue";
 import ReceiptHelper from "./ReceiptHelper";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -48,6 +48,30 @@ const marketPhotos: Record<string, string> = Object.fromEntries(
     `/images/market/plate-${slug}.webp`,
   ]),
 );
+const modeKey = "roota.market.control-mode.v1";
+function subscribeMode(notify: () => void) {
+  window.addEventListener("storage", notify);
+  window.addEventListener("roota-market-mode", notify);
+  return () => {
+    window.removeEventListener("storage", notify);
+    window.removeEventListener("roota-market-mode", notify);
+  };
+}
+function simpleModeSnapshot() {
+  try {
+    return localStorage.getItem(modeKey) !== "full";
+  } catch {
+    return true;
+  }
+}
+function saveMarketMode(simple: boolean) {
+  try {
+    localStorage.setItem(modeKey, simple ? "simple" : "full");
+  } catch {
+    /* Storage may be disabled. */
+  }
+  window.dispatchEvent(new Event("roota-market-mode"));
+}
 
 function Counter({
   value,
@@ -248,6 +272,12 @@ function StockSettings({
   );
 }
 export default function MarketControl() {
+  const simpleMode = useSyncExternalStore(
+    subscribeMode,
+    simpleModeSnapshot,
+    () => true,
+  );
+  const [helperOpen, setHelperOpen] = useState(false);
   const [olderSales, setOlderSales] = useState<MarketState["history"]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyEnd, setHistoryEnd] = useState(false);
@@ -362,25 +392,39 @@ export default function MarketControl() {
           </a>
           <button
             className="market-secondary"
-            onClick={() => setPairOpen((v) => !v)}
+            type="button"
+            aria-pressed={!simpleMode}
+            onClick={() => saveMarketMode(!simpleMode)}
           >
-            <Monitor size={16} />
-            <span
-              className={`market-live-dot ${displaysOnline ? "is-online" : ""}`}
-            />
-            {displaysOnline ? "iPad подключён" : "Подключить iPad"}
+            {simpleMode ? "Полный интерфейс" : "Упрощённый интерфейс"}
           </button>
-          <button
-            className="market-secondary"
-            disabled={!data || busy || sale?.status === "pending"}
-            onClick={() => setSettings(data!.inventory.map((i) => ({ ...i })))}
-          >
-            <Settings2 size={16} />
-            Товары и остатки
-          </button>
+          {!simpleMode ? (
+            <>
+              <button
+                className="market-secondary"
+                onClick={() => setPairOpen((v) => !v)}
+              >
+                <Monitor size={16} />
+                <span
+                  className={`market-live-dot ${displaysOnline ? "is-online" : ""}`}
+                />
+                {displaysOnline ? "iPad подключён" : "Подключить iPad"}
+              </button>
+              <button
+                className="market-secondary"
+                disabled={!data || busy || sale?.status === "pending"}
+                onClick={() =>
+                  setSettings(data!.inventory.map((i) => ({ ...i })))
+                }
+              >
+                <Settings2 size={16} />
+                Товары и остатки
+              </button>
+            </>
+          ) : null}
         </div>
       </div>
-      {data ? (
+      {!simpleMode && data ? (
         <div className="market-extra-toolbar">
           <button
             className="market-secondary"
@@ -396,7 +440,7 @@ export default function MarketControl() {
           </a>
         </div>
       ) : null}
-      {preferences && data ? (
+      {!simpleMode && preferences && data ? (
         <TransferPreferences
           initial={data.transferSettings}
           busy={busy}
@@ -406,7 +450,7 @@ export default function MarketControl() {
           }}
         />
       ) : null}
-      {pairOpen ? (
+      {!simpleMode && pairOpen ? (
         <section className="market-pair-panel">
           <div>
             <h2>Один раз познакомим экраны</h2>
@@ -470,7 +514,9 @@ export default function MarketControl() {
                 : "Выдача чеков требует проверки"}
             </strong>
             <span>{h.detail}</span>
-            <a href="#market-helper">Открыть помощник чеков ↓</a>
+            <a href="#market-helper" onClick={() => setHelperOpen(true)}>
+              Открыть помощник чеков ↓
+            </a>
           </div>
         ))}
       {connectionError || error ? (
@@ -478,11 +524,11 @@ export default function MarketControl() {
           {error || `Нет связи с кассой. ${connectionError}`}
         </p>
       ) : null}
-      {data?.mode === "test" ? (
+      {!simpleMode && data?.mode === "test" ? (
         <p className="market-test">
           Тестовый режим · деньги не списываются, остатки не расходуются
         </p>
-      ) : data && !data.mode ? (
+      ) : !simpleMode && data && !data.mode ? (
         <p className="market-alert">
           Оплата Робокассы не настроена. Выбор товаров и подключение экрана
           доступны.
@@ -495,336 +541,354 @@ export default function MarketControl() {
         </section>
       ) : (
         <>
-          <div className="market-workspace">
-            <div className="market-products">
-              <div
-                className="market-segmented"
-                aria-label="Как оформить покупку"
-              >
-                {[false, true].map((value) => (
-                  <button
-                    key={String(value)}
-                    disabled={locked}
-                    aria-pressed={byAmount === value}
-                    onClick={() => {
-                      setByAmount(value);
-                      key.current = null;
-                    }}
-                  >
-                    {value ? "По сумме" : "По изделиям"}
-                  </button>
-                ))}
-              </div>
-              {byAmount ? (
-                <section className="market-counter-amount">
-                  <label htmlFor="counter-amount">Сумма покупки, ₽</label>
-                  <input
-                    id="counter-amount"
-                    inputMode="decimal"
-                    autoComplete="off"
-                    maxLength={30}
-                    value={amount}
-                    disabled={locked}
-                    onChange={(event) => {
-                      setAmount(event.target.value);
-                      key.current = null;
-                    }}
-                  />
-                  <p className="market-small">
-                    В чеке — «{marketGoodsName}». Остатки изделий сохраняются.
-                  </p>
-                </section>
-              ) : (
-                <>
-                  <section>
-                    <div className="market-section-heading">
-                      <h2>Изделия</h2>
-                      <span>Каталог маркета</span>
-                    </div>
-                    <div className="market-product-grid">
+          {!simpleMode ? (
+            <div className="market-workspace">
+              <div className="market-products">
+                <div
+                  className="market-segmented"
+                  aria-label="Как оформить покупку"
+                >
+                  {[false, true].map((value) => (
+                    <button
+                      key={String(value)}
+                      disabled={locked}
+                      aria-pressed={byAmount === value}
+                      onClick={() => {
+                        setByAmount(value);
+                        key.current = null;
+                      }}
+                    >
+                      {value ? "По сумме" : "По изделиям"}
+                    </button>
+                  ))}
+                </div>
+                {byAmount ? (
+                  <section className="market-counter-amount">
+                    <label htmlFor="counter-amount">Сумма покупки, ₽</label>
+                    <input
+                      id="counter-amount"
+                      inputMode="decimal"
+                      autoComplete="off"
+                      maxLength={30}
+                      value={amount}
+                      disabled={locked}
+                      onChange={(event) => {
+                        setAmount(event.target.value);
+                        key.current = null;
+                      }}
+                    />
+                    <p className="market-small">
+                      В чеке — «{marketGoodsName}». Остатки изделий сохраняются.
+                    </p>
+                  </section>
+                ) : (
+                  <>
+                    <section>
+                      <div className="market-section-heading">
+                        <h2>Изделия</h2>
+                        <span>Каталог маркета</span>
+                      </div>
+                      <div className="market-product-grid">
+                        {data.inventory
+                          .filter((i) =>
+                            ["plate", "postcard", "object"].includes(i.kind),
+                          )
+                          .map((i, index) => (
+                            <article
+                              className={`market-product-card ${(quantities[i.key] ?? 0) > 0 ? "is-selected" : ""}`}
+                              key={i.key}
+                            >
+                              <div
+                                className={`market-product-image market-tone-${index % 4}`}
+                              >
+                                {i.image || marketPhotos[i.key] ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img
+                                    src={i.image || marketPhotos[i.key]}
+                                    alt={i.name}
+                                    loading="lazy"
+                                  />
+                                ) : (
+                                  <Creature
+                                    id={
+                                      i.kind === "postcard"
+                                        ? 2912
+                                        : [2891, 2895, 2907, 2903][index % 4]
+                                    }
+                                  />
+                                )}
+                                {(quantities[i.key] ?? 0) > 0 ? (
+                                  <span className="market-selected-mark">
+                                    <Check size={16} />
+                                  </span>
+                                ) : null}
+                              </div>
+                              <div className="market-product-info">
+                                <h3>{i.name}</h3>
+                                <p>
+                                  {i.price ? money(i.price) : "Укажите цену"}
+                                  <span>
+                                    {i.stock_qty
+                                      ? `${i.stock_qty} шт. на столе`
+                                      : "Пока нет на столе"}
+                                  </span>
+                                </p>
+                                <Counter
+                                  name={i.name}
+                                  value={quantities[i.key] ?? 0}
+                                  max={i.stock_qty}
+                                  disabled={
+                                    locked ||
+                                    !i.price ||
+                                    Boolean(connectionError)
+                                  }
+                                  onChange={(n) => change(i.key, n)}
+                                />
+                              </div>
+                            </article>
+                          ))}
+                      </div>
+                    </section>
+                    <section className="market-garden">
+                      <div className="market-section-heading">
+                        <div>
+                          <p className="market-eyebrow">
+                            Керамический конструктор
+                          </p>
+                          <h2>Сад</h2>
+                        </div>
+                        <Creature id={2909} />
+                      </div>
+                      <div
+                        className="market-segmented"
+                        aria-label="Способ покупки Сада"
+                      >
+                        {[
+                          [true, "Собрать набор"],
+                          [false, "Детали поштучно"],
+                        ].map(([bundle, label]) => (
+                          <button
+                            key={String(bundle)}
+                            aria-pressed={gardenBundle === bundle}
+                            disabled={locked}
+                            onClick={() => {
+                              key.current = null;
+                              setGardenBundle(Boolean(bundle));
+                            }}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
                       {data.inventory
                         .filter((i) =>
-                          ["plate", "postcard", "object"].includes(i.kind),
+                          ["stems", "flowers", "leaves"].includes(i.kind),
                         )
-                        .map((i, index) => (
-                          <article
-                            className={`market-product-card ${(quantities[i.key] ?? 0) > 0 ? "is-selected" : ""}`}
-                            key={i.key}
-                          >
-                            <div
-                              className={`market-product-image market-tone-${index % 4}`}
-                            >
-                              {i.image || marketPhotos[i.key] ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img
-                                  src={i.image || marketPhotos[i.key]}
-                                  alt={i.name}
-                                  loading="lazy"
-                                />
-                              ) : (
-                                <Creature
-                                  id={
-                                    i.kind === "postcard"
-                                      ? 2912
-                                      : [2891, 2895, 2907, 2903][index % 4]
-                                  }
-                                />
-                              )}
-                              {(quantities[i.key] ?? 0) > 0 ? (
-                                <span className="market-selected-mark">
-                                  <Check size={16} />
-                                </span>
-                              ) : null}
-                            </div>
-                            <div className="market-product-info">
+                        .map((i) => (
+                          <div className="market-garden-row" key={i.key}>
+                            <div>
                               <h3>{i.name}</h3>
                               <p>
-                                {i.price ? money(i.price) : "Укажите цену"}
-                                <span>
-                                  {i.stock_qty
-                                    ? `${i.stock_qty} шт. на столе`
-                                    : "Пока нет на столе"}
-                                </span>
+                                {money(i.price ?? 0)} / шт. · осталось{" "}
+                                {i.stock_qty}
                               </p>
-                              <Counter
-                                name={i.name}
-                                value={quantities[i.key] ?? 0}
-                                max={i.stock_qty}
-                                disabled={
-                                  locked || !i.price || Boolean(connectionError)
-                                }
-                                onChange={(n) => change(i.key, n)}
-                              />
                             </div>
-                          </article>
+                            <Counter
+                              name={i.name}
+                              value={quantities[i.key] ?? 0}
+                              max={i.stock_qty}
+                              disabled={
+                                locked || !i.price || Boolean(connectionError)
+                              }
+                              onChange={(n) => change(i.key, n)}
+                            />
+                          </div>
                         ))}
+                      <p className="market-small">
+                        В наборе 16–23 детали — скидка 5%, от 24 — 10%. В
+                        поштучном режиме скидки нет.
+                      </p>
+                    </section>
+                  </>
+                )}
+              </div>
+              <aside className="market-receipt">
+                <div className="market-receipt-top">
+                  <p className="market-eyebrow">Состав покупки</p>
+                  <h2>{sale ? sale.number : "Покупка"}</h2>
+                  <span className="market-receipt-star">✳</span>
+                </div>
+                {chosen ? (
+                  <>
+                    <ReceiptItems sale={chosen} />
+                    <div className="market-receipt-total">
+                      <span>Всего</span>
+                      <strong>{money(chosen.amount)}</strong>
                     </div>
-                  </section>
-                  <section className="market-garden">
-                    <div className="market-section-heading">
-                      <div>
-                        <p className="market-eyebrow">
-                          Керамический конструктор
-                        </p>
-                        <h2>Сад</h2>
-                      </div>
-                      <Creature id={2909} />
-                    </div>
-                    <div
-                      className="market-segmented"
-                      aria-label="Способ покупки Сада"
+                    {quote?.discount && !sale ? (
+                      <p className="market-saving">
+                        Скидка на Сад {quote.discount}% уже учтена
+                      </p>
+                    ) : null}
+                  </>
+                ) : (
+                  <div className="market-empty-receipt">
+                    <Creature id={2907} />
+                    <p>
+                      {byAmount ? "Введите сумму покупки" : "Выберите изделия"}
+                    </p>
+                  </div>
+                )}
+                {sale ? (
+                  <div className="market-sale-actions">
+                    <span
+                      className={`market-status-pill ${sale.status === "paid_review" ? "is-warning" : ""}`}
+                      role="status"
                     >
-                      {[
-                        [true, "Собрать набор"],
-                        [false, "Детали поштучно"],
-                      ].map(([bundle, label]) => (
+                      {expired
+                        ? "Время кода истекло"
+                        : statusLabel(sale.status)}
+                    </span>
+                    {sale.status === "pending" &&
+                    !expired &&
+                    sale.paymentUrl &&
+                    !connectionError ? (
+                      <>
+                        <div className="market-mini-qr">
+                          <QrCode value={sale.paymentUrl} />
+                        </div>
+                        <p className="market-small">
+                          {sale.method === "robokassa"
+                            ? "QR отправлен на iPad. Email для чека покупатель вводит на телефоне."
+                            : "Покупатель проверяет сумму и получателя в банковском приложении."}
+                        </p>
+                      </>
+                    ) : null}
+                    {sale.status === "pending" &&
+                    sale.method !== "robokassa" ? (
+                      <>
+                        <ManualInstructions sale={sale} />
                         <button
-                          key={String(bundle)}
-                          aria-pressed={gardenBundle === bundle}
-                          disabled={locked}
-                          onClick={() => {
-                            key.current = null;
-                            setGardenBundle(Boolean(bundle));
+                          className="market-primary"
+                          disabled={busy || expired || Boolean(connectionError)}
+                          onClick={async () => {
+                            if (
+                              window.confirm(
+                                sale.method === "transfer"
+                                  ? "Вы проверили в своём банке поступление полной суммы? Скриншот покупателя не подтверждает поступление."
+                                  : "Вы получили полную сумму наличными?",
+                              )
+                            )
+                              await action({
+                                action: "confirm-manual",
+                                id: sale.id,
+                              });
                           }}
                         >
-                          {label}
+                          Деньги получены
                         </button>
-                      ))}
-                    </div>
-                    {data.inventory
-                      .filter((i) =>
-                        ["stems", "flowers", "leaves"].includes(i.kind),
-                      )
-                      .map((i) => (
-                        <div className="market-garden-row" key={i.key}>
-                          <div>
-                            <h3>{i.name}</h3>
-                            <p>
-                              {money(i.price ?? 0)} / шт. · осталось{" "}
-                              {i.stock_qty}
-                            </p>
-                          </div>
-                          <Counter
-                            name={i.name}
-                            value={quantities[i.key] ?? 0}
-                            max={i.stock_qty}
-                            disabled={
-                              locked || !i.price || Boolean(connectionError)
-                            }
-                            onChange={(n) => change(i.key, n)}
-                          />
-                        </div>
-                      ))}
-                    <p className="market-small">
-                      В наборе 16–23 детали — скидка 5%, от 24 — 10%. В
-                      поштучном режиме скидки нет.
-                    </p>
-                  </section>
-                </>
-              )}
-            </div>
-            <aside className="market-receipt">
-              <div className="market-receipt-top">
-                <p className="market-eyebrow">Состав покупки</p>
-                <h2>{sale ? sale.number : "Покупка"}</h2>
-                <span className="market-receipt-star">✳</span>
-              </div>
-              {chosen ? (
-                <>
-                  <ReceiptItems sale={chosen} />
-                  <div className="market-receipt-total">
-                    <span>Всего</span>
-                    <strong>{money(chosen.amount)}</strong>
-                  </div>
-                  {quote?.discount && !sale ? (
-                    <p className="market-saving">
-                      Скидка на Сад {quote.discount}% уже учтена
-                    </p>
-                  ) : null}
-                </>
-              ) : (
-                <div className="market-empty-receipt">
-                  <Creature id={2907} />
-                  <p>
-                    {byAmount ? "Введите сумму покупки" : "Выберите изделия"}
-                  </p>
-                </div>
-              )}
-              {sale ? (
-                <div className="market-sale-actions">
-                  <span
-                    className={`market-status-pill ${sale.status === "paid_review" ? "is-warning" : ""}`}
-                    role="status"
-                  >
-                    {expired ? "Время кода истекло" : statusLabel(sale.status)}
-                  </span>
-                  {sale.status === "pending" &&
-                  !expired &&
-                  sale.paymentUrl &&
-                  !connectionError ? (
-                    <>
-                      <div className="market-mini-qr">
-                        <QrCode value={sale.paymentUrl} />
+                      </>
+                    ) : null}
+                    {sale.status === "paid" &&
+                    sale.method !== "robokassa" &&
+                    !sale.receiptUrl ? (
+                      <div className="market-receipt-needed" role="status">
+                        <p>Продажа сохранена. Чек ФНС ещё не выдан.</p>
+                        <a
+                          className="market-primary"
+                          href="#market-receipt-tasks"
+                        >
+                          Выдать чек в «Моём налоге» ↓
+                        </a>
                       </div>
-                      <p className="market-small">
-                        {sale.method === "robokassa"
-                          ? "QR отправлен на iPad. Email для чека покупатель вводит на телефоне."
-                          : "Покупатель проверяет сумму и получателя в банковском приложении."}
+                    ) : null}
+                    <ReceiptDownload sale={sale} />
+                    {sale.status === "paid_review" ? (
+                      <p className="market-error">
+                        Деньги пришли после отмены или истечения срока.
+                        Проверьте платёж в Робокассе и наличие товара перед
+                        выдачей.
                       </p>
-                    </>
-                  ) : null}
-                  {sale.status === "pending" && sale.method !== "robokassa" ? (
-                    <>
-                      <ManualInstructions sale={sale} />
+                    ) : null}
+                    {sale.status === "pending" ? (
                       <button
-                        className="market-primary"
-                        disabled={busy || expired || Boolean(connectionError)}
+                        className="market-secondary"
+                        disabled={busy || Boolean(connectionError)}
                         onClick={async () => {
                           if (
                             window.confirm(
-                              sale.method === "transfer"
-                                ? "Вы проверили в своём банке поступление полной суммы? Скриншот покупателя не подтверждает поступление."
-                                : "Вы получили полную сумму наличными?",
+                              "Отменить покупку и вернуть товары в остаток? Если покупатель уже открыл оплату, он ещё может перечислить деньги — такая оплата потребует проверки.",
                             )
                           )
-                            await action({
-                              action: "confirm-manual",
-                              id: sale.id,
-                            });
+                            await action({ action: "cancel", id: sale.id });
                         }}
                       >
-                        Деньги получены
+                        Отменить покупку
                       </button>
-                    </>
-                  ) : null}
-                  {sale.status === "paid" &&
-                  sale.method !== "robokassa" &&
-                  !sale.receiptUrl ? (
-                    <div className="market-receipt-needed" role="status">
-                      <p>Продажа сохранена. Чек ФНС ещё не выдан.</p>
-                      <a
+                    ) : (
+                      <button
                         className="market-primary"
-                        href="#market-receipt-tasks"
+                        disabled={busy || Boolean(connectionError)}
+                        onClick={clear}
                       >
-                        Выдать чек в «Моём налоге» ↓
-                      </a>
-                    </div>
-                  ) : null}
-                  <ReceiptDownload sale={sale} />
-                  {sale.status === "paid_review" ? (
-                    <p className="market-error">
-                      Деньги пришли после отмены или истечения срока. Проверьте
-                      платёж в Робокассе и наличие товара перед выдачей.
-                    </p>
-                  ) : null}
-                  {sale.status === "pending" ? (
-                    <button
-                      className="market-secondary"
-                      disabled={busy || Boolean(connectionError)}
-                      onClick={async () => {
-                        if (
-                          window.confirm(
-                            "Отменить покупку и вернуть товары в остаток? Если покупатель уже открыл оплату, он ещё может перечислить деньги — такая оплата потребует проверки.",
-                          )
-                        )
-                          await action({ action: "cancel", id: sale.id });
-                      }}
-                    >
-                      Отменить покупку
-                    </button>
-                  ) : (
-                    <button
-                      className="market-primary"
-                      disabled={busy || Boolean(connectionError)}
-                      onClick={clear}
-                    >
-                      Следующая покупка <ArrowUpRight size={18} />
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <>
-                  <p className="market-error" role="status">
-                    {quoteError}
-                  </p>
-                  <div className="market-payment-choices">
-                    <button
-                      className="market-primary"
-                      disabled={
-                        !quote || busy || Boolean(connectionError) || !data.mode
-                      }
-                      onClick={() => show("robokassa")}
-                    >
-                      Робокасса · показать QR <ArrowUpRight size={18} />
-                    </button>
-                    <div>
-                      <button
-                        className="market-secondary"
-                        disabled={!quote || busy || Boolean(connectionError)}
-                        onClick={() => show("transfer")}
-                      >
-                        Перевод
+                        Следующая покупка <ArrowUpRight size={18} />
                       </button>
-                      <button
-                        className="market-secondary"
-                        disabled={!quote || busy || Boolean(connectionError)}
-                        onClick={() => show("cash")}
-                      >
-                        Наличные
-                      </button>
-                    </div>
+                    )}
                   </div>
-                  <p className="market-small">
-                    Сумма и состав появятся на экране покупателя. Код действует
-                    15 минут.
-                  </p>
-                </>
-              )}
-            </aside>
-          </div>
-          <MarketIntakeQueue state={data} />
-          <ReceiptHelper state={data} />
-          <ReceiptTasks state={data} busy={busy} action={action} />
+                ) : (
+                  <>
+                    <p className="market-error" role="status">
+                      {quoteError}
+                    </p>
+                    <div className="market-payment-choices">
+                      <button
+                        className="market-primary"
+                        disabled={
+                          !quote ||
+                          busy ||
+                          Boolean(connectionError) ||
+                          !data.mode
+                        }
+                        onClick={() => show("robokassa")}
+                      >
+                        Робокасса · показать QR <ArrowUpRight size={18} />
+                      </button>
+                      <div>
+                        <button
+                          className="market-secondary"
+                          disabled={!quote || busy || Boolean(connectionError)}
+                          onClick={() => show("transfer")}
+                        >
+                          Перевод
+                        </button>
+                        <button
+                          className="market-secondary"
+                          disabled={!quote || busy || Boolean(connectionError)}
+                          onClick={() => show("cash")}
+                        >
+                          Наличные
+                        </button>
+                      </div>
+                    </div>
+                    <p className="market-small">
+                      Сумма и состав появятся на экране покупателя. Код
+                      действует 15 минут.
+                    </p>
+                  </>
+                )}
+              </aside>
+            </div>
+          ) : null}
+          <MarketIntakeQueue state={data} simple={simpleMode} />
+          <details
+            className="market-helper-settings"
+            open={!simpleMode || helperOpen}
+            onToggle={(e) => setHelperOpen(e.currentTarget.open)}
+          >
+            <summary>Помощник и отправка чеков</summary>
+            <ReceiptHelper state={data} />
+            <ReceiptTasks state={data} busy={busy} action={action} />
+          </details>
           <section className="market-sales">
             <div className="market-section-heading">
               <h2>Продажи на маркете</h2>
@@ -852,12 +916,7 @@ export default function MarketControl() {
                           s.status === "paid_review" ? "market-error" : ""
                         }
                       >
-                        {statusLabel(s.status)}{" "}
-                        {s.items.some(
-                          (i) =>
-                            i.name === marketGoodsName ||
-                            i.name === "Оплата товара на маркете",
-                        ) && <small>⚠ Без разбивки по изделиям</small>}
+                        {statusLabel(s.status)}
                       </span>
                       <strong>{money(s.amount)}</strong>
                     </summary>

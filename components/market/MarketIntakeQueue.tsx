@@ -10,6 +10,76 @@ import {
   type MarketIntakeRow,
 } from "@/lib/market/model";
 import { QrCode, ReceiptItems, marketFetch } from "./shared";
+function SimpleRequestEditor({
+  r,
+  run,
+  busy,
+}: {
+  r: MarketIntakeRow;
+  run: (body: unknown) => Promise<void>;
+  busy: boolean;
+}) {
+  const [paidDate, setPaidDate] = useState(() => marketPaymentDate());
+  return (
+    <details className="market-intake-order">
+      <summary>
+        <span>
+          {r.number}
+          {r.mode === "test" ? " · тест" : ""}
+        </span>
+        <strong>{money(r.amount)}</strong>
+        <span>
+          {r.method === "cash"
+            ? "Наличные"
+            : r.method === "transfer"
+              ? "Перевод"
+              : "Робокасса"}
+          {" · "}
+          {r.method === "robokassa"
+            ? "Чек оформляет Робокасса"
+            : r.paidAt
+              ? "Деньги получены · чек ожидает подготовки"
+              : "Ожидает подтверждения денег"}
+        </span>
+      </summary>
+      <p>{r.email || "Покупка без почты"}</p>
+      <p className="market-small">
+        В чеке: {marketGoodsName} · {money(r.amount)}
+      </p>
+      {r.method !== "robokassa" ? (
+        <>
+          {!r.paidAt &&
+          marketPaymentDate(r.createdAt) !== marketPaymentDate() ? (
+            <label>
+              Дата получения денег
+              <input
+                type="date"
+                value={paidDate}
+                min={marketPaymentDate(r.createdAt)}
+                max={marketPaymentDate()}
+                disabled={busy}
+                onChange={(e) => setPaidDate(e.target.value)}
+              />
+            </label>
+          ) : null}
+          <button
+            className="market-primary"
+            disabled={busy || !paidDate}
+            onClick={() =>
+              void run({ action: "intake-confirm-simple", id: r.id, paidDate })
+            }
+          >
+            {busy
+              ? "Сохраняем…"
+              : r.paidAt
+                ? "Подготовить чек"
+                : "Деньги получены"}
+          </button>
+        </>
+      ) : null}
+    </details>
+  );
+}
 function RequestEditor({
   r,
   state,
@@ -286,7 +356,13 @@ function RequestEditor({
     </details>
   );
 }
-export default function MarketIntakeQueue({ state }: { state: MarketState }) {
+export default function MarketIntakeQueue({
+  state,
+  simple = false,
+}: {
+  state: MarketState;
+  simple?: boolean;
+}) {
   const [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   async function run(body: unknown) {
@@ -304,8 +380,9 @@ export default function MarketIntakeQueue({ state }: { state: MarketState }) {
     <section className="market-intake-queue" id="market-intake-queue">
       <h2>Покупки по постоянному QR</h2>
       <p>
-        По Робокассе покупатель оплачивает введённую сумму сразу. Для наличных и
-        переводов подтвердите деньги, а затем выберите позиции чека.
+        {simple
+          ? "Проверьте оплату и нажмите «Деньги получены». Чек с общим названием подготовится автоматически."
+          : "По Робокассе покупатель оплачивает введённую сумму сразу. Для наличных и переводов подтвердите деньги, а затем выберите позиции чека."}
       </p>
       <details>
         <summary>Постоянный QR для печати и приём покупок</summary>
@@ -343,9 +420,13 @@ export default function MarketIntakeQueue({ state }: { state: MarketState }) {
           {error}
         </p>
       ) : null}
-      {state.intakes?.map((r) => (
-        <RequestEditor key={r.id} r={r} state={state} run={run} busy={busy} />
-      ))}
+      {state.intakes?.map((r) =>
+        simple ? (
+          <SimpleRequestEditor key={r.id} r={r} run={run} busy={busy} />
+        ) : (
+          <RequestEditor key={r.id} r={r} state={state} run={run} busy={busy} />
+        ),
+      )}
       {state.intakes?.length === 200 ? (
         <p>Показаны первые 200 покупок. После обработки появятся следующие.</p>
       ) : null}

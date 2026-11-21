@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
     "tesseract.js",
     "tesseract.js-core",
     "@tesseract.js-data/rus",
+    "@tesseract.js-data/eng",
   ],
   async headers() {
     return [

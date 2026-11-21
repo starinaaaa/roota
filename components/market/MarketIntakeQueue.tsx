@@ -50,6 +50,12 @@ function RequestEditor({
         </span>
         <strong>{money(r.amount)}</strong>
         <span>
+          {r.method === "cash"
+            ? "Наличные"
+            : r.method === "transfer"
+              ? "Перевод"
+              : "Робокасса"}
+          {" · "}
           {r.saleId
             ? "Состав сохранён · ожидает оплаты"
             : r.paidAt

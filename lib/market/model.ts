@@ -22,6 +22,18 @@ export const basketSchema = z
   .refine((v) => Object.keys(v.quantities).length <= 30);
 export type Basket = z.infer<typeof basketSchema>;
 export const marketGoodsName = "Оплата товара на маркете";
+export const receiptNameSchema = z
+  .string()
+  .trim()
+  .min(1, "Введите название товара для чека")
+  .max(128, "Название товара должно быть не длиннее 128 символов")
+  .refine(
+    (name) =>
+      !Array.from(name).some(
+        (char) => char.charCodeAt(0) < 32 || char.charCodeAt(0) === 127,
+      ),
+    "Название товара должно быть в одной строке",
+  );
 export type SaleItem = {
   name: string;
   quantity: number;

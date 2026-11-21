@@ -3,6 +3,7 @@ import { useState } from "react";
 import {
   money,
   quoteBasket,
+  receiptNameSchema,
   type MarketState,
   type MarketIntakeRow,
 } from "@/lib/market/model";
@@ -19,7 +20,10 @@ function RequestEditor({
   busy: boolean;
 }) {
   const [quantities, setQuantities] = useState<Record<string, number>>({}),
-    [gardenBundle, setGardenBundle] = useState(true);
+    [gardenBundle, setGardenBundle] = useState(true),
+    [customName, setCustomName] = useState(r.method !== "robokassa"),
+    [receiptName, setReceiptName] = useState("");
+  const nameResult = receiptNameSchema.safeParse(receiptName);
   let quote: ReturnType<typeof quoteBasket> | null = null,
     error = "";
   try {
@@ -36,6 +40,7 @@ function RequestEditor({
   }
   const exact =
     !!quote && Math.round(quote.amount * 100) === Math.round(r.amount * 100);
+  const ready = customName ? nameResult.success : exact;
   return (
     <details className="market-intake-order">
       <summary>
@@ -91,52 +96,106 @@ function RequestEditor({
             </button>
           ) : null}
           <h3>Что купили на {money(r.amount)}</h3>
-          <div className="market-intake-items">
-            {state.inventory
-              .filter((i) => i.price !== null)
-              .map((i) => (
-                <label key={i.key}>
-                  <span>
-                    {i.name} · {money(i.price!)} · осталось {i.stock_qty}
-                  </span>
-                  <input
-                    type="number"
-                    min="0"
-                    max={Math.min(100, i.stock_qty)}
-                    step="1"
-                    aria-label={`${r.number}: ${i.name}`}
-                    value={quantities[i.key] ?? 0}
-                    onChange={(e) =>
-                      setQuantities((v) => ({
-                        ...v,
-                        [i.key]: Math.max(
-                          0,
-                          Math.min(100, Number(e.target.value) || 0),
-                        ),
-                      }))
-                    }
-                  />
-                </label>
-              ))}
-          </div>
-          <label className="market-consent">
-            <input
-              type="checkbox"
-              checked={gardenBundle}
-              onChange={(e) => setGardenBundle(e.target.checked)}
-            />
-            <span>«Сад» — набор с действующими скидками</span>
-          </label>
-          <p
-            className={exact ? "market-intake-exact" : "market-error"}
-            role="status"
-          >
-            {money(quote?.amount ?? 0)} / {money(r.amount)} ·{" "}
-            {exact
-              ? "Сумма совпадает"
-              : "Состав должен точно совпадать с суммой покупки"}
-          </p>
-          {error ? <p className="market-small">{error}</p> : null}
+          {r.method !== "robokassa" ? (
+            <div
+              className="market-segmented"
+              role="group"
+              aria-label={`${r.number}: позиции чека`}
+            >
+              <button
+                type="button"
+                aria-pressed={customName}
+                disabled={busy}
+                onClick={() => setCustomName(true)}
+              >
+                Ввести название
+              </button>
+              <button
+                type="button"
+                aria-pressed={!customName}
+                disabled={busy}
+                onClick={() => setCustomName(false)}
+              >
+                Выбрать из каталога
+              </button>
+            </div>
+          ) : null}
+          {customName ? (
+            <div className="market-intake-receipt-name">
+              <label htmlFor={`receipt-name-${r.id}`}>
+                Название товара для чека
+              </label>
+              <input
+                id={`receipt-name-${r.id}`}
+                type="text"
+                maxLength={128}
+                placeholder="Например, Ваза Roota"
+                value={receiptName}
+                disabled={busy}
+                aria-describedby={`receipt-name-help-${r.id}`}
+                aria-invalid={!!receiptName && !nameResult.success}
+                onChange={(e) => setReceiptName(e.target.value)}
+              />
+              <p id={`receipt-name-help-${r.id}`} className="market-small">
+                Одна позиция на {money(r.amount)}. Это название попадёт в чек
+                ФНС. Остатки каталога не изменятся.
+              </p>
+              {receiptName && !nameResult.success ? (
+                <p className="market-error" role="alert">
+                  {nameResult.error.issues[0]?.message}
+                </p>
+              ) : null}
+            </div>
+          ) : (
+            <>
+              <div className="market-intake-items">
+                {state.inventory
+                  .filter((i) => i.price !== null)
+                  .map((i) => (
+                    <label key={i.key}>
+                      <span>
+                        {i.name} · {money(i.price!)} · осталось {i.stock_qty}
+                      </span>
+                      <input
+                        type="number"
+                        min="0"
+                        max={Math.min(100, i.stock_qty)}
+                        step="1"
+                        aria-label={`${r.number}: ${i.name}`}
+                        value={quantities[i.key] ?? 0}
+                        onChange={(e) =>
+                          setQuantities((v) => ({
+                            ...v,
+                            [i.key]: Math.max(
+                              0,
+                              Math.min(100, Number(e.target.value) || 0),
+                            ),
+                          }))
+                        }
+                      />
+                    </label>
+                  ))}
+              </div>
+              <label className="market-consent">
+                <input
+                  type="checkbox"
+                  checked={gardenBundle}
+                  onChange={(e) => setGardenBundle(e.target.checked)}
+                />
+                <span>«Сад» — набор с действующими скидками</span>
+              </label>
+              <p
+                className={exact ? "market-intake-exact" : "market-error"}
+                role="status"
+              >
+                {money(quote?.amount ?? 0)} / {money(r.amount)} ·{" "}
+                {exact
+                  ? "Сумма совпадает"
+                  : "Состав должен точно совпадать с суммой покупки"}
+              </p>
+              {error ? <p className="market-small">{error}</p> : null}
+            </>
+          )}
           {r.method === "robokassa" ? (
             <p className="market-small">
               Сначала сохраняем точный состав. Затем покупатель оплачивает на
@@ -149,16 +208,18 @@ function RequestEditor({
           ) : null}
           <button
             className="market-primary"
-            disabled={busy || !exact || (!r.paidAt && r.method !== "robokassa")}
+            disabled={busy || !ready || (!r.paidAt && r.method !== "robokassa")}
             onClick={() =>
               void run({
                 action: "intake-finalize",
                 id: r.id,
-                basket: {
-                  requestKey: crypto.randomUUID(),
-                  quantities,
-                  gardenBundle,
-                },
+                basket: customName
+                  ? { generic: true, name: receiptName.trim() }
+                  : {
+                      requestKey: crypto.randomUUID(),
+                      quantities,
+                      gardenBundle,
+                    },
               })
             }
           >
@@ -166,7 +227,7 @@ function RequestEditor({
               ? "Сохранить состав и разрешить оплату"
               : "Сформировать чек"}
           </button>
-          {r.paidAt && r.method !== "robokassa" && (
+          {!customName && r.paidAt && r.method !== "robokassa" && (
             <button
               type="button"
               className="market-secondary"

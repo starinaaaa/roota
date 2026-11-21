@@ -90,7 +90,7 @@ export function parseReceiptText(text: string, plan: ImageReceiptPlan) {
     const before = row.slice(0, amount.index);
     const after = row
       .slice(amount.index! + amount[0].length)
-      .replace(/^\s*[₽РВB](?=\s|$)/u, "");
+      .replace(/^\s*[₽РВBP£](?=\s|$)/u, "");
     const name = before + after;
     if (normalized(name) !== normalized(plan.rows[i].name))
       throw new Error(

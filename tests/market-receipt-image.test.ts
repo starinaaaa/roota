@@ -46,6 +46,19 @@ test("receipt image text requires exact rows, price, total and settlement date",
     }).total,
     1000,
   );
+  assert.equal(
+    parseReceiptText(
+      text.replace(
+        "1. Открытка 10,00",
+        "1. Керамическое 10,00 £\nизделие Roota",
+      ),
+      {
+        ...plan,
+        rows: [{ name: "Керамическое изделие Roota", kopecks: 1000 }],
+      },
+    ).total,
+    1000,
+  );
 });
 test("local OCR verifies a QR-bearing original, fingerprint and snapshot; repeats reuse proof and keep the submission-time fence", async () => {
   const url = `https://lknpd.nalog.ru/api/v1/receipt/773212983545/fixture-${randomUUID()}/print`;

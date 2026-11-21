@@ -6,6 +6,7 @@ import {
   quoteBasket,
   marketGoodsName,
   receiptNameSchema,
+  marketPaymentDate,
 } from "./model";
 import {
   createSale,
@@ -117,7 +118,13 @@ export async function createIntake(
   );
   return result;
 }
-export async function confirmIntake(db: MarketDb, id: string, actor: string) {
+export async function confirmIntake(
+  db: MarketDb,
+  id: string,
+  actor: string,
+  paidDate?: string,
+) {
+  if (paidDate !== undefined) z.iso.date().parse(paidDate);
   await lockRegister(db);
   const {
     rows: [r],
@@ -129,9 +136,21 @@ export async function confirmIntake(db: MarketDb, id: string, actor: string) {
     throw Error("Эту покупку нельзя подтвердить вручную");
   if (r.paid_at) return;
   if (r.sale_id) throw Error("Покупка уже передана на оплату");
+  const today = marketPaymentDate();
+  if (
+    paidDate &&
+    (paidDate < marketPaymentDate(r.created_at) || paidDate > today)
+  )
+    throw Error(
+      "Дата получения денег должна быть между датой покупки и сегодняшним днём",
+    );
+  const settledAt =
+    paidDate && paidDate !== today
+      ? new Date(`${paidDate}T00:00:00+03:00`)
+      : null;
   await db.query(
-    "update market_intakes set paid_at=now(),confirmed_by=$2 where id=$1",
-    [id, actor],
+    "update market_intakes set paid_at=coalesce($3::timestamptz,now()),confirmed_by=$2 where id=$1",
+    [id, actor, settledAt],
   );
 }
 export async function finalizeIntake(

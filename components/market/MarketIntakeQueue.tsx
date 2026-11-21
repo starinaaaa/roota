@@ -4,6 +4,8 @@ import {
   money,
   quoteBasket,
   receiptNameSchema,
+  marketGoodsName,
+  marketPaymentDate,
   type MarketState,
   type MarketIntakeRow,
 } from "@/lib/market/model";
@@ -22,7 +24,8 @@ function RequestEditor({
   const [quantities, setQuantities] = useState<Record<string, number>>({}),
     [gardenBundle, setGardenBundle] = useState(true),
     [customName, setCustomName] = useState(r.method !== "robokassa"),
-    [receiptName, setReceiptName] = useState("");
+    [receiptName, setReceiptName] = useState(marketGoodsName),
+    [paidDate, setPaidDate] = useState(() => marketPaymentDate());
   const nameResult = receiptNameSchema.safeParse(receiptName);
   let quote: ReturnType<typeof quoteBasket> | null = null,
     error = "";
@@ -93,13 +96,28 @@ function RequestEditor({
       ) : (
         <>
           {!r.paidAt && r.method !== "robokassa" ? (
-            <button
-              className="market-primary"
-              disabled={busy}
-              onClick={() => void run({ action: "intake-confirm", id: r.id })}
-            >
-              Деньги получены · {r.number}
-            </button>
+            <>
+              <label>
+                Дата получения денег
+                <input
+                  type="date"
+                  value={paidDate}
+                  min={marketPaymentDate(r.createdAt)}
+                  max={marketPaymentDate()}
+                  disabled={busy}
+                  onChange={(e) => setPaidDate(e.target.value)}
+                />
+              </label>
+              <button
+                className="market-primary"
+                disabled={busy || !paidDate}
+                onClick={() =>
+                  void run({ action: "intake-confirm", id: r.id, paidDate })
+                }
+              >
+                Деньги получены · {r.number}
+              </button>
+            </>
           ) : null}
           <h3>Что купили на {money(r.amount)}</h3>
           {r.method !== "robokassa" ? (
@@ -241,7 +259,7 @@ function RequestEditor({
               onClick={() => {
                 if (
                   window.confirm(
-                    "Выдать чек с позицией «Оплата товара на маркете»? Остатки конкретных изделий не изменятся.",
+                    `Выдать чек с позицией «${marketGoodsName}»? Остатки конкретных изделий не изменятся.`,
                   )
                 )
                   void run({
@@ -251,7 +269,7 @@ function RequestEditor({
                   });
               }}
             >
-              Оплата товара на маркете · без выбора изделий
+              {marketGoodsName} · без выбора изделий
             </button>
           )}
           {!r.paidAt ? (

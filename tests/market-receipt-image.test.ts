@@ -34,6 +34,10 @@ test("receipt image text requires exact rows, price, total and settlement date",
   assert.throws(() =>
     parseReceiptText(text, { ...plan, rows: [...plan.rows, ...plan.rows] }),
   );
+  assert.equal(
+    parseReceiptText(text.replace("+03:00", "+ 03:00"), plan).registeredAt,
+    "2026-11-07T14:10:00.000Z",
+  );
   const plate = "Керамическая тарелка «Поцелуй»";
   const wrapped = text.replace(
     "1. Открытка 10,00",
@@ -60,11 +64,11 @@ test("receipt image text requires exact rows, price, total and settlement date",
     1000,
   );
 });
-test("local OCR verifies a QR-bearing original, fingerprint and snapshot; repeats reuse proof and keep the submission-time fence", async () => {
+async function receiptFixture(time = "17:10") {
   const url = `https://lknpd.nalog.ru/api/v1/receipt/773212983545/fixture-${randomUUID()}/print`;
   const lines = [
     "Чек №fixture",
-    "07.11.26 17:10(+03:00)",
+    `07.11.26 ${time}(+03:00)`,
     "Наименование       Сумма",
     "1. Керамическое           10,00",
     "изделие Roota",
@@ -94,6 +98,11 @@ test("local OCR verifies a QR-bearing original, fingerprint and snapshot; repeat
       headers: { "content-type": "image/png" },
     });
   }) as typeof fetch;
+  return { url, hash, fetcher, calls: () => calls };
+}
+test("local OCR verifies a QR-bearing original, fingerprint and snapshot; repeats reuse proof and keep the submission-time fence", async () => {
+  const fixture = await receiptFixture();
+  const { url, hash, fetcher } = fixture;
   const proof = await verifyReceiptImage(
     url,
     hash,
@@ -109,7 +118,7 @@ test("local OCR verifies a QR-bearing original, fingerprint and snapshot; repeat
     rows: [{ name: "Керамическое изделие Roota", kopecks: 1000 }],
   };
   await verifyReceiptImage(url, hash, brandedPlan, null, fetcher);
-  assert.equal(calls, 2);
+  assert.equal(fixture.calls(), 2);
   await assert.rejects(
     verifyReceiptImage(
       url,
@@ -120,7 +129,7 @@ test("local OCR verifies a QR-bearing original, fingerprint and snapshot; repeat
     ),
     /Время/,
   );
-  assert.equal(calls, 3);
+  assert.equal(fixture.calls(), 3);
   await assert.rejects(
     verifyReceiptImage(url, "a".repeat(64), plan, null, fetcher),
     /изображением/,
@@ -134,5 +143,32 @@ test("local OCR verifies a QR-bearing original, fingerprint and snapshot; repeat
       fetcher,
     ),
     /QR/,
+  );
+});
+
+test("prior-day FNS closing time keeps the printed settlement date; arbitrary earlier times remain rejected", async () => {
+  const brandedPlan = {
+    ...plan,
+    rows: [{ name: "Керамическое изделие Roota", kopecks: 1000 }],
+  };
+  const closing = await receiptFixture("23:59");
+  const proof = await verifyReceiptImage(
+    closing.url,
+    closing.hash,
+    brandedPlan,
+    new Date("2026-11-08T01:00:00Z"),
+    closing.fetcher,
+  );
+  assert.equal(proof.registeredAt, "2026-11-07T20:59:00.000Z");
+  const earlier = await receiptFixture();
+  await assert.rejects(
+    verifyReceiptImage(
+      earlier.url,
+      earlier.hash,
+      brandedPlan,
+      new Date("2026-11-08T01:00:00Z"),
+      earlier.fetcher,
+    ),
+    /Время/,
   );
 });

@@ -8,6 +8,7 @@ import { createWorker } from "tesseract.js";
 import russian from "@tesseract.js-data/rus";
 import english from "@tesseract.js-data/eng";
 import { fetchReceiptDocument } from "./verify-receipt";
+import { marketPaymentDate } from "./model";
 
 export type ImageReceiptPlan = {
   date: string;
@@ -43,7 +44,7 @@ export function parseReceiptText(text: string, plan: ImageReceiptPlan) {
     .filter(Boolean);
   const times = [
     ...text.matchAll(
-      /\b(\d{2})\.(\d{2})\.(\d{2}|\d{4})\s+(\d{2}):(\d{2})\s*\(\s*(\+03:00)\s*\)/g,
+      /\b(\d{2})\.(\d{2})\.(\d{2}|\d{4})\s+(\d{2}):(\d{2})\s*\(\s*(\+\s*03:00)\s*\)/g,
     ),
   ];
   const totals = lines
@@ -54,7 +55,7 @@ export function parseReceiptText(text: string, plan: ImageReceiptPlan) {
   const [, day, month, y, hour, minute, offset] = times[0];
   const year = y.length === 2 ? "20" + y : y;
   const date = `${year}-${month}-${day}`,
-    iso = `${date}T${hour}:${minute}:00${offset}`,
+    iso = `${date}T${hour}:${minute}:00${offset.replace(/\s/g, "")}`,
     time = new Date(iso);
   if (
     !Number.isFinite(time.getTime()) ||
@@ -198,9 +199,18 @@ export async function verifyReceiptImage(
       cache.set(key, parsed);
     }
     const registeredAt = new Date(parsed.registeredAt);
+    // FNS prints a prior settlement day's receipt at that day's 23:59,
+    // even when the actual issuance happens later. Keep the printed time.
+    const priorDayClosingTime =
+      notBefore &&
+      plan.date < marketPaymentDate(notBefore) &&
+      parsed.registeredAt ===
+        new Date(`${plan.date}T23:59:00+03:00`).toISOString();
     if (
       registeredAt.getTime() > Date.now() + 60000 ||
-      (notBefore && registeredAt.getTime() < notBefore.getTime() - 60000)
+      (notBefore &&
+        !priorDayClosingTime &&
+        registeredAt.getTime() < notBefore.getTime() - 60000)
     )
       throw new Error(
         "Время чека не подтверждает эту отправку. Нужна сверка продавца",

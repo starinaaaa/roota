@@ -435,6 +435,29 @@ test("cash and transfer require seller confirmation, preserve snapshots, and acc
       ),
       /другой чек/,
     );
+    const second = await run((client) =>
+      createSale(client, request({ postcard: 1 }), "live", "transfer"),
+    );
+    await run((client) => confirmManualSale(client, second.id, "local-test"));
+    await assert.rejects(
+      run((client) =>
+        attachReceipt(client, second.id, {
+          url: "https://lknpd.nalog.ru/api/v1/receipt/773212983545/test123/print",
+          registeredAt: "2026-11-07T10:00:00Z",
+          verifiedAt: "2026-11-07T10:00:01Z",
+        }),
+      ),
+      /для другой покупки/,
+    );
+    assert.equal(
+      (
+        await db.query<{ receipt_url: string | null }>(
+          "select receipt_url from market_sales where id=$1",
+          [second.id],
+        )
+      ).rows[0].receipt_url,
+      null,
+    );
     assert.equal(
       validReceiptUrl(
         "https://lknpd.nalog.ru.evil.test/api/v1/receipt/773212983545/a/print",

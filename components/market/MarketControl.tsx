@@ -853,9 +853,11 @@ export default function MarketControl() {
                         }
                       >
                         {statusLabel(s.status)}{" "}
-                        {s.items.some((i) => i.name === marketGoodsName) && (
-                          <small>⚠ Без разбивки по изделиям</small>
-                        )}
+                        {s.items.some(
+                          (i) =>
+                            i.name === marketGoodsName ||
+                            i.name === "Оплата товара на маркете",
+                        ) && <small>⚠ Без разбивки по изделиям</small>}
                       </span>
                       <strong>{money(s.amount)}</strong>
                     </summary>

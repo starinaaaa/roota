@@ -75,7 +75,14 @@ export async function POST(request: Request) {
         break;
       case "intake-confirm":
         await transaction((db) =>
-          confirmIntake(db, z.uuid().parse(body.id), admin.id),
+          confirmIntake(
+            db,
+            z.uuid().parse(body.id),
+            admin.id,
+            body.paidDate === undefined
+              ? undefined
+              : z.iso.date().parse(body.paidDate),
+          ),
         );
         break;
       case "intake-finalize":

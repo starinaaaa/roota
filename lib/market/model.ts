@@ -21,7 +21,15 @@ export const basketSchema = z
   .strict()
   .refine((v) => Object.keys(v.quantities).length <= 30);
 export type Basket = z.infer<typeof basketSchema>;
-export const marketGoodsName = "Оплата товара на маркете";
+export const marketGoodsName = "Керамическое изделие Roota";
+export function marketPaymentDate(value: Date | string = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Moscow",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(value));
+}
 export const receiptNameSchema = z
   .string()
   .trim()

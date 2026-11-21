@@ -86,7 +86,9 @@ async function fixture() {
   await db.exec(
     await readFile("database/migrations/20261108_market_intake.sql", "utf8"),
   );
-  await db.exec(await readFile("database/migrations/20261120_market_thanks.sql", "utf8"));
+  await db.exec(
+    await readFile("database/migrations/20261120_market_thanks.sql", "utf8"),
+  );
   const adapter = db as unknown as MarketDb;
   await db.exec(
     await readFile(
@@ -1023,7 +1025,10 @@ test("Robokassa receipt contact schedules feedback only after verified payment c
       "select kind from email_messages where payload->>'market_sale_id'=$1 order by kind",
       [sale.id],
     );
-    assert.deepEqual(messages.rows.map(row => row.kind), ["market_payment_thanks", "review_invite"]);
+    assert.deepEqual(
+      messages.rows.map((row) => row.kind),
+      ["market_payment_thanks", "review_invite"],
+    );
     assert.equal(
       (
         await db.query("select * from market_receipt_jobs where sale_id=$1", [
@@ -1748,7 +1753,7 @@ test("amount-only market receipts preserve kopecks without stock movements; cash
       assert.equal((await finish()).id, sale.id);
       assert.deepEqual(sale.items, [
         {
-          name: "Оплата товара на маркете",
+          name: "Керамическое изделие Roota",
           quantity: 1,
           sum: 1.25,
           kind: "goods",
@@ -1811,7 +1816,7 @@ test("counter amount works with cash without a scan, permanent QR without email,
     for (const method of ["cash", "transfer", "robokassa"] as const) {
       const input = { requestKey: randomUUID(), amount: "12,50" };
       const sale = await run((c) => createSale(c, input, "live", method));
-      assert.equal(sale.items[0].name, "Оплата товара на маркете");
+      assert.equal(sale.items[0].name, "Керамическое изделие Roota");
       assert.equal(Number(sale.amount), 12.5);
       assert.deepEqual(sale.allocations, []);
       assert.equal(sale.reserved, false);
@@ -2006,6 +2011,55 @@ test("invalid or changed receipt names never create a replacement task", async (
       ),
       /наличных и прямых переводов/,
     );
+  } finally {
+    await db.close();
+  }
+});
+
+test("late confirmation preserves the seller-selected Moscow payment date in the helper plan", async () => {
+  const { db, run } = await fixture();
+  const { marketPaymentDate } = await import("../lib/market/model");
+  const { receiptPlan } = await import("../extensions/roota-npd/core.mjs");
+  const { claimReceiptJob } = await import("../lib/market/receipt-jobs");
+  try {
+    await db.query("update market_register set intake_enabled=true");
+    const intake = await run((d) =>
+      createIntake(d, intakeInput("transfer", "5500"), "live", "fixture"),
+    );
+    const yesterday = new Date(Date.now() - 86400000);
+    const date = marketPaymentDate(yesterday);
+    await db.query("update market_intakes set created_at=$2 where id=$1", [
+      intake.id,
+      yesterday,
+    ]);
+    await assert.rejects(
+      run((d) => confirmIntake(d, intake.id, "seller", "2000-01-01")),
+      /Дата получения денег/,
+    );
+    await assert.rejects(
+      run((d) =>
+        confirmIntake(
+          d,
+          intake.id,
+          "seller",
+          marketPaymentDate(new Date(Date.now() + 86400000)),
+        ),
+      ),
+      /Дата получения денег/,
+    );
+    await run((d) => confirmIntake(d, intake.id, "seller", date));
+    await run((d) =>
+      confirmIntake(d, intake.id, "seller", marketPaymentDate()),
+    );
+    await run((d) => finalizeIntake(d, intake.id, { generic: true }, "seller"));
+    const task = (await run((d) =>
+      claimReceiptJob(d, "fixture-worker", "live"),
+    ))!;
+    const plan = receiptPlan(task);
+    assert.equal(plan.date, date);
+    assert.deepEqual(plan.rows, [
+      { name: "Керамическое изделие Roota", kopecks: 550000 },
+    ]);
   } finally {
     await db.close();
   }

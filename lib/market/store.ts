@@ -323,6 +323,12 @@ export async function attachReceipt(
       "Нужна ссылка на чек из Моего налога: lknpd.nalog.ru/api/v1/receipt/.../print",
     );
   await lockRegister(db);
+  const reused = await db.query(
+    "select id from public.market_sales where receipt_url=$1 and id<>$2 limit 1",
+    [url, id],
+  );
+  if (reused.rowCount)
+    throw new Error("Этот оригинал чека уже сохранён для другой покупки");
   const {
     rows: [sale],
   } = await db.query<SaleRow>(

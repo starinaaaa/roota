@@ -53,7 +53,8 @@ test("local OCR verifies a QR-bearing original, fingerprint and snapshot; repeat
     "Чек №fixture",
     "07.11.26 17:10(+03:00)",
     "Наименование       Сумма",
-    "1. Открытка            10,00",
+    "1. Керамическое           10,00",
+    "изделие Roota",
     "Итого:                     10,00",
     "Режим НО НПД",
     "ИНН 773212983545",
@@ -83,20 +84,24 @@ test("local OCR verifies a QR-bearing original, fingerprint and snapshot; repeat
   const proof = await verifyReceiptImage(
     url,
     hash,
-    plan,
+    { ...plan, rows: [{ name: "Керамическое изделие Roota", kopecks: 1000 }] },
     new Date("2026-11-07T14:10:30Z"),
     fetcher,
   );
   assert.equal(proof.url, url);
   assert.equal(proof.registeredAt, "2026-11-07T14:10:00.000Z");
   assert.equal(proof.total, 1000);
-  await verifyReceiptImage(url, hash, plan, null, fetcher);
+  const brandedPlan = {
+    ...plan,
+    rows: [{ name: "Керамическое изделие Roota", kopecks: 1000 }],
+  };
+  await verifyReceiptImage(url, hash, brandedPlan, null, fetcher);
   assert.equal(calls, 2);
   await assert.rejects(
     verifyReceiptImage(
       url,
       hash,
-      plan,
+      brandedPlan,
       new Date("2026-11-07T14:12:00Z"),
       fetcher,
     ),

@@ -1,8 +1,12 @@
 import { createHash } from "node:crypto";
+import { copyFile, mkdtemp } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import sharp from "sharp";
 import jsQR from "jsqr";
 import { createWorker } from "tesseract.js";
 import russian from "@tesseract.js-data/rus";
+import english from "@tesseract.js-data/eng";
 import { fetchReceiptDocument } from "./verify-receipt";
 
 export type ImageReceiptPlan = {
@@ -84,7 +88,8 @@ export function parseReceiptText(text: string, plan: ImageReceiptPlan) {
     // The price column can end before the item name wraps to its next line.
     const amount = amounts[0];
     const before = row.slice(0, amount.index);
-    const after = row.slice(amount.index! + amount[0].length)
+    const after = row
+      .slice(amount.index! + amount[0].length)
       .replace(/^\s*[₽РВB](?=\s|$)/u, "");
     const name = before + after;
     if (normalized(name) !== normalized(plan.rows[i].name))
@@ -96,6 +101,24 @@ export function parseReceiptText(text: string, plan: ImageReceiptPlan) {
 }
 
 let occupied = false;
+let languageDirectory: Promise<string> | undefined;
+function receiptLanguages() {
+  return (languageDirectory ??= (async () => {
+    const directory = await mkdtemp(join(tmpdir(), "roota-receipt-ocr-"));
+    await Promise.all(
+      [russian, english].map((language) =>
+        copyFile(
+          join(language.langPath, `${language.code}.traineddata.gz`),
+          join(directory, `${language.code}.traineddata.gz`),
+        ),
+      ),
+    );
+    return directory;
+  })().catch((error) => {
+    languageDirectory = undefined;
+    throw error;
+  }));
+}
 const cache = new Map<string, { registeredAt: string; total: number }>();
 export async function verifyReceiptImage(
   url: string,
@@ -147,8 +170,8 @@ export async function verifyReceiptImage(
         .resize({ width: 1320 })
         .png()
         .toBuffer();
-      const worker = await createWorker("rus", 1, {
-        langPath: russian.langPath,
+      const worker = await createWorker("rus+eng", 1, {
+        langPath: await receiptLanguages(),
         gzip: true,
         cacheMethod: "none",
       });

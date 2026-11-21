@@ -2064,3 +2064,65 @@ test("late confirmation preserves the seller-selected Moscow payment date in the
     await db.close();
   }
 });
+
+test("simple QR confirmation creates exactly one paid sale and receipt task on retry", async () => {
+  const { db, run, adapter } = await fixture();
+  const { confirmSimpleIntake } = await import("../lib/market/intake");
+  const { marketPaymentDate } = await import("../lib/market/model");
+  try {
+    await db.query("update market_register set intake_enabled=true");
+    const stock = await inventory(adapter);
+    const intake = await run((d) =>
+      createIntake(d, intakeInput("transfer", "3500,25"), "live", "simple"),
+    );
+    const first = await run((d) =>
+      confirmSimpleIntake(d, intake.id, "seller", marketPaymentDate()),
+    );
+    const second = await run((d) =>
+      confirmSimpleIntake(d, intake.id, "seller", marketPaymentDate()),
+    );
+    assert.equal(first.id, second.id);
+    const saved = (
+      await db.query<{ status: string; items: unknown }>(
+        "select status,items from market_sales where id=$1",
+        [first.id],
+      )
+    ).rows[0];
+    assert.equal(saved.status, "paid");
+    assert.deepEqual(saved.items, [
+      {
+        name: "Керамическое изделие Roota",
+        quantity: 1,
+        sum: 3500.25,
+        kind: "goods",
+      },
+    ]);
+    assert.equal(
+      (
+        await db.query<{ n: number }>(
+          "select count(*)::int n from market_receipt_jobs where sale_id=$1",
+          [first.id],
+        )
+      ).rows[0].n,
+      1,
+    );
+    assert.deepEqual(await inventory(adapter), stock);
+    const provider = await run((d) =>
+      createIntake(d, intakeInput("robokassa", "3500"), "live", "provider"),
+    );
+    await assert.rejects(
+      run((d) => confirmSimpleIntake(d, provider.id, "seller")),
+      /нельзя подтвердить вручную/,
+    );
+    assert.equal(
+      (
+        await db.query<{ n: number }>(
+          "select count(*)::int n from market_receipt_jobs",
+        )
+      ).rows[0].n,
+      1,
+    );
+  } finally {
+    await db.close();
+  }
+});

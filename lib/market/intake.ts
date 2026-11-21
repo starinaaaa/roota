@@ -153,6 +153,17 @@ export async function confirmIntake(
     [id, actor, settledAt],
   );
 }
+/** Confirmation and the receipt task commit together; a retry returns the same sale. */
+export async function confirmSimpleIntake(
+  db: MarketDb,
+  id: string,
+  actor: string,
+  paidDate?: string,
+) {
+  await confirmIntake(db, id, actor, paidDate);
+  return finalizeIntake(db, id, { generic: true }, actor);
+}
+
 export async function finalizeIntake(
   db: MarketDb,
   id: string,

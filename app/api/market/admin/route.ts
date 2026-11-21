@@ -1,6 +1,7 @@
 import {
   createReceiptCheck,
   confirmIntake,
+  confirmSimpleIntake,
   finalizeIntake,
   cancelIntake,
 } from "@/lib/market/intake";
@@ -72,6 +73,18 @@ export async function POST(request: Request) {
             [z.boolean().parse(body.enabled)],
           );
         });
+        break;
+      case "intake-confirm-simple":
+        await transaction((db) =>
+          confirmSimpleIntake(
+            db,
+            z.uuid().parse(body.id),
+            admin.id,
+            body.paidDate === undefined
+              ? undefined
+              : z.iso.date().parse(body.paidDate),
+          ),
+        );
         break;
       case "intake-confirm":
         await transaction((db) =>

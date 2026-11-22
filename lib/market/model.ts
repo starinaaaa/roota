@@ -90,7 +90,10 @@ export type MarketState = {
   intakes: MarketIntakeRow[];
   inventory: InventoryItem[];
   sale: PublicSale | null;
-  history: Omit<PublicSale, "paymentUrl" | "qr">[];
+  history: (Omit<PublicSale, "paymentUrl" | "qr"> & {
+    createdAt: string;
+    email: string | null;
+  })[];
   displays: { id: string; lastSeenAt: string }[];
   totals: { count: number; amount: number };
   mode: "test" | "live" | null;

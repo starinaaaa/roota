@@ -610,6 +610,9 @@
 .market-sales-list summary strong {
   font-weight: 300;
 }
+.market-sale-email {
+  overflow-wrap: anywhere;
+}
 .market-sales-list details .market-receipt-items {
   max-width: 800px;
   padding-bottom: 16px;

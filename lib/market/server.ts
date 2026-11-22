@@ -63,6 +63,19 @@ export function configuredMode() {
     return null;
   }
 }
+export type MarketHistoryRow = SaleRow & {
+  order_created_at: Date;
+  order_email: string | null;
+};
+export function marketHistorySale(sale: MarketHistoryRow) {
+  return {
+    ...publicSale(sale),
+    paymentUrl: null,
+    qr: null,
+    createdAt: sale.order_created_at.toISOString(),
+    email: sale.order_email,
+  };
+}
 export async function marketLinks(): Promise<SocialLinks> {
   const site = await getSiteContent();
   return {
@@ -96,8 +109,16 @@ export async function marketState(): Promise<MarketState> {
     } = await db.query<SaleRow>(
       "select s.*,(select number from market_intakes i where i.sale_id=s.id) intake_number,case when j.state='submitting' and j.lease_until<=now() then 'uncertain' else j.state end receipt_state,j.registered_at receipt_registered_at,j.verified_at receipt_verified_at from public.market_sales s left join public.market_receipt_jobs j on j.sale_id=s.id join public.market_register r on r.current_sale_id=s.id where r.id=1",
     );
-    const { rows: history } = await db.query<SaleRow>(
-      "select s.*,(select number from market_intakes i where i.sale_id=s.id) intake_number,case when j.state='submitting' and j.lease_until<=now() then 'uncertain' else j.state end receipt_state,j.registered_at receipt_registered_at,j.verified_at receipt_verified_at from public.market_sales s left join public.market_receipt_jobs j on j.sale_id=s.id order by s.created_at desc,s.id desc limit 20",
+    const { rows: history } = await db.query<MarketHistoryRow>(
+      `select s.*,i.number intake_number,
+        coalesce(i.created_at,s.created_at) order_created_at,
+        coalesce(nullif(s.email,''),nullif(i.email,'')) order_email,
+        case when j.state='submitting' and j.lease_until<=now() then 'uncertain' else j.state end receipt_state,
+        j.registered_at receipt_registered_at,j.verified_at receipt_verified_at
+      from public.market_sales s
+      left join public.market_intakes i on i.sale_id=s.id
+      left join public.market_receipt_jobs j on j.sale_id=s.id
+      order by s.created_at desc,s.id desc limit 20`,
     );
     const { rows: displays } = await db.query<{
       id: string;
@@ -147,9 +168,7 @@ export async function marketState(): Promise<MarketState> {
       helpers,
       inventory: stock,
       sale: sale ? publicSale(sale) : null,
-      history: history.map((s) => {
-        return { ...publicSale(s), paymentUrl: null, qr: null };
-      }),
+      history: history.map(marketHistorySale),
       displays: displays.map((d) => ({
         id: d.id,
         lastSeenAt: d.last_seen_at.toISOString(),

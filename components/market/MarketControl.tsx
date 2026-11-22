@@ -921,6 +921,17 @@ export default function MarketControl() {
                       <strong>{money(s.amount)}</strong>
                     </summary>
                     <p>
+                      Заказ создан ·{" "}
+                      <time dateTime={s.createdAt}>
+                        {new Date(s.createdAt).toLocaleString("ru-RU", {
+                          timeZone: "Europe/Moscow",
+                        })}
+                      </time>
+                    </p>
+                    <p className="market-sale-email">
+                      Email покупателя · {s.email ?? "не указан"}
+                    </p>
+                    <p>
                       {receiptStatusLabel(s.receiptStatus)}
                       {s.receiptRegisteredAt
                         ? ` · ${new Date(s.receiptRegisteredAt).toLocaleString("ru-RU", { timeZone: "Europe/Moscow" })}`

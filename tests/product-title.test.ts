@@ -14,7 +14,7 @@ test("category names are singular and existing descriptive titles are preserved"
   assert.equal(productTitle("Без категории"), "Без категории");
   assert.equal(productTitle("Сад — Тайный сад (стебли: 6, цветочки: 3, листочки: 3)", { slug: "objects", name: "Объекты" }), "Сад — Тайный сад (стебли: 6, цветочки: 3, листочки: 3)");
 });
-test("purchase email renders category title and photo in HTML and title in plain text", () => {
+test("purchase email renders category title in HTML and plain text", () => {
   const name = productTitle("Лес <3>", { slug: "plates" });
   const email = renderEmail(
     { subject: "Покупка", body: "Спасибо!" },
@@ -28,15 +28,11 @@ test("purchase email renders category title and photo in HTML and title in plain
         name,
         quantity: 1,
         price: 6000,
-        imageUrl: "https://roota.moscow/media/demo/photo",
       },
     ],
   );
   assert.match(email.html, /Тарелка «Лес &lt;3&gt;»/);
-  assert.match(
-    email.html,
-    /<img src="https:\/\/roota.moscow\/media\/demo\/photo"/,
-  );
+  assert.doesNotMatch(email.html, /<img /);
   assert.match(email.plaintext, /Тарелка «Лес <3>»/);
 });
 

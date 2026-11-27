@@ -5,7 +5,7 @@ export const metadata = { title: "Отзывы — Roota" };
 export default async function ReviewsPage() {
   const { data, error } = await createServerClient()
     .from("customer_reviews")
-    .select("id,display_name,rating,body,photo_paths,created_at")
+    .select("id,display_name,body,photo_paths,created_at")
     .eq("state", "published")
     .eq("publication_consent", true)
     .order("created_at", { ascending: false })
@@ -21,10 +21,7 @@ export default async function ReviewsPage() {
           className="border-b border-stone-200 pb-6 space-y-3"
         >
           <p className="font-medium">{r.display_name || "Покупатель Roota"}</p>
-          <p>
-            {r.rating} из 5 ·{" "}
-            {new Date(r.created_at).toLocaleDateString("ru-RU")}
-          </p>
+          <p>{new Date(r.created_at).toLocaleDateString("ru-RU")}</p>
           <p className="whitespace-pre-wrap">{r.body}</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {r.photo_paths.map((_: string, i: number) => (

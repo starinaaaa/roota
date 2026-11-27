@@ -42,15 +42,20 @@ export default async function ReviewsAdmin() {
     <div className="space-y-6">
       <h1 className="font-display text-page">Отзывы</h1>
       <p>
-        Публикуйте отзывы любой оценки, если покупатель разрешил публикацию.
-        Контакты остаются в админке. Основная форма — на сайте по персональной ссылке из заказа. Приглашение отправляется на почту через 7 дней после получения всего заказа, если покупатель согласился на такое письмо.
+        Публикуйте отзывы, если покупатель разрешил публикацию. Контакты
+        остаются в админке. Основная форма — на сайте по персональной ссылке из
+        заказа. Приглашение отправляется на почту через 7 дней после получения
+        всего заказа, если покупатель согласился на такое письмо.
       </p>
       <h2 className="text-xl">Отзывы с сайта</h2>
       {!reviews.data.length && <p>Пока нет отзывов с сайта.</p>}
       {reviews.data.map((r) => (
         <article key={r.id} className="admin-card space-y-3">
           <p>
-            {r.market_sale_id ? "Покупка на маркете" : `Заказ ${r.orders?.order_number}`} · {r.rating}/5 · {r.state}
+            {r.market_sale_id
+              ? "Покупка на маркете"
+              : `Заказ ${r.orders?.order_number}`}{" "}
+            · {r.state}
           </p>
           <p>Имя для публикации: {r.display_name || "Покупатель Roota"}</p>
           <p className="whitespace-pre-wrap">{r.body}</p>
@@ -89,8 +94,8 @@ export default async function ReviewsAdmin() {
         <h2 className="text-xl">Отзывы в Telegram и промокоды</h2>
         <p>
           После получения честного отзыва подтвердите его здесь. Покупатель
-          получит персональный код на 10% на изделия на 30 дней. Оценка, фото и
-          согласие на публикацию не влияют на выдачу.
+          получит персональный код на 10% на изделия на 30 дней. Фото и согласие
+          на публикацию не влияют на выдачу.
         </p>
         {telegramOrders.length === 0 && <p>Пока нет полученных заказов.</p>}
         {telegramOrders.map((o) => (
@@ -123,8 +128,10 @@ export default async function ReviewsAdmin() {
       <h2 className="text-xl">Приглашения</h2>
       {invites.data.map((i) => (
         <p key={i.id}>
-          {i.payload?.market_sale_id ? "Маркет" : `Заказ ${relationList(i.orders)[0]?.order_number}`} · {i.recipient} ·{" "}
-          {i.state} ·{" "}
+          {i.payload?.market_sale_id
+            ? "Маркет"
+            : `Заказ ${relationList(i.orders)[0]?.order_number}`}{" "}
+          · {i.recipient} · {i.state} ·{" "}
           {new Date(i.scheduled_at).toLocaleString("ru-RU", {
             timeZone: "Europe/Moscow",
           })}

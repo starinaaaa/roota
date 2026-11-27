@@ -5,30 +5,13 @@ import { readFile } from "node:fs/promises";
 import { PGlite } from "@electric-sql/pglite";
 import { canReviewOrder, reviewPhotoError, reviewSchema } from "../lib/reviews";
 
-test("review validation allows optional photos without count or byte limits and requires an explicit rating and public name", () => {
+test("review validation allows optional photos without count or byte limits and requires impressions and a public name", () => {
   assert.equal(
-    reviewSchema.safeParse({ rating: "", body: "Отзыв", displayName: "Анна" })
-      .success,
-    false,
-  );
-  assert.equal(
-    reviewSchema.safeParse({
-      rating: "1",
-      body: "  Не подошло  ",
-      displayName: "  Анна  ",
-    }).success,
+    reviewSchema.safeParse({ body: "  Не подошло  ", displayName: "  Анна  " }).success,
     true,
   );
-  assert.equal(
-    reviewSchema.safeParse({ rating: "5", body: " ", displayName: "Анна" })
-      .success,
-    false,
-  );
-  assert.equal(
-    reviewSchema.safeParse({ rating: "5", body: "Отзыв", displayName: " " })
-      .success,
-    false,
-  );
+  assert.equal(reviewSchema.safeParse({ body: " ", displayName: "Анна" }).success, false);
+  assert.equal(reviewSchema.safeParse({ body: "Отзыв", displayName: " " }).success, false);
   const photo = { size: 50 * 1024 * 1024, type: "image/jpeg" };
   assert.equal(reviewPhotoError([]), null);
   assert.equal(reviewPhotoError(Array(5).fill(photo)), null);
@@ -114,6 +97,11 @@ test("website reviews save name and photos atomically, reward once, and schedule
         "utf8",
       ),
     );
+    await db.exec(await readFile("database/migrations/20261106_market.sql", "utf8"));
+    await db.exec(await readFile("database/migrations/20261106_market_manual_payments.sql", "utf8"));
+    await db.exec(await readFile("database/migrations/20261107_market_newsletter.sql", "utf8"));
+    await db.exec(await readFile("database/migrations/20261107_market_reviews.sql", "utf8"));
+    await db.exec(await readFile("database/migrations/20261127_reviews_without_ratings.sql", "utf8"));
     const delay = (
       await db.query<{ hours: number }>(
         "select extract(epoch from scheduled_at-created_at)/3600 as hours from email_messages where kind='review_invite' and order_id=$1",
@@ -162,15 +150,23 @@ test("website reviews save name and photos atomically, reward once, and schedule
     ).rows[0];
     assert.equal(invite.ok, true);
     const photos = Array.from({ length: 12 }, (_, i) => `${fresh.id}/${i}.jpg`);
+    await assert.rejects(
+      db.query(
+        "select submit_customer_review_with_phone($1,'+79990000001','Отзыв',$2::text[],false,'Анна')",
+        [fresh.token, photos],
+      ),
+      /REVIEW_PHONE_MISMATCH/,
+    );
     const saved = (
       await db.query<{ id: string }>(
-        "select submit_customer_review($1,1,'  Есть замечания  ',$2::text[],false,'  Анна  ') id",
+        "select submit_customer_review_with_phone($1,'89990000000','  Есть замечания  ',$2::text[],false,'  Анна  ') id",
         [fresh.token, photos],
       )
     ).rows[0].id;
     const review = (
       await db.query<{
         display_name: string;
+        rating: number | null;
         body: string;
         photo_paths: string[];
         publication_consent: boolean;
@@ -178,6 +174,7 @@ test("website reviews save name and photos atomically, reward once, and schedule
       }>("select * from customer_reviews where id=$1", [saved])
     ).rows[0];
     assert.equal(review.display_name, "Анна");
+    assert.equal(review.rating, null);
     assert.equal(review.body, "Есть замечания");
     assert.deepEqual(review.photo_paths, photos);
     assert.equal(review.publication_consent, false);

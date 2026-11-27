@@ -806,7 +806,7 @@ test("order email includes purchase and delivery details, escapes content and no
   assert.doesNotMatch(result.html, /\\n/);
 });
 
-test("purchase email shows photos, unit prices and a printable confirmation without unsafe image URLs", () => {
+test("purchase email shows unit prices and a printable confirmation without item photos", () => {
   const values = {
     number: "GL-20261014-TEST",
     items: "Изделие × 2 — 300 ₽",
@@ -833,15 +833,12 @@ test("purchase email shows photos, unit prices and a printable confirmation with
         name: "Тарелка <Лес>",
         quantity: 2,
         price: 150,
-        imageUrl: "https://roota.moscow/media/product/image",
       },
-      { name: "Чашка", quantity: 1, price: 1, imageUrl: "javascript:alert(1)" },
+      { name: "Чашка", quantity: 1, price: 1 },
     ],
   );
-  assert.match(
-    result.html,
-    /<img src="https:\/\/roota.moscow\/media\/product\/image"/,
-  );
+  assert.doesNotMatch(result.html, /<img /);
+  assert.match(result.html, /background:#fafaf9/);
   assert.match(result.html, /Тарелка &lt;Лес&gt;/);
   assert.match(result.html, /2 шт. × 150/);
   assert.match(result.html, /Сохранить подтверждение покупки/);

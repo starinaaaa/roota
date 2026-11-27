@@ -26,7 +26,6 @@ export async function readMarketReviewMultipart(request: Request) {
     body: {
       displayName: form.get("displayName"),
       phone: form.get("phone"),
-      rating: form.get("rating"),
       body: form.get("body"),
       publicationConsent: form.get("publicationConsent") === "true",
       accepted: form.get("accepted") === "true",

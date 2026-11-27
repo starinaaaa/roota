@@ -4,7 +4,6 @@ export const REVIEW_PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
 export const REVIEW_PHOTO_HELP = "Фотографии JPEG, PNG или WebP.";
 
 export const reviewSchema = z.object({
-  rating: z.coerce.number().int().min(1, "Выберите оценку").max(5),
   body: z
     .string()
     .trim()

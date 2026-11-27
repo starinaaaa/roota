@@ -3,11 +3,13 @@ import { createServerClient } from "@/lib/db";
 import { orderIdForToken } from "@/lib/order-access";
 import Link from "next/link";
 import ReviewForm from "@/components/review/ReviewForm";
+import ReviewIntro from "@/components/review/ReviewIntro";
 import { canReviewOrder } from "@/lib/reviews";
 import { getPool } from "@/lib/db/pool";
 import { getSiteContent } from "@/lib/site";
 import {
   reviewCopy,
+  reviewPageArtwork,
   REVIEW_REWARD_TERMS,
   reviewTelegramUrl,
   rewardExpiry,
@@ -62,27 +64,22 @@ export default async function ReviewPage({
   ]);
   const reward = rewardResult.rows[0];
   const copy = reviewCopy(order.data.order_items);
+  const submitted = Boolean(review.data || reward);
   return (
-    <div className="max-w-2xl mx-auto px-6 pt-28 pb-20 md:pt-36 space-y-6">
+    <div className="mx-auto max-w-[600px] space-y-6 px-6 pt-28 pb-20 md:pt-36">
       <Link
         href={`/order/${token}`}
         className="text-caption text-stone-600 underline underline-offset-4"
       >
-        ← К заказу {order.data.order_number}
+        ← К заказу
       </Link>
-      <h1 className="font-display text-page">Ваш отзыв</h1>
-      <p>
-        Заказ {order.data.order_number}. Будем рады честному отзыву — любая
-        оценка важна.
-      </p>
-      {!review.data && !reward && (
-        <p className="text-copy leading-relaxed text-stone-700">
-          {copy.introduction}
-        </p>
-      )}
-      {review.data || reward ? (
+      <ReviewIntro
+        title={submitted ? "Спасибо, что рассказали 💛" : copy.subject}
+        introduction={submitted ? undefined : copy.introduction}
+        artwork={submitted ? reviewPageArtwork.orderThanks : copy.pageArtwork}
+      />
+      {submitted ? (
         <div className="space-y-4" role="status">
-          <h2 className="font-display text-section">Спасибо за ваш отзыв!</h2>
           <p>
             {review.data
               ? review.data.publication_consent
@@ -98,9 +95,9 @@ export default async function ReviewPage({
                   : "Срок действия промокода завершён."}
               </p>
             ) : (
-              <div className="border border-stone-300 p-5 space-y-3">
+              <div className="space-y-3 border-y border-stone-200 py-5">
                 <p>Ваш персональный промокод на скидку 10%</p>
-                <p className="font-mono text-xl select-all break-all">
+                <p className="inline-block bg-stone-100 px-4 py-2 font-mono text-xl break-all select-all">
                   {reward.code}
                 </p>
                 <p>
@@ -136,7 +133,6 @@ export default async function ReviewPage({
             defaultName={order.data.customer_name.trim().split(/\s+/)[0] ?? ""}
           />
           <p className="border-t border-stone-200 pt-5 text-caption text-stone-600">
-            Удобнее в переписке?{" "}
             <a
               href={reviewTelegramUrl(site.telegram, order.data.order_number)}
               target="_blank"

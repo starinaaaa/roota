@@ -30,7 +30,7 @@ test("admin previews render every review variant and coupon terms without empty 
     assert.match(preview.html, /Оставить отзыв/);
     assert.match(preview.plaintext, /без регистрации/);
     assert.match(preview.plaintext, /можно добавить фотографии/);
-    assert.match(preview.html, /<img src="https:\/\/roota\.moscow\/images\/review\/(order|garden)\.png"/);
+    assert.match(preview.html, /<img src="https:\/\/roota\.moscow\/images\/review\/(order|garden|market)\.png"/);
     assert.doesNotMatch(preview.html, /Написать отзыв в Telegram/);
     assert.doesNotMatch(preview.html, /\{\{/);
     return preview.subject;

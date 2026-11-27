@@ -52,7 +52,11 @@ export function reviewCopy(items: ReviewItem[]) {
   return {
     subject,
     introduction,
-    artwork: onlyGarden ? reviewArtwork.garden : reviewArtwork.order,
+    artwork: onlyGarden
+      ? reviewArtwork.garden
+      : onlyPlates
+        ? reviewArtwork.order
+        : reviewArtwork.market,
     pageArtwork: onlyGarden
       ? reviewPageArtwork.garden
       : reviewPageArtwork.order,

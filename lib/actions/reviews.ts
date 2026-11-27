@@ -9,13 +9,18 @@ import { orderIdForToken } from "@/lib/order-access";
 import { after } from "next/server";
 import { processEmailQueue } from "@/lib/email/queue";
 import { canReviewOrder, reviewPhotoError, reviewSchema } from "@/lib/reviews";
+import { phone } from "@/lib/validation";
+
+const phoneMismatch =
+  "Укажите тот же номер телефона, что и при оформлении заказа.";
+const websiteReviewSchema = reviewSchema.extend({ phone });
 
 export type ReviewFormState = { error?: string };
 
 export async function saveReview(form: FormData): Promise<ReviewFormState> {
   const token = String(form.get("token") ?? "");
-  const parsed = reviewSchema.safeParse({
-    rating: form.get("rating"),
+  const parsed = websiteReviewSchema.safeParse({
+    phone: String(form.get("phone") ?? ""),
     body: form.get("body"),
     displayName: form.get("display_name"),
   });
@@ -38,7 +43,7 @@ export async function saveReview(form: FormData): Promise<ReviewFormState> {
       };
     const order = (
       await getPool().query(
-        "select delivery_stage,payment_status,status from orders where id=$1",
+        "select delivery_stage,payment_status,status,public.reward_phone(customer_phone) as review_phone from orders where id=$1",
         [orderId],
       )
     ).rows[0];
@@ -46,6 +51,8 @@ export async function saveReview(form: FormData): Promise<ReviewFormState> {
       return {
         error: "Оставить отзыв можно после получения всего оплаченного заказа.",
       };
+    if (order.review_phone !== parsed.data.phone)
+      return { error: phoneMismatch };
     const existing = await getPool().query(
       "select id from customer_reviews where order_id=$1",
       [orderId],
@@ -81,10 +88,10 @@ export async function saveReview(form: FormData): Promise<ReviewFormState> {
       persistenceStarted = true;
       const usedPaths = await transaction(async (client) => {
         const saved = await client.query<{ id: string }>(
-          "select public.submit_customer_review($1::text,$2::integer,$3::text,$4::text[],$5::boolean,$6::text) as id",
+          "select public.submit_customer_review_with_phone($1,$2,$3,$4,$5,$6) as id",
           [
             token,
-            parsed.data.rating,
+            parsed.data.phone,
             parsed.data.body,
             paths,
             consent,
@@ -102,9 +109,12 @@ export async function saveReview(form: FormData): Promise<ReviewFormState> {
       const unused = paths.filter((path) => !usedPaths.includes(path));
       if (unused.length) await db.storage.from("review-photos").remove(unused);
     }
-  } catch {
-    if (!persistenceStarted && paths.length)
+  } catch (error) {
+    const mismatch =
+      error instanceof Error && error.message === "REVIEW_PHONE_MISMATCH";
+    if ((!persistenceStarted || mismatch) && paths.length)
       await db.storage.from("review-photos").remove(paths);
+    if (mismatch) return { error: phoneMismatch };
     return {
       error:
         "Не удалось сохранить отзыв. Ваш текст и выбранные фото остались в форме. Повторите отправку; если отзыв уже сохранился, откроется подтверждение.",

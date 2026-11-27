@@ -6,6 +6,24 @@ type ReviewItem = {
   configurator?: string | null;
 };
 
+export const reviewArtwork = {
+  order: "/images/review/order.png",
+  garden: "/images/review/garden.png",
+  market: "/images/review/market.png",
+  thanks: "/images/review/thanks.png",
+} as const;
+export type ReviewArtwork = (typeof reviewArtwork)[keyof typeof reviewArtwork];
+
+export const reviewPageArtwork = {
+  order: "/images/review/page-order.png",
+  garden: "/images/review/page-garden.png",
+  market: "/images/review/page-market.png",
+  orderThanks: "/images/review/page-order-thanks.png",
+  marketThanks: "/images/review/page-market-thanks.png",
+} as const;
+export type ReviewPageArtwork =
+  (typeof reviewPageArtwork)[keyof typeof reviewPageArtwork];
+
 export function reviewCopy(items: ReviewItem[]) {
   const garden = (i: ReviewItem) =>
     Boolean(i.configuration) ||
@@ -25,23 +43,31 @@ export function reviewCopy(items: ReviewItem[]) {
         : "Как ваши тарелочки устроились дома?"
       : "Как изделия Roota устроились у вас дома?";
   const introduction = onlyGarden
-    ? "Уже собрали свою первую композицию? Расскажите, как вам керамический конструктор «Сад». Если захочется, добавьте фото: очень интересно увидеть, что у вас выросло."
+    ? "Уже успели что-нибудь собрать? Мне интересно, какие кусочки у вас подружились."
     : onlyPlates
       ? count === 1
-        ? "Расскажите, как вам тарелочка Roota. Если захочется, добавьте фото: нам интересно увидеть её у вас дома."
-        : "Расскажите, как вам тарелочки Roota. Если захочется, добавьте фото: нам интересно увидеть их у вас дома."
-      : "Расскажите, как вам изделия Roota. Если захочется, добавьте фото: нам интересно увидеть их у вас дома.";
-  return { subject, introduction };
+        ? "Уже успели с неё позавтракать? Расскажите, как вам тарелка в обычной жизни."
+        : "Расскажите, какой тарелкой чаще пользуетесь и почему."
+      : "Расскажите, чем уже успели попользоваться и как вам.";
+  return {
+    subject,
+    introduction,
+    artwork: onlyGarden ? reviewArtwork.garden : reviewArtwork.order,
+    pageArtwork: onlyGarden
+      ? reviewPageArtwork.garden
+      : reviewPageArtwork.order,
+  };
 }
 
 export const REVIEW_REWARD_TERMS =
-  "В благодарность за честный отзыв подарим персональный промокод на скидку 10% на изделия в следующем заказе. Он действует 30 дней с выдачи, один раз, для телефона из этого заказа. На доставку скидка не распространяется и с другими промокодами не суммируется. Любая оценка важна; фото и разрешение на публикацию — по желанию.";
+  "В благодарность за отзыв пришлю персональный промокод на 10% на изделия в следующем заказе. Он действует 30 дней с выдачи, один раз, для телефона из этого заказа. На доставку скидка не распространяется и с другими промокодами не суммируется. Фото и разрешение на публикацию — по желанию.";
 
 export function reviewInvitation(items: ReviewItem[]) {
   const copy = reviewCopy(items);
   return {
     subject: copy.subject,
-    body: `${copy.introduction}\n\nОставьте отзыв на сайте — форма откроется по кнопке ниже, без регистрации. Можно добавить до 5 фотографий. Обычного снимка на телефон вполне достаточно.\n\n${REVIEW_REWARD_TERMS}\n\nПосле отправки отзыва промокод появится на сайте и придёт на почту.`,
+    artwork: copy.artwork,
+    body: `Привет, это Даша из Roota :)\n\n${copy.introduction}\n\nФорма откроется без регистрации. Если хочется, можно добавить фотографии.\n\n${REVIEW_REWARD_TERMS}\n\nПосле отзыва промокод появится на сайте и придёт на почту.\n\nДаша`,
   };
 }
 

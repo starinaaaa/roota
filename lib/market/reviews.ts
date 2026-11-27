@@ -5,6 +5,7 @@ import { z } from "zod";
 export const marketReviewSchema = reviewSchema
   .extend({
     phone,
+    rating: z.unknown().optional(),
     publicationConsent: z.boolean(),
     accepted: z.literal(true),
   })
@@ -50,7 +51,7 @@ export async function submitMarketReview(
   const input = marketReviewSchema.parse(raw);
   await db.query("select public.submit_market_review($1,$2,$3,$4,$5,$6)", [
     token,
-    input.rating,
+    null,
     input.body,
     input.publicationConsent,
     input.displayName,

@@ -1,7 +1,7 @@
 import { deliveryEmailUpdate } from "@/lib/delivery/customer-parcels";
 import { ozonTrackingHint } from "@/lib/delivery/tracking";
 import { LEGAL_VERSION } from "@/lib/legal";
-import { reviewInvitation } from "@/lib/review-copy";
+import { reviewArtwork, reviewInvitation } from "@/lib/review-copy";
 import {
   renderEmail,
   type TemplateKind,
@@ -86,6 +86,15 @@ export function renderEmailPreview(
   const review = template.kind === "review_invite";
   const reward = template.kind === "order_review_reward";
   const orderMessage = template.kind.startsWith("order_") && !reward;
+  const artwork = review
+    ? invitation.artwork
+    : reward
+      ? reviewArtwork.thanks
+      : template.kind === "collection"
+        ? reviewArtwork.garden
+        : template.kind === "restock"
+          ? reviewArtwork.order
+          : undefined;
   const url = review
     ? "https://roota.moscow/review/preview"
     : reward
@@ -108,5 +117,8 @@ export function renderEmailPreview(
     orderMessage,
     items,
     undefined,
+    undefined,
+    undefined,
+    artwork ? new URL(artwork, url).href : undefined,
   );
 }

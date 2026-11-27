@@ -40,7 +40,6 @@ export type EmailOrderItem = {
   name: string;
   quantity: number;
   price: number;
-  imageUrl?: string;
 };
 export function renderEmail(
   template: { subject: string; body: string },
@@ -53,6 +52,7 @@ export function renderEmail(
   parcels?: CustomerParcel[],
   secondaryAction?: { url: string; label: string },
   marketLinks: { url: string; label: string }[] = [],
+  artworkUrl?: string,
 ) {
   const returnInstructions = returnInstructionsForVersion(values.legal_version);
   const fill = (s: string) =>
@@ -118,11 +118,14 @@ export function renderEmail(
       return undefined;
     }
   };
+  const illustration = photo(artworkUrl);
+  const artworkHtml = illustration
+    ? `<img src="${text(illustration)}" width="380" height="110" alt="" style="display:block;width:100%;max-width:380px;height:auto;margin:0 0 16px">`
+    : "";
   const itemRows = orderItems?.length
     ? orderItems
         .map((item) => {
-          const image = photo(item.imageUrl);
-          return `<tr><td style="padding:16px 12px 16px 0;border-bottom:1px solid #e7e5e4;vertical-align:top;width:56px">${image ? `<img src="${text(image)}" alt="${text(item.name)}" width="56" height="64" style="display:block;width:56px;height:64px;object-fit:cover;background:#f5f5f4">` : `<div style="width:56px;height:64px;background:#f5f5f4;text-align:center;line-height:64px;font-size:10px;letter-spacing:1px">ROOTA</div>`}</td><td style="padding:16px 8px 16px 0;border-bottom:1px solid #e7e5e4;vertical-align:top">${text(item.name)}<br><span style="font-size:12px;color:#78716c">${item.quantity} шт. × ${text(money(item.price))}</span></td><td align="right" style="padding:16px 0;border-bottom:1px solid #e7e5e4;vertical-align:top;white-space:nowrap">${text(money(item.quantity * item.price))}</td></tr>`;
+          return `<tr><td style="padding:16px 8px 16px 0;border-bottom:1px solid #e7e5e4;vertical-align:top">${text(item.name)}<br><span style="font-size:12px;color:#78716c">${item.quantity} шт. × ${text(money(item.price))}</span></td><td align="right" style="padding:16px 0;border-bottom:1px solid #e7e5e4;vertical-align:top;white-space:nowrap">${text(money(item.quantity * item.price))}</td></tr>`;
         })
         .join("")
     : (values.items ?? "")
@@ -132,7 +135,7 @@ export function renderEmail(
           const split = item.lastIndexOf(" — ");
           const name = split < 0 ? item : item.slice(0, split);
           const amount = split < 0 ? "" : item.slice(split + 3);
-          return `<tr><td colspan="2" style="padding:14px 0;border-bottom:1px solid #e7e5e4">${text(name)}</td><td align="right" style="padding:14px 0 14px 16px;border-bottom:1px solid #e7e5e4;white-space:nowrap">${text(amount)}</td></tr>`;
+          return `<tr><td style="padding:14px 0;border-bottom:1px solid #e7e5e4">${text(name)}</td><td align="right" style="padding:14px 0 14px 16px;border-bottom:1px solid #e7e5e4;white-space:nowrap">${text(amount)}</td></tr>`;
         })
         .join("");
   const parcelHtml = parcels?.length
@@ -143,12 +146,12 @@ export function renderEmail(
     <p style="font-size:12px;letter-spacing:1px;color:#78716c;text-transform:uppercase;margin:0 0 8px">Ваш заказ № ${text(values.number)}</p>
     <p style="font-size:13px;color:#78716c;margin:0 0 16px">${text(values.date)}</p>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:15px">${itemRows}
-      <tr><td colspan="2" style="padding:16px 0">Доставка</td><td align="right" style="white-space:nowrap;padding-left:16px">${text(values.shipping)}</td></tr>
-      <tr><td colspan="2" style="padding:18px 0;border-top:1px solid #d6d3d1;font-size:21px">Итого</td><td align="right" style="border-top:1px solid #d6d3d1;font-size:21px;white-space:nowrap">${text(values.total)} ₽</td></tr>
+      <tr><td style="padding:16px 0">Доставка</td><td align="right" style="white-space:nowrap;padding-left:16px">${text(values.shipping)}</td></tr>
+      <tr><td style="padding:18px 0;border-top:1px solid #d6d3d1;font-size:21px">Итого</td><td align="right" style="border-top:1px solid #d6d3d1;font-size:21px;white-space:nowrap">${text(values.total)} ₽</td></tr>
     </table>
     <p style="font-size:13px;color:#57534e;margin:0 0 24px">${text(values.payment)}</p>
     ${values.fulfillment ? `<p style="font-size:14px;margin:0 0 24px">${text(values.fulfillment)}</p>` : ""}
-    <div style="background:#f8f6f1;padding:20px;font-size:14px;line-height:1.7">
+    <div style="border-top:1px solid #e7e5e4;padding:16px 0;font-size:14px;line-height:1.7">
       <p style="margin:0 0 8px;font-size:16px">${text(values.delivery)}</p>
       <p style="margin:0 0 12px">${text(values.address)}<br>Получатель: ${text(values.recipient)}</p>
       ${parcelHtml}
@@ -161,6 +164,7 @@ export function renderEmail(
   const documentUrl =
     orderMessage && values.document_url ? values.document_url : undefined;
   const plaintext = `ROOTA\n\n${body}${details ? `\n\n${details}` : ""}\n\n${label}: ${url}${marketLinks.map(link => `\n${link.label}: ${link.url}`).join("")}${secondaryAction ? `\n${secondaryAction.label}: ${secondaryAction.url}` : ""}${documentUrl ? `\nПодтверждение покупки: ${documentUrl}\nФискальный чек направляет Robokassa отдельным письмом.` : ""}\n\nНужна помощь? Ответьте на письмо: hello@roota.moscow${unsubscribe ? `\nНастройки и отписка: ${unsubscribe}` : ""}`;
-  const html = `<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;background:#f8f6f1;color:#292724"><div style="max-width:600px;margin:32px auto;padding:28px 24px;background:#fff;font-family:Arial,sans-serif;line-height:1.6"><p style="letter-spacing:5px">ROOTA</p><h1 style="font-size:28px;line-height:1.25;font-weight:400;overflow-wrap:normal">${escapeHtml(subject)}</h1><p>${escapeHtml(body).replaceAll("\n", "<br>")}</p>${detailHtml}${discountHtml}<p><a href="${escapeHtml(url)}" style="display:inline-block;padding:12px 20px;background:#292724;color:#fff;text-decoration:none">${escapeHtml(label)}</a></p>${marketLinks.map(link => `<p><a href="${escapeHtml(link.url)}" style="display:inline-block;border:1px solid #57534e;padding:12px 20px;color:#292724;text-decoration:none">${escapeHtml(link.label)}</a></p>`).join("")}${secondaryAction ? `<p><a href="${escapeHtml(secondaryAction.url)}" style="color:#292724">${escapeHtml(secondaryAction.label)}</a></p>` : ""}${documentUrl ? `<p style="font-size:13px"><a href="${text(documentUrl)}" style="color:#57534e">Сохранить подтверждение покупки</a></p><p style="font-size:12px;color:#78716c">Фискальный чек направляет Robokassa отдельным письмом.</p>` : ""}<p style="font-size:13px">Нужна помощь? <a href="mailto:hello@roota.moscow" style="color:#292724">hello@roota.moscow</a><br>Ответьте на это письмо — мы рядом.</p>${unsubscribe ? `<p style="font-size:12px"><a href="${escapeHtml(unsubscribe)}">Настройки и отписка</a></p>` : ""}</div></body></html>`;
+  const actionHtml = `<p><a href="${escapeHtml(url)}" style="display:inline-block;padding:12px 20px;background:#292724;color:#fff;text-decoration:none">${escapeHtml(label)}</a></p>`;
+  const html = `<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;background:#fafaf9;color:#292724"><div style="max-width:600px;margin:32px auto;padding:28px 24px;background:#fafaf9;font-family:Arial,sans-serif;line-height:1.6"><p style="letter-spacing:5px">ROOTA</p>${artworkHtml}<h1 style="font-size:28px;line-height:1.25;font-weight:400;overflow-wrap:normal">${escapeHtml(subject)}</h1><p>${escapeHtml(body).replaceAll("\n", "<br>")}</p>${actionHtml}${detailHtml}${discountHtml}${marketLinks.map(link => `<p><a href="${escapeHtml(link.url)}" style="display:inline-block;border:1px solid #57534e;padding:12px 20px;color:#292724;text-decoration:none">${escapeHtml(link.label)}</a></p>`).join("")}${secondaryAction ? `<p><a href="${escapeHtml(secondaryAction.url)}" style="color:#292724">${escapeHtml(secondaryAction.label)}</a></p>` : ""}${documentUrl ? `<p style="font-size:13px"><a href="${text(documentUrl)}" style="color:#57534e">Сохранить подтверждение покупки</a></p><p style="font-size:12px;color:#78716c">Фискальный чек направляет Robokassa отдельным письмом.</p>` : ""}<p style="font-size:13px">Нужна помощь? <a href="mailto:hello@roota.moscow" style="color:#292724">hello@roota.moscow</a><br>Ответьте на это письмо — мы рядом.</p>${unsubscribe ? `<p style="font-size:12px"><a href="${escapeHtml(unsubscribe)}">Настройки и отписка</a></p>` : ""}</div></body></html>`;
   return { subject, html, plaintext };
 }

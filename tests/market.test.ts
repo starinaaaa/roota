@@ -89,6 +89,9 @@ async function fixture() {
   await db.exec(
     await readFile("database/migrations/20261120_market_thanks.sql", "utf8"),
   );
+  await db.exec(
+    await readFile("database/migrations/20261127_reviews_without_ratings.sql", "utf8"),
+  );
   const adapter = db as unknown as MarketDb;
   await db.exec(
     await readFile(
@@ -878,7 +881,7 @@ test("market contact keeps receipt email, review consent and newsletter independ
     await db.close();
   }
 });
-test("honest market reviews issue one existing checkout coupon for any rating, without requiring publication or newsletter", async () => {
+test("honest market reviews issue one existing checkout coupon without a rating, publication or newsletter consent", async () => {
   const { saveManualContact } = await import("../lib/market/store");
   const { submitMarketReview, marketReviewState } =
     await import("../lib/market/reviews");
@@ -897,7 +900,6 @@ test("honest market reviews issue one existing checkout coupon for any rating, w
       )
     ).rows[0].review_token;
     const input = {
-      rating: 1,
       body: "Впечатления о встрече и изделии",
       displayName: "Анна",
       phone: "89991234567",
@@ -916,18 +918,18 @@ test("honest market reviews issue one existing checkout coupon for any rating, w
     await db.query("select prepare_market_review_invites()");
     const first = await run((c) => submitMarketReview(c, token, input));
     const second = await run((c) =>
-      submitMarketReview(c, token, { ...input, rating: 5, body: "повтор" }),
+      submitMarketReview(c, token, { ...input, body: "повтор" }),
     );
     assert.equal(first!.reward!.code, second!.reward!.code);
     assert.equal(first!.publicationConsent, false);
     const saved = (
-      await db.query<{ rating: number; body: string }>(
+      await db.query<{ rating: number | null; body: string }>(
         "select rating,body from customer_reviews where market_sale_id=$1",
         [sale.id],
       )
     ).rows;
     assert.equal(saved.length, 1);
-    assert.equal(saved[0].rating, 1);
+    assert.equal(saved[0].rating, null);
     assert.equal(saved[0].body, input.body);
     const reward = (
       await db.query<{ phone: string; percent: number; days: number }>(

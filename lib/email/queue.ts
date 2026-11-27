@@ -7,7 +7,6 @@ import { orderProduction } from "@/lib/shop-operations";
 import { plannedReadyDate } from "@/lib/production";
 import { getSiteContent } from "@/lib/site";
 import { getPool } from "@/lib/db/pool";
-import { cdnImageUrl } from "@/lib/image-cdn";
 import { orderProductDetails } from "@/lib/order-product-details";
 import {
   customerParcels,
@@ -23,7 +22,7 @@ import { siteUrl } from "@/lib/seo";
 import { sendEmail } from "./server";
 import { renderEmail, marketingKinds, type EmailOrderItem } from "./templates";
 import { ozonTrackingHint } from "@/lib/delivery/tracking";
-import { reviewInvitation, rewardExpiry } from "@/lib/review-copy";
+import { reviewArtwork, reviewInvitation, rewardExpiry, type ReviewArtwork } from "@/lib/review-copy";
 export async function processEmailQueue() {
   if (
     process.env.CUSTOMER_EMAILS_ENABLED !== "true" ||
@@ -67,6 +66,10 @@ export async function processEmailQueue() {
         product: m.payload?.product ?? "",
       };
       let orderItems: EmailOrderItem[] | undefined;
+      let artwork: ReviewArtwork | undefined;
+      if (m.kind === "order_review_reward") artwork = reviewArtwork.thanks;
+      if (m.kind === "restock") artwork = reviewArtwork.order;
+      if (m.kind === "collection") artwork = reviewArtwork.garden;
       let parcels: CustomerParcel[] | undefined;
       let subscription = m.subscription_id
         ? (
@@ -176,9 +179,6 @@ export async function processEmailQueue() {
             name: productDocumentName(detail?.title(i.product_name) ?? i.product_name, i.configuration),
             quantity: i.quantity,
             price: Number(i.price),
-            imageUrl: detail?.image
-              ? (cdnImageUrl(detail.image, 160) ?? siteUrl(detail.image))
-              : undefined,
           };
         });
         const leadDays = Math.max(
@@ -224,6 +224,7 @@ export async function processEmailQueue() {
         label = "Открыть заказ";
         if (m.kind === "review_invite") {
           const copy = reviewInvitation(o.order_items);
+          artwork = copy.artwork;
           values.review_subject = copy.subject;
           values.review_body = copy.body;
           if (!subscription) {
@@ -325,10 +326,11 @@ export async function processEmailQueue() {
             continue;
           }
           const copy = marketReviewInvitation(sale.items);
+          artwork = copy.artwork;
           values.review_subject = copy.subject;
           values.review_body = copy.body;
           url = siteUrl(`/market/review/${sale.review_token}`);
-          label = "Поделиться впечатлениями";
+          label = "Оставить отзыв";
         } else {
           const reward = (
             await getPool().query<{ code: string; expires_at: Date }>(
@@ -350,7 +352,7 @@ export async function processEmailQueue() {
           values.promo_code = reward.code;
           values.promo_expires = rewardExpiry(reward.expires_at);
           template.body =
-            "Спасибо за ваш честный отзыв о покупке на маркете!\n\nВаш персональный промокод: {{promo_code}}\n10% на изделия в следующем заказе до {{promo_expires}}. Укажите при оформлении телефон, который оставили в форме отзыва. Код действует один раз, доставка оплачивается полностью.\n\nС теплом, Даша и чудики Roota";
+            "Спасибо, что нашли время написать. Вот обещанный код для следующего заказа на сайте.\n\nВаш персональный промокод: {{promo_code}}\n10% на керамику в следующем заказе до {{promo_expires}}. При оформлении укажите телефон из формы отзыва. Код действует один раз и не суммируется с другими промокодами. Доставка оплачивается полностью.\n\nДаша";
           url = siteUrl("/catalog");
           label = "Выбрать изделия";
         }
@@ -426,6 +428,7 @@ export async function processEmailQueue() {
           parcels,
           undefined,
           marketLinks,
+          artwork ? siteUrl(artwork) : undefined,
         ),
         metadata: { message_id: m.id },
       };

@@ -28,7 +28,7 @@ export default function ReviewForm({
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [name, setName] = useState(defaultName);
   const [body, setBody] = useState("");
-  const [rating, setRating] = useState("");
+  const [phone, setPhone] = useState("");
   const [consent, setConsent] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const [state, action, pending] = useActionState<ReviewFormState, FormData>(
@@ -84,25 +84,6 @@ export default function ReviewForm({
           </span>
         </label>
         <label className="block text-ui">
-          Ваша оценка
-          <select
-            name="rating"
-            required
-            value={rating}
-            onChange={(event) => setRating(event.target.value)}
-            className={inputClass}
-          >
-            <option value="" disabled>
-              Выберите оценку
-            </option>
-            {[5, 4, 3, 2, 1].map((value) => (
-              <option key={value} value={value}>
-                {value} из 5
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="block text-ui">
           Как вам изделие?
           <textarea
             name="body"
@@ -111,7 +92,7 @@ export default function ReviewForm({
             required
             value={body}
             onChange={(event) => setBody(event.target.value)}
-            placeholder="Что понравилось? Всё ли оказалось так, как вы ожидали?"
+            placeholder="Расскажите о своих впечатлениях"
             className={inputClass}
           />
         </label>
@@ -207,6 +188,28 @@ export default function ReviewForm({
             </ul>
           )}
         </div>
+        <label className="block text-ui">
+          Телефон
+          <input
+            name="phone"
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel"
+            required
+            maxLength={40}
+            placeholder="+7"
+            value={phone}
+            onChange={(event) => setPhone(event.target.value)}
+            className={inputClass}
+            aria-describedby="review-phone-help"
+          />
+          <span
+            id="review-phone-help"
+            className="mt-2 block text-caption text-stone-600"
+          >
+            Тот же номер, что в заказе. К нему привязан промокод.
+          </span>
+        </label>
         <label className="flex items-start gap-3 text-ui leading-relaxed">
           <input
             type="checkbox"
@@ -216,8 +219,8 @@ export default function ReviewForm({
             className="mt-1 size-4 shrink-0 accent-stone-900"
           />
           <span>
-            Разрешаю опубликовать моё имя, текст, оценку и приложенные
-            фотографии на сайте Roota. Контакты и номер заказа не публикуются.
+            Разрешаю опубликовать моё имя, текст и приложенные фотографии на
+            сайте Roota. Контакты и номер заказа не публикуются.
           </span>
         </label>
         <p className="text-caption text-stone-600">

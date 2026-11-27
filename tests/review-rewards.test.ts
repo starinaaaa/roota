@@ -29,7 +29,8 @@ test("admin previews render every review variant and coupon terms without empty 
     assert.match(preview.plaintext, /На доставку скидка не распространяется/);
     assert.match(preview.html, /Оставить отзыв/);
     assert.match(preview.plaintext, /без регистрации/);
-    assert.match(preview.plaintext, /до 5 фотографий/);
+    assert.match(preview.plaintext, /можно добавить фотографии/);
+    assert.match(preview.html, /<img src="https:\/\/roota\.moscow\/images\/review\/(order|garden)\.png"/);
     assert.doesNotMatch(preview.html, /Написать отзыв в Telegram/);
     assert.doesNotMatch(preview.html, /\{\{/);
     return preview.subject;
@@ -41,6 +42,7 @@ test("admin previews render every review variant and coupon terms without empty 
     body: "Ваш промокод: {{promo_code}}. Скидка 10% на изделия до {{promo_expires}}. Доставка оплачивается полностью.",
   });
   assert.match(reward.plaintext, /ROOTA-0123456789AB/);
+  assert.match(reward.html, /images\/review\/thanks\.png/);
   assert.match(reward.plaintext, /Доставка оплачивается полностью/);
   assert.doesNotMatch(reward.html, /Подтверждение покупки|Состав заказа/);
 });
